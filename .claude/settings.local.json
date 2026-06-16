@@ -1,7 +1,0 @@
-{
-  "permissions": {
-    "allow": [
-      "PowerShell($taskFile = \"C:\\\\Users\\\\heifel67\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\u--06-Mitarbeiterordner-1-6-Felix-Heine-coding-personal-stattracker\\\\95aeb946-bd75-4fba-913e-572721319044\\\\tasks\\\\bp8sr2zoj.output\"; $timeout = 90; $elapsed = 0; while \\($elapsed -lt $timeout\\) { Start-Sleep -Seconds 5; $elapsed += 5; $content = Get-Content $taskFile -Raw; if \\($content -match \"Success|Error|failed|npm warn\"\\) { $lines = $content -split \"`n\"; $last10 = $lines | Select-Object -Last 10; Write-Output \\($last10 -join \"`n\"\\); if \\($content -match \"Success!|created successfully\"\\) { break } } })"
-    ]
-  }
-}
