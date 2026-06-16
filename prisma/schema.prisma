@@ -1,0 +1,121 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  MEMBER
+}
+
+enum Format {
+  ROUND_1V1
+  ROUND_2V2
+  ROUND_3V3
+  ROUND_4V4
+  ROUND_5V5
+  TIME_ATTACK_10
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String
+  password  String
+  role      Role     @default(MEMBER)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  player   Player? @relation(fields: [playerId], references: [id])
+  playerId String? @unique
+}
+
+model Player {
+  id        String   @id @default(cuid())
+  tmId      String   @unique
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user         User?
+  lineupSlots  LineupSlot[]
+  roundResults RoundResult[]
+}
+
+model Tournament {
+  id          String    @id @default(cuid())
+  name        String
+  format      Format
+  description String?
+  startDate   DateTime?
+  endDate     DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  matches Match[]
+}
+
+model Match {
+  id           String     @id @default(cuid())
+  tournamentId String
+  tournament   Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  opponent     String?
+  date         DateTime?
+  notes        String?
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  lineup Lineup?
+  rounds Round[]
+}
+
+model Lineup {
+  id        String   @id @default(cuid())
+  matchId   String   @unique
+  match     Match    @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  slots LineupSlot[]
+}
+
+model LineupSlot {
+  id       String @id @default(cuid())
+  lineupId String
+  lineup   Lineup @relation(fields: [lineupId], references: [id], onDelete: Cascade)
+  playerId String
+  player   Player @relation(fields: [playerId], references: [id])
+
+  @@unique([lineupId, playerId])
+}
+
+model Round {
+  id        String    @id @default(cuid())
+  matchId   String
+  match     Match     @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  number    Int
+  track     String?
+  timestamp DateTime?
+  createdAt DateTime  @default(now())
+
+  results RoundResult[]
+
+  @@unique([matchId, number])
+}
+
+model RoundResult {
+  id         String  @id @default(cuid())
+  roundId    String
+  round      Round   @relation(fields: [roundId], references: [id], onDelete: Cascade)
+  playerId   String?
+  player     Player? @relation(fields: [playerId], references: [id])
+  tmId       String
+  playerName String
+  timeMs     Int
+  isOurTeam  Boolean @default(false)
+
+  @@unique([roundId, tmId])
+}
