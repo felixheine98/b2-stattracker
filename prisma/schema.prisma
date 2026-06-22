@@ -9,7 +9,8 @@ datasource db {
 
 enum Role {
   ADMIN
-  MEMBER
+  MANAGER
+  PLAYER
 }
 
 enum Format {
@@ -23,10 +24,11 @@ enum Format {
 
 model User {
   id        String   @id @default(cuid())
-  email     String   @unique
+  email     String?  @unique
+  username  String   @unique
   name      String
   password  String
-  role      Role     @default(MEMBER)
+  role      Role     @default(PLAYER)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -41,43 +43,79 @@ model Player {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  user         User?
-  lineupSlots  LineupSlot[]
-  roundResults RoundResult[]
+  user                  User?
+  lineupSlots           LineupSlot[]
+  roundResults          RoundResult[]
+  tournamentLineupSlots TournamentLineupSlot[]
 }
 
 model Tournament {
   id          String    @id @default(cuid())
   name        String
-  format      Format
+  formats     Format[]
   description String?
   startDate   DateTime?
   endDate     DateTime?
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
-  matches Match[]
+  matches         Match[]
+  tournamentLineups TournamentLineup[]
+}
+
+model TournamentLineup {
+  id           String     @id @default(cuid())
+  tournamentId String
+  tournament   Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  name         String
+  createdAt    DateTime   @default(now())
+
+  slots TournamentLineupSlot[]
+}
+
+model TournamentLineupSlot {
+  id       String           @id @default(cuid())
+  lineupId String
+  lineup   TournamentLineup @relation(fields: [lineupId], references: [id], onDelete: Cascade)
+  playerId String
+  player   Player           @relation(fields: [playerId], references: [id])
+
+  @@unique([lineupId, playerId])
 }
 
 model Match {
   id           String     @id @default(cuid())
   tournamentId String
   tournament   Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  isSeeding    Boolean    @default(false)
   opponent     String?
   date         DateTime?
   notes        String?
   createdAt    DateTime   @default(now())
   updatedAt    DateTime   @updatedAt
 
+  subMatches SubMatch[]
+}
+
+model SubMatch {
+  id        String   @id @default(cuid())
+  matchId   String
+  match     Match    @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  format    Format
+  order     Int
+  createdAt DateTime @default(now())
+
   lineup Lineup?
   rounds Round[]
+
+  @@unique([matchId, order])
 }
 
 model Lineup {
-  id        String   @id @default(cuid())
-  matchId   String   @unique
-  match     Match    @relation(fields: [matchId], references: [id], onDelete: Cascade)
-  createdAt DateTime @default(now())
+  id         String    @id @default(cuid())
+  subMatchId String    @unique
+  subMatch   SubMatch  @relation(fields: [subMatchId], references: [id], onDelete: Cascade)
+  createdAt  DateTime  @default(now())
 
   slots LineupSlot[]
 }
@@ -93,17 +131,17 @@ model LineupSlot {
 }
 
 model Round {
-  id        String    @id @default(cuid())
-  matchId   String
-  match     Match     @relation(fields: [matchId], references: [id], onDelete: Cascade)
-  number    Int
-  track     String?
-  timestamp DateTime?
-  createdAt DateTime  @default(now())
+  id         String    @id @default(cuid())
+  subMatchId String
+  subMatch   SubMatch  @relation(fields: [subMatchId], references: [id], onDelete: Cascade)
+  number     Int
+  track      String?
+  timestamp  DateTime?
+  createdAt  DateTime  @default(now())
 
   results RoundResult[]
 
-  @@unique([matchId, number])
+  @@unique([subMatchId, number])
 }
 
 model RoundResult {

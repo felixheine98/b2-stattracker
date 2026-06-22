@@ -3,6 +3,7 @@ import { db } from "@/lib/db"
 import { NextResponse } from "next/server"
 import { z } from "zod"
 import { Format } from "@prisma/client"
+import { canManage } from "@/lib/roles"
 
 export async function GET() {
   const session = await auth()
@@ -18,7 +19,7 @@ export async function GET() {
 
 const createSchema = z.object({
   name: z.string().min(1),
-  format: z.nativeEnum(Format),
+  formats: z.array(z.nativeEnum(Format)).min(1, "Select at least one format"),
   description: z.string().nullable().optional(),
   startDate: z.string().nullable().optional(),
   endDate: z.string().nullable().optional(),
@@ -27,6 +28,7 @@ const createSchema = z.object({
 export async function POST(req: Request) {
   const session = await auth()
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+  if (!canManage((session.user as { role?: string }).role)) return NextResponse.json({ error: "Forbidden" }, { status: 403 })
 
   const body = await req.json()
   const parsed = createSchema.safeParse(body)
@@ -37,7 +39,7 @@ export async function POST(req: Request) {
   const tournament = await db.tournament.create({
     data: {
       name: parsed.data.name,
-      format: parsed.data.format,
+      formats: parsed.data.formats,
       description: parsed.data.description ?? null,
       startDate: parsed.data.startDate ? new Date(parsed.data.startDate) : null,
       endDate: parsed.data.endDate ? new Date(parsed.data.endDate) : null,

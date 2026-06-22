@@ -5,7 +5,7 @@ import bcrypt from "bcryptjs"
 import { z } from "zod"
 
 const credentialsSchema = z.object({
-  email: z.string().email(),
+  login: z.string().min(1),
   password: z.string().min(1),
 })
 
@@ -14,19 +14,27 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   providers: [
     Credentials({
       credentials: {
-        email: {},
+        login: {},
         password: {},
       },
       async authorize(credentials) {
         const parsed = credentialsSchema.safeParse(credentials)
         if (!parsed.success) return null
 
-        const user = await db.user.findUnique({
-          where: { email: parsed.data.email },
-        })
+        const { login, password } = parsed.data
+
+        // Always try username first
+        let user = await db.user.findUnique({ where: { username: login } })
+
+        // Fall back to email lookup (ADMIN only, and only if login looks like an email)
+        if (!user && login.includes("@")) {
+          const byEmail = await db.user.findUnique({ where: { email: login } })
+          if (byEmail?.role === "ADMIN") user = byEmail
+        }
+
         if (!user) return null
 
-        const valid = await bcrypt.compare(parsed.data.password, user.password)
+        const valid = await bcrypt.compare(password, user.password)
         if (!valid) return null
 
         return { id: user.id, email: user.email, name: user.name, role: user.role }
@@ -48,6 +56,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     },
   },
   pages: {
-    signIn: "/login",
+    signIn: "/b2-stats/login",
   },
 })

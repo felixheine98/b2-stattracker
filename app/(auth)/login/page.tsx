@@ -20,7 +20,7 @@ export default function LoginPage() {
 
     const form = new FormData(e.currentTarget)
     const result = await signIn("credentials", {
-      email: form.get("email"),
+      login: form.get("login"),
       password: form.get("password"),
       redirect: false,
     })
@@ -28,33 +28,33 @@ export default function LoginPage() {
     setLoading(false)
 
     if (result?.error) {
-      setError("Invalid email or password")
+      setError("Invalid username or password")
     } else {
-      router.push("/")
+      router.push("/dashboard")
       router.refresh()
     }
   }
 
   return (
-    <div className="rounded-xl border border-slate-800 bg-slate-900 p-6">
-      <h2 className="text-lg font-semibold text-slate-100 mb-5">Sign in</h2>
+    <div className="rounded-xl border border-[#2d2829] bg-[#1c1819] p-6">
+      <h2 className="text-lg font-semibold text-[#f5f0f0] mb-5">Sign in</h2>
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="space-y-1.5">
-          <Label htmlFor="email">Email</Label>
-          <Input id="email" name="email" type="email" autoComplete="email" required />
+          <Label htmlFor="login">Username or email</Label>
+          <Input id="login" name="login" type="text" autoComplete="username" required />
         </div>
         <div className="space-y-1.5">
           <Label htmlFor="password">Password</Label>
           <Input id="password" name="password" type="password" autoComplete="current-password" required />
         </div>
-        {error && <p className="text-sm text-red-400">{error}</p>}
+        {error && <p className="text-sm text-[#ED1F24]">{error}</p>}
         <Button type="submit" className="w-full" disabled={loading}>
           {loading ? "Signing in…" : "Sign in"}
         </Button>
       </form>
-      <p className="mt-4 text-center text-sm text-slate-500">
+      <p className="mt-4 text-center text-sm text-[#5e5858]">
         No account?{" "}
-        <Link href="/register" className="text-cyan-400 hover:text-cyan-300">
+        <Link href="/register" className="text-[#FBD00D] hover:text-[#e6bc0c]">
           Register
         </Link>
       </p>

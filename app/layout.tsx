@@ -1,5 +1,10 @@
 import type { Metadata } from "next"
+import { Inter, Space_Grotesk } from "next/font/google"
 import "./globals.css"
+import { Providers } from "./providers"
+
+const inter = Inter({ subsets: ["latin"], variable: "--font-inter" })
+const spaceGrotesk = Space_Grotesk({ subsets: ["latin"], variable: "--font-heading" })
 
 export const metadata: Metadata = {
   title: "StatTracker – Trackmania Team Stats",
@@ -8,8 +13,10 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className="h-full">
-      <body className="min-h-full bg-slate-950 text-slate-100 antialiased">{children}</body>
+    <html lang="en" className={`h-full ${inter.variable} ${spaceGrotesk.variable}`}>
+      <body className="min-h-full antialiased">
+        <Providers>{children}</Providers>
+      </body>
     </html>
   )
 }

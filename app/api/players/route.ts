@@ -2,6 +2,7 @@ import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
 import { NextResponse } from "next/server"
 import { z } from "zod"
+import { canManage } from "@/lib/roles"
 
 export async function GET() {
   const session = await auth()
@@ -26,6 +27,7 @@ const createSchema = z.object({
 export async function POST(req: Request) {
   const session = await auth()
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+  if (!canManage((session.user as { role?: string }).role)) return NextResponse.json({ error: "Forbidden" }, { status: 403 })
 
   const body = await req.json()
   const parsed = createSchema.safeParse(body)

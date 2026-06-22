@@ -5,7 +5,8 @@ import { z } from "zod"
 
 const schema = z.object({
   name: z.string().min(1),
-  email: z.string().email(),
+  username: z.string().min(3, "Username must be at least 3 characters").regex(/^[a-zA-Z0-9_.-]+$/, "Username may only contain letters, numbers, underscores, dots and hyphens"),
+  email: z.string().email().optional().or(z.literal("")).transform(v => v || null),
   password: z.string().min(8, "Password must be at least 8 characters"),
 })
 
@@ -16,15 +17,21 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: parsed.error.issues[0].message }, { status: 400 })
   }
 
-  const existing = await db.user.findUnique({ where: { email: parsed.data.email } })
-  if (existing) {
-    return NextResponse.json({ error: "An account with this email already exists" }, { status: 409 })
-  }
+  const { name, username, email, password } = parsed.data
 
-  const hashed = await bcrypt.hash(parsed.data.password, 12)
+  const checks = await Promise.all([
+    email ? db.user.findUnique({ where: { email } }) : null,
+    db.user.findUnique({ where: { username } }),
+  ])
+
+  if (checks[0]) return NextResponse.json({ error: "An account with this email already exists" }, { status: 409 })
+  if (checks[1]) return NextResponse.json({ error: "This username is already taken" }, { status: 409 })
+
+  const hashed = await bcrypt.hash(password, 12)
+  const existingCount = await db.user.count()
   const user = await db.user.create({
-    data: { name: parsed.data.name, email: parsed.data.email, password: hashed },
-    select: { id: true, name: true, email: true, role: true },
+    data: { name, username, email, password: hashed, role: existingCount === 0 ? "ADMIN" : "PLAYER" },
+    select: { id: true, name: true, username: true, email: true, role: true },
   })
 
   return NextResponse.json(user, { status: 201 })

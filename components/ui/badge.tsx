@@ -2,7 +2,7 @@ import { cn } from "@/lib/utils"
 import { HTMLAttributes } from "react"
 
 interface BadgeProps extends HTMLAttributes<HTMLSpanElement> {
-  variant?: "default" | "cyan" | "green" | "yellow" | "red" | "purple"
+  variant?: "default" | "primary" | "secondary" | "green" | "yellow" | "red" | "purple"
 }
 
 export function Badge({ className, variant = "default", ...props }: BadgeProps) {
@@ -11,12 +11,12 @@ export function Badge({ className, variant = "default", ...props }: BadgeProps) 
       className={cn(
         "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium",
         {
-          "bg-slate-700 text-slate-300": variant === "default",
-          "bg-cyan-900 text-cyan-300 border border-cyan-800": variant === "cyan",
-          "bg-green-900 text-green-300 border border-green-800": variant === "green",
-          "bg-yellow-900 text-yellow-300 border border-yellow-800": variant === "yellow",
-          "bg-red-900 text-red-300 border border-red-800": variant === "red",
-          "bg-purple-900 text-purple-300 border border-purple-800": variant === "purple",
+          "bg-[#251f20] text-[#9a9090] border border-[#3a3435]": variant === "default",
+          "bg-[#FBD00D]/15 text-[#FBD00D] border border-[#FBD00D]/30": variant === "primary" || variant === "yellow",
+          "bg-[#002484]/20 text-[#6b8fff] border border-[#002484]/40": variant === "secondary",
+          "bg-green-950 text-green-400 border border-green-900": variant === "green",
+          "bg-[#ED1F24]/15 text-[#ED1F24] border border-[#ED1F24]/30": variant === "red",
+          "bg-purple-950 text-purple-400 border border-purple-900": variant === "purple",
         },
         className
       )}

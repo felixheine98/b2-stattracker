@@ -19,12 +19,24 @@ export function formatTime(ms: number): string {
 
 export function formatLabel(format: Format): string {
   const map: Record<Format, string> = {
+    ROUND_1V1: "1v1",
+    ROUND_2V2: "2v2",
+    ROUND_3V3: "3v3",
+    ROUND_4V4: "4v4",
+    ROUND_5V5: "5v5",
+    TIME_ATTACK_10: "Seeding",
+  }
+  return map[format]
+}
+
+export function formatLabelLong(format: Format): string {
+  const map: Record<Format, string> = {
     ROUND_1V1: "1v1 Round",
     ROUND_2V2: "2v2 Round",
     ROUND_3V3: "3v3 Round",
     ROUND_4V4: "4v4 Round",
     ROUND_5V5: "5v5 Round",
-    TIME_ATTACK_10: "10R Time Attack",
+    TIME_ATTACK_10: "Seeding (Time Attack)",
   }
   return map[format]
 }

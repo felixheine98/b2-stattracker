@@ -4,7 +4,7 @@ import { cn } from "@/lib/utils"
 import { ButtonHTMLAttributes, forwardRef } from "react"
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: "default" | "outline" | "ghost" | "destructive"
+  variant?: "default" | "secondary" | "outline" | "ghost" | "destructive"
   size?: "sm" | "md" | "lg"
 }
 
@@ -14,12 +14,13 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       <button
         ref={ref}
         className={cn(
-          "inline-flex items-center justify-center gap-2 rounded-md font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500 disabled:pointer-events-none disabled:opacity-50",
+          "inline-flex items-center justify-center gap-2 rounded-md font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FBD00D] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0e0b0b] disabled:pointer-events-none disabled:opacity-40",
           {
-            "bg-cyan-500 text-slate-900 hover:bg-cyan-400": variant === "default",
-            "border border-slate-600 bg-transparent text-slate-200 hover:bg-slate-700 hover:border-slate-500": variant === "outline",
-            "bg-transparent text-slate-300 hover:bg-slate-700 hover:text-slate-100": variant === "ghost",
-            "bg-red-600 text-white hover:bg-red-500": variant === "destructive",
+            "bg-[#FBD00D] text-[#1a1718] hover:bg-[#e6bc0c]": variant === "default",
+            "bg-[#002484] text-white hover:bg-[#001e70]": variant === "secondary",
+            "border border-[#3a3435] bg-transparent text-[#f5f0f0] hover:bg-[#251f20] hover:border-[#5e5858]": variant === "outline",
+            "bg-transparent text-[#9a9090] hover:bg-[#251f20] hover:text-[#f5f0f0]": variant === "ghost",
+            "bg-[#ED1F24] text-white hover:bg-[#d61c21]": variant === "destructive",
           },
           {
             "h-8 px-3 text-sm": size === "sm",

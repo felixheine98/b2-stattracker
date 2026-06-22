@@ -1,4 +1,6 @@
 import { db } from "@/lib/db"
+import { auth } from "@/lib/auth"
+import { canManage } from "@/lib/roles"
 import { notFound } from "next/navigation"
 import { TournamentDetailView } from "./tournament-detail-view"
 
@@ -9,24 +11,27 @@ interface Props {
 export default async function TournamentDetailPage({ params }: Props) {
   const { id } = await params
 
-  const tournament = await db.tournament.findUnique({
-    where: { id },
-    include: {
-      matches: {
-        orderBy: { date: "desc" },
-        include: {
-          lineup: {
-            include: { slots: { include: { player: true } } },
+  const [session, tournament, players] = await Promise.all([
+    auth(),
+    db.tournament.findUnique({
+      where: { id },
+      include: {
+        matches: {
+          orderBy: { createdAt: "desc" },
+          include: {
+            _count: { select: { subMatches: true } },
           },
-          _count: { select: { rounds: true } },
+        },
+        tournamentLineups: {
+          orderBy: { createdAt: "asc" },
+          include: { slots: { include: { player: true } } },
         },
       },
-    },
-  })
+    }),
+    db.player.findMany({ orderBy: { name: "asc" } }),
+  ])
 
   if (!tournament) notFound()
 
-  const players = await db.player.findMany({ orderBy: { name: "asc" } })
-
-  return <TournamentDetailView tournament={tournament} players={players} />
+  return <TournamentDetailView tournament={tournament} players={players} canManage={canManage((session?.user as { role?: string })?.role)} />
 }
