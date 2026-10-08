@@ -1,6 +1,7 @@
 import { db } from "@/lib/db"
 import { auth } from "@/lib/auth"
 import { canManage } from "@/lib/roles"
+import { guestTmIdsAt, tournamentReferenceDate } from "@/lib/player-status"
 import { notFound } from "next/navigation"
 import { MatchDetailView } from "./match-detail-view"
 
@@ -42,10 +43,13 @@ export default async function MatchDetailPage({ params }: Props) {
         },
       },
     }),
-    db.player.findMany({ orderBy: { name: "asc" } }),
+    db.player.findMany({ orderBy: { name: "asc" }, include: { statusChanges: true } }),
   ])
 
   if (!match || match.tournament.id !== tournamentId) notFound()
 
-  return <MatchDetailView match={match} allPlayers={allPlayers} canManage={canManage((session?.user as { role?: string })?.role)} />
+  // Members and guests as of the tournament's start day
+  const guestTmIds = guestTmIdsAt(allPlayers, tournamentReferenceDate(match.tournament))
+
+  return <MatchDetailView match={match} allPlayers={allPlayers} guestTmIds={guestTmIds} canManage={canManage((session?.user as { role?: string })?.role)} />
 }

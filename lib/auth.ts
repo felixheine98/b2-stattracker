@@ -42,10 +42,18 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     }),
   ],
   callbacks: {
-    jwt({ token, user }) {
+    async jwt({ token, user }) {
       if (user) {
         token.id = user.id
         token.role = (user as { role?: string }).role
+        return token
+      }
+      // Re-read the account on every use: a deleted login is signed out at once
+      // and a changed role applies without waiting for the token to expire
+      if (token.id) {
+        const current = await db.user.findUnique({ where: { id: token.id as string }, select: { role: true } })
+        if (!current) return null
+        token.role = current.role
       }
       return token
     },

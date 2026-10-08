@@ -56,6 +56,10 @@ async function main() {
   let created = 0
   let skipped = 0
 
+  // Logins are only created when setting up an empty database. Afterwards accounts are
+  // managed on the Accounts page, and a deleted login must not come back on restart.
+  const bootstrapLogins = (await prisma.user.count()) === 0
+
   for (const p of PLAYERS) {
     const username = p.name.toLowerCase()
 
@@ -64,7 +68,15 @@ async function main() {
       where: { tmId: p.tmId },
       update: {},
       create: { name: p.name, tmId: p.tmId },
+      include: { statusChanges: { orderBy: { effectiveFrom: 'desc' }, take: 1 } },
     })
+
+    // Guests never get a login created automatically; a deleted one must stay deleted
+    const status = player.statusChanges[0]?.status ?? player.initialStatus
+    if (!bootstrapLogins || status === 'GUEST') {
+      skipped++
+      continue
+    }
 
     // Skip if username taken OR player already linked to a user
     const [existingByUsername, playerWithUser] = await Promise.all([
@@ -91,6 +103,13 @@ async function main() {
   }
 
   console.log(`Seed done — ${created} created, ${skipped} skipped.`)
+
+  // Every tournament needs a start date: it decides who counts as member or guest
+  const tournaments = await prisma.tournament.findMany({ where: { startDate: null }, select: { id: true, createdAt: true } })
+  for (const t of tournaments) {
+    await prisma.tournament.update({ where: { id: t.id }, data: { startDate: t.createdAt } })
+  }
+  if (tournaments.length > 0) console.log(`Set start date for ${tournaments.length} tournament(s).`)
 }
 
 main()

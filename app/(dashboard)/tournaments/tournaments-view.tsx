@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { useSyncedState } from "@/lib/use-synced-state"
+import { localTodayKey } from "@/lib/player-status"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -209,7 +210,7 @@ export function TournamentsView({ tournaments: initial, canManage }: { tournamen
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <Label htmlFor="startDate">Start date</Label>
-              <Input id="startDate" name="startDate" type="date" />
+              <Input id="startDate" name="startDate" type="date" defaultValue={localTodayKey()} required />
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="endDate">End date</Label>

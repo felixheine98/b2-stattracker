@@ -2,15 +2,16 @@
 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import { Dialog, DialogTitle } from "@/components/ui/dialog"
 import { Textarea } from "@/components/ui/textarea"
 import { formatLabel, formatLabelLong, formatTime, teamSize } from "@/lib/utils"
 import type { Format } from "@prisma/client"
-import { ArrowLeft, ChevronDown, ChevronUp, Clock, Download, Grid3x3, Pencil, Trophy, Upload, Users, X } from "lucide-react"
+import { ArrowLeft, ChevronDown, ChevronUp, Clock, Download, Grid3x3, Trophy, Upload, Users } from "lucide-react"
 import Link from "next/link"
 import { useSyncedState } from "@/lib/use-synced-state"
 import { PlayerAvatar } from "@/components/player-avatar"
+import { GuestBadge } from "@/components/guest-badge"
 import { useMemo, useState } from "react"
 import { EcmImportDialog } from "./ecm-import-dialog"
 import { RoundEntryDialog } from "./round-entry-dialog"
@@ -76,7 +77,7 @@ interface Match {
 
 type SortCol = "name" | "played" | "placementSum" | "avg" | "roundW" | "roundL" | "bestTime" | "medianTime" | "avgTime"
 
-function SubMatchStatsTable({ sm }: { sm: SubMatch }) {
+function SubMatchStatsTable({ sm, isGuest }: { sm: SubMatch; isGuest: (tmId: string) => boolean }) {
   const [sortCol, setSortCol] = useState<SortCol>("avg")
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc")
 
@@ -194,7 +195,10 @@ function SubMatchStatsTable({ sm }: { sm: SubMatch }) {
           )}
           {sorted.map((row) => (
             <tr key={row.tmId} className="border-b border-[#1c1819] hover:bg-[#1c1819]/50">
-              <td className="py-1.5 pr-4 text-[#f5f0f0] font-medium">{row.name}</td>
+              <td className="py-1.5 pr-4 text-[#f5f0f0] font-medium whitespace-nowrap">
+                {row.name}
+                {isGuest(row.tmId) && <GuestBadge className="ml-1.5" />}
+              </td>
               <td className="py-1.5 px-2 text-right text-[#c5bfbf]">{row.roundsPlayed}</td>
               <td className="py-1.5 px-2 text-right text-[#c5bfbf]">{row.placementSum}</td>
               <td className="py-1.5 px-2 text-right text-[#c5bfbf] font-mono">
@@ -217,23 +221,19 @@ function SubMatchStatsTable({ sm }: { sm: SubMatch }) {
 interface Props {
   match: Match
   allPlayers: Player[]
+  // Lower-cased TM IDs of players who are guests in this tournament
+  guestTmIds: string[]
   canManage: boolean
 }
 
-export function MatchDetailView({ match: initialMatch, allPlayers, canManage }: Props) {
+export function MatchDetailView({ match: initialMatch, allPlayers, guestTmIds, canManage }: Props) {
+  const guests = new Set(guestTmIds)
+  const isGuest = (tmId: string) => guests.has(tmId.toLowerCase())
   const [subMatches, setSubMatches] = useSyncedState(initialMatch.subMatches)
-  const [matchLineup, setMatchLineup] = useSyncedState<TournamentLineup | null>(initialMatch.tournamentLineup ?? null)
+  const matchLineup = initialMatch.tournamentLineup ?? null
   const [expanded, setExpanded] = useState<Set<string>>(
     new Set(initialMatch.subMatches.map((s) => s.id))
   )
-
-  // Match-level lineup editor
-  const [showMatchLineupEditor, setShowMatchLineupEditor] = useState(false)
-  const [matchLineupLoading, setMatchLineupLoading] = useState(false)
-
-  // Sub-match level lineup editor
-  const [lineupEditor, setLineupEditor] = useState<{ subMatchId: string; selectedIds: string[] } | null>(null)
-  const [lineupLoading, setLineupLoading] = useState(false)
 
   // CSV import
   const [importDialog, setImportDialog] = useState<{ subMatchId: string } | null>(null)
@@ -268,50 +268,6 @@ export function MatchDetailView({ match: initialMatch, allPlayers, canManage }: 
       else next.add(id)
       return next
     })
-  }
-
-  // Sets (or clears) the match-level lineup and updates all sub-matches
-  async function saveMatchLineup(lineupId: string | null) {
-    setMatchLineupLoading(true)
-    const res = await fetch(
-      `/b2-stats/api/tournaments/${initialMatch.tournament.id}/matches/${initialMatch.id}`,
-      {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ tournamentLineupId: lineupId }),
-      }
-    )
-    setMatchLineupLoading(false)
-    if (!res.ok) return
-    const data = await res.json()
-    setMatchLineup(data.tournamentLineup ?? null)
-    setSubMatches(data.subMatches)
-    setShowMatchLineupEditor(false)
-  }
-
-  function openLineupEditor(sm: SubMatch) {
-    // Pre-select current sub-match lineup players; fall back to match lineup players
-    const currentIds = sm.lineup?.slots.map((s) => s.player.id)
-      ?? matchLineup?.slots.map((s) => s.player.id)
-      ?? []
-    setLineupEditor({ subMatchId: sm.id, selectedIds: currentIds })
-  }
-
-  async function saveLineup() {
-    if (!lineupEditor) return
-    setLineupLoading(true)
-    const res = await fetch(`/b2-stats/api/submatches/${lineupEditor.subMatchId}/lineup`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ playerIds: lineupEditor.selectedIds }),
-    })
-    setLineupLoading(false)
-    if (!res.ok) return
-    const data = await res.json()
-    setSubMatches((sms) =>
-      sms.map((sm) => (sm.id === lineupEditor.subMatchId ? { ...sm, lineup: data } : sm))
-    )
-    setLineupEditor(null)
   }
 
   function openImport(subMatchId: string) {
@@ -360,16 +316,6 @@ export function MatchDetailView({ match: initialMatch, allPlayers, canManage }: 
 
   const matchStats = computeMatchStats(subMatches)
 
-  // Players to show in the sub-match lineup editor:
-  // if a match lineup is set, show those players first (and mark them), then the rest
-  const lineupPlayerIds = new Set(matchLineup?.slots.map((s) => s.player.id) ?? [])
-  const editorPlayers = matchLineup
-    ? [
-        ...allPlayers.filter((p) => lineupPlayerIds.has(p.id)),
-        ...allPlayers.filter((p) => !lineupPlayerIds.has(p.id)),
-      ]
-    : allPlayers
-
   const matchTitle = initialMatch.isSeeding
     ? "Seeding"
     : [matchLineup?.name, initialMatch.opponent].filter(Boolean).join(" vs ") || "Unknown opponent"
@@ -403,47 +349,32 @@ export function MatchDetailView({ match: initialMatch, allPlayers, canManage }: 
             )}
             {initialMatch.notes && <p className="text-[#5e5858] text-sm mt-1">{initialMatch.notes}</p>}
 
-            {/* Match-level lineup badge + edit */}
-            {canManage && (
-              <div className="flex items-center gap-2 mt-2">
-                {matchLineup ? (
-                  <span className="inline-flex items-center gap-1.5 rounded-full bg-[#251f20] border border-[#2d2829] px-3 py-1 text-xs text-[#c5bfbf]">
-                    <Users size={11} className="text-[#FBD00D]" />
-                    {matchLineup.name}
-                    <button
-                      type="button"
-                      onClick={() => setShowMatchLineupEditor(true)}
-                      className="text-[#5e5858] hover:text-[#f5f0f0] ml-0.5"
+            {/* Lineup of this match, fixed when the match is created */}
+            {matchLineup && (
+              <div className="mt-3">
+                <p className="text-xs text-[#9a9090] mb-1.5 flex items-center gap-1.5">
+                  <Users size={12} className="text-[#FBD00D]" />
+                  {matchLineup.name}
+                </p>
+                <div className="flex flex-wrap gap-1.5">
+                  {matchLineup.slots.map((slot) => (
+                    <span
+                      key={slot.id}
+                      className="inline-flex items-center gap-1.5 rounded-full bg-[#251f20] border border-[#2d2829] px-2.5 py-1 text-xs text-[#c5bfbf]"
                     >
-                      <Pencil size={10} />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => saveMatchLineup(null)}
-                      className="text-[#5e5858] hover:text-[#ED1F24] ml-0.5"
-                    >
-                      <X size={10} />
-                    </button>
-                  </span>
-                ) : (
-                  <Button variant="outline" size="sm" onClick={() => setShowMatchLineupEditor(true)}>
-                    <Users size={14} />
-                    Lineup zuweisen
-                  </Button>
-                )}
-                {!initialMatch.isSeeding && (
-                  <Button size="sm" onClick={() => setShowEcmImport(true)}>
-                    <Download size={14} />
-                    Von eCM importieren
-                  </Button>
-                )}
+                      <PlayerAvatar player={slot.player} className="h-4 w-4 text-[9px]" />
+                      {slot.player.name}
+                      {isGuest(slot.player.tmId) && <GuestBadge />}
+                    </span>
+                  ))}
+                </div>
               </div>
             )}
-            {!canManage && matchLineup && (
-              <div className="flex items-center gap-1.5 mt-2">
-                <Users size={12} className="text-[#FBD00D]" />
-                <span className="text-xs text-[#9a9090]">{matchLineup.name}</span>
-              </div>
+            {canManage && !initialMatch.isSeeding && (
+              <Button size="sm" className="mt-3" onClick={() => setShowEcmImport(true)}>
+                <Download size={14} />
+                Von eCM importieren
+              </Button>
             )}
           </div>
           {matchStats.subMatchesPlayed > 0 && (
@@ -498,74 +429,34 @@ export function MatchDetailView({ match: initialMatch, allPlayers, canManage }: 
               {/* Sub-match content */}
               {isOpen && (
                 <div className="border-t border-[#2d2829] p-4 space-y-4 bg-[#0e0c0d]">
-                  <div className="grid grid-cols-2 gap-4">
-                    {/* Lineup */}
-                    <Card>
-                      <CardHeader>
-                        <div className="flex items-center justify-between">
-                          <CardTitle className="text-sm">Lineup</CardTitle>
-                          {canManage && (
-                            <Button variant="outline" size="sm" onClick={() => openLineupEditor(sm)}>
-                              <Users size={14} />
-                              Edit
-                            </Button>
-                          )}
+                  {/* Summary */}
+                  {totalRounds > 0 && (
+                    <div className="flex flex-wrap gap-x-8 gap-y-2 rounded-xl border border-[#2d2829] bg-[#1c1819] px-5 py-3 text-sm">
+                      <div>
+                        <p className="text-xs text-[#9a9090]">Rounds</p>
+                        <p className="text-[#f5f0f0] font-medium">{totalRounds}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-[#9a9090]">Our rounds won</p>
+                        <p className="text-[#f5f0f0] font-medium">{stats.ourRoundsWon} / {totalRounds}</p>
+                      </div>
+                      {stats.bestOurTime && (
+                        <div>
+                          <p className="text-xs text-[#9a9090]">Our best time</p>
+                          <p className="text-[#FBD00D] font-mono font-medium">{formatTime(stats.bestOurTime)}</p>
                         </div>
-                      </CardHeader>
-                      <CardContent>
-                        {!sm.lineup || sm.lineup.slots.length === 0 ? (
-                          <p className="text-[#9a9090] text-sm">No lineup set.</p>
-                        ) : (
-                          <div className="space-y-1.5">
-                            {sm.lineup.slots.map((slot) => (
-                              <div key={slot.id} className="flex items-center gap-2 text-sm">
-                                <PlayerAvatar player={slot.player} />
-                                <span className="text-[#f5f0f0]">{slot.player.name}</span>
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                      </CardContent>
-                    </Card>
-
-                    {/* Stats */}
-                    <Card>
-                      <CardHeader><CardTitle className="text-sm">Summary</CardTitle></CardHeader>
-                      <CardContent>
-                        {totalRounds === 0 ? (
-                          <p className="text-[#9a9090] text-sm">No results yet.</p>
-                        ) : (
-                          <div className="space-y-2 text-sm">
-                            <div className="flex justify-between">
-                              <span className="text-[#9a9090]">Rounds</span>
-                              <span className="text-[#f5f0f0] font-medium">{totalRounds}</span>
-                            </div>
-                            <div className="flex justify-between">
-                              <span className="text-[#9a9090]">Our rounds won</span>
-                              <span className="text-[#f5f0f0] font-medium">
-                                {stats.ourRoundsWon} / {totalRounds}
-                              </span>
-                            </div>
-                            {stats.bestOurTime && (
-                              <div className="flex justify-between">
-                                <span className="text-[#9a9090]">Our best time</span>
-                                <span className="text-[#FBD00D] font-mono font-medium">{formatTime(stats.bestOurTime)}</span>
-                              </div>
-                            )}
-                            {stats.bestOpponentTime && (
-                              <div className="flex justify-between">
-                                <span className="text-[#9a9090]">Opponent best</span>
-                                <span className="text-[#c5bfbf] font-mono">{formatTime(stats.bestOpponentTime)}</span>
-                              </div>
-                            )}
-                          </div>
-                        )}
-                      </CardContent>
-                    </Card>
-                  </div>
+                      )}
+                      {stats.bestOpponentTime && (
+                        <div>
+                          <p className="text-xs text-[#9a9090]">Opponent best</p>
+                          <p className="text-[#c5bfbf] font-mono">{formatTime(stats.bestOpponentTime)}</p>
+                        </div>
+                      )}
+                    </div>
+                  )}
 
                   {/* Player stats table */}
-                  <SubMatchStatsTable sm={sm} />
+                  <SubMatchStatsTable sm={sm} isGuest={isGuest} />
 
                   {/* Import button */}
                   {canManage && (
@@ -630,7 +521,10 @@ export function MatchDetailView({ match: initialMatch, allPlayers, canManage }: 
                                           <span className={`w-5 shrink-0 text-xs font-bold font-mono ${rankColor(rank)}`}>
                                             #{rank}
                                           </span>
-                                          <span className="text-[#f5f0f0] flex-1 truncate">{r.playerName}</span>
+                                          <span className="text-[#f5f0f0] flex-1 truncate">
+                                            {r.playerName}
+                                            {isGuest(r.tmId) && <GuestBadge className="ml-1.5" />}
+                                          </span>
                                           <span className={`font-mono shrink-0 ${rankColor(rank)}`}>
                                             {r.timeMs != null ? formatTime(r.timeMs) : "—"}
                                           </span>
@@ -679,125 +573,12 @@ export function MatchDetailView({ match: initialMatch, allPlayers, canManage }: 
         })}
       </div>
 
-      {/* Match-level lineup editor dialog */}
-      <Dialog open={showMatchLineupEditor} onClose={() => setShowMatchLineupEditor(false)}>
-        <DialogTitle>Lineup für dieses Match</DialogTitle>
-        <p className="text-xs text-[#5e5858] mb-4">
-          Das gewählte Lineup wird auf alle Sub-Matches angewendet. Einzelne Spieler können danach pro Sub-Match getauscht werden.
-        </p>
-        <div className="flex flex-col gap-1.5 mb-4">
-          <button
-            type="button"
-            onClick={() => saveMatchLineup(null)}
-            disabled={matchLineupLoading}
-            className={`w-full text-left rounded-lg border px-3 py-2 text-sm transition-colors ${
-              !matchLineup
-                ? "border-[#3a3435] bg-[#251f20] text-[#9a9090]"
-                : "border-[#2d2829] text-[#5e5858] hover:border-[#3a3435]"
-            }`}
-          >
-            — kein Lineup —
-          </button>
-          {initialMatch.tournament.tournamentLineups.map((tl) => (
-            <button
-              key={tl.id}
-              type="button"
-              onClick={() => saveMatchLineup(tl.id)}
-              disabled={matchLineupLoading}
-              className={`w-full text-left rounded-lg border px-3 py-2 text-sm transition-colors ${
-                matchLineup?.id === tl.id
-                  ? "border-[#FBD00D]/50 bg-[#FBD00D]/10 text-[#f5f0f0]"
-                  : "border-[#2d2829] text-[#9a9090] hover:border-[#3a3435]"
-              }`}
-            >
-              <span className="font-medium">{tl.name}</span>
-              <span className="text-[#5e5858] ml-2 text-xs">
-                {tl.slots.map((s) => s.player.name).join(", ")}
-              </span>
-            </button>
-          ))}
-          {initialMatch.tournament.tournamentLineups.length === 0 && (
-            <p className="text-sm text-[#9a9090]">
-              Noch keine Lineups.{" "}
-              <Link href={`/tournaments/${initialMatch.tournament.id}`} className="text-[#FBD00D] hover:underline">
-                Lineup erstellen
-              </Link>
-            </p>
-          )}
-        </div>
-        <div className="flex justify-end">
-          <Button variant="ghost" onClick={() => setShowMatchLineupEditor(false)}>Abbrechen</Button>
-        </div>
-      </Dialog>
-
-      {/* Sub-match lineup editor dialog */}
-      <Dialog open={!!lineupEditor} onClose={() => setLineupEditor(null)}>
-        <DialogTitle>
-          Lineup bearbeiten
-          {lineupEditor && (
-            <span className="ml-2 text-sm font-normal text-[#9a9090]">
-              — {formatLabelLong(subMatches.find((sm) => sm.id === lineupEditor.subMatchId)?.format ?? "ROUND_1V1")}
-            </span>
-          )}
-        </DialogTitle>
-        {matchLineup && (
-          <p className="text-xs text-[#5e5858] mb-3">
-            Spieler des Match-Lineups <span className="text-[#9a9090]">{matchLineup.name}</span> sind vorausgewählt. Hier können einzelne Spieler für diesen Sub-Match getauscht werden.
-          </p>
-        )}
-        <div className="space-y-3 max-h-64 overflow-y-auto mb-4">
-          {editorPlayers.map((p) => {
-            const selected = lineupEditor?.selectedIds.includes(p.id) ?? false
-            const isLineupPlayer = lineupPlayerIds.has(p.id)
-            return (
-              <label key={p.id} className="flex items-center gap-3 cursor-pointer group">
-                <input
-                  type="checkbox"
-                  checked={selected}
-                  onChange={() =>
-                    setLineupEditor((prev) =>
-                      prev
-                        ? {
-                            ...prev,
-                            selectedIds: selected
-                              ? prev.selectedIds.filter((id) => id !== p.id)
-                              : [...prev.selectedIds, p.id],
-                          }
-                        : null
-                    )
-                  }
-                  className="h-4 w-4 accent-[#FBD00D]"
-                />
-                <span className={`text-sm group-hover:text-white ${isLineupPlayer ? "text-[#f5f0f0]" : "text-[#9a9090]"}`}>
-                  {p.name}
-                </span>
-                {isLineupPlayer && (
-                  <span className="text-[9px] text-[#FBD00D] border border-[#FBD00D]/30 rounded px-1">LU</span>
-                )}
-                <span className="text-xs text-[#5e5858] font-mono ml-auto">{p.tmId.slice(0, 8)}…</span>
-              </label>
-            )
-          })}
-          {allPlayers.length === 0 && (
-            <p className="text-[#9a9090] text-sm">
-              No players registered.{" "}
-              <Link href="/players" className="text-[#FBD00D] hover:underline">Add players first.</Link>
-            </p>
-          )}
-        </div>
-        <div className="flex gap-2 justify-end">
-          <Button variant="ghost" onClick={() => setLineupEditor(null)}>Abbrechen</Button>
-          <Button onClick={saveLineup} disabled={lineupLoading}>
-            {lineupLoading ? "Saving…" : "Save Lineup"}
-          </Button>
-        </div>
-      </Dialog>
-
       {/* eCircuitMania import dialog */}
       {showEcmImport && (
         <EcmImportDialog
           subMatches={subMatches}
           allPlayers={allPlayers}
+          isGuest={isGuest}
           onClose={() => setShowEcmImport(false)}
           onImported={(subMatchId, rounds) =>
             setSubMatches((sms) => sms.map((sm) => (sm.id === subMatchId ? { ...sm, rounds } : sm)))
@@ -812,6 +593,7 @@ export function MatchDetailView({ match: initialMatch, allPlayers, canManage }: 
           subMatch={roundEntrySubMatch}
           pool={(roundEntrySubMatch.lineup ?? matchLineup)?.slots.map((s) => s.player) ?? []}
           allPlayers={allPlayers}
+          isGuest={isGuest}
           onClose={() => setRoundEntryId(null)}
           onSaved={(rounds) => {
             setSubMatches((sms) => sms.map((sm) => (sm.id === roundEntrySubMatch.id ? { ...sm, rounds } : sm)))

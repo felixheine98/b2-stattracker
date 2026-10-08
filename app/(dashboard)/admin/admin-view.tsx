@@ -34,7 +34,14 @@ const ROLE_ICON: Record<Role, typeof ShieldCheck> = {
   PLAYER: User,
 }
 
-export function AdminView({ users: initial, currentUserId }: { users: UserRow[]; currentUserId: string }) {
+interface Props {
+  users: UserRow[]
+  currentUserId: string
+  // Managers see every account but can only create and delete PLAYER accounts
+  isAdmin: boolean
+}
+
+export function AdminView({ users: initial, currentUserId, isAdmin }: Props) {
   const [users, setUsers] = useSyncedState(initial)
   const [showForm, setShowForm] = useState(false)
   const [error, setError] = useState("")
@@ -58,9 +65,9 @@ export function AdminView({ users: initial, currentUserId }: { users: UserRow[];
   async function handleDelete(userId: string) {
     if (!confirm("Delete this user? This cannot be undone.")) return
     setDeleting(userId)
-    await fetch(`/b2-stats/api/admin/users/${userId}`, { method: "DELETE" })
+    const res = await fetch(`/b2-stats/api/admin/users/${userId}`, { method: "DELETE" })
     setDeleting(null)
-    setUsers((u) => u.filter((user) => user.id !== userId))
+    if (res.ok) setUsers((u) => u.filter((user) => user.id !== userId))
   }
 
   async function handleCreate(e: React.FormEvent<HTMLFormElement>) {
@@ -76,7 +83,7 @@ export function AdminView({ users: initial, currentUserId }: { users: UserRow[];
         username: form.get("username"),
         email: form.get("email"),
         password: form.get("password"),
-        role: form.get("role"),
+        role: form.get("role") ?? "PLAYER",
       }),
     })
     setLoading(false)
@@ -95,7 +102,7 @@ export function AdminView({ users: initial, currentUserId }: { users: UserRow[];
     <div className="space-y-6 max-w-5xl">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-[#f5f0f0]">User Management</h1>
+          <h1 className="text-2xl font-bold text-[#f5f0f0]">Accounts</h1>
           <p className="text-[#9a9090] text-sm mt-0.5">{users.length} accounts</p>
         </div>
         <Button onClick={() => { setShowForm(true); setError("") }}>
@@ -134,7 +141,7 @@ export function AdminView({ users: initial, currentUserId }: { users: UserRow[];
                     )}
                   </td>
                   <td className="px-4 py-3">
-                    {isSelf ? (
+                    {isSelf || !isAdmin ? (
                       <Badge variant={ROLE_BADGE[user.role]}>
                         <RoleIcon size={10} className="mr-1" />
                         {user.role}
@@ -153,7 +160,7 @@ export function AdminView({ users: initial, currentUserId }: { users: UserRow[];
                     )}
                   </td>
                   <td className="px-4 py-3 text-right">
-                    {!isSelf && (
+                    {!isSelf && (isAdmin || user.role === "PLAYER") && (
                       <Button
                         variant="ghost"
                         size="sm"
@@ -194,14 +201,16 @@ export function AdminView({ users: initial, currentUserId }: { users: UserRow[];
               <Label htmlFor="password">Password</Label>
               <Input id="password" name="password" type="password" required />
             </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="role">Role</Label>
-              <Select id="role" name="role" defaultValue="PLAYER">
-                <option value="PLAYER">PLAYER</option>
-                <option value="MANAGER">MANAGER</option>
-                <option value="ADMIN">ADMIN</option>
-              </Select>
-            </div>
+            {isAdmin && (
+              <div className="space-y-1.5">
+                <Label htmlFor="role">Role</Label>
+                <Select id="role" name="role" defaultValue="PLAYER">
+                  <option value="PLAYER">PLAYER</option>
+                  <option value="MANAGER">MANAGER</option>
+                  <option value="ADMIN">ADMIN</option>
+                </Select>
+              </div>
+            )}
           </div>
           {error && <p className="text-sm text-[#ED1F24]">{error}</p>}
           <div className="flex gap-2 justify-end pt-1">

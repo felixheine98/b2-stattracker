@@ -9,6 +9,18 @@ export default async function PlayersPage() {
     db.player.findMany({
       include: {
         user: { select: { id: true, name: true, email: true, username: true } },
+        statusChanges: { orderBy: { effectiveFrom: "asc" } },
+        // Tournaments the player took part in, for the status history
+        tournamentLineupSlots: {
+          select: {
+            lineup: {
+              select: {
+                name: true,
+                tournament: { select: { id: true, name: true, startDate: true, createdAt: true } },
+              },
+            },
+          },
+        },
         _count: { select: { roundResults: true } },
       },
       orderBy: { name: "asc" },

@@ -14,6 +14,7 @@ const BOOKMARKLET_URL = `javascript:${encodeURIComponent(ECM_BOOKMARKLET)}`
 interface Props {
   subMatches: SubMatch[]
   allPlayers: Player[]
+  isGuest: (tmId: string) => boolean
   onClose: () => void
   onImported: (subMatchId: string, rounds: Round[]) => void
 }
@@ -50,7 +51,7 @@ function loadSavedMapping(): Record<string, string> {
   }
 }
 
-export function EcmImportDialog({ subMatches, allPlayers, onClose, onImported }: Props) {
+export function EcmImportDialog({ subMatches, allPlayers, isGuest, onClose, onImported }: Props) {
   const [text, setText] = useState("")
   const [teamChoice, setTeamChoice] = useState<number | null>(null)
   const [mappingEdits, setMappingEdits] = useState<Record<string, string>>({})
@@ -280,9 +281,18 @@ export function EcmImportDialog({ subMatches, allPlayers, onClose, onImported }:
                       className={`${selectClass} w-40 ${playerIdFor(name) ? "" : "border-[#ED1F24]"}`}
                     >
                       <option value="">— wählen —</option>
-                      {allPlayers.map((p) => (
-                        <option key={p.id} value={p.id}>{p.name}</option>
-                      ))}
+                      <optgroup label="Members">
+                        {allPlayers.filter((p) => !isGuest(p.tmId)).map((p) => (
+                          <option key={p.id} value={p.id}>{p.name}</option>
+                        ))}
+                      </optgroup>
+                      {allPlayers.some((p) => isGuest(p.tmId)) && (
+                        <optgroup label="Gäste">
+                          {allPlayers.filter((p) => isGuest(p.tmId)).map((p) => (
+                            <option key={p.id} value={p.id}>{p.name}</option>
+                          ))}
+                        </optgroup>
+                      )}
                     </select>
                   </label>
                 ))}

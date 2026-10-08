@@ -29,7 +29,7 @@ export default async function TournamentDetailPage({ params }: Props) {
         },
       },
     }),
-    db.player.findMany({ orderBy: { name: "asc" } }),
+    db.player.findMany({ orderBy: { name: "asc" }, include: { statusChanges: true } }),
     db.match.findMany({
       where: { tournamentId: id },
       include: {

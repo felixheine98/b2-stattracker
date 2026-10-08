@@ -13,6 +13,11 @@ enum Role {
   PLAYER
 }
 
+enum PlayerStatus {
+  MEMBER
+  GUEST
+}
+
 enum Format {
   ROUND_1V1
   ROUND_2V2
@@ -41,13 +46,28 @@ model Player {
   tmId      String   @unique
   name      String
   country   String?
+  // Status the player has "from the beginning"; later switches are PlayerStatusChange rows
+  initialStatus PlayerStatus @default(MEMBER)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  statusChanges         PlayerStatusChange[]
   user                  User?
   lineupSlots           LineupSlot[]
   roundResults          RoundResult[]
   tournamentLineupSlots TournamentLineupSlot[]
+}
+
+// A switch between team member and guest, valid from the given day on
+model PlayerStatusChange {
+  id            String       @id @default(cuid())
+  playerId      String
+  player        Player       @relation(fields: [playerId], references: [id], onDelete: Cascade)
+  status        PlayerStatus
+  effectiveFrom DateTime     @db.Date
+  createdAt     DateTime     @default(now())
+
+  @@unique([playerId, effectiveFrom])
 }
 
 model Tournament {

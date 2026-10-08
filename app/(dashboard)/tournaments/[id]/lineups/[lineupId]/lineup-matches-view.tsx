@@ -1,10 +1,20 @@
 "use client"
 
+import { GuestBadge } from "@/components/guest-badge"
 import { PlayerAvatar } from "@/components/player-avatar"
+import { useSyncedState } from "@/lib/use-synced-state"
+import { localTodayKey } from "@/lib/player-status"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
+import { useState } from "react"
+import { Button } from "@/components/ui/button"
+import { Dialog, DialogTitle } from "@/components/ui/dialog"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { ArrowLeft, Swords, Users, ChevronRight, Calendar, BarChart2 } from "lucide-react"
+import { ArrowLeft, Swords, Users, ChevronRight, Calendar, BarChart2, Plus, Trash2 } from "lucide-react"
 import { formatLabel } from "@/lib/utils"
 import type { Format } from "@prisma/client"
 
@@ -51,10 +61,13 @@ interface Props {
   lineup: {
     id: string
     name: string
-    tournament: { id: string; name: string }
+    tournament: { id: string; name: string; formats: Format[] }
     slots: Array<{ id: string; player: Player }>
     matches: Match[]
   }
+  // Lower-cased TM IDs of players who are guests in this tournament
+  guestTmIds: string[]
+  canManage: boolean
 }
 
 // Points-based round outcome
@@ -128,7 +141,7 @@ function buildAggregates(matches: Match[]): FormatAggregate[] {
     .map((f) => byFormat.get(f)!)
 }
 
-function FormatStatsTable({ agg }: { agg: FormatAggregate }) {
+function FormatStatsTable({ agg, isGuest }: { agg: FormatAggregate; isGuest: (tmId: string) => boolean }) {
   const players = Array.from(agg.players.values()).sort((a, b) => a.name.localeCompare(b.name))
 
   return (
@@ -157,7 +170,10 @@ function FormatStatsTable({ agg }: { agg: FormatAggregate }) {
           <tbody>
             {players.map((p) => (
               <tr key={p.tmId} className="border-b border-[#1c1819] hover:bg-[#1c1819]/60">
-                <td className="py-1.5 pl-3 pr-4 text-[#f5f0f0] font-medium">{p.name}</td>
+                <td className="py-1.5 pl-3 pr-4 text-[#f5f0f0] font-medium whitespace-nowrap">
+                  {p.name}
+                  {isGuest(p.tmId) && <GuestBadge className="ml-1.5" />}
+                </td>
                 <td className="py-1.5 px-3 text-right text-[#c5bfbf]">{p.roundsPlayed}</td>
                 <td className="py-1.5 px-3 text-right text-[#c5bfbf]">{p.placementSum}</td>
                 <td className="py-1.5 px-3 text-right text-[#c5bfbf] font-mono">
@@ -174,9 +190,63 @@ function FormatStatsTable({ agg }: { agg: FormatAggregate }) {
   )
 }
 
-export function LineupMatchesView({ lineup }: Props) {
+export function LineupMatchesView({ lineup, guestTmIds, canManage }: Props) {
+  const guests = new Set(guestTmIds)
+  const isGuest = (tmId: string) => guests.has(tmId.toLowerCase())
+  const router = useRouter()
   const { tournament } = lineup
-  const aggregates = buildAggregates(lineup.matches)
+  const [matches, setMatches] = useSyncedState(lineup.matches)
+  const aggregates = buildAggregates(matches)
+  const nonSeedingFormats = tournament.formats.filter((f) => f !== "TIME_ATTACK_10")
+
+  // --- Add match dialog state ---
+  const [showAddMatch, setShowAddMatch] = useState(false)
+  const [isSeeding, setIsSeeding] = useState(false)
+  const [matchError, setMatchError] = useState("")
+  const [matchLoading, setMatchLoading] = useState(false)
+  const [deletingMatch, setDeletingMatch] = useState<string | null>(null)
+
+  function openAddMatch() {
+    setIsSeeding(false)
+    setMatchError("")
+    setShowAddMatch(true)
+  }
+
+  // New matches always belong to this lineup
+  async function handleCreateMatch(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault()
+    setMatchError("")
+    setMatchLoading(true)
+    const form = new FormData(e.currentTarget)
+    const res = await fetch(`/b2-stats/api/tournaments/${tournament.id}/matches`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        isSeeding,
+        opponent: form.get("opponent") || null,
+        date: form.get("date") || null,
+        notes: form.get("notes") || null,
+        lineupId: lineup.id,
+      }),
+    })
+    setMatchLoading(false)
+    if (!res.ok) {
+      const data = await res.json().catch(() => null)
+      setMatchError(data?.error ?? "Failed to create match")
+      return
+    }
+    const data = await res.json()
+    setShowAddMatch(false)
+    router.push(`/tournaments/${tournament.id}/matches/${data.id}`)
+  }
+
+  async function handleDeleteMatch(matchId: string) {
+    if (!confirm("Delete this match and all its data?")) return
+    setDeletingMatch(matchId)
+    const res = await fetch(`/b2-stats/api/tournaments/${tournament.id}/matches/${matchId}`, { method: "DELETE" })
+    setDeletingMatch(null)
+    if (res.ok) setMatches((m) => m.filter((match) => match.id !== matchId))
+  }
 
   return (
     <div className="space-y-6 max-w-4xl">
@@ -207,6 +277,7 @@ export function LineupMatchesView({ lineup }: Props) {
             >
               <PlayerAvatar player={slot.player} className="h-5 w-5 text-[10px]" />
               {slot.player.name}
+              {isGuest(slot.player.tmId) && <GuestBadge />}
             </span>
           ))}
         </div>
@@ -221,7 +292,7 @@ export function LineupMatchesView({ lineup }: Props) {
           </h2>
           <div className="space-y-4">
             {aggregates.map((agg) => (
-              <FormatStatsTable key={agg.format} agg={agg} />
+              <FormatStatsTable key={agg.format} agg={agg} isGuest={isGuest} />
             ))}
           </div>
         </div>
@@ -229,25 +300,31 @@ export function LineupMatchesView({ lineup }: Props) {
 
       {/* Matches */}
       <div>
-        <h2 className="text-sm font-semibold text-[#9a9090] uppercase tracking-wider mb-3 flex items-center gap-2">
-          <Swords size={14} />
-          Matches ({lineup.matches.length})
-        </h2>
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="text-sm font-semibold text-[#9a9090] uppercase tracking-wider flex items-center gap-2">
+            <Swords size={14} />
+            Matches ({matches.length})
+          </h2>
+          {canManage && (
+            <Button onClick={openAddMatch}>
+              <Plus size={16} />
+              Add Match
+            </Button>
+          )}
+        </div>
 
-        {lineup.matches.length === 0 ? (
+        {matches.length === 0 ? (
           <Card>
             <CardContent className="py-10 text-center">
               <Swords size={28} className="mx-auto text-[#5e5858] mb-3" />
               <p className="text-[#9a9090] text-sm">No matches with this lineup yet.</p>
-              <p className="text-xs text-[#5e5858] mt-1">
-                When creating a match, select this lineup to track it here.
-              </p>
             </CardContent>
           </Card>
         ) : (
           <div className="space-y-2">
-            {lineup.matches.map((match) => (
-              <Link key={match.id} href={`/tournaments/${tournament.id}/matches/${match.id}`}>
+            {matches.map((match) => (
+              <div key={match.id} className="flex items-center gap-2">
+              <Link href={`/tournaments/${tournament.id}/matches/${match.id}`} className="flex-1 min-w-0">
                 <Card className="hover:border-[#3a3435] transition-colors cursor-pointer">
                   <CardContent className="py-3 flex items-center justify-between">
                     <div className="flex items-center gap-3 min-w-0">
@@ -276,10 +353,90 @@ export function LineupMatchesView({ lineup }: Props) {
                   </CardContent>
                 </Card>
               </Link>
+              {canManage && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleDeleteMatch(match.id)}
+                  disabled={deletingMatch === match.id}
+                  className="shrink-0 text-[#5e5858] hover:text-[#ED1F24]"
+                >
+                  <Trash2 size={14} />
+                </Button>
+              )}
+              </div>
             ))}
           </div>
         )}
       </div>
+
+      {/* Add Match Dialog */}
+      <Dialog open={canManage && showAddMatch} onClose={() => setShowAddMatch(false)}>
+        <DialogTitle>Add Match</DialogTitle>
+        <form onSubmit={handleCreateMatch} className="space-y-4">
+          <div className="space-y-1.5">
+            <Label>Lineup</Label>
+            <div className="rounded-lg border border-[#FBD00D]/50 bg-[#FBD00D]/10 px-3 py-2 text-sm">
+              <span className="font-medium text-[#f5f0f0]">{lineup.name}</span>
+              <span className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-xs text-[#9a9090]">
+                {lineup.slots.map((s) => (
+                  <span key={s.id} className="inline-flex items-center gap-1">
+                    {s.player.name}
+                    {isGuest(s.player.tmId) && <GuestBadge />}
+                  </span>
+                ))}
+              </span>
+            </div>
+          </div>
+          <div className="space-y-1.5">
+            <Label>Match type</Label>
+            <div className="flex gap-2">
+              {([
+                [false, "Regular Match"],
+                [true, "Seeding"],
+              ] as const).map(([value, label]) => (
+                <button
+                  key={label}
+                  type="button"
+                  onClick={() => setIsSeeding(value)}
+                  className={`flex-1 rounded-lg border px-3 py-2 text-sm transition-colors ${
+                    isSeeding === value
+                      ? "border-[#FBD00D]/50 bg-[#FBD00D]/10 text-[#f5f0f0]"
+                      : "border-[#2d2829] text-[#9a9090] hover:border-[#3a3435]"
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+            {!isSeeding && (
+              <p className="text-xs text-[#5e5858]">
+                Creates {nonSeedingFormats.length} sub-match{nonSeedingFormats.length !== 1 ? "es" : ""} automatically:{" "}
+                {nonSeedingFormats.map((f) => formatLabel(f)).join(", ") || "no non-seeding formats configured"}
+              </p>
+            )}
+          </div>
+          {!isSeeding && (
+            <div className="space-y-1.5">
+              <Label htmlFor="opponent">Opponent team</Label>
+              <Input id="opponent" name="opponent" placeholder="Team Rockets" />
+            </div>
+          )}
+          <div className="space-y-1.5">
+            <Label htmlFor="date">Date</Label>
+            <Input id="date" name="date" type="date" defaultValue={localTodayKey()} />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="notes">Notes <span className="text-[#5e5858]">(optional)</span></Label>
+            <Textarea id="notes" name="notes" rows={2} />
+          </div>
+          {matchError && <p className="text-sm text-[#ED1F24]">{matchError}</p>}
+          <div className="flex gap-2 justify-end">
+            <Button variant="ghost" type="button" onClick={() => setShowAddMatch(false)}>Cancel</Button>
+            <Button type="submit" disabled={matchLoading}>{matchLoading ? "Creating…" : "Create Match"}</Button>
+          </div>
+        </form>
+      </Dialog>
     </div>
   )
 }

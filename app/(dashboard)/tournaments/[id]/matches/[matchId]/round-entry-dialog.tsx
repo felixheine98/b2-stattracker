@@ -1,6 +1,7 @@
 "use client"
 
 import { Button } from "@/components/ui/button"
+import { GuestBadge } from "@/components/guest-badge"
 import { Dialog, DialogTitle } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { cn, formatLabel, formatTime, parseTime, teamSize } from "@/lib/utils"
@@ -24,6 +25,7 @@ interface Props {
   // Players offered by default (sub-match or match lineup)
   pool: Player[]
   allPlayers: Player[]
+  isGuest: (tmId: string) => boolean
   onClose: () => void
   onSaved: (rounds: Round[]) => void
 }
@@ -55,7 +57,7 @@ function placementColor(position: number): string {
   return "text-[#9a9090]"
 }
 
-export function RoundEntryDialog({ subMatch, pool, allPlayers, onClose, onSaved }: Props) {
+export function RoundEntryDialog({ subMatch, pool, allPlayers, isGuest, onClose, onSaved }: Props) {
   const size = teamSize(subMatch.format) ?? 1
   const maxPosition = size * 2
 
@@ -330,7 +332,8 @@ export function RoundEntryDialog({ subMatch, pool, allPlayers, onClose, onSaved 
               )}
             </div>
             <div className="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto">
-              {selectablePlayers.map((player) => {
+              {/* Team members first, then guests */}
+              {[...selectablePlayers.filter((p) => !isGuest(p.tmId)), ...selectablePlayers.filter((p) => isGuest(p.tmId))].map((player) => {
                 const selected = playerIds.includes(player.id)
                 return (
                   <button
@@ -346,6 +349,7 @@ export function RoundEntryDialog({ subMatch, pool, allPlayers, onClose, onSaved 
                     )}
                   >
                     {player.name}
+                    {isGuest(player.tmId) && <GuestBadge className="ml-1.5" />}
                   </button>
                 )
               })}
@@ -421,6 +425,7 @@ export function RoundEntryDialog({ subMatch, pool, allPlayers, onClose, onSaved 
                     <tr key={id}>
                       <td className="sticky left-0 z-10 bg-[#1c1819] pr-3 text-sm font-medium text-[#f5f0f0] whitespace-nowrap">
                         {playerById.get(id)?.name ?? "?"}
+                        {isGuest(playerById.get(id)?.tmId ?? "") && <GuestBadge className="ml-1.5" />}
                       </td>
                       {columns.map((column, c) => {
                         const value = column[id]

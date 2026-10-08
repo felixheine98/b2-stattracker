@@ -3,6 +3,7 @@ import { db } from "@/lib/db"
 import { NextResponse } from "next/server"
 import { canManage } from "@/lib/roles"
 import { isCountryCode } from "@/lib/countries"
+import { currentStatus } from "@/lib/player-status"
 
 interface Params {
   params: Promise<{ id: string }>
@@ -17,30 +18,37 @@ export async function PATCH(req: Request, { params }: Params) {
 
   const { id } = await params
   const body = await req.json() as { userId?: string | null; country?: string | null }
+  const { userId, country } = body
 
-  if (body.country !== undefined) {
-    if (body.country !== null && !isCountryCode(body.country))
-      return NextResponse.json({ error: "Unknown country" }, { status: 400 })
-    await db.player.update({ where: { id }, data: { country: body.country } })
-  }
+  // Validate everything before writing, so a rejected request changes nothing
+  const target = await db.player.findUnique({ where: { id }, include: { statusChanges: true, user: { select: { id: true } } } })
+  if (!target) return NextResponse.json({ error: "Player not found" }, { status: 404 })
 
-  const userId = body.userId
-  // Clear any existing link to this player first
-  if (userId !== undefined) await db.user.updateMany({ where: { playerId: id }, data: { playerId: null } })
+  if (country !== undefined && country !== null && !isCountryCode(country))
+    return NextResponse.json({ error: "Unknown country" }, { status: 400 })
 
   if (userId) {
+    // Guests keep a login they already have, but never get a new one linked
+    if (currentStatus(target) === "GUEST" && target.user?.id !== userId)
+      return NextResponse.json({ error: "Guests cannot be linked to an account" }, { status: 400 })
+
     // Verify user exists and isn't already linked to a different player
     const user = await db.user.findUnique({ where: { id: userId } })
     if (!user) return NextResponse.json({ error: "User not found" }, { status: 404 })
     if (user.playerId && user.playerId !== id)
       return NextResponse.json({ error: "User is already linked to another player" }, { status: 409 })
-
-    await db.user.update({ where: { id: userId }, data: { playerId: id } })
   }
+
+  await db.$transaction([
+    ...(country !== undefined ? [db.player.update({ where: { id }, data: { country } })] : []),
+    // Clear any existing link to this player first
+    ...(userId !== undefined ? [db.user.updateMany({ where: { playerId: id }, data: { playerId: null } })] : []),
+    ...(userId ? [db.user.update({ where: { id: userId }, data: { playerId: id } })] : []),
+  ])
 
   const player = await db.player.findUnique({
     where: { id },
-    include: { user: { select: { id: true, name: true, email: true } } },
+    include: { user: { select: { id: true, name: true, email: true, username: true } } },
   })
 
   return NextResponse.json(player)

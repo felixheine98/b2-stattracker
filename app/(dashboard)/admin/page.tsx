@@ -1,12 +1,13 @@
 import { auth } from "@/lib/auth"
 import { redirect } from "next/navigation"
 import { db } from "@/lib/db"
+import { canManage } from "@/lib/roles"
 import { AdminView } from "./admin-view"
 
 export default async function AdminPage() {
   const session = await auth()
   const role = (session?.user as { role?: string })?.role
-  if (role !== "ADMIN") redirect("/dashboard")
+  if (!canManage(role)) redirect("/dashboard")
 
   const users = await db.user.findMany({
     select: {
@@ -23,5 +24,5 @@ export default async function AdminPage() {
 
   const currentUserId = (session?.user as { id?: string })?.id ?? ""
 
-  return <AdminView users={users} currentUserId={currentUserId} />
+  return <AdminView users={users} currentUserId={currentUserId} isAdmin={role === "ADMIN"} />
 }

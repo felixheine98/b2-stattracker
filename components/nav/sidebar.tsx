@@ -19,7 +19,7 @@ interface SidebarProps {
 
 export function Sidebar({ userName, role }: SidebarProps) {
   const pathname = usePathname()
-  const isAdmin = role === "ADMIN"
+  const canSeeAccounts = role === "ADMIN" || role === "MANAGER"
 
   return (
     <aside className="flex h-screen w-56 flex-col border-r border-[#2d2829] bg-[#1c1819]">
@@ -46,7 +46,7 @@ export function Sidebar({ userName, role }: SidebarProps) {
           </Link>
         ))}
 
-        {isAdmin && (
+        {canSeeAccounts && (
           <>
             <div className="mx-3 my-2 border-t border-[#2d2829]" />
             <Link
@@ -59,7 +59,7 @@ export function Sidebar({ userName, role }: SidebarProps) {
               )}
             >
               <ShieldCheck size={16} />
-              Admin
+              Accounts
             </Link>
           </>
         )}

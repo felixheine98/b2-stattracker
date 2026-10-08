@@ -10,8 +10,8 @@ export default auth((req) => {
   // pathname may or may not include basePath depending on Next.js 16 proxy internals
   const stripped = pathname.startsWith(BASE) ? pathname.slice(BASE.length) || "/" : pathname
 
-  const isPublicApi = stripped.startsWith("/api/auth") || stripped.startsWith("/api/register")
-  const isAuthPage = stripped === "/login" || stripped === "/register"
+  const isPublicApi = stripped.startsWith("/api/auth")
+  const isAuthPage = stripped === "/login"
 
   if (isPublicApi) return NextResponse.next()
 

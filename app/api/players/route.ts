@@ -11,6 +11,7 @@ export async function GET() {
   const players = await db.player.findMany({
     include: {
       user: { select: { id: true, name: true, email: true } },
+      statusChanges: { orderBy: { effectiveFrom: "asc" } },
       _count: { select: { roundResults: true } },
     },
     orderBy: { name: "asc" },
@@ -22,6 +23,8 @@ export async function GET() {
 const createSchema = z.object({
   name: z.string().min(1),
   tmId: z.string().uuid(),
+  // Category the player is created in; it applies "from the beginning"
+  status: z.enum(["MEMBER", "GUEST"]).default("MEMBER"),
 })
 
 export async function POST(req: Request) {
@@ -36,7 +39,11 @@ export async function POST(req: Request) {
   }
 
   try {
-    const player = await db.player.create({ data: parsed.data })
+    const { name, tmId, status } = parsed.data
+    const player = await db.player.create({
+      data: { name, tmId, initialStatus: status },
+      include: { statusChanges: true },
+    })
     return NextResponse.json(player, { status: 201 })
   } catch (e: unknown) {
     if ((e as { code?: string }).code === "P2002") {

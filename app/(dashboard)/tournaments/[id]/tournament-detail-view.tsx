@@ -4,6 +4,8 @@ import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { useSyncedState } from "@/lib/use-synced-state"
 import { PlayerAvatar } from "@/components/player-avatar"
+import { GuestBadge } from "@/components/guest-badge"
+import { guestTmIdsAt, tournamentReferenceDate, type PlayerStatus, type StatusChange } from "@/lib/player-status"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -23,6 +25,12 @@ interface Player {
   tmId: string
   name: string
   country?: string | null
+}
+
+// The full player list carries the status history, used to tell members from guests
+interface PlayerWithStatus extends Player {
+  initialStatus: PlayerStatus
+  statusChanges: StatusChange[]
 }
 
 interface TournamentLineupSlot {
@@ -54,6 +62,7 @@ interface Tournament {
   description?: string | null
   startDate?: Date | null
   endDate?: Date | null
+  createdAt: Date
   matches: Match[]
   tournamentLineups: TournamentLineup[]
 }
@@ -152,7 +161,7 @@ function buildAggregates(matches: StatsMatch[]): FormatAggregate[] {
     .map((f) => byFormat.get(f)!)
 }
 
-function FormatStatsTable({ agg, lineups }: { agg: FormatAggregate; lineups: TournamentLineup[] }) {
+function FormatStatsTable({ agg, lineups, isGuest }: { agg: FormatAggregate; lineups: TournamentLineup[]; isGuest: (tmId: string) => boolean }) {
   const players = Array.from(agg.players.values()).sort((a, b) => a.name.localeCompare(b.name))
   const lineupOf = (tmId: string) =>
     lineups.find((l) => l.slots.some((s) => s.player.tmId.toLowerCase() === tmId.toLowerCase()))
@@ -183,7 +192,10 @@ function FormatStatsTable({ agg, lineups }: { agg: FormatAggregate; lineups: Tou
           <tbody>
             {players.map((p) => (
               <tr key={p.tmId} className="border-b border-[#1c1819] hover:bg-[#1c1819]/60">
-                <td className="py-1.5 pl-3 pr-4 text-[#f5f0f0] font-medium">{p.name}</td>
+                <td className="py-1.5 pl-3 pr-4 text-[#f5f0f0] font-medium whitespace-nowrap">
+                  {p.name}
+                  {isGuest(p.tmId) && <GuestBadge className="ml-1.5" />}
+                </td>
                 <td className="py-1.5 px-3 text-[#c5bfbf] whitespace-nowrap">{lineupOf(p.tmId)?.name ?? "—"}</td>
                 <td className="py-1.5 px-3 text-right text-[#c5bfbf]">{p.roundsPlayed}</td>
                 <td className="py-1.5 px-3 text-right text-[#c5bfbf]">{p.placementSum}</td>
@@ -205,7 +217,7 @@ function FormatStatsTable({ agg, lineups }: { agg: FormatAggregate; lineups: Tou
 
 interface Props {
   tournament: Tournament
-  players: Player[]
+  players: PlayerWithStatus[]
   statsMatches: StatsMatch[]
   canManage: boolean
 }
@@ -270,12 +282,14 @@ export function TournamentDetailView({ tournament: initial, players, statsMatche
   const [matches, setMatches] = useSyncedState(initial.matches)
   const [lineups, setLineups] = useSyncedState<TournamentLineup[]>(initial.tournamentLineups)
 
-  // --- Match dialog state ---
-  const [showAddMatch, setShowAddMatch] = useState(false)
-  const [matchError, setMatchError] = useState("")
-  const [matchLoading, setMatchLoading] = useState(false)
-  const [isSeeding, setIsSeeding] = useState(false)
-  const [selectedLineupId, setSelectedLineupId] = useState<string>("")
+  // Within a tournament everyone is member or guest as of its start day
+  const guestTmIds = new Set(guestTmIdsAt(players, tournamentReferenceDate(tournament)))
+  const isGuest = (tmId: string) => guestTmIds.has(tmId.toLowerCase())
+  // Selection lists show team members first, then guests
+  const playerGroups = [
+    { label: null, players: players.filter((p) => !isGuest(p.tmId)) },
+    { label: "Gäste", players: players.filter((p) => isGuest(p.tmId)) },
+  ].filter((g) => g.players.length > 0)
 
   // --- Edit tournament dialog state ---
   const [showEdit, setShowEdit] = useState(false)
@@ -309,44 +323,9 @@ export function TournamentDetailView({ tournament: initial, players, statsMatche
 
   // --- Handlers ---
 
-  function closeAddMatch() {
-    setShowAddMatch(false)
-    setIsSeeding(false)
-    setSelectedLineupId("")
-    setMatchError("")
-  }
-
-  async function handleCreateMatch(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault()
-    setMatchError("")
-    setMatchLoading(true)
-    const form = new FormData(e.currentTarget)
-    const res = await fetch(`/b2-stats/api/tournaments/${tournament.id}/matches`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        isSeeding,
-        opponent: form.get("opponent") || null,
-        date: form.get("date") || null,
-        notes: form.get("notes") || null,
-        lineupId: selectedLineupId || null,
-      }),
-    })
-    setMatchLoading(false)
-    if (!res.ok) {
-      const data = await res.json()
-      setMatchError(data.error ?? "Failed to create match")
-      return
-    }
-    const data = await res.json()
-    setMatches((m) => [data, ...m])
-    closeAddMatch()
-    router.push(`/tournaments/${tournament.id}/matches/${data.id}`)
-  }
-
   async function handleEditSave() {
-    if (!editName.trim() || editFormats.length === 0) {
-      setEditError("Name and at least one format are required.")
+    if (!editName.trim() || editFormats.length === 0 || !editStartDate) {
+      setEditError("Name, start date and at least one format are required.")
       return
     }
     setEditError("")
@@ -358,7 +337,7 @@ export function TournamentDetailView({ tournament: initial, players, statsMatche
         name: editName.trim(),
         formats: editFormats,
         description: editDescription || null,
-        startDate: editStartDate || null,
+        startDate: editStartDate,
         endDate: editEndDate || null,
       }),
     })
@@ -457,7 +436,6 @@ export function TournamentDetailView({ tournament: initial, players, statsMatche
     setShowEdit(true)
   }
 
-  const nonSeedingFormats = tournament.formats.filter((f) => f !== "TIME_ATTACK_10")
 
   return (
     <div className="space-y-6 max-w-4xl">
@@ -512,34 +490,19 @@ export function TournamentDetailView({ tournament: initial, players, statsMatche
         </div>
       </div>
 
-      {/* Gesamtstatistik */}
-      {(() => {
-        // Only matches that still exist locally, so deleting a match updates the stats at once
-        const aggregates = buildAggregates(statsMatches.filter((sm) => matches.some((m) => m.id === sm.id)))
-        if (aggregates.length === 0) return null
-        return (
-          <div>
-            <h2 className="text-sm font-semibold text-[#9a9090] uppercase tracking-wider mb-3 flex items-center gap-2">
-              <BarChart2 size={14} />
-              Gesamtstatistik
-            </h2>
-            <div className="space-y-4">
-              {aggregates.map((agg) => (
-                <FormatStatsTable key={agg.format} agg={agg} lineups={lineups} />
-              ))}
-            </div>
-          </div>
-        )
-      })()}
-
       {/* Lineups section */}
       <div>
         <div className="flex items-center justify-between mb-3">
-          <h2 className="text-sm font-semibold text-[#9a9090] uppercase tracking-wider">
-            Lineups ({lineups.length})
-          </h2>
+          <div>
+            <h2 className="text-lg font-semibold text-[#f5f0f0] flex items-center gap-2">
+              <Users size={18} className="text-[#FBD00D]" />
+              Lineups
+              <span className="text-sm font-normal text-[#5e5858]">{lineups.length}</span>
+            </h2>
+            <p className="text-xs text-[#9a9090] mt-0.5">Open a lineup to see its matches and add new ones.</p>
+          </div>
           {canManage && (
-            <Button variant="outline" size="sm" onClick={openNewLineupForm}>
+            <Button size="sm" onClick={openNewLineupForm}>
               <Plus size={14} />
               New Lineup
             </Button>
@@ -550,18 +513,20 @@ export function TournamentDetailView({ tournament: initial, players, statsMatche
           <Card>
             <CardContent className="py-6 text-center">
               <Users size={22} className="mx-auto text-[#5e5858] mb-2" />
-              <p className="text-[#9a9090] text-sm">No lineups yet. Create a named player lineup to reuse across matches.</p>
+              <p className="text-[#9a9090] text-sm">No lineups yet. Create a lineup first – matches are added inside a lineup.</p>
             </CardContent>
           </Card>
         ) : (
-          <div className="grid gap-2 sm:grid-cols-2">
-            {lineups.map((lineup) => (
+          <div className="grid gap-3 sm:grid-cols-2">
+            {lineups.map((lineup) => {
+              const matchCount = matches.filter((m) => m.tournamentLineupId === lineup.id).length
+              return (
               <div key={lineup.id} className="relative group">
                 <Link href={`/tournaments/${tournament.id}/lineups/${lineup.id}`} className="block">
-                  <Card className="hover:border-[#3a3435] transition-colors cursor-pointer">
-                    <CardContent className="py-3 px-4">
-                      <div className="flex items-start justify-between gap-2 mb-2">
-                        <p className="text-sm font-semibold text-[#f5f0f0]">{lineup.name}</p>
+                  <Card className="border-[#3a3435] hover:border-[#FBD00D]/50 transition-colors cursor-pointer">
+                    <CardContent className="p-4">
+                      <div className="flex items-start justify-between gap-2 mb-3">
+                        <p className="text-base font-semibold text-[#f5f0f0]">{lineup.name}</p>
                         {canManage && (
                           <div className="flex items-center gap-1 shrink-0" onClick={(e) => e.preventDefault()}>
                             <Button
@@ -592,17 +557,49 @@ export function TournamentDetailView({ tournament: initial, players, statsMatche
                           >
                             <PlayerAvatar player={slot.player} className="h-3.5 w-3.5 text-[9px]" />
                             {slot.player.name}
+                            {isGuest(slot.player.tmId) && <GuestBadge />}
                           </span>
                         ))}
+                      </div>
+                      <div className="mt-3 flex items-center justify-between border-t border-[#2d2829] pt-3 text-xs">
+                        <span className="flex items-center gap-1.5 text-[#9a9090]">
+                          <Swords size={12} />
+                          {matchCount} match{matchCount !== 1 ? "es" : ""}
+                        </span>
+                        <span className="flex items-center gap-0.5 font-medium text-[#FBD00D]">
+                          Open lineup
+                          <ChevronRight size={14} />
+                        </span>
                       </div>
                     </CardContent>
                   </Card>
                 </Link>
               </div>
-            ))}
+              )
+            })}
           </div>
         )}
       </div>
+
+      {/* Gesamtstatistik */}
+      {(() => {
+        // Only matches that still exist locally, so deleting a match updates the stats at once
+        const aggregates = buildAggregates(statsMatches.filter((sm) => matches.some((m) => m.id === sm.id)))
+        if (aggregates.length === 0) return null
+        return (
+          <div>
+            <h2 className="text-sm font-semibold text-[#9a9090] uppercase tracking-wider mb-3 flex items-center gap-2">
+              <BarChart2 size={14} />
+              Gesamtstatistik
+            </h2>
+            <div className="space-y-4">
+              {aggregates.map((agg) => (
+                <FormatStatsTable key={agg.format} agg={agg} lineups={lineups} isGuest={isGuest} />
+              ))}
+            </div>
+          </div>
+        )
+      })()}
 
       {/* Matches section */}
       <div>
@@ -610,18 +607,12 @@ export function TournamentDetailView({ tournament: initial, players, statsMatche
           <h2 className="text-sm font-semibold text-[#9a9090] uppercase tracking-wider">
             Matches ({matches.length})
           </h2>
-          {canManage && (
-            <Button onClick={() => { setShowAddMatch(true); setMatchError(""); setIsSeeding(false); setSelectedLineupId("") }}>
-              <Plus size={16} />
-              Add Match
-            </Button>
-          )}
         </div>
         {matches.length === 0 ? (
           <Card>
             <CardContent className="py-10 text-center">
               <Swords size={28} className="mx-auto text-[#5e5858] mb-3" />
-              <p className="text-[#9a9090] text-sm">No matches yet. Add your first match.</p>
+              <p className="text-[#9a9090] text-sm">No matches yet. Open a lineup to add the first match.</p>
             </CardContent>
           </Card>
         ) : (
@@ -674,106 +665,6 @@ export function TournamentDetailView({ tournament: initial, players, statsMatche
           </div>
         )}
       </div>
-
-      {/* Add Match Dialog */}
-      <Dialog open={canManage && showAddMatch} onClose={closeAddMatch}>
-        <DialogTitle>Add Match</DialogTitle>
-        <form onSubmit={handleCreateMatch} className="space-y-4">
-          <div className="space-y-1.5">
-            <Label>Match type</Label>
-            <div className="flex gap-2">
-              <button
-                type="button"
-                onClick={() => setIsSeeding(false)}
-                className={`flex-1 rounded-lg border px-3 py-2 text-sm transition-colors ${
-                  !isSeeding
-                    ? "border-[#FBD00D]/50 bg-[#FBD00D]/10 text-[#f5f0f0]"
-                    : "border-[#2d2829] text-[#9a9090] hover:border-[#3a3435]"
-                }`}
-              >
-                Regular Match
-              </button>
-              <button
-                type="button"
-                onClick={() => setIsSeeding(true)}
-                className={`flex-1 rounded-lg border px-3 py-2 text-sm transition-colors ${
-                  isSeeding
-                    ? "border-[#FBD00D]/50 bg-[#FBD00D]/10 text-[#f5f0f0]"
-                    : "border-[#2d2829] text-[#9a9090] hover:border-[#3a3435]"
-                }`}
-              >
-                Seeding
-              </button>
-            </div>
-            {!isSeeding && (
-              <p className="text-xs text-[#5e5858]">
-                Creates {nonSeedingFormats.length} sub-match
-                {nonSeedingFormats.length !== 1 ? "es" : ""} automatically:{" "}
-                {nonSeedingFormats.map((f) => formatLabel(f)).join(", ") || "no non-seeding formats configured"}
-              </p>
-            )}
-          </div>
-          {!isSeeding && (
-            <div className="space-y-1.5">
-              <Label htmlFor="opponent">Opponent team</Label>
-              <Input id="opponent" name="opponent" placeholder="Team Rockets" />
-            </div>
-          )}
-          <div className="space-y-1.5">
-            <Label htmlFor="date">Date</Label>
-            <Input id="date" name="date" type="date" />
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="notes">Notes <span className="text-[#5e5858]">(optional)</span></Label>
-            <Textarea id="notes" name="notes" rows={2} />
-          </div>
-          {lineups.length > 0 && (
-            <div className="space-y-1.5">
-              <Label>Our lineup <span className="text-[#5e5858]">(optional)</span></Label>
-              <div className="flex flex-col gap-1.5">
-                <button
-                  type="button"
-                  onClick={() => setSelectedLineupId("")}
-                  className={`w-full text-left rounded-lg border px-3 py-2 text-sm transition-colors ${
-                    selectedLineupId === ""
-                      ? "border-[#3a3435] bg-[#251f20] text-[#9a9090]"
-                      : "border-[#2d2829] text-[#5e5858] hover:border-[#3a3435]"
-                  }`}
-                >
-                  — none —
-                </button>
-                {lineups.map((l) => (
-                  <button
-                    key={l.id}
-                    type="button"
-                    onClick={() => setSelectedLineupId(l.id)}
-                    className={`w-full text-left rounded-lg border px-3 py-2 text-sm transition-colors ${
-                      selectedLineupId === l.id
-                        ? "border-[#FBD00D]/50 bg-[#FBD00D]/10 text-[#f5f0f0]"
-                        : "border-[#2d2829] text-[#9a9090] hover:border-[#3a3435]"
-                    }`}
-                  >
-                    <span className="font-medium">{l.name}</span>
-                    <span className="text-[#5e5858] ml-2 text-xs">
-                      {l.slots.map((s) => s.player.name).join(", ")}
-                    </span>
-                  </button>
-                ))}
-              </div>
-              {selectedLineupId && (
-                <p className="text-xs text-[#5e5858]">
-                  Players will be pre-assigned as "our team" in each sub-match — CSV import will identify them automatically.
-                </p>
-              )}
-            </div>
-          )}
-          {matchError && <p className="text-sm text-[#ED1F24]">{matchError}</p>}
-          <div className="flex gap-2 justify-end">
-            <Button variant="ghost" type="button" onClick={closeAddMatch}>Cancel</Button>
-            <Button type="submit" disabled={matchLoading}>{matchLoading ? "Creating…" : "Create Match"}</Button>
-          </div>
-        </form>
-      </Dialog>
 
       {/* Edit Tournament Dialog */}
       <Dialog open={showEdit} onClose={() => setShowEdit(false)} className="max-w-lg">
@@ -872,7 +763,14 @@ export function TournamentDetailView({ tournament: initial, players, statsMatche
               </p>
             ) : (
               <div className="space-y-2 max-h-64 overflow-y-auto rounded-lg border border-[#2d2829] bg-[#0e0c0d] p-3">
-                {players.map((p) => {
+                {playerGroups.map((group) => (
+                  <div key={group.label ?? "members"} className="space-y-2">
+                    {group.label && (
+                      <p className="border-t border-[#2d2829] pt-2 text-[10px] font-semibold uppercase tracking-wider text-[#5e5858]">
+                        {group.label}
+                      </p>
+                    )}
+                {group.players.map((p) => {
                   const selected = lineupPlayerIds.includes(p.id)
                   // A player can only be in one lineup per tournament
                   const otherLineup = lineups.find(
@@ -883,6 +781,7 @@ export function TournamentDetailView({ tournament: initial, players, statsMatche
                       <div key={p.id} className="flex items-center gap-3 opacity-50" title={`Already in lineup ${otherLineup.name}`}>
                         <input type="checkbox" disabled className="h-4 w-4" />
                         <span className="text-sm text-[#9a9090]">{p.name}</span>
+                        {isGuest(p.tmId) && <GuestBadge />}
                         <span className="text-xs text-[#9a9090] ml-auto">in {otherLineup.name}</span>
                       </div>
                     )
@@ -900,10 +799,13 @@ export function TournamentDetailView({ tournament: initial, players, statsMatche
                         className="h-4 w-4 accent-[#FBD00D]"
                       />
                       <span className="text-sm text-[#f5f0f0] group-hover:text-white">{p.name}</span>
+                      {isGuest(p.tmId) && <GuestBadge />}
                       <span className="text-xs text-[#5e5858] font-mono ml-auto">{p.tmId.slice(0, 8)}…</span>
                     </label>
                   )
                 })}
+                  </div>
+                ))}
               </div>
             )}
           </div>

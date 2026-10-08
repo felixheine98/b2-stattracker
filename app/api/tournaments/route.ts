@@ -4,6 +4,7 @@ import { NextResponse } from "next/server"
 import { z } from "zod"
 import { Format } from "@prisma/client"
 import { canManage } from "@/lib/roles"
+import { isValidDay } from "@/lib/player-status"
 
 export async function GET() {
   const session = await auth()
@@ -21,7 +22,8 @@ const createSchema = z.object({
   name: z.string().min(1),
   formats: z.array(z.nativeEnum(Format)).min(1, "Select at least one format"),
   description: z.string().nullable().optional(),
-  startDate: z.string().nullable().optional(),
+  // Required: the start day decides who counts as member or guest in this tournament
+  startDate: z.string().refine(isValidDay, "A valid start date is required"),
   endDate: z.string().nullable().optional(),
 })
 
@@ -41,7 +43,7 @@ export async function POST(req: Request) {
       name: parsed.data.name,
       formats: parsed.data.formats,
       description: parsed.data.description ?? null,
-      startDate: parsed.data.startDate ? new Date(parsed.data.startDate) : null,
+      startDate: new Date(parsed.data.startDate),
       endDate: parsed.data.endDate ? new Date(parsed.data.endDate) : null,
     },
   })

@@ -2,6 +2,7 @@ import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { formatLabel } from "@/lib/utils"
+import { currentStatus } from "@/lib/player-status"
 import Link from "next/link"
 import { Trophy, Users, Swords, Calendar } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
@@ -9,8 +10,8 @@ import { Badge } from "@/components/ui/badge"
 export default async function DashboardPage() {
   const session = await auth()
 
-  const [playerCount, tournamentCount, matchCount, recentTournaments] = await Promise.all([
-    db.player.count(),
+  const [players, tournamentCount, matchCount, recentTournaments] = await Promise.all([
+    db.player.findMany({ select: { initialStatus: true, statusChanges: true } }),
     db.tournament.count(),
     db.match.count(),
     db.tournament.findMany({
@@ -19,6 +20,9 @@ export default async function DashboardPage() {
       include: { _count: { select: { matches: true } } },
     }),
   ])
+
+  // Guests are stand-ins and do not count as team members
+  const playerCount = players.filter((p) => currentStatus(p) === "MEMBER").length
 
   return (
     <div className="space-y-6 max-w-5xl">

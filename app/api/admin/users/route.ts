@@ -3,14 +3,13 @@ import { db } from "@/lib/db"
 import { NextResponse } from "next/server"
 import bcrypt from "bcryptjs"
 import { z } from "zod"
+import { canManage } from "@/lib/roles"
 
-function isAdmin(role?: string | null) {
-  return role === "ADMIN"
-}
+// Admins manage every account. Managers see all accounts but only create PLAYER accounts.
 
 export async function GET() {
   const session = await auth()
-  if (!isAdmin((session?.user as { role?: string })?.role))
+  if (!canManage((session?.user as { role?: string })?.role))
     return NextResponse.json({ error: "Forbidden" }, { status: 403 })
 
   const users = await db.user.findMany({
@@ -39,7 +38,8 @@ const createSchema = z.object({
 
 export async function POST(req: Request) {
   const session = await auth()
-  if (!isAdmin((session?.user as { role?: string })?.role))
+  const sessionRole = (session?.user as { role?: string })?.role
+  if (!canManage(sessionRole))
     return NextResponse.json({ error: "Forbidden" }, { status: 403 })
 
   const body = await req.json()
@@ -48,6 +48,8 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: parsed.error.issues[0].message }, { status: 400 })
 
   const { name, username, email, password, role } = parsed.data
+  if (sessionRole !== "ADMIN" && role !== "PLAYER")
+    return NextResponse.json({ error: "Only an admin can create manager or admin accounts" }, { status: 403 })
 
   const [byEmail, byUsername] = await Promise.all([
     email ? db.user.findUnique({ where: { email } }) : null,

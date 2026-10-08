@@ -2,6 +2,7 @@ import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
 import { NextResponse } from "next/server"
 import { z } from "zod"
+import { canManage } from "@/lib/roles"
 
 function isAdmin(role?: string | null) {
   return role === "ADMIN"
@@ -35,9 +36,11 @@ export async function PATCH(req: Request, { params }: Params) {
   return NextResponse.json(user)
 }
 
+// Admins can delete any account but their own; managers only PLAYER accounts
 export async function DELETE(_req: Request, { params }: Params) {
   const session = await auth()
-  if (!isAdmin((session?.user as { role?: string })?.role))
+  const sessionRole = (session?.user as { role?: string })?.role
+  if (!canManage(sessionRole))
     return NextResponse.json({ error: "Forbidden" }, { status: 403 })
 
   const { id } = await params
@@ -45,6 +48,11 @@ export async function DELETE(_req: Request, { params }: Params) {
   // Don't allow deleting yourself
   if ((session?.user as { id?: string })?.id === id)
     return NextResponse.json({ error: "Cannot delete your own account" }, { status: 400 })
+
+  const target = await db.user.findUnique({ where: { id }, select: { role: true } })
+  if (!target) return NextResponse.json({ error: "Not found" }, { status: 404 })
+  if (!isAdmin(sessionRole) && target.role !== "PLAYER")
+    return NextResponse.json({ error: "Only an admin can delete manager or admin accounts" }, { status: 403 })
 
   await db.user.delete({ where: { id } })
   return new NextResponse(null, { status: 204 })

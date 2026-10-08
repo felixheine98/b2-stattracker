@@ -4,6 +4,7 @@ import { NextResponse } from "next/server"
 import { z } from "zod"
 import { Format } from "@prisma/client"
 import { canManage } from "@/lib/roles"
+import { isValidDay } from "@/lib/player-status"
 
 interface Params {
   params: Promise<{ id: string }>
@@ -34,7 +35,8 @@ const patchSchema = z.object({
   name: z.string().min(1).optional(),
   formats: z.array(z.nativeEnum(Format)).min(1).optional(),
   description: z.string().nullable().optional(),
-  startDate: z.string().nullable().optional(),
+  // The start date can be changed but not removed
+  startDate: z.string().refine(isValidDay, "A valid start date is required").optional(),
   endDate: z.string().nullable().optional(),
 })
 
@@ -57,7 +59,7 @@ export async function PATCH(req: Request, { params }: Params) {
       ...(name !== undefined && { name }),
       ...(formats !== undefined && { formats }),
       ...(description !== undefined && { description }),
-      ...(startDate !== undefined && { startDate: startDate ? new Date(startDate) : null }),
+      ...(startDate !== undefined && { startDate: new Date(startDate) }),
       ...(endDate !== undefined && { endDate: endDate ? new Date(endDate) : null }),
     },
   })
