@@ -1,22 +1,13 @@
 # TODOS
 
-- db seed mit allen spielern -> DONE
-
-- fix rounds won calculation -> DONE
-
-- select lineup bei match erstellung -> danach werden nur noch diese spieler angezeigt bei selection -> DONE
-- click auf lineup -> deren matches angezeigt -> DONE
-  - page darüber alle DONE
 - ganzen statistiken aus meinem sheet umsetzen
   - per match
   - per lineup (gesamt)
   - per tourney (gesamt gesamt)
-- manual import bzw versuch import über eCM seite
 - lineup manager hinzufügen (können nur stats hinzufügen in ausgewählter comp+LU)
 - Lineup Builder -> gemeinsames erstellen für lineups, welches direkt in eine comp reingespeichert wird 
 - danach werden in dieser comp nur noch diese 4 lineups gezeigt bzw nur die spieler
 
-- gäste unter players (eigene kategorie, verschieben member <-> gast, status pro turnier nach startdatum) -> DONE
 - match nachträglich bearbeiten (datum, gegner, notizen)
 - tmid automatisch von anderer seite holen (beim anlegen von spielern/gästen)
 
@@ -27,7 +18,6 @@
 - [ ] als member -> in tourney übersicht der eigenen stats, danach kann man sich durch die stats durchklicken
 - [ ] kategorisierung der comps nach style? (tech mixed rpg ice fs etc)
 - [ ] Design/UI/UX Verbesserungen
-- [ ] in matchdetails -> lineup feld kleiner machen, damit lineup + summary kleiner sind - oder sogar entfernen und mit der box was anderes machen
 - [ ] lineup manager rolle (fix vergeben) oder per tourney manager rolle -> scheint A) im Lineup overview auf + hat berechtigung, matches anzulegen und stats zu machen
 - [ ] übersichts seite -> letzte comp anzeigen + paar overall stats
 - [ ] best performer pro match/week/tourney? -> den auf übersicht auch anzeigen?
