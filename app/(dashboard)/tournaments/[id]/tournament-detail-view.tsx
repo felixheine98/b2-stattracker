@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { useSyncedState } from "@/lib/use-synced-state"
+import { PlayerAvatar } from "@/components/player-avatar"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -21,6 +22,7 @@ interface Player {
   id: string
   tmId: string
   name: string
+  country?: string | null
 }
 
 interface TournamentLineupSlot {
@@ -588,9 +590,7 @@ export function TournamentDetailView({ tournament: initial, players, statsMatche
                             key={slot.id}
                             className="inline-flex items-center gap-1 rounded-full bg-[#251f20] border border-[#2d2829] px-2 py-0.5 text-xs text-[#c5bfbf]"
                           >
-                            <span className="h-3.5 w-3.5 rounded-full bg-[#FBD00D]/20 text-[#FBD00D] text-[9px] font-bold flex items-center justify-center shrink-0">
-                              {slot.player.name.charAt(0).toUpperCase()}
-                            </span>
+                            <PlayerAvatar player={slot.player} className="h-3.5 w-3.5 text-[9px]" />
                             {slot.player.name}
                           </span>
                         ))}

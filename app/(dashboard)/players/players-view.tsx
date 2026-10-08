@@ -3,6 +3,8 @@
 import { useState, useTransition } from "react"
 import { useRouter } from "next/navigation"
 import { useSyncedState } from "@/lib/use-synced-state"
+import { PlayerAvatar } from "@/components/player-avatar"
+import { countryOptions } from "@/lib/countries"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -21,6 +23,7 @@ interface Player {
   id: string
   tmId: string
   name: string
+  country?: string | null
   createdAt: Date
   user?: { id: string; name: string; email: string | null; username: string } | null
   _count?: { roundResults: number }
@@ -33,6 +36,7 @@ interface Props {
 }
 
 export function PlayersView({ players: initial, users, canManage }: Props) {
+  const countries = countryOptions()
   const router = useRouter()
   const [players, setPlayers] = useSyncedState(initial)
   const [showForm, setShowForm] = useState(false)
@@ -70,6 +74,16 @@ export function PlayersView({ players: initial, users, canManage }: Props) {
     await fetch(`/b2-stats/api/players/${id}`, { method: "DELETE" })
     setDeleting(null)
     setPlayers((p) => p.filter((pl) => pl.id !== id))
+  }
+
+  async function handleCountry(playerId: string, country: string | null) {
+    const res = await fetch(`/b2-stats/api/players/${playerId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ country }),
+    })
+    if (!res.ok) return
+    setPlayers((p) => p.map((pl) => (pl.id === playerId ? { ...pl, country } : pl)))
   }
 
   async function handleLink(playerId: string, userId: string | null) {
@@ -153,6 +167,7 @@ export function PlayersView({ players: initial, users, canManage }: Props) {
             <thead>
               <tr className="border-b border-[#2d2829] bg-[#251f20]">
                 <th className="text-left px-4 py-3 text-[#9a9090] font-medium">Name</th>
+                <th className="text-left px-4 py-3 text-[#9a9090] font-medium">Land</th>
                 <th className="text-left px-4 py-3 text-[#9a9090] font-medium">TM ID</th>
                 <th className="text-left px-4 py-3 text-[#9a9090] font-medium">Linked account</th>
                 <th className="text-right px-4 py-3 text-[#9a9090] font-medium">Results</th>
@@ -165,7 +180,29 @@ export function PlayersView({ players: initial, users, canManage }: Props) {
                   key={player.id}
                   className={`border-b border-[#2d2829] last:border-0 ${i % 2 === 0 ? "bg-[#1c1819]" : "bg-[#1c1819]/60"}`}
                 >
-                  <td className="px-4 py-3 font-medium text-[#f5f0f0]">{player.name}</td>
+                  <td className="px-4 py-3 font-medium text-[#f5f0f0]">
+                    <span className="flex items-center gap-2">
+                      <PlayerAvatar player={player} />
+                      {player.name}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3">
+                    {canManage ? (
+                      <select
+                        value={player.country ?? ""}
+                        onChange={(e) => handleCountry(player.id, e.target.value || null)}
+                        aria-label={`Land von ${player.name}`}
+                        className="h-8 w-32 rounded-md border border-[#3a3435] bg-[#251f20] px-2 text-xs text-[#f5f0f0] focus:outline-none focus:ring-2 focus:ring-[#FBD00D]"
+                      >
+                        <option value="">— kein Land —</option>
+                        {countries.map((c) => (
+                          <option key={c.code} value={c.code}>{c.name}</option>
+                        ))}
+                      </select>
+                    ) : (
+                      <span className="text-xs text-[#9a9090]">{countries.find((c) => c.code === player.country)?.name ?? "—"}</span>
+                    )}
+                  </td>
                   <td className="px-4 py-3 font-mono text-xs text-[#5e5858]">{player.tmId}</td>
                   <td className="px-4 py-3">
                     {canManage ? (

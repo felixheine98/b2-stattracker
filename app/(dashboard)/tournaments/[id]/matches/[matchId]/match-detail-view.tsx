@@ -7,16 +7,19 @@ import { Dialog, DialogTitle } from "@/components/ui/dialog"
 import { Textarea } from "@/components/ui/textarea"
 import { formatLabel, formatLabelLong, formatTime, teamSize } from "@/lib/utils"
 import type { Format } from "@prisma/client"
-import { ArrowLeft, ChevronDown, ChevronUp, Clock, Grid3x3, Pencil, Trophy, Upload, Users, X } from "lucide-react"
+import { ArrowLeft, ChevronDown, ChevronUp, Clock, Download, Grid3x3, Pencil, Trophy, Upload, Users, X } from "lucide-react"
 import Link from "next/link"
 import { useSyncedState } from "@/lib/use-synced-state"
+import { PlayerAvatar } from "@/components/player-avatar"
 import { useMemo, useState } from "react"
+import { EcmImportDialog } from "./ecm-import-dialog"
 import { RoundEntryDialog } from "./round-entry-dialog"
 
 export interface Player {
   id: string
   tmId: string
   name: string
+  country?: string | null
 }
 
 interface RoundResult {
@@ -74,7 +77,7 @@ interface Match {
 type SortCol = "name" | "played" | "placementSum" | "avg" | "roundW" | "roundL" | "bestTime" | "medianTime" | "avgTime"
 
 function SubMatchStatsTable({ sm }: { sm: SubMatch }) {
-  const [sortCol, setSortCol] = useState<SortCol>("name")
+  const [sortCol, setSortCol] = useState<SortCol>("avg")
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc")
 
   const teamStats = useMemo(() => computeStats(sm.rounds), [sm.rounds])
@@ -239,6 +242,8 @@ export function MatchDetailView({ match: initialMatch, allPlayers, canManage }: 
   const [importLoading, setImportLoading] = useState(false)
   const [importFileName, setImportFileName] = useState("")
   const [importDragOver, setImportDragOver] = useState(false)
+
+  const [showEcmImport, setShowEcmImport] = useState(false)
 
   // Manual round entry
   const [roundEntryId, setRoundEntryId] = useState<string | null>(null)
@@ -426,6 +431,12 @@ export function MatchDetailView({ match: initialMatch, allPlayers, canManage }: 
                     Lineup zuweisen
                   </Button>
                 )}
+                {!initialMatch.isSeeding && (
+                  <Button size="sm" onClick={() => setShowEcmImport(true)}>
+                    <Download size={14} />
+                    Von eCM importieren
+                  </Button>
+                )}
               </div>
             )}
             {!canManage && matchLineup && (
@@ -508,9 +519,7 @@ export function MatchDetailView({ match: initialMatch, allPlayers, canManage }: 
                           <div className="space-y-1.5">
                             {sm.lineup.slots.map((slot) => (
                               <div key={slot.id} className="flex items-center gap-2 text-sm">
-                                <div className="h-6 w-6 rounded-full bg-[#FBD00D]/15 flex items-center justify-center text-[#FBD00D] text-xs font-bold shrink-0">
-                                  {slot.player.name.charAt(0).toUpperCase()}
-                                </div>
+                                <PlayerAvatar player={slot.player} />
                                 <span className="text-[#f5f0f0]">{slot.player.name}</span>
                               </div>
                             ))}
@@ -783,6 +792,18 @@ export function MatchDetailView({ match: initialMatch, allPlayers, canManage }: 
           </Button>
         </div>
       </Dialog>
+
+      {/* eCircuitMania import dialog */}
+      {showEcmImport && (
+        <EcmImportDialog
+          subMatches={subMatches}
+          allPlayers={allPlayers}
+          onClose={() => setShowEcmImport(false)}
+          onImported={(subMatchId, rounds) =>
+            setSubMatches((sms) => sms.map((sm) => (sm.id === subMatchId ? { ...sm, rounds } : sm)))
+          }
+        />
+      )}
 
       {/* Manual round entry dialog */}
       {roundEntrySubMatch && (

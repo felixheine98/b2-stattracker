@@ -10,7 +10,8 @@ interface Params {
 }
 
 // positions[i] and times[i] belong to playerIds[i]; source is the number of the
-// existing round this one was edited from, so its opponent results can be kept
+// existing round this one was edited from, so its opponent results can be kept.
+// opponents lists the opposing players in finishing order (used by imports).
 const schema = z.object({
   playerIds: z.array(z.string()).min(1),
   rounds: z.array(
@@ -18,6 +19,9 @@ const schema = z.object({
       positions: z.array(z.number().int().min(1)),
       times: z.array(z.number().int().positive().nullable()).optional(),
       source: z.number().int().nullish(),
+      opponents: z
+        .array(z.object({ name: z.string().trim().min(1).max(100), timeMs: z.number().int().positive().nullable() }))
+        .optional(),
     })
   ),
   track: z.string().trim().max(100).nullish(),
@@ -49,12 +53,13 @@ export async function PUT(req: Request, { params }: Params) {
   if (playerIds.length !== size || new Set(playerIds).size !== size) {
     return NextResponse.json({ error: `Exactly ${size} different players are required` }, { status: 400 })
   }
-  for (const [i, { positions, times }] of rounds.entries()) {
+  for (const [i, { positions, times, opponents }] of rounds.entries()) {
     const valid =
       positions.length === size &&
       new Set(positions).size === size &&
       positions.every((p) => p <= maxPosition) &&
-      (!times || times.length === size)
+      (!times || times.length === size) &&
+      (!opponents || (opponents.length === size && new Set(opponents.map((o) => o.name)).size === size))
     if (!valid) return NextResponse.json({ error: `Round ${i + 1} has invalid placements` }, { status: 400 })
   }
 
@@ -71,7 +76,7 @@ export async function PUT(req: Request, { params }: Params) {
 
   await db.$transaction([
     db.round.deleteMany({ where: { subMatchId: id } }),
-    ...rounds.map(({ positions, times, source }, number) => {
+    ...rounds.map(({ positions, times, source, opponents }, number) => {
       // Placements not taken by our players belong to the opponent
       const opponentPositions = Array.from({ length: maxPosition }, (_, i) => i + 1).filter(
         (p) => !positions.includes(p)
@@ -99,9 +104,9 @@ export async function PUT(req: Request, { params }: Params) {
                 }
               }),
               ...opponentPositions.map((position, i) => ({
-                tmId: knownOpponents?.[i].tmId ?? `opponent-${position}`,
-                playerName: knownOpponents?.[i].playerName ?? opponentName,
-                timeMs: knownOpponents?.[i].timeMs ?? null,
+                tmId: opponents ? `ecm-${opponents[i].name}` : knownOpponents?.[i].tmId ?? `opponent-${position}`,
+                playerName: opponents?.[i].name ?? knownOpponents?.[i].playerName ?? opponentName,
+                timeMs: opponents ? opponents[i].timeMs : knownOpponents?.[i].timeMs ?? null,
                 position,
                 isOurTeam: false,
               })),

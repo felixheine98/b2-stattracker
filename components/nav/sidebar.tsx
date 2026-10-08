@@ -23,11 +23,10 @@ export function Sidebar({ userName, role }: SidebarProps) {
 
   return (
     <aside className="flex h-screen w-56 flex-col border-r border-[#2d2829] bg-[#1c1819]">
-      <div className="flex items-center gap-2.5 px-5 py-5 border-b border-[#2d2829]">
-        <div className="h-7 w-7 rounded-md bg-[#FBD00D] flex items-center justify-center text-[#1a1718] font-bold text-sm">
-          TM
-        </div>
-        <span className="font-semibold text-[#f5f0f0] text-sm tracking-tight">StatTracker</span>
+      <div className="flex items-center gap-3 px-5 py-4 border-b border-[#2d2829]">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/b2-stats/b2-logo.svg" alt="" className="h-11 w-11 object-contain" />
+        <span className="font-bold text-[#f5f0f0] text-xl tracking-tight">B2 Stats</span>
       </div>
 
       <nav className="flex-1 space-y-0.5 px-2 py-4">

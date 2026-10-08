@@ -1,0 +1,308 @@
+"use client"
+
+import { Button } from "@/components/ui/button"
+import { Dialog, DialogTitle } from "@/components/ui/dialog"
+import { Textarea } from "@/components/ui/textarea"
+import { ECM_BOOKMARKLET, normalizeName, parseEcmPayload, type EcmPayload, type EcmSet } from "@/lib/ecm"
+import { formatLabel, parseTime, teamSize } from "@/lib/utils"
+import { useMemo, useState } from "react"
+import type { Player, Round, SubMatch } from "./match-detail-view"
+
+const MAPPING_KEY = "ecm-player-map"
+const BOOKMARKLET_URL = `javascript:${encodeURIComponent(ECM_BOOKMARKLET)}`
+
+interface Props {
+  subMatches: SubMatch[]
+  allPlayers: Player[]
+  onClose: () => void
+  onImported: (subMatchId: string, rounds: Round[]) => void
+}
+
+interface SetAnalysis {
+  size: number
+  // eCM names of our players in this set, in order of first appearance
+  ourNames: string[]
+  error?: string
+}
+
+function analyzeSet(set: EcmSet, isOurs: (name: string) => boolean): SetAnalysis {
+  const count = set.rounds[0]?.length ?? 0
+  if (count === 0) return { size: 0, ourNames: [], error: "keine Runden" }
+  if (count % 2 !== 0 || set.rounds.some((r) => r.length !== count)) {
+    return { size: 0, ourNames: [], error: "uneinheitliche Spielerzahl pro Runde" }
+  }
+  const size = count / 2
+  const ourNames: string[] = []
+  for (const round of set.rounds) {
+    const ours = round.filter((e) => isOurs(e.p))
+    if (ours.length !== size) return { size, ourNames, error: "Teamzuordnung passt nicht" }
+    for (const e of ours) if (!ourNames.includes(e.p)) ourNames.push(e.p)
+  }
+  if (ourNames.length !== size) return { size, ourNames, error: "wechselnde Spieler innerhalb des Sets" }
+  return { size, ourNames }
+}
+
+function loadSavedMapping(): Record<string, string> {
+  try {
+    return JSON.parse(localStorage.getItem(MAPPING_KEY) ?? "{}")
+  } catch {
+    return {}
+  }
+}
+
+export function EcmImportDialog({ subMatches, allPlayers, onClose, onImported }: Props) {
+  const [text, setText] = useState("")
+  const [teamChoice, setTeamChoice] = useState<number | null>(null)
+  const [mappingEdits, setMappingEdits] = useState<Record<string, string>>({})
+  const [savedMapping] = useState(loadSavedMapping)
+  const [targetEdits, setTargetEdits] = useState<Record<number, string>>({})
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState("")
+  const [copied, setCopied] = useState(false)
+
+  const payload: EcmPayload | null = useMemo(() => parseEcmPayload(text), [text])
+
+  // React refuses javascript: URLs in JSX, so the bookmarklet link is set on the element directly
+  const setBookmarkletHref = (el: HTMLAnchorElement | null) => {
+    el?.setAttribute("href", BOOKMARKLET_URL)
+  }
+
+  const playerByNormalized = useMemo(
+    () => new Map(allPlayers.map((p) => [normalizeName(p.name), p])),
+    [allPlayers]
+  )
+  const autoMatch = (name: string) =>
+    allPlayers.find((p) => p.name.toLowerCase() === name.toLowerCase()) ?? playerByNormalized.get(normalizeName(name))
+
+  // Our team is the one whose roster contains more known players
+  const autoTeam = useMemo(() => {
+    if (!payload) return 0
+    const known = payload.teams.map((t) => t.players.filter((n) => autoMatch(n)).length)
+    return known.indexOf(Math.max(...known, 0))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [payload])
+  const ourTeam = teamChoice ?? Math.max(autoTeam, 0)
+  const roster = payload?.teams[ourTeam]?.players ?? []
+  const isOurs = (name: string) => (roster.length > 0 ? roster.includes(name) : !!autoMatch(name))
+
+  const analyses = payload?.sets.map((set) => analyzeSet(set, isOurs)) ?? []
+  const playerIdFor = (name: string) => mappingEdits[name] ?? savedMapping[name] ?? autoMatch(name)?.id ?? ""
+
+  // Each set goes to the first free sub-match with the same team size
+  const targets: string[] = []
+  analyses.forEach((a, i) => {
+    if (targetEdits[i] !== undefined) {
+      targets[i] = targetEdits[i]
+      return
+    }
+    const free = subMatches.find((sm) => !a.error && teamSize(sm.format) === a.size && !targets.includes(sm.id))
+    targets[i] = free?.id ?? ""
+  })
+
+  const selected = analyses.map((a, i) => !a.error && targets[i] !== "")
+  const neededNames = [...new Set(analyses.flatMap((a, i) => (selected[i] ? a.ourNames : [])))]
+  const problems: string[] = []
+  analyses.forEach((a, i) => {
+    if (!selected[i]) return
+    const ids = a.ourNames.map(playerIdFor)
+    if (ids.some((id) => !id)) problems.push(`${payload!.sets[i].label}: nicht alle Spieler zugeordnet`)
+    else if (new Set(ids).size !== ids.length) problems.push(`${payload!.sets[i].label}: ein Spieler ist doppelt zugeordnet`)
+    if (targets.filter((t, j) => selected[j] && t === targets[i]).length > 1) {
+      problems.push(`${payload!.sets[i].label}: Sub-Match mehrfach gewählt`)
+    }
+  })
+  const canImport = selected.some(Boolean) && problems.length === 0 && !saving
+
+  async function copyBookmarklet() {
+    try {
+      await navigator.clipboard.writeText(BOOKMARKLET_URL)
+      setCopied(true)
+    } catch {
+      setError("Kopieren nicht möglich – bitte den Link in die Lesezeichenleiste ziehen.")
+    }
+  }
+
+  async function handleImport() {
+    if (!payload) return
+    setSaving(true)
+    setError("")
+    try {
+      localStorage.setItem(
+        MAPPING_KEY,
+        JSON.stringify({ ...savedMapping, ...Object.fromEntries(neededNames.map((n) => [n, playerIdFor(n)])) })
+      )
+    } catch {
+      // Remembering the mapping is only a convenience
+    }
+    for (const [i, set] of payload.sets.entries()) {
+      if (!selected[i]) continue
+      const names = analyses[i].ourNames
+      const res = await fetch(`/b2-stats/api/submatches/${targets[i]}/rounds`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          playerIds: names.map(playerIdFor),
+          track: set.map,
+          rounds: set.rounds.map((round) => ({
+            positions: names.map((n) => round.findIndex((e) => e.p === n) + 1),
+            times: names.map((n) => parseTime(round.find((e) => e.p === n)?.t ?? "") ?? null),
+            opponents: round
+              .filter((e) => !isOurs(e.p))
+              .map((e) => ({ name: e.p, timeMs: parseTime(e.t) ?? null })),
+          })),
+        }),
+      })
+      if (!res.ok) {
+        const data = await res.json().catch(() => null)
+        setError(`${set.label}: ${data?.error ?? "Import fehlgeschlagen"}`)
+        setSaving(false)
+        return
+      }
+      const data = await res.json()
+      onImported(targets[i], data.rounds)
+    }
+    setSaving(false)
+    onClose()
+  }
+
+  const selectClass =
+    "h-8 rounded-md border border-[#3a3435] bg-[#251f20] px-2 text-xs text-[#f5f0f0] focus:outline-none focus:ring-2 focus:ring-[#FBD00D]"
+
+  return (
+    <Dialog open onClose={onClose} className="max-w-2xl">
+      <DialogTitle>Von eCircuitMania importieren</DialogTitle>
+
+      {!payload ? (
+        <div className="space-y-4">
+          <ol className="list-decimal space-y-2 pl-5 text-sm text-[#c5bfbf]">
+            <li>
+              Einmalig: diesen Link in die Lesezeichenleiste ziehen:{" "}
+              <a
+                ref={setBookmarkletHref}
+                onClick={(e) => e.preventDefault()}
+                className="inline-block cursor-grab rounded-md border border-[#FBD00D]/50 bg-[#FBD00D]/10 px-2 py-0.5 text-xs font-medium text-[#FBD00D]"
+              >
+                eCM → Stattracker
+              </a>
+              <button type="button" onClick={copyBookmarklet} className="ml-2 text-xs text-[#5e5858] hover:text-[#f5f0f0]">
+                {copied ? "Adresse kopiert ✓" : "oder Adresse kopieren"}
+              </button>
+            </li>
+            <li className="list-none text-xs text-[#5e5858]">
+              Lesezeichenleiste einblenden: ⌘⇧B (Mac) bzw. Strg+Umschalt+B. Alternativ ein beliebiges Lesezeichen
+              anlegen, bearbeiten und die kopierte Adresse als URL einfügen.
+            </li>
+            <li>Die Match-Seite auf ecircuitmania.com öffnen und das Lesezeichen anklicken.</li>
+            <li>Im Fenster oben rechts auf „Kopieren“ klicken und das Ergebnis hier einfügen.</li>
+          </ol>
+          <Textarea
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            rows={5}
+            className="font-mono text-xs"
+            placeholder="Kopierte Daten hier einfügen (Strg+V)"
+          />
+          {text.trim() && <p className="text-sm text-[#ED1F24]">Das sind keine Daten aus dem eCM-Lesezeichen.</p>}
+          <div className="flex justify-end">
+            <Button variant="ghost" onClick={onClose}>Abbrechen</Button>
+          </div>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {payload.teams.length > 1 && (
+            <div className="flex items-center gap-2 text-sm">
+              <span className="text-[#9a9090]">Unser Team</span>
+              {payload.teams.map((team, i) => (
+                <button
+                  key={team.name}
+                  type="button"
+                  onClick={() => setTeamChoice(i)}
+                  className={`rounded-full border px-3 py-1 text-xs transition-colors ${
+                    i === ourTeam
+                      ? "border-[#FBD00D]/50 bg-[#FBD00D]/10 text-[#f5f0f0]"
+                      : "border-[#2d2829] text-[#9a9090] hover:border-[#3a3435]"
+                  }`}
+                >
+                  {team.name}
+                </button>
+              ))}
+            </div>
+          )}
+
+          <div className="space-y-1.5">
+            <p className="text-xs font-semibold uppercase tracking-wider text-[#9a9090]">Sets</p>
+            {payload.sets.map((set, i) => {
+              const a = analyses[i]
+              return (
+                <div key={i} className="flex items-center gap-3 rounded-lg border border-[#2d2829] px-3 py-2 text-sm">
+                  <span className="font-medium text-[#f5f0f0]">{set.label}</span>
+                  <span className="text-[#9a9090]">{set.map}</span>
+                  {a.error ? (
+                    <span className="ml-auto text-xs text-[#ED1F24]">nicht importierbar: {a.error}</span>
+                  ) : (
+                    <>
+                      <span className="text-xs text-[#5e5858]">
+                        {a.size}v{a.size} · {set.rounds.length} Runden · {a.ourNames.join(", ")}
+                      </span>
+                      <select
+                        value={targets[i]}
+                        onChange={(e) => setTargetEdits((t) => ({ ...t, [i]: e.target.value }))}
+                        className={`${selectClass} ml-auto`}
+                        aria-label={`Ziel für ${set.label}`}
+                      >
+                        <option value="">— überspringen —</option>
+                        {subMatches.map((sm, idx) =>
+                          teamSize(sm.format) === a.size ? (
+                            <option key={sm.id} value={sm.id}>
+                              {idx + 1}. {formatLabel(sm.format)}
+                              {sm.rounds.length > 0 ? " (überschreibt)" : ""}
+                            </option>
+                          ) : null
+                        )}
+                      </select>
+                    </>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+
+          {neededNames.length > 0 && (
+            <div className="space-y-1.5">
+              <p className="text-xs font-semibold uppercase tracking-wider text-[#9a9090]">Spieler zuordnen</p>
+              <div className="grid grid-cols-2 gap-x-4 gap-y-1.5">
+                {neededNames.map((name) => (
+                  <label key={name} className="flex items-center justify-between gap-2 text-sm text-[#c5bfbf]">
+                    {name}
+                    <select
+                      value={playerIdFor(name)}
+                      onChange={(e) => setMappingEdits((m) => ({ ...m, [name]: e.target.value }))}
+                      className={`${selectClass} w-40 ${playerIdFor(name) ? "" : "border-[#ED1F24]"}`}
+                    >
+                      <option value="">— wählen —</option>
+                      {allPlayers.map((p) => (
+                        <option key={p.id} value={p.id}>{p.name}</option>
+                      ))}
+                    </select>
+                  </label>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {problems.map((problem) => (
+            <p key={problem} className="text-xs text-[#ED1F24]">{problem}</p>
+          ))}
+          {error && <p className="text-sm text-[#ED1F24]">{error}</p>}
+
+          <div className="flex gap-2 justify-end">
+            <Button variant="ghost" onClick={() => setText("")}>Zurück</Button>
+            <Button onClick={handleImport} disabled={!canImport}>
+              {saving ? "Importiert…" : `${selected.filter(Boolean).length} Set(s) importieren`}
+            </Button>
+          </div>
+        </div>
+      )}
+    </Dialog>
+  )
+}

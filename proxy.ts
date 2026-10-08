@@ -27,5 +27,6 @@ export default auth((req) => {
 })
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
+  // Static assets (icons, logos, flags, manifest) must be reachable without a session
+  matcher: ["/((?!_next/static|_next/image|manifest.webmanifest|.*\\.(?:ico|svg|png)$).*)"],
 }

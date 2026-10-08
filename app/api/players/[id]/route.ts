@@ -2,12 +2,13 @@ import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
 import { NextResponse } from "next/server"
 import { canManage } from "@/lib/roles"
+import { isCountryCode } from "@/lib/countries"
 
 interface Params {
   params: Promise<{ id: string }>
 }
 
-// Link or unlink a user account to this player profile
+// Link or unlink a user account to this player profile, or set the player's country
 export async function PATCH(req: Request, { params }: Params) {
   const session = await auth()
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
@@ -15,10 +16,17 @@ export async function PATCH(req: Request, { params }: Params) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 })
 
   const { id } = await params
-  const { userId } = await req.json() as { userId: string | null }
+  const body = await req.json() as { userId?: string | null; country?: string | null }
 
+  if (body.country !== undefined) {
+    if (body.country !== null && !isCountryCode(body.country))
+      return NextResponse.json({ error: "Unknown country" }, { status: 400 })
+    await db.player.update({ where: { id }, data: { country: body.country } })
+  }
+
+  const userId = body.userId
   // Clear any existing link to this player first
-  await db.user.updateMany({ where: { playerId: id }, data: { playerId: null } })
+  if (userId !== undefined) await db.user.updateMany({ where: { playerId: id }, data: { playerId: null } })
 
   if (userId) {
     // Verify user exists and isn't already linked to a different player

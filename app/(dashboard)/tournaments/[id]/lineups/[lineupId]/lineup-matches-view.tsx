@@ -1,5 +1,6 @@
 "use client"
 
+import { PlayerAvatar } from "@/components/player-avatar"
 import Link from "next/link"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -43,6 +44,7 @@ interface Player {
   id: string
   name: string
   tmId: string
+  country?: string | null
 }
 
 interface Props {
@@ -203,9 +205,7 @@ export function LineupMatchesView({ lineup }: Props) {
               key={slot.id}
               className="inline-flex items-center gap-1.5 rounded-full bg-[#251f20] border border-[#2d2829] px-3 py-1 text-sm text-[#c5bfbf]"
             >
-              <span className="h-5 w-5 rounded-full bg-[#FBD00D]/20 text-[#FBD00D] text-[10px] font-bold flex items-center justify-center shrink-0">
-                {slot.player.name.charAt(0).toUpperCase()}
-              </span>
+              <PlayerAvatar player={slot.player} className="h-5 w-5 text-[10px]" />
               {slot.player.name}
             </span>
           ))}
