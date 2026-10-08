@@ -3,7 +3,7 @@
 import { GuestBadge } from "@/components/guest-badge"
 import { PlayerAvatar } from "@/components/player-avatar"
 import { useSyncedState } from "@/lib/use-synced-state"
-import { localTodayKey } from "@/lib/player-status"
+import { formatDay, localTodayKey } from "@/lib/player-status"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useState } from "react"
@@ -342,7 +342,7 @@ export function LineupMatchesView({ lineup, guestTmIds, canManage }: Props) {
                           {match.date && (
                             <span className="flex items-center gap-1">
                               <Calendar size={10} />
-                              {new Date(match.date).toLocaleDateString()}
+                              {formatDay(match.date)}
                             </span>
                           )}
                           <span>{match._count.subMatches} sub-match{match._count.subMatches !== 1 ? "es" : ""}</span>

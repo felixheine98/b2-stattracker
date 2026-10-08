@@ -46,6 +46,13 @@ model Player {
   tmId      String   @unique
   name      String
   country   String?
+  // Result of the last comparison with trackmania.io; null name after a check = not found
+  tmioName             String?
+  tmioCountry          String?
+  tmioCheckedAt        DateTime?
+  // trackmania.io values the user chose to ignore; a hint returns only when they change
+  dismissedTmioName    String?
+  dismissedTmioCountry String?
   // Status the player has "from the beginning"; later switches are PlayerStatusChange rows
   initialStatus PlayerStatus @default(MEMBER)
   createdAt DateTime @default(now())

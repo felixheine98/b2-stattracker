@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { useSyncedState } from "@/lib/use-synced-state"
-import { localTodayKey } from "@/lib/player-status"
+import { formatDay, localTodayKey } from "@/lib/player-status"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -180,7 +180,7 @@ export function TournamentsView({ tournaments: initial, canManage }: { tournamen
                     <span>{t._count.matches} match{t._count.matches !== 1 ? "es" : ""}</span>
                     <div className="flex items-center gap-1">
                       {t.startDate && (
-                        <span>{new Date(t.startDate).toLocaleDateString()}</span>
+                        <span>{formatDay(t.startDate)}</span>
                       )}
                       <ChevronRight size={14} />
                     </div>

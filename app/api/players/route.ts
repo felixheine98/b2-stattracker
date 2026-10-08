@@ -3,6 +3,7 @@ import { db } from "@/lib/db"
 import { NextResponse } from "next/server"
 import { z } from "zod"
 import { canManage } from "@/lib/roles"
+import { isCountryCode } from "@/lib/countries"
 
 export async function GET() {
   const session = await auth()
@@ -22,9 +23,18 @@ export async function GET() {
 
 const createSchema = z.object({
   name: z.string().min(1),
-  tmId: z.string().uuid(),
+  // Stored in lower case so the same account cannot be added twice in different spelling
+  tmId: z.string().uuid().transform((v) => v.toLowerCase()),
   // Category the player is created in; it applies "from the beginning"
   status: z.enum(["MEMBER", "GUEST"]).default("MEMBER"),
+  country: z.string().refine(isCountryCode, "Unknown country").nullable().optional(),
+  // Set when the player was picked from the trackmania.io search
+  tmio: z
+    .object({
+      name: z.string().min(1).max(100),
+      country: z.string().refine(isCountryCode, "Unknown country").nullable(),
+    })
+    .optional(),
 })
 
 export async function POST(req: Request) {
@@ -39,9 +49,21 @@ export async function POST(req: Request) {
   }
 
   try {
-    const { name, tmId, status } = parsed.data
+    const { name, tmId, status, country, tmio } = parsed.data
     const player = await db.player.create({
-      data: { name, tmId, initialStatus: status },
+      data: {
+        name,
+        tmId,
+        initialStatus: status,
+        country: country ?? null,
+        ...(tmio && {
+          tmioName: tmio.name,
+          tmioCountry: tmio.country,
+          tmioCheckedAt: new Date(),
+          // A name changed while adding is deliberate, so no hint for it
+          ...(tmio.name !== name && { dismissedTmioName: tmio.name }),
+        }),
+      },
       include: { statusChanges: true },
     })
     return NextResponse.json(player, { status: 201 })

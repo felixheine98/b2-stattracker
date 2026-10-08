@@ -1,10 +1,10 @@
 "use client"
 
-import { useState, useTransition } from "react"
+import { useEffect, useRef, useState, useTransition } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { useSyncedState } from "@/lib/use-synced-state"
 import { PlayerAvatar } from "@/components/player-avatar"
-import { countryOptions } from "@/lib/countries"
+import { countryName, countryOptions } from "@/lib/countries"
 import {
   currentStatus,
   dayKey,
@@ -22,7 +22,7 @@ import { Label } from "@/components/ui/label"
 import { Card, CardContent } from "@/components/ui/card"
 import { Dialog, DialogTitle } from "@/components/ui/dialog"
 import { cn } from "@/lib/utils"
-import { ArrowLeftRight, History, KeyRound, Link2, Link2Off, Plus, Trash2, Trophy, User, Wand2 } from "lucide-react"
+import { ArrowLeftRight, Check, History, KeyRound, Link2, Link2Off, Plus, RefreshCw, Search, Trash2, Trophy, User, Wand2, X } from "lucide-react"
 
 interface UserOption {
   id: string
@@ -37,6 +37,12 @@ interface Player {
   name: string
   country?: string | null
   createdAt: Date
+  // Result of the last comparison with trackmania.io and the values the user chose to ignore
+  tmioName?: string | null
+  tmioCountry?: string | null
+  tmioCheckedAt?: Date | string | null
+  dismissedTmioName?: string | null
+  dismissedTmioCountry?: string | null
   initialStatus: PlayerStatus
   statusChanges: StatusChange[]
   tournamentLineupSlots?: Array<{
@@ -49,7 +55,32 @@ interface Player {
   _count?: { roundResults: number }
 }
 
+// A player found on trackmania.io
+interface TmioResult {
+  id: string
+  name: string
+  clubTag: string | null
+  country: string | null
+  countryName: string | null
+  region: string | null
+  existing: { name: string; status: PlayerStatus } | null
+}
+
 type Tab = "members" | "guests"
+
+// trackmania.io allows 40 requests per minute
+const SYNC_DELAY_MS = 1600
+
+// A differing trackmania.io value that has not been taken over or hidden yet
+function nameHint(player: Player): string | null {
+  const value = player.tmioName
+  return value && value !== player.name && value !== player.dismissedTmioName ? value : null
+}
+
+function countryHint(player: Player): string | null {
+  const value = player.tmioCountry
+  return value && player.country && value !== player.country && value !== player.dismissedTmioCountry ? value : null
+}
 
 interface Props {
   players: Player[]
@@ -73,8 +104,22 @@ function statusSummary(player: Player): string {
     : `${STATUS_LABEL[player.initialStatus]} from the start`
 }
 
+// A trackmania.io value that differs from ours, with the two ways to settle it
+function HintLine({ label, canManage, onAdopt, onDismiss }: { label: string; canManage: boolean; onAdopt: () => void; onDismiss: () => void }) {
+  return (
+    <p className="mt-1 flex items-center gap-2 whitespace-nowrap text-[11px] font-normal text-[#cd7f32]">
+      {label}
+      {canManage && (
+        <>
+          <button type="button" onClick={onAdopt} className="text-[#FBD00D] hover:underline">Adopt</button>
+          <button type="button" onClick={onDismiss} className="text-[#9a9090] hover:underline">Hide</button>
+        </>
+      )}
+    </p>
+  )
+}
+
 export function PlayersView({ players: initial, users, canManage }: Props) {
-  const countries = countryOptions()
   const router = useRouter()
   const [players, setPlayers] = useSyncedState(initial)
   // The tab lives in the address, so a reload or shared link opens the same tab
@@ -85,6 +130,31 @@ export function PlayersView({ players: initial, users, canManage }: Props) {
   const [deleting, setDeleting] = useState<string | null>(null)
   const [linking, setLinking] = useState<string | null>(null)
   const [autoLinking, startAutoLink] = useTransition()
+
+  // --- Add dialog: trackmania.io search ---
+  const [formName, setFormName] = useState("")
+  const [formTmId, setFormTmId] = useState("")
+  const [searchQuery, setSearchQuery] = useState("")
+  const [searchResults, setSearchResults] = useState<TmioResult[] | null>(null)
+  const [searchLoading, setSearchLoading] = useState(false)
+  const [searchError, setSearchError] = useState("")
+  const [picked, setPicked] = useState<TmioResult | null>(null)
+  const searchTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
+  const latestQuery = useRef("")
+
+  // --- Comparison with trackmania.io ---
+  const [syncProgress, setSyncProgress] = useState<{ done: number; total: number } | null>(null)
+  const [syncMessage, setSyncMessage] = useState("")
+  const [syncingId, setSyncingId] = useState<string | null>(null)
+  const cancelSync = useRef(false)
+
+  // Leaving the page stops a running comparison and any pending search
+  useEffect(() => {
+    return () => {
+      cancelSync.current = true
+      clearTimeout(searchTimer.current)
+    }
+  }, [])
 
   // --- Move between members and guests ---
   const [moveId, setMoveId] = useState<string | null>(null)
@@ -115,26 +185,152 @@ export function PlayersView({ players: initial, users, canManage }: Props) {
     setPlayers((p) => p.map((pl) => (pl.id === playerId ? { ...pl, statusChanges } : pl)))
   }
 
+  // Drop a pending or running search so its answer cannot show up later
+  function resetSearch() {
+    clearTimeout(searchTimer.current)
+    latestQuery.current = ""
+    setSearchLoading(false)
+  }
+
+  function closeForm() {
+    resetSearch()
+    setShowForm(false)
+  }
+
+  function openForm() {
+    resetSearch()
+    setShowForm(true)
+    setError("")
+    setFormName("")
+    setFormTmId("")
+    setSearchQuery("")
+    setSearchResults(null)
+    setSearchError("")
+    setPicked(null)
+  }
+
+  async function runSearch(query: string) {
+    setSearchLoading(true)
+    setSearchError("")
+    const res = await fetch(`/b2-stats/api/tmio/search?q=${encodeURIComponent(query)}`).catch(() => null)
+    // Ignore answers that were overtaken by a newer search
+    if (latestQuery.current !== query) return
+    setSearchLoading(false)
+    const data = await res?.json().catch(() => null)
+    if (!res?.ok || !Array.isArray(data?.results)) {
+      setSearchResults(null)
+      setSearchError(data?.error ?? "Search failed")
+      return
+    }
+    setSearchResults(data.results)
+  }
+
+  // Search a moment after typing stops, to stay well within trackmania.io's request limit
+  function handleSearchChange(value: string) {
+    setSearchQuery(value)
+    latestQuery.current = value.trim()
+    clearTimeout(searchTimer.current)
+    if (value.trim().length < 3) {
+      setSearchResults(null)
+      setSearchError("")
+      setSearchLoading(false)
+      return
+    }
+    searchTimer.current = setTimeout(() => runSearch(value.trim()), 500)
+  }
+
+  function pickResult(result: TmioResult) {
+    setPicked(result)
+    setFormName(result.name)
+    setFormTmId(result.id)
+    setError("")
+  }
+
   async function handleCreate(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
     setError("")
     setLoading(true)
-    const form = new FormData(e.currentTarget)
     const res = await fetch("/b2-stats/api/players", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name: form.get("name"), tmId: form.get("tmId"), status: newStatus }),
+      body: JSON.stringify({
+        name: formName.trim(),
+        tmId: formTmId.trim().toLowerCase(),
+        status: newStatus,
+        ...(picked && { country: picked.country, tmio: { name: picked.name, country: picked.country } }),
+      }),
     })
     setLoading(false)
     if (!res.ok) {
-      const data = await res.json()
-      setError(data.error ?? "Failed to create player")
+      const data = await res.json().catch(() => null)
+      setError(data?.error ?? "Failed to create player")
       return
     }
     const data = await res.json()
     setPlayers((p) => [...p, { ...data, user: null, _count: { roundResults: 0 } }].sort((a, b) => a.name.localeCompare(b.name)))
-    setShowForm(false)
-    ;(e.target as HTMLFormElement).reset()
+    closeForm()
+  }
+
+  // Compare one player with trackmania.io; resolves to what happened
+  async function syncPlayer(player: Player): Promise<"ok" | "difference" | "notfound" | "gone" | "limit" | "error"> {
+    const res = await fetch(`/b2-stats/api/players/${player.id}/tmio`, { method: "POST" }).catch(() => null)
+    // 404 means the player was deleted here in the meantime
+    if (!res?.ok) return res?.status === 429 ? "limit" : res?.status === 404 ? "gone" : "error"
+    const data = await res.json()
+    const merged = { ...player, ...data }
+    setPlayers((p) => p.map((pl) => (pl.id === player.id ? { ...pl, ...data } : pl)))
+    if (!data.tmioName) return "notfound"
+    return nameHint(merged) || countryHint(merged) ? "difference" : "ok"
+  }
+
+  async function handleSyncOne(player: Player) {
+    setSyncingId(player.id)
+    setSyncMessage("")
+    const outcome = await syncPlayer(player)
+    setSyncingId(null)
+    if (outcome === "limit") setSyncMessage("trackmania.io request limit reached, try again in a minute.")
+    else if (outcome === "error") setSyncMessage(`Could not check ${player.name} on trackmania.io.`)
+    else if (outcome === "notfound") setSyncMessage(`${player.name} was not found on trackmania.io.`)
+    else if (outcome === "difference") setSyncMessage(`${player.name} checked: differs from trackmania.io, see the hint in the row.`)
+    else if (outcome === "ok") setSyncMessage(`${player.name} checked: no differences.`)
+  }
+
+  async function handleSyncAll() {
+    const list = visible
+    cancelSync.current = false
+    setSyncMessage("")
+    setSyncProgress({ done: 0, total: list.length })
+    const counts = { ok: 0, difference: 0, notfound: 0, gone: 0, error: 0 }
+    let stopped = ""
+    for (const [i, player] of list.entries()) {
+      if (cancelSync.current) { stopped = " Stopped early."; break }
+      const outcome = await syncPlayer(player)
+      if (outcome === "limit") { stopped = " Stopped: trackmania.io request limit reached, try again in a minute."; break }
+      counts[outcome]++
+      setSyncProgress({ done: i + 1, total: list.length })
+      if (i < list.length - 1) await new Promise((resolve) => setTimeout(resolve, SYNC_DELAY_MS))
+    }
+    setSyncProgress(null)
+    const checked = counts.ok + counts.difference + counts.notfound
+    setSyncMessage(
+      `${checked} of ${list.length - counts.gone} checked, ${counts.difference} with differences, ${counts.notfound} not found` +
+        (counts.error > 0 ? `, ${counts.error} failed` : "") + "." + stopped
+    )
+  }
+
+  async function resolveHint(player: Player, field: "name" | "country", action: "adopt" | "dismiss") {
+    const res = await fetch(`/b2-stats/api/players/${player.id}/tmio`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ field, action, value: field === "name" ? player.tmioName : player.tmioCountry }),
+    })
+    const body = await res.json().catch(() => null)
+    // 409: the value changed since this page loaded; show the fresh hint instead of acting on it
+    const data = res.ok ? body : res.status === 409 ? body?.player : null
+    if (!data) return
+    setPlayers((p) =>
+      p.map((pl) => (pl.id === player.id ? { ...pl, ...data } : pl)).sort((a, b) => a.name.localeCompare(b.name))
+    )
   }
 
   async function handleDelete(id: string) {
@@ -296,8 +492,21 @@ export function PlayersView({ players: initial, users, canManage }: Props) {
               Auto-link ({autoLinkCount})
             </Button>
           )}
+          {canManage && (syncProgress || visible.length > 0) && (
+            syncProgress ? (
+              <Button variant="outline" onClick={() => { cancelSync.current = true }}>
+                <RefreshCw size={15} className="animate-spin" />
+                {syncProgress.done}/{syncProgress.total} · Stop
+              </Button>
+            ) : (
+              <Button variant="outline" onClick={handleSyncAll} disabled={!!syncingId} title="Compare names and countries with trackmania.io">
+                <RefreshCw size={15} />
+                Sync with trackmania.io
+              </Button>
+            )
+          )}
           {canManage && (
-            <Button onClick={() => { setShowForm(true); setError("") }}>
+            <Button onClick={openForm}>
               <Plus size={16} />
               {tab === "members" ? "Add Member" : "Add Guest"}
             </Button>
@@ -326,6 +535,15 @@ export function PlayersView({ players: initial, users, canManage }: Props) {
           </button>
         ))}
       </div>
+
+      {syncMessage && (
+        <p className="flex items-center justify-between gap-3 rounded-lg border border-[#2d2829] bg-[#1c1819] px-4 py-2 text-sm text-[#c5bfbf]">
+          {syncMessage}
+          <button type="button" onClick={() => setSyncMessage("")} className="text-[#5e5858] hover:text-[#f5f0f0]" title="Close">
+            <X size={14} />
+          </button>
+        </p>
+      )}
 
       {visible.length === 0 ? (
         <Card>
@@ -363,6 +581,14 @@ export function PlayersView({ players: initial, users, canManage }: Props) {
                       <PlayerAvatar player={player} />
                       {player.name}
                     </span>
+                    {nameHint(player) && (
+                      <HintLine label={`trackmania.io: ${nameHint(player)}`} canManage={canManage}
+                        onAdopt={() => resolveHint(player, "name", "adopt")}
+                        onDismiss={() => resolveHint(player, "name", "dismiss")} />
+                    )}
+                    {player.tmioCheckedAt && !player.tmioName && (
+                      <p className="mt-1 text-[11px] font-normal text-[#cd7f32]">not found on trackmania.io</p>
+                    )}
                   </td>
                   <td className="px-4 py-3">
                     {canManage ? (
@@ -373,12 +599,17 @@ export function PlayersView({ players: initial, users, canManage }: Props) {
                         className="h-8 w-32 rounded-md border border-[#3a3435] bg-[#251f20] px-2 text-xs text-[#f5f0f0] focus:outline-none focus:ring-2 focus:ring-[#FBD00D]"
                       >
                         <option value="">— kein Land —</option>
-                        {countries.map((c) => (
+                        {countryOptions(player.country).map((c) => (
                           <option key={c.code} value={c.code}>{c.name}</option>
                         ))}
                       </select>
                     ) : (
-                      <span className="text-xs text-[#9a9090]">{countries.find((c) => c.code === player.country)?.name ?? "—"}</span>
+                      <span className="text-xs text-[#9a9090]">{player.country ? countryName(player.country) : "—"}</span>
+                    )}
+                    {countryHint(player) && (
+                      <HintLine label={`trackmania.io: ${countryName(countryHint(player)!)}`} canManage={canManage}
+                        onAdopt={() => resolveHint(player, "country", "adopt")}
+                        onDismiss={() => resolveHint(player, "country", "dismiss")} />
                     )}
                   </td>
                   <td className="px-4 py-3 font-mono text-xs text-[#5e5858]">{player.tmId}</td>
@@ -455,6 +686,16 @@ export function PlayersView({ players: initial, users, canManage }: Props) {
                   <td className="px-4 py-3 text-right">
                     {canManage && (
                       <div className="flex items-center justify-end gap-1">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleSyncOne(player)}
+                          disabled={!!syncProgress || !!syncingId}
+                          className="text-[#5e5858] hover:text-[#f5f0f0]"
+                          title="Compare with trackmania.io"
+                        >
+                          <RefreshCw size={14} className={syncingId === player.id ? "animate-spin" : ""} />
+                        </Button>
                         <Button variant="outline" size="sm" onClick={() => openMove(player)} className="whitespace-nowrap">
                           <ArrowLeftRight size={13} />
                           {tab === "members" ? "To guests" : "To members"}
@@ -479,27 +720,89 @@ export function PlayersView({ players: initial, users, canManage }: Props) {
       )}
 
       {/* Add member / guest */}
-      <Dialog open={canManage && showForm} onClose={() => setShowForm(false)}>
+      <Dialog open={canManage && showForm} onClose={closeForm} className="max-w-lg">
         <DialogTitle>{tab === "members" ? "Add Member" : "Add Guest"}</DialogTitle>
         <form onSubmit={handleCreate} className="space-y-4">
           <div className="space-y-1.5">
+            <Label htmlFor="tmio-search">Find on trackmania.io</Label>
+            <div className="relative">
+              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#5e5858]" />
+              <Input
+                id="tmio-search"
+                value={searchQuery}
+                onChange={(e) => handleSearchChange(e.target.value)}
+                onKeyDown={(e) => { if (e.key === "Enter") e.preventDefault() }}
+                placeholder="Name, player ID or trackmania.io link"
+                autoComplete="off"
+                className="pl-9"
+              />
+            </div>
+            {searchLoading && <p className="text-xs text-[#5e5858]">Searching…</p>}
+            {searchError && <p className="text-xs text-[#ED1F24]">{searchError}</p>}
+            {searchResults && searchResults.length === 0 && !searchLoading && (
+              <p className="text-xs text-[#5e5858]">No player found. You can still enter name and ID below.</p>
+            )}
+            {searchResults && searchResults.length > 0 && (
+              <div className="max-h-52 space-y-1 overflow-y-auto rounded-lg border border-[#2d2829] bg-[#0e0c0d] p-1.5">
+                {searchResults.map((result) => (
+                  <button
+                    key={result.id}
+                    type="button"
+                    onClick={() => pickResult(result)}
+                    disabled={!!result.existing}
+                    className={cn(
+                      "flex w-full items-center gap-2.5 rounded-md border px-2.5 py-1.5 text-left text-sm transition-colors disabled:opacity-50",
+                      picked?.id === result.id
+                        ? "border-[#FBD00D]/50 bg-[#FBD00D]/10"
+                        : "border-transparent hover:bg-[#251f20]"
+                    )}
+                  >
+                    <PlayerAvatar player={result} className="h-5 w-5 text-[10px]" />
+                    <span className="font-medium text-[#f5f0f0]">{result.name}</span>
+                    {result.clubTag && <span className="rounded bg-[#251f20] px-1.5 text-[10px] text-[#9a9090]">{result.clubTag}</span>}
+                    <span className="ml-auto truncate text-xs text-[#5e5858]">
+                      {result.existing
+                        ? `already added as ${STATUS_LABEL[result.existing.status].toLowerCase()}`
+                        : [result.region, result.countryName].filter(Boolean).join(", ")}
+                    </span>
+                    {picked?.id === result.id && <Check size={14} className="shrink-0 text-[#FBD00D]" />}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+          <div className="space-y-1.5">
             <Label htmlFor="name">Display Name</Label>
-            <Input id="name" name="name" placeholder="Tommy.TM" required />
+            <Input id="name" value={formName} onChange={(e) => setFormName(e.target.value)} placeholder="Tommy.TM" required />
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="tmId">Trackmania Player ID</Label>
-            <Input
-              id="tmId"
-              name="tmId"
-              placeholder="15b02a29-73f5-459d-a46e-4a28b1941c34"
-              pattern="[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
-              required
-            />
-            <p className="text-xs text-[#5e5858]">The UUID from the Trackmania player ID field in the CSV</p>
+            <div className="flex items-center gap-2">
+              <Input
+                id="tmId"
+                value={formTmId}
+                onChange={(e) => setFormTmId(e.target.value)}
+                readOnly={!!picked}
+                placeholder="15b02a29-73f5-459d-a46e-4a28b1941c34"
+                pattern="[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}"
+                required
+                className={cn("font-mono text-xs", picked && "opacity-70")}
+              />
+              {picked && (
+                <Button type="button" variant="ghost" size="sm" onClick={() => { setPicked(null); setFormTmId("") }} title="Enter the ID by hand instead">
+                  <X size={14} />
+                </Button>
+              )}
+            </div>
+            <p className="text-xs text-[#5e5858]">
+              {picked
+                ? `Taken from trackmania.io${picked.country ? `, country ${countryName(picked.country)}` : ""}.`
+                : "Filled in when you pick a search result, or paste the UUID by hand."}
+            </p>
           </div>
           {error && <p className="text-sm text-[#ED1F24]">{error}</p>}
           <div className="flex gap-2 justify-end">
-            <Button variant="ghost" type="button" onClick={() => setShowForm(false)}>Cancel</Button>
+            <Button variant="ghost" type="button" onClick={closeForm}>Cancel</Button>
             <Button type="submit" disabled={loading}>
               {loading ? "Saving…" : tab === "members" ? "Add Member" : "Add Guest"}
             </Button>

@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation"
 import { useSyncedState } from "@/lib/use-synced-state"
 import { PlayerAvatar } from "@/components/player-avatar"
 import { GuestBadge } from "@/components/guest-badge"
-import { guestTmIdsAt, tournamentReferenceDate, type PlayerStatus, type StatusChange } from "@/lib/player-status"
+import { formatDay, guestTmIdsAt, tournamentReferenceDate, type PlayerStatus, type StatusChange } from "@/lib/player-status"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -465,9 +465,9 @@ export function TournamentDetailView({ tournament: initial, players, statsMatche
             {(tournament.startDate || tournament.endDate) && (
               <div className="flex items-center gap-1.5 text-xs text-[#5e5858] mt-1">
                 <Calendar size={12} />
-                {tournament.startDate && new Date(tournament.startDate).toLocaleDateString()}
+                {tournament.startDate && formatDay(tournament.startDate)}
                 {tournament.startDate && tournament.endDate && " – "}
-                {tournament.endDate && new Date(tournament.endDate).toLocaleDateString()}
+                {tournament.endDate && formatDay(tournament.endDate)}
               </div>
             )}
           </div>
@@ -637,7 +637,7 @@ export function TournamentDetailView({ tournament: initial, players, statsMatche
                           </div>
                           <div className="flex items-center gap-3 text-xs text-[#5e5858]">
                             {match.date && (
-                              <span>{new Date(match.date).toLocaleDateString()}</span>
+                              <span>{formatDay(match.date)}</span>
                             )}
                             <span>
                               {match._count.subMatches} sub-match{match._count.subMatches !== 1 ? "es" : ""}

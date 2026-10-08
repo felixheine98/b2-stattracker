@@ -9,7 +9,6 @@
 - danach werden in dieser comp nur noch diese 4 lineups gezeigt bzw nur die spieler
 
 - match nachträglich bearbeiten (datum, gegner, notizen)
-- tmid automatisch von anderer seite holen (beim anlegen von spielern/gästen)
 
 - [ ] csv import für gesamtes match -> danach UI wo man einzelne runden (multi select) rauslöschen kann, falls match dumper nicht 100% korrekt ist
 - [ ] gegner DB anlegen? -> logos, dropdown möglichkeit für fixe teams/lineups 
@@ -23,4 +22,3 @@
 - [ ] best performer pro match/week/tourney? -> den auf übersicht auch anzeigen?
 - [ ] validierung von importierten daten zu eingegebenen daten (match) -> passt das gegner team etc
 - [ ] per map statistiken (pro comp für 1 lineup, pro week für alle lineups)
-- [ ] fetchen von neuen Member/Gästen via TMio? -> holt ID + Flagge 

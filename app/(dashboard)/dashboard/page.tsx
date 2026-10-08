@@ -2,7 +2,7 @@ import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { formatLabel } from "@/lib/utils"
-import { currentStatus } from "@/lib/player-status"
+import { formatDay, currentStatus } from "@/lib/player-status"
 import Link from "next/link"
 import { Trophy, Users, Swords, Calendar } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
@@ -114,7 +114,7 @@ export default async function DashboardPage() {
                       {t.startDate && (
                         <div className="flex items-center gap-1 text-xs text-[#5e5858]">
                           <Calendar size={12} />
-                          {new Date(t.startDate).toLocaleDateString()}
+                          {formatDay(t.startDate)}
                         </div>
                       )}
                     </div>
