@@ -6,7 +6,7 @@ This version has breaking changes — APIs, conventions, and file structure may 
 
 # Branching
 
-Do not create a new branch for every task. By default, branch off `main` at most once and keep working on that branch for subsequent tasks. If you think a separate branch is warranted, ask first instead of creating it on your own.
+Do not create a new branch for every task. For small, quick tasks, do not branch at all: commit directly on the current branch, including `main`. For larger work, branch off `main` at most once and keep working on that branch for subsequent tasks. If you think an additional branch is warranted, ask first instead of creating it on your own.
 
 # Testing
 
