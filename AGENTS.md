@@ -7,3 +7,7 @@ This version has breaking changes — APIs, conventions, and file structure may 
 # Branching
 
 Do not create a new branch for every task. By default, branch off `main` at most once and keep working on that branch for subsequent tasks. If you think a separate branch is warranted, ask first instead of creating it on your own.
+
+# Testing
+
+Follow test-driven development: write a failing test first, then the implementation that makes it pass, then refactor.
