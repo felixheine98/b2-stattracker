@@ -107,7 +107,7 @@ function statusSummary(player: Player): string {
 // A trackmania.io value that differs from ours, with the two ways to settle it
 function HintLine({ label, canManage, onAdopt, onDismiss }: { label: string; canManage: boolean; onAdopt: () => void; onDismiss: () => void }) {
   return (
-    <p className="mt-1 flex items-center gap-2 whitespace-nowrap text-[11px] font-normal text-[#cd7f32]">
+    <p className="mt-1 flex flex-wrap items-center gap-x-2 text-[11px] font-normal text-[#cd7f32]">
       {label}
       {canManage && (
         <>
@@ -557,17 +557,18 @@ export function PlayersView({ players: initial, users, canManage }: Props) {
           </CardContent>
         </Card>
       ) : (
-        <div className="rounded-xl border border-[#2d2829] overflow-x-auto">
+        // The cells size themselves by the width of this box (@5xl / @7xl), so the table fits without scrolling
+        <div className="@container rounded-xl border border-[#2d2829] overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-[#2d2829] bg-[#251f20]">
-                <th className="text-left px-4 py-3 text-[#9a9090] font-medium">Name</th>
-                <th className="text-left px-4 py-3 text-[#9a9090] font-medium">Land</th>
-                <th className="text-left px-4 py-3 text-[#9a9090] font-medium">TM ID</th>
-                <th className="text-left px-4 py-3 text-[#9a9090] font-medium">{tab === "members" ? "Linked account" : "Login"}</th>
-                <th className="text-left px-4 py-3 text-[#9a9090] font-medium">Status</th>
-                <th className="text-right px-4 py-3 text-[#9a9090] font-medium">Results</th>
-                <th className="px-4 py-3" />
+                <th className="text-left px-3 py-3 @7xl:px-4 text-[#9a9090] font-medium">Name</th>
+                <th className="text-left px-3 py-3 @7xl:px-4 text-[#9a9090] font-medium">Land</th>
+                <th className="text-left px-3 py-3 @7xl:px-4 text-[#9a9090] font-medium">TM ID</th>
+                <th className="text-left px-3 py-3 @7xl:px-4 text-[#9a9090] font-medium">{tab === "members" ? "Linked account" : "Login"}</th>
+                <th className="text-left px-3 py-3 @7xl:px-4 text-[#9a9090] font-medium">Status</th>
+                <th className="text-right px-3 py-3 @7xl:px-4 text-[#9a9090] font-medium">Results</th>
+                <th className="px-3 py-3 @7xl:px-4" />
               </tr>
             </thead>
             <tbody>
@@ -576,7 +577,7 @@ export function PlayersView({ players: initial, users, canManage }: Props) {
                   key={player.id}
                   className={`border-b border-[#2d2829] last:border-0 ${i % 2 === 0 ? "bg-[#1c1819]" : "bg-[#1c1819]/60"}`}
                 >
-                  <td className="px-4 py-3 font-medium text-[#f5f0f0]">
+                  <td className="px-3 py-3 @7xl:px-4 font-medium text-[#f5f0f0]">
                     <span className="flex items-center gap-2 whitespace-nowrap">
                       <PlayerAvatar player={player} />
                       {player.name}
@@ -590,13 +591,13 @@ export function PlayersView({ players: initial, users, canManage }: Props) {
                       <p className="mt-1 text-[11px] font-normal text-[#cd7f32]">not found on trackmania.io</p>
                     )}
                   </td>
-                  <td className="px-4 py-3">
+                  <td className="px-3 py-3 @7xl:px-4">
                     {canManage ? (
                       <select
                         value={player.country ?? ""}
                         onChange={(e) => handleCountry(player.id, e.target.value || null)}
                         aria-label={`Land von ${player.name}`}
-                        className="h-8 w-32 rounded-md border border-[#3a3435] bg-[#251f20] px-2 text-xs text-[#f5f0f0] focus:outline-none focus:ring-2 focus:ring-[#FBD00D]"
+                        className="h-8 w-24 @5xl:w-32 rounded-md border border-[#3a3435] bg-[#251f20] px-2 text-xs text-[#f5f0f0] focus:outline-none focus:ring-2 focus:ring-[#FBD00D]"
                       >
                         <option value="">— kein Land —</option>
                         {countryOptions(player.country).map((c) => (
@@ -612,8 +613,10 @@ export function PlayersView({ players: initial, users, canManage }: Props) {
                         onDismiss={() => resolveHint(player, "country", "dismiss")} />
                     )}
                   </td>
-                  <td className="px-4 py-3 font-mono text-xs text-[#5e5858]">{player.tmId}</td>
-                  <td className="px-4 py-3">
+                  <td className="px-3 py-3 @7xl:px-4 font-mono text-xs text-[#5e5858]">
+                    <span className="block w-[9ch] truncate @7xl:w-auto" title={player.tmId}>{player.tmId}</span>
+                  </td>
+                  <td className="px-3 py-3 @7xl:px-4">
                     {tab === "guests" ? (
                       // Guests keep a login they had as a member; a new one cannot be linked
                       player.user ? (
@@ -642,7 +645,7 @@ export function PlayersView({ players: initial, users, canManage }: Props) {
                           value={player.user?.id ?? ""}
                           onChange={(e) => handleLink(player.id, e.target.value || null)}
                           disabled={linking === player.id}
-                          className="h-7 rounded border border-[#3a3435] bg-[#251f20] px-2 text-xs text-[#f5f0f0] focus:outline-none focus:ring-1 focus:ring-[#FBD00D] disabled:opacity-50"
+                          className="h-7 max-w-36 @5xl:max-w-44 @7xl:max-w-none rounded border border-[#3a3435] bg-[#251f20] px-2 text-xs text-[#f5f0f0] focus:outline-none focus:ring-1 focus:ring-[#FBD00D] disabled:opacity-50"
                         >
                           <option value="">— no account —</option>
                           {availableUsers(player).map((u) => (
@@ -671,19 +674,19 @@ export function PlayersView({ players: initial, users, canManage }: Props) {
                       </span>
                     )}
                   </td>
-                  <td className="px-4 py-3">
+                  <td className="px-3 py-3 @7xl:px-4">
                     <button
                       type="button"
                       onClick={() => openHistory(player)}
-                      className="inline-flex items-center gap-1.5 whitespace-nowrap text-xs text-[#9a9090] hover:text-[#f5f0f0]"
+                      className="inline-flex items-center gap-1.5 text-left text-xs text-[#9a9090] hover:text-[#f5f0f0]"
                       title="Show history"
                     >
-                      <History size={12} />
+                      <History size={12} className="shrink-0" />
                       {statusSummary(player)}
                     </button>
                   </td>
-                  <td className="px-4 py-3 text-right text-[#9a9090]">{player._count?.roundResults ?? 0}</td>
-                  <td className="px-4 py-3 text-right">
+                  <td className="px-3 py-3 @7xl:px-4 text-right text-[#9a9090]">{player._count?.roundResults ?? 0}</td>
+                  <td className="px-3 py-3 @7xl:px-4 text-right">
                     {canManage && (
                       <div className="flex items-center justify-end gap-1">
                         <Button
@@ -696,9 +699,15 @@ export function PlayersView({ players: initial, users, canManage }: Props) {
                         >
                           <RefreshCw size={14} className={syncingId === player.id ? "animate-spin" : ""} />
                         </Button>
-                        <Button variant="outline" size="sm" onClick={() => openMove(player)} className="whitespace-nowrap">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => openMove(player)}
+                          className="whitespace-nowrap"
+                          title={tab === "members" ? "To guests" : "To members"}
+                        >
                           <ArrowLeftRight size={13} />
-                          {tab === "members" ? "To guests" : "To members"}
+                          <span className="hidden @7xl:inline">{tab === "members" ? "To guests" : "To members"}</span>
                         </Button>
                         <Button
                           variant="ghost"
