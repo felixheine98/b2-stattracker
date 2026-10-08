@@ -1,0 +1,23 @@
+# Dev setup: picked up automatically by `docker compose up -d`.
+# Runs `next dev` on the mounted source, so code changes show up without a rebuild.
+# For the production image use: docker compose -f docker-compose.yml up -d --build
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+
+    read_only: false
+
+    mem_limit: 3g
+    pids_limit: 1000
+
+    volumes:
+      - .:/app
+      - node_modules_dev:/app/node_modules
+
+    healthcheck:
+      start_period: 180s
+
+volumes:
+  node_modules_dev:

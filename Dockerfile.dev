@@ -1,0 +1,8 @@
+FROM node:24-alpine
+RUN apk add --no-cache libc6-compat openssl
+WORKDIR /app
+# node_modules lives in a volume; create it here so the volume is owned by the node user (uid 1000)
+RUN mkdir node_modules && chown node:node node_modules
+USER node
+EXPOSE 3000
+CMD ["./docker-dev-entrypoint.sh"]

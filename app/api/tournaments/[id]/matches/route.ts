@@ -74,6 +74,7 @@ export async function POST(req: Request, { params }: Params) {
       opponent: parsed.data.opponent ?? null,
       date: parsed.data.date ? new Date(parsed.data.date) : null,
       notes: parsed.data.notes ?? null,
+      tournamentLineupId: parsed.data.lineupId ?? null,
       subMatches: {
         create: subMatchFormats.map((sm) => ({ ...sm, lineup: lineupCreate })),
       },

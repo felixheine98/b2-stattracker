@@ -82,3 +82,24 @@ export function parseCSV(csv: string): CsvRow[] {
       }
     })
 }
+
+// Players per team for round formats; null for formats without team rounds (seeding)
+export function teamSize(format: Format): number | null {
+  const m = /^ROUND_(\d)V\d$/.exec(format)
+  return m ? Number(m[1]) : null
+}
+
+// Parses "45.123", "1:02.345" or plain milliseconds ("45123").
+// Returns null for empty input and undefined for input that is not a time.
+export function parseTime(text: string): number | null | undefined {
+  const value = text.trim()
+  if (!value) return null
+  if (/^\d{4,}$/.test(value)) return Number(value)
+  const m = /^(?:(\d+):)?(\d{1,2})(?:[.,](\d{1,3}))?$/.exec(value)
+  if (!m) return undefined
+  const minutes = m[1] ? Number(m[1]) : 0
+  const seconds = Number(m[2])
+  if (m[1] && seconds >= 60) return undefined
+  const ms = minutes * 60000 + seconds * 1000 + Number((m[3] ?? "").padEnd(3, "0"))
+  return ms > 0 ? ms : undefined
+}

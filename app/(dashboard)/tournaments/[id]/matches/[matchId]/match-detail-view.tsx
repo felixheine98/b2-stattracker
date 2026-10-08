@@ -1,17 +1,19 @@
 "use client"
 
-import { useState } from "react"
-import Link from "next/link"
+import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Dialog, DialogTitle } from "@/components/ui/dialog"
-import { Badge } from "@/components/ui/badge"
-import { ArrowLeft, Upload, Users, Clock, Trophy, ChevronDown, ChevronUp } from "lucide-react"
-import { formatLabel, formatLabelLong, formatTime } from "@/lib/utils"
+import { Textarea } from "@/components/ui/textarea"
+import { formatLabel, formatLabelLong, formatTime, teamSize } from "@/lib/utils"
 import type { Format } from "@prisma/client"
+import { ArrowLeft, ChevronDown, ChevronUp, Clock, Grid3x3, Pencil, Trophy, Upload, Users, X } from "lucide-react"
+import Link from "next/link"
+import { useSyncedState } from "@/lib/use-synced-state"
+import { useMemo, useState } from "react"
+import { RoundEntryDialog } from "./round-entry-dialog"
 
-interface Player {
+export interface Player {
   id: string
   tmId: string
   name: string
@@ -21,13 +23,13 @@ interface RoundResult {
   id: string
   tmId: string
   playerName: string
-  timeMs: number
+  timeMs: number | null
   isOurTeam: boolean
   playerId?: string | null
   player?: { id: string; name: string } | null
 }
 
-interface Round {
+export interface Round {
   id: string
   number: number
   track?: string | null
@@ -39,7 +41,7 @@ interface Lineup {
   slots: Array<{ id: string; player: Player }>
 }
 
-interface SubMatch {
+export interface SubMatch {
   id: string
   format: Format
   order: number
@@ -59,6 +61,7 @@ interface Match {
   opponent?: string | null
   date?: Date | null
   notes?: string | null
+  tournamentLineup?: TournamentLineup | null
   tournament: {
     id: string
     name: string
@@ -68,6 +71,146 @@ interface Match {
   subMatches: SubMatch[]
 }
 
+type SortCol = "name" | "played" | "placementSum" | "avg" | "roundW" | "roundL" | "bestTime" | "medianTime" | "avgTime"
+
+function SubMatchStatsTable({ sm }: { sm: SubMatch }) {
+  const [sortCol, setSortCol] = useState<SortCol>("name")
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("asc")
+
+  const teamStats = useMemo(() => computeStats(sm.rounds), [sm.rounds])
+
+  const rows = useMemo(() => {
+    const playerMap = new Map<string, { id: string | null; tmId: string; name: string }>()
+    for (const round of sm.rounds) {
+      for (const r of round.results) {
+        if (r.isOurTeam && !playerMap.has(r.tmId)) {
+          playerMap.set(r.tmId, { id: r.playerId ?? null, tmId: r.tmId, name: r.playerName })
+        }
+      }
+    }
+    return Array.from(playerMap.values()).map((p) => {
+      let roundsPlayed = 0
+      let placementSum = 0
+      const times: number[] = []
+      for (const round of sm.rounds) {
+        const result = round.results.find(
+          (r) => r.isOurTeam && ((p.id && r.playerId === p.id) || r.tmId === p.tmId)
+        )
+        if (!result) continue
+        roundsPlayed++
+        placementSum += round.results.findIndex((r) => r.id === result.id) + 1
+        if (result.timeMs != null) times.push(result.timeMs)
+      }
+      const sortedTimes = [...times].sort((a, b) => a - b)
+      const bestTime = sortedTimes[0] ?? null
+      const avgTime = times.length > 0 ? times.reduce((s, t) => s + t, 0) / times.length : null
+      const mid = Math.floor(sortedTimes.length / 2)
+      const medianTime = sortedTimes.length === 0 ? null
+        : sortedTimes.length % 2 === 1 ? sortedTimes[mid]
+        : (sortedTimes[mid - 1] + sortedTimes[mid]) / 2
+      return {
+        tmId: p.tmId,
+        name: p.name,
+        roundsPlayed,
+        placementSum,
+        avg: roundsPlayed > 0 ? placementSum / roundsPlayed : 0,
+        bestTime,
+        medianTime,
+        avgTime,
+      }
+    })
+  }, [sm.rounds])
+
+  const sorted = useMemo(() => {
+    return [...rows].sort((a, b) => {
+      let cmp = 0
+      if (sortCol === "name") cmp = a.name.localeCompare(b.name)
+      else if (sortCol === "played") cmp = a.roundsPlayed - b.roundsPlayed
+      else if (sortCol === "placementSum") cmp = a.placementSum - b.placementSum
+      else if (sortCol === "avg") cmp = a.avg - b.avg
+      else if (sortCol === "roundW") cmp = teamStats.ourRoundsWon - teamStats.ourRoundsWon
+      else if (sortCol === "roundL") cmp = teamStats.ourRoundsLost - teamStats.ourRoundsLost
+      else if (sortCol === "bestTime") cmp = (a.bestTime ?? Infinity) - (b.bestTime ?? Infinity)
+      else if (sortCol === "medianTime") cmp = (a.medianTime ?? Infinity) - (b.medianTime ?? Infinity)
+      else if (sortCol === "avgTime") cmp = (a.avgTime ?? Infinity) - (b.avgTime ?? Infinity)
+      return sortDir === "asc" ? cmp : -cmp
+    })
+  }, [rows, sortCol, sortDir, teamStats])
+
+  function toggleSort(col: SortCol) {
+    if (sortCol === col) setSortDir((d) => (d === "asc" ? "desc" : "asc"))
+    else { setSortCol(col); setSortDir("asc") }
+  }
+
+  const mapOutcome = sm.rounds.length === 0 ? null
+    : teamStats.ourRoundsWon > teamStats.ourRoundsLost ? "W"
+    : teamStats.ourRoundsLost > teamStats.ourRoundsWon ? "L" : "D"
+  const mapColor = mapOutcome === "W" ? "text-[#FBD00D]" : mapOutcome === "L" ? "text-[#ED1F24]" : "text-[#9a9090]"
+
+  function Th({ col, label, left }: { col: SortCol; label: string; left?: boolean }) {
+    const active = sortCol === col
+    return (
+      <th
+        onClick={() => toggleSort(col)}
+        className={`py-1.5 px-2 font-medium cursor-pointer select-none whitespace-nowrap group ${left ? "text-left pl-0 pr-4" : "text-right"}`}
+      >
+        <span className="inline-flex items-center gap-1 justify-end">
+          <span className={`transition-colors ${active ? "text-[#f5f0f0]" : "text-[#5e5858] group-hover:text-[#9a9090]"}`}>
+            {label}
+          </span>
+          <span className={`text-[9px] transition-colors ${active ? "text-[#FBD00D]" : "text-[#2d2829] group-hover:text-[#3a3435]"}`}>
+            {active && sortDir === "desc" ? "▼" : "▲"}
+          </span>
+        </span>
+      </th>
+    )
+  }
+
+  return (
+    <div className="overflow-x-auto">
+      <table className="w-full text-xs">
+        <thead>
+          <tr className="border-b border-[#2d2829]">
+            <Th col="name" label="Spieler" left />
+            <Th col="played" label="Gespielt" />
+            <Th col="placementSum" label="Platzsumme" />
+            <Th col="avg" label="Ø Platz" />
+            <th className="py-1.5 px-2 text-right text-[#5e5858] font-medium whitespace-nowrap">Round W</th>
+            <th className="py-1.5 px-2 text-right text-[#5e5858] font-medium whitespace-nowrap">Round L</th>
+            <Th col="bestTime" label="Beste Zeit" />
+            <Th col="medianTime" label="Median Zeit" />
+            <Th col="avgTime" label="Ø Zeit" />
+            <th className="py-1.5 pl-2 text-right text-[#5e5858] font-medium">Map</th>
+          </tr>
+        </thead>
+        <tbody>
+          {sorted.length === 0 && (
+            <tr>
+              <td colSpan={10} className="py-3 text-center text-[#5e5858]">Noch keine Daten</td>
+            </tr>
+          )}
+          {sorted.map((row) => (
+            <tr key={row.tmId} className="border-b border-[#1c1819] hover:bg-[#1c1819]/50">
+              <td className="py-1.5 pr-4 text-[#f5f0f0] font-medium">{row.name}</td>
+              <td className="py-1.5 px-2 text-right text-[#c5bfbf]">{row.roundsPlayed}</td>
+              <td className="py-1.5 px-2 text-right text-[#c5bfbf]">{row.placementSum}</td>
+              <td className="py-1.5 px-2 text-right text-[#c5bfbf] font-mono">
+                {row.avg > 0 ? row.avg.toFixed(3) : "—"}
+              </td>
+              <td className="py-1.5 px-2 text-right text-[#f5f0f0]">{sm.rounds.length > 0 ? teamStats.ourRoundsWon : "—"}</td>
+              <td className="py-1.5 px-2 text-right text-[#f5f0f0]">{sm.rounds.length > 0 ? teamStats.ourRoundsLost : "—"}</td>
+              <td className="py-1.5 px-2 text-right text-[#FBD00D] font-mono">{row.bestTime != null ? formatTime(row.bestTime) : "—"}</td>
+              <td className="py-1.5 px-2 text-right text-[#c5bfbf] font-mono">{row.medianTime != null ? formatTime(Math.round(row.medianTime)) : "—"}</td>
+              <td className="py-1.5 px-2 text-right text-[#c5bfbf] font-mono">{row.avgTime != null ? formatTime(Math.round(row.avgTime)) : "—"}</td>
+              <td className={`py-1.5 pl-2 text-right font-bold ${mapColor}`}>{mapOutcome ?? "—"}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  )
+}
+
 interface Props {
   match: Match
   allPlayers: Player[]
@@ -75,18 +218,43 @@ interface Props {
 }
 
 export function MatchDetailView({ match: initialMatch, allPlayers, canManage }: Props) {
-  const [subMatches, setSubMatches] = useState(initialMatch.subMatches)
+  const [subMatches, setSubMatches] = useSyncedState(initialMatch.subMatches)
+  const [matchLineup, setMatchLineup] = useSyncedState<TournamentLineup | null>(initialMatch.tournamentLineup ?? null)
   const [expanded, setExpanded] = useState<Set<string>>(
     new Set(initialMatch.subMatches.map((s) => s.id))
   )
 
+  // Match-level lineup editor
+  const [showMatchLineupEditor, setShowMatchLineupEditor] = useState(false)
+  const [matchLineupLoading, setMatchLineupLoading] = useState(false)
+
+  // Sub-match level lineup editor
   const [lineupEditor, setLineupEditor] = useState<{ subMatchId: string; selectedIds: string[] } | null>(null)
   const [lineupLoading, setLineupLoading] = useState(false)
 
+  // CSV import
   const [importDialog, setImportDialog] = useState<{ subMatchId: string } | null>(null)
   const [csvText, setCsvText] = useState("")
   const [importError, setImportError] = useState("")
   const [importLoading, setImportLoading] = useState(false)
+  const [importFileName, setImportFileName] = useState("")
+  const [importDragOver, setImportDragOver] = useState(false)
+
+  // Manual round entry
+  const [roundEntryId, setRoundEntryId] = useState<string | null>(null)
+  const roundEntrySubMatch = subMatches.find((sm) => sm.id === roundEntryId)
+
+  // Sub-matches whose round results are shown (collapsed by default)
+  const [roundsOpen, setRoundsOpen] = useState<Set<string>>(new Set())
+
+  function toggleRounds(id: string) {
+    setRoundsOpen((s) => {
+      const next = new Set(s)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
 
   function toggleExpanded(id: string) {
     setExpanded((s) => {
@@ -97,8 +265,31 @@ export function MatchDetailView({ match: initialMatch, allPlayers, canManage }: 
     })
   }
 
+  // Sets (or clears) the match-level lineup and updates all sub-matches
+  async function saveMatchLineup(lineupId: string | null) {
+    setMatchLineupLoading(true)
+    const res = await fetch(
+      `/b2-stats/api/tournaments/${initialMatch.tournament.id}/matches/${initialMatch.id}`,
+      {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ tournamentLineupId: lineupId }),
+      }
+    )
+    setMatchLineupLoading(false)
+    if (!res.ok) return
+    const data = await res.json()
+    setMatchLineup(data.tournamentLineup ?? null)
+    setSubMatches(data.subMatches)
+    setShowMatchLineupEditor(false)
+  }
+
   function openLineupEditor(sm: SubMatch) {
-    setLineupEditor({ subMatchId: sm.id, selectedIds: sm.lineup?.slots.map((s) => s.player.id) ?? [] })
+    // Pre-select current sub-match lineup players; fall back to match lineup players
+    const currentIds = sm.lineup?.slots.map((s) => s.player.id)
+      ?? matchLineup?.slots.map((s) => s.player.id)
+      ?? []
+    setLineupEditor({ subMatchId: sm.id, selectedIds: currentIds })
   }
 
   async function saveLineup() {
@@ -121,7 +312,20 @@ export function MatchDetailView({ match: initialMatch, allPlayers, canManage }: 
   function openImport(subMatchId: string) {
     setCsvText("")
     setImportError("")
+    setImportFileName("")
+    setImportDragOver(false)
     setImportDialog({ subMatchId })
+  }
+
+  async function loadImportFile(file: File | undefined) {
+    if (!file) return
+    setImportError("")
+    try {
+      setCsvText(await file.text())
+      setImportFileName(file.name)
+    } catch {
+      setImportError("Datei konnte nicht gelesen werden")
+    }
   }
 
   async function handleImport() {
@@ -151,6 +355,20 @@ export function MatchDetailView({ match: initialMatch, allPlayers, canManage }: 
 
   const matchStats = computeMatchStats(subMatches)
 
+  // Players to show in the sub-match lineup editor:
+  // if a match lineup is set, show those players first (and mark them), then the rest
+  const lineupPlayerIds = new Set(matchLineup?.slots.map((s) => s.player.id) ?? [])
+  const editorPlayers = matchLineup
+    ? [
+        ...allPlayers.filter((p) => lineupPlayerIds.has(p.id)),
+        ...allPlayers.filter((p) => !lineupPlayerIds.has(p.id)),
+      ]
+    : allPlayers
+
+  const matchTitle = initialMatch.isSeeding
+    ? "Seeding"
+    : [matchLineup?.name, initialMatch.opponent].filter(Boolean).join(" vs ") || "Unknown opponent"
+
   return (
     <div className="space-y-6 max-w-5xl">
       {/* Header */}
@@ -165,9 +383,7 @@ export function MatchDetailView({ match: initialMatch, allPlayers, canManage }: 
         <div className="flex items-start justify-between gap-4">
           <div>
             <div className="flex items-center gap-2 mb-1 flex-wrap">
-              <h1 className="text-2xl font-bold text-[#f5f0f0]">
-                {initialMatch.isSeeding ? "Seeding" : `vs. ${initialMatch.opponent ?? "Unknown"}`}
-              </h1>
+              <h1 className="text-2xl font-bold text-[#f5f0f0]">{matchTitle}</h1>
               {initialMatch.isSeeding && <Badge variant="primary">Seeding</Badge>}
             </div>
             {initialMatch.date && (
@@ -181,6 +397,43 @@ export function MatchDetailView({ match: initialMatch, allPlayers, canManage }: 
               </p>
             )}
             {initialMatch.notes && <p className="text-[#5e5858] text-sm mt-1">{initialMatch.notes}</p>}
+
+            {/* Match-level lineup badge + edit */}
+            {canManage && (
+              <div className="flex items-center gap-2 mt-2">
+                {matchLineup ? (
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-[#251f20] border border-[#2d2829] px-3 py-1 text-xs text-[#c5bfbf]">
+                    <Users size={11} className="text-[#FBD00D]" />
+                    {matchLineup.name}
+                    <button
+                      type="button"
+                      onClick={() => setShowMatchLineupEditor(true)}
+                      className="text-[#5e5858] hover:text-[#f5f0f0] ml-0.5"
+                    >
+                      <Pencil size={10} />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => saveMatchLineup(null)}
+                      className="text-[#5e5858] hover:text-[#ED1F24] ml-0.5"
+                    >
+                      <X size={10} />
+                    </button>
+                  </span>
+                ) : (
+                  <Button variant="outline" size="sm" onClick={() => setShowMatchLineupEditor(true)}>
+                    <Users size={14} />
+                    Lineup zuweisen
+                  </Button>
+                )}
+              </div>
+            )}
+            {!canManage && matchLineup && (
+              <div className="flex items-center gap-1.5 mt-2">
+                <Users size={12} className="text-[#FBD00D]" />
+                <span className="text-xs text-[#9a9090]">{matchLineup.name}</span>
+              </div>
+            )}
           </div>
           {matchStats.subMatchesPlayed > 0 && (
             <Card className="shrink-0">
@@ -218,6 +471,7 @@ export function MatchDetailView({ match: initialMatch, allPlayers, canManage }: 
                     {formatLabel(sm.format)}
                   </Badge>
                   <span className="text-sm text-[#9a9090]">{formatLabelLong(sm.format)}</span>
+                  {sm.rounds[0]?.track && <span className="text-sm text-[#f5f0f0]">{sm.rounds[0].track}</span>}
                   {totalRounds > 0 && (
                     <span className="text-xs text-[#5e5858]">{totalRounds} round{totalRounds !== 1 ? "s" : ""}</span>
                   )}
@@ -301,9 +555,18 @@ export function MatchDetailView({ match: initialMatch, allPlayers, canManage }: 
                     </Card>
                   </div>
 
+                  {/* Player stats table */}
+                  <SubMatchStatsTable sm={sm} />
+
                   {/* Import button */}
                   {canManage && (
-                    <div className="flex justify-end">
+                    <div className="flex justify-end gap-2">
+                      {teamSize(sm.format) != null && (
+                        <Button variant="outline" size="sm" onClick={() => setRoundEntryId(sm.id)}>
+                          <Grid3x3 size={14} />
+                          Runden eintippen
+                        </Button>
+                      )}
                       <Button variant="outline" size="sm" onClick={() => openImport(sm.id)}>
                         <Upload size={14} />
                         Import CSV
@@ -314,11 +577,23 @@ export function MatchDetailView({ match: initialMatch, allPlayers, canManage }: 
                   {/* Rounds */}
                   {totalRounds > 0 && (
                     <div className="space-y-3">
-                      <h3 className="text-xs font-semibold text-[#9a9090] uppercase tracking-wider">Round Results</h3>
-                      {sm.rounds.map((round) => {
+                      <button
+                        type="button"
+                        aria-expanded={roundsOpen.has(sm.id)}
+                        onClick={() => toggleRounds(sm.id)}
+                        className="w-full flex items-center justify-between rounded-lg border border-[#2d2829] bg-[#1c1819] px-4 py-2.5 text-left hover:bg-[#211e1f] transition-colors"
+                      >
+                        <span className="text-xs font-semibold text-[#9a9090] uppercase tracking-wider">
+                          Round Results
+                          <span className="ml-2 font-normal normal-case tracking-normal text-[#5e5858]">
+                            {totalRounds} round{totalRounds !== 1 ? "s" : ""}
+                          </span>
+                        </span>
+                        {roundsOpen.has(sm.id) ? <ChevronUp size={16} className="text-[#5e5858]" /> : <ChevronDown size={16} className="text-[#5e5858]" />}
+                      </button>
+                      {roundsOpen.has(sm.id) && sm.rounds.map((round) => {
                         const ourResults = round.results.filter((r) => r.isOurTeam)
                         const oppResults = round.results.filter((r) => !r.isOurTeam)
-                        // Overall rank across all players in this round (results already sorted by timeMs asc)
                         const rankMap = new Map(round.results.map((r, idx) => [r.id, idx + 1]))
                         const outcome = computeRoundOutcome(round.results)
 
@@ -348,7 +623,7 @@ export function MatchDetailView({ match: initialMatch, allPlayers, canManage }: 
                                           </span>
                                           <span className="text-[#f5f0f0] flex-1 truncate">{r.playerName}</span>
                                           <span className={`font-mono shrink-0 ${rankColor(rank)}`}>
-                                            {formatTime(r.timeMs)}
+                                            {r.timeMs != null ? formatTime(r.timeMs) : "—"}
                                           </span>
                                         </div>
                                       )
@@ -367,7 +642,7 @@ export function MatchDetailView({ match: initialMatch, allPlayers, canManage }: 
                                           </span>
                                           <span className="text-[#9a9090] flex-1 truncate">{r.playerName}</span>
                                           <span className={`font-mono shrink-0 ${rankColor(rank)}`}>
-                                            {formatTime(r.timeMs)}
+                                            {r.timeMs != null ? formatTime(r.timeMs) : "—"}
                                           </span>
                                         </div>
                                       )
@@ -385,7 +660,7 @@ export function MatchDetailView({ match: initialMatch, allPlayers, canManage }: 
                   {totalRounds === 0 && (
                     <div className="py-6 text-center">
                       <Clock size={24} className="mx-auto text-[#5e5858] mb-2" />
-                      <p className="text-[#9a9090] text-xs">No results yet. Import a CSV to add round data.</p>
+                      <p className="text-[#9a9090] text-xs">No results yet. Enter rounds manually or import a CSV.</p>
                     </div>
                   )}
                 </div>
@@ -395,41 +670,76 @@ export function MatchDetailView({ match: initialMatch, allPlayers, canManage }: 
         })}
       </div>
 
-      {/* Lineup editor dialog */}
+      {/* Match-level lineup editor dialog */}
+      <Dialog open={showMatchLineupEditor} onClose={() => setShowMatchLineupEditor(false)}>
+        <DialogTitle>Lineup für dieses Match</DialogTitle>
+        <p className="text-xs text-[#5e5858] mb-4">
+          Das gewählte Lineup wird auf alle Sub-Matches angewendet. Einzelne Spieler können danach pro Sub-Match getauscht werden.
+        </p>
+        <div className="flex flex-col gap-1.5 mb-4">
+          <button
+            type="button"
+            onClick={() => saveMatchLineup(null)}
+            disabled={matchLineupLoading}
+            className={`w-full text-left rounded-lg border px-3 py-2 text-sm transition-colors ${
+              !matchLineup
+                ? "border-[#3a3435] bg-[#251f20] text-[#9a9090]"
+                : "border-[#2d2829] text-[#5e5858] hover:border-[#3a3435]"
+            }`}
+          >
+            — kein Lineup —
+          </button>
+          {initialMatch.tournament.tournamentLineups.map((tl) => (
+            <button
+              key={tl.id}
+              type="button"
+              onClick={() => saveMatchLineup(tl.id)}
+              disabled={matchLineupLoading}
+              className={`w-full text-left rounded-lg border px-3 py-2 text-sm transition-colors ${
+                matchLineup?.id === tl.id
+                  ? "border-[#FBD00D]/50 bg-[#FBD00D]/10 text-[#f5f0f0]"
+                  : "border-[#2d2829] text-[#9a9090] hover:border-[#3a3435]"
+              }`}
+            >
+              <span className="font-medium">{tl.name}</span>
+              <span className="text-[#5e5858] ml-2 text-xs">
+                {tl.slots.map((s) => s.player.name).join(", ")}
+              </span>
+            </button>
+          ))}
+          {initialMatch.tournament.tournamentLineups.length === 0 && (
+            <p className="text-sm text-[#9a9090]">
+              Noch keine Lineups.{" "}
+              <Link href={`/tournaments/${initialMatch.tournament.id}`} className="text-[#FBD00D] hover:underline">
+                Lineup erstellen
+              </Link>
+            </p>
+          )}
+        </div>
+        <div className="flex justify-end">
+          <Button variant="ghost" onClick={() => setShowMatchLineupEditor(false)}>Abbrechen</Button>
+        </div>
+      </Dialog>
+
+      {/* Sub-match lineup editor dialog */}
       <Dialog open={!!lineupEditor} onClose={() => setLineupEditor(null)}>
         <DialogTitle>
-          Edit Lineup
+          Lineup bearbeiten
           {lineupEditor && (
             <span className="ml-2 text-sm font-normal text-[#9a9090]">
               — {formatLabelLong(subMatches.find((sm) => sm.id === lineupEditor.subMatchId)?.format ?? "ROUND_1V1")}
             </span>
           )}
         </DialogTitle>
-        {initialMatch.tournament.tournamentLineups.length > 0 && (
-          <div className="mb-4 space-y-1.5">
-            <p className="text-xs text-[#5e5858]">Load from preset lineup:</p>
-            <div className="flex flex-wrap gap-1.5">
-              {initialMatch.tournament.tournamentLineups.map((tl) => (
-                <button
-                  key={tl.id}
-                  type="button"
-                  onClick={() =>
-                    setLineupEditor((prev) =>
-                      prev ? { ...prev, selectedIds: tl.slots.map((s) => s.player.id) } : null
-                    )
-                  }
-                  className="inline-flex items-center gap-1 rounded-md border border-[#2d2829] bg-[#1c1819] px-2.5 py-1 text-xs text-[#9a9090] hover:border-[#FBD00D]/40 hover:text-[#f5f0f0] transition-colors"
-                >
-                  <Users size={10} />
-                  {tl.name}
-                </button>
-              ))}
-            </div>
-          </div>
+        {matchLineup && (
+          <p className="text-xs text-[#5e5858] mb-3">
+            Spieler des Match-Lineups <span className="text-[#9a9090]">{matchLineup.name}</span> sind vorausgewählt. Hier können einzelne Spieler für diesen Sub-Match getauscht werden.
+          </p>
         )}
         <div className="space-y-3 max-h-64 overflow-y-auto mb-4">
-          {allPlayers.map((p) => {
+          {editorPlayers.map((p) => {
             const selected = lineupEditor?.selectedIds.includes(p.id) ?? false
+            const isLineupPlayer = lineupPlayerIds.has(p.id)
             return (
               <label key={p.id} className="flex items-center gap-3 cursor-pointer group">
                 <input
@@ -449,8 +759,13 @@ export function MatchDetailView({ match: initialMatch, allPlayers, canManage }: 
                   }
                   className="h-4 w-4 accent-[#FBD00D]"
                 />
-                <span className="text-sm text-[#f5f0f0] group-hover:text-white">{p.name}</span>
-                <span className="text-xs text-[#5e5858] font-mono">{p.tmId.slice(0, 8)}…</span>
+                <span className={`text-sm group-hover:text-white ${isLineupPlayer ? "text-[#f5f0f0]" : "text-[#9a9090]"}`}>
+                  {p.name}
+                </span>
+                {isLineupPlayer && (
+                  <span className="text-[9px] text-[#FBD00D] border border-[#FBD00D]/30 rounded px-1">LU</span>
+                )}
+                <span className="text-xs text-[#5e5858] font-mono ml-auto">{p.tmId.slice(0, 8)}…</span>
               </label>
             )
           })}
@@ -462,12 +777,27 @@ export function MatchDetailView({ match: initialMatch, allPlayers, canManage }: 
           )}
         </div>
         <div className="flex gap-2 justify-end">
-          <Button variant="ghost" onClick={() => setLineupEditor(null)}>Cancel</Button>
+          <Button variant="ghost" onClick={() => setLineupEditor(null)}>Abbrechen</Button>
           <Button onClick={saveLineup} disabled={lineupLoading}>
             {lineupLoading ? "Saving…" : "Save Lineup"}
           </Button>
         </div>
       </Dialog>
+
+      {/* Manual round entry dialog */}
+      {roundEntrySubMatch && (
+        <RoundEntryDialog
+          key={roundEntrySubMatch.id}
+          subMatch={roundEntrySubMatch}
+          pool={(roundEntrySubMatch.lineup ?? matchLineup)?.slots.map((s) => s.player) ?? []}
+          allPlayers={allPlayers}
+          onClose={() => setRoundEntryId(null)}
+          onSaved={(rounds) => {
+            setSubMatches((sms) => sms.map((sm) => (sm.id === roundEntrySubMatch.id ? { ...sm, rounds } : sm)))
+            setRoundEntryId(null)
+          }}
+        />
+      )}
 
       {/* CSV import dialog */}
       <Dialog open={!!importDialog} onClose={() => setImportDialog(null)} className="max-w-2xl">
@@ -483,9 +813,40 @@ export function MatchDetailView({ match: initialMatch, allPlayers, canManage }: 
           <p className="text-xs text-[#9a9090]">
             Paste CSV with columns: Time, Track, PlayerID, PlayerName, Record, RoundNumber
           </p>
+          <label
+            onDragOver={(e) => { e.preventDefault(); setImportDragOver(true) }}
+            onDragLeave={() => setImportDragOver(false)}
+            onDrop={(e) => {
+              e.preventDefault()
+              setImportDragOver(false)
+              loadImportFile(e.dataTransfer.files[0])
+            }}
+            className={`flex cursor-pointer flex-col items-center gap-1 rounded-lg border border-dashed px-4 py-5 text-center transition-colors ${
+              importDragOver
+                ? "border-[#FBD00D] bg-[#FBD00D]/10"
+                : "border-[#3a3435] hover:border-[#5e5858] hover:bg-[#251f20]"
+            }`}
+          >
+            <Upload size={18} className={importDragOver ? "text-[#FBD00D]" : "text-[#9a9090]"} />
+            <span className="text-sm text-[#f5f0f0]">
+              {importFileName || "CSV-Datei hierher ziehen oder klicken zum Auswählen"}
+            </span>
+            <span className="text-xs text-[#5e5858]">
+              {importFileName ? "Andere Datei wählen" : "oder den Inhalt unten einfügen"}
+            </span>
+            <input
+              type="file"
+              accept=".csv,text/csv,text/plain"
+              className="sr-only"
+              onChange={(e) => {
+                loadImportFile(e.target.files?.[0])
+                e.target.value = ""
+              }}
+            />
+          </label>
           <Textarea
             value={csvText}
-            onChange={(e) => setCsvText(e.target.value)}
+            onChange={(e) => { setCsvText(e.target.value); setImportFileName("") }}
             rows={10}
             className="font-mono text-xs"
             placeholder={"Time,Track,PlayerID,PlayerName,Record,RoundNumber\n1739732697,SMS - Origin,15b02a29-...,Tommy.TM,61167,0\n..."}
@@ -516,8 +877,6 @@ function computeRoundOutcome(results: RoundResult[]): "win" | "loss" | "draw" | 
   const ourResults = results.filter((r) => r.isOurTeam)
   const oppResults = results.filter((r) => !r.isOurTeam)
   if (ourResults.length === 0 || oppResults.length === 0) return null
-  // rank 1 = n pts, rank 2 = n-1 pts, ..., rank n = 1 pt
-  // results are sorted by timeMs asc so index = rank-1
   const rankMap = new Map(results.map((r, idx) => [r.id, idx + 1]))
   const ourPoints = ourResults.reduce((sum, r) => sum + (n - (rankMap.get(r.id) ?? n) + 1), 0)
   const total = (n * (n + 1)) / 2
@@ -539,8 +898,8 @@ function computeStats(rounds: Round[]) {
     else if (outcome === "loss") ourRoundsLost++
     else if (outcome === "draw") ourRoundsDrawn++
 
-    const ourBest = round.results.filter((r) => r.isOurTeam)[0]?.timeMs
-    const oppBest = round.results.filter((r) => !r.isOurTeam)[0]?.timeMs
+    const ourBest = round.results.filter((r) => r.isOurTeam)[0]?.timeMs ?? undefined
+    const oppBest = round.results.filter((r) => !r.isOurTeam)[0]?.timeMs ?? undefined
     if (ourBest !== undefined && (bestOurTime === undefined || ourBest < bestOurTime)) bestOurTime = ourBest
     if (oppBest !== undefined && (bestOpponentTime === undefined || oppBest < bestOpponentTime)) bestOpponentTime = oppBest
   }

@@ -1,71 +1,38 @@
 services:
   db:
     image: postgres:16-alpine
-
     security_opt:
       - no-new-privileges:true
-
-    mem_limit: 512m
-    pids_limit: 150
-
     restart: unless-stopped
 
     environment:
-      POSTGRES_USER: ${POSTGRES_USER:?POSTGRES_USER is required}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
-      POSTGRES_DB: ${POSTGRES_DB:?POSTGRES_DB is required}
+     POSTGRES_USER: ${POSTGRES_USER:?POSTGRES_USER is required}
+     POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+     POSTGRES_DB: ${POSTGRES_DB:?POSTGRES_DB is required}     
 
     volumes:
       - postgres_data:/var/lib/postgresql/data
-
     healthcheck:
-      test:
-        - CMD-SHELL
-        - pg_isready -U ${POSTGRES_USER:-stattracker}
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-stattracker}"]
       interval: 5s
       timeout: 5s
       retries: 5
 
   app:
     build: .
-
     security_opt:
       - no-new-privileges:true
-
-    cap_drop:
-      - ALL
-
-    read_only: true
-
-    tmpfs:
-      - /tmp:size=64m,mode=1777,uid=1001,gid=65533
-
-    mem_limit: 512m
-    pids_limit: 150
-
     restart: unless-stopped
-
     ports:
       - "127.0.0.1:${PORT:-3050}:3000"
-
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER:?POSTGRES_USER is required}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}@db:5432/${POSTGRES_DB:?POSTGRES_DB is required}
       AUTH_URL: ${AUTH_URL:-https://reh-netsolutions.cc/api/auth}
       AUTH_SECRET: ${NEXTAUTH_SECRET:?NEXTAUTH_SECRET is required}
       AUTH_TRUST_HOST: "true"
-
     depends_on:
       db:
         condition: service_healthy
-
-    healthcheck:
-      test:
-        - CMD-SHELL
-        - wget -q --spider http://127.0.0.1:3000/b2-stats/login || exit 1
-      interval: 30s
-      timeout: 5s
-      retries: 3
-      start_period: 30s
 
 volumes:
   postgres_data:

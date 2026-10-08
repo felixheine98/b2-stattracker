@@ -1,5 +1,6 @@
 "use client"
 
+import { useSyncedState } from "@/lib/use-synced-state"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogTitle } from "@/components/ui/dialog"
@@ -34,7 +35,7 @@ const ROLE_ICON: Record<Role, typeof ShieldCheck> = {
 }
 
 export function AdminView({ users: initial, currentUserId }: { users: UserRow[]; currentUserId: string }) {
-  const [users, setUsers] = useState(initial)
+  const [users, setUsers] = useSyncedState(initial)
   const [showForm, setShowForm] = useState(false)
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)

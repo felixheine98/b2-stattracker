@@ -3,6 +3,7 @@ import { db } from "@/lib/db"
 import { NextResponse } from "next/server"
 import { z } from "zod"
 import { canManage } from "@/lib/roles"
+import { findLineupConflict } from "@/lib/lineups"
 
 interface Params {
   params: Promise<{ id: string }>
@@ -42,12 +43,16 @@ export async function POST(req: Request, { params }: Params) {
     return NextResponse.json({ error: parsed.error.issues[0].message }, { status: 400 })
   }
 
+  const playerIds = [...new Set(parsed.data.playerIds)]
+  const conflict = await findLineupConflict(id, playerIds)
+  if (conflict) return NextResponse.json({ error: conflict }, { status: 409 })
+
   const lineup = await db.tournamentLineup.create({
     data: {
       tournamentId: id,
       name: parsed.data.name,
       slots: {
-        create: parsed.data.playerIds.map((playerId) => ({ playerId })),
+        create: playerIds.map((playerId) => ({ playerId })),
       },
     },
     include: { slots: { include: { player: true } } },

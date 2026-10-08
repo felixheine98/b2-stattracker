@@ -16,6 +16,7 @@ export default async function MatchDetailPage({ params }: Props) {
     db.match.findUnique({
       where: { id: matchId },
       include: {
+        tournamentLineup: { select: { id: true, name: true, slots: { include: { player: true } } } },
         tournament: {
           include: {
             tournamentLineups: {
@@ -32,7 +33,7 @@ export default async function MatchDetailPage({ params }: Props) {
               orderBy: { number: "asc" },
               include: {
                 results: {
-                  orderBy: { timeMs: "asc" },
+                  orderBy: [{ position: "asc" }, { timeMs: "asc" }],
                   include: { player: { select: { id: true, name: true } } },
                 },
               },

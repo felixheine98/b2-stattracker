@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react"
 import { useRouter } from "next/navigation"
+import { useSyncedState } from "@/lib/use-synced-state"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -33,7 +34,7 @@ interface Props {
 
 export function PlayersView({ players: initial, users, canManage }: Props) {
   const router = useRouter()
-  const [players, setPlayers] = useState(initial)
+  const [players, setPlayers] = useSyncedState(initial)
   const [showForm, setShowForm] = useState(false)
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)

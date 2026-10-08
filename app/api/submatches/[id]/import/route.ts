@@ -84,7 +84,7 @@ export async function POST(req: Request, { params }: Params) {
       },
       include: {
         results: {
-          orderBy: { timeMs: "asc" },
+          orderBy: [{ position: "asc" }, { timeMs: "asc" }],
           include: { player: { select: { id: true, name: true } } },
         },
       },

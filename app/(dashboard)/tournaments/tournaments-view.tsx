@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
+import { useSyncedState } from "@/lib/use-synced-state"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -86,7 +87,7 @@ function FormatBuilder({ value, onChange }: { value: Format[]; onChange: (v: For
 
 export function TournamentsView({ tournaments: initial, canManage }: { tournaments: Tournament[]; canManage: boolean }) {
   const router = useRouter()
-  const [tournaments, setTournaments] = useState(initial)
+  const [tournaments, setTournaments] = useSyncedState(initial)
   const [showForm, setShowForm] = useState(false)
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)

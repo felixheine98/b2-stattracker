@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
+import { useSyncedState } from "@/lib/use-synced-state"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -11,7 +12,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Dialog, DialogTitle } from "@/components/ui/dialog"
 import { Badge } from "@/components/ui/badge"
 import {
-  Plus, ArrowLeft, Calendar, ChevronRight, Swords, Trash2, Pencil, X, Users,
+  Plus, ArrowLeft, Calendar, ChevronRight, Swords, Trash2, Pencil, X, Users, BarChart2,
 } from "lucide-react"
 import { formatLabel, formatLabelLong } from "@/lib/utils"
 import type { Format } from "@prisma/client"
@@ -39,6 +40,8 @@ interface Match {
   opponent?: string | null
   date?: Date | null
   notes?: string | null
+  tournamentLineupId?: string | null
+  tournamentLineup?: { name: string } | null
   _count: { subMatches: number }
 }
 
@@ -53,9 +56,155 @@ interface Tournament {
   tournamentLineups: TournamentLineup[]
 }
 
+// --- Stats types ---
+
+interface StatsRoundResult {
+  id: string
+  tmId: string
+  playerName: string
+  timeMs: number | null
+  isOurTeam: boolean
+}
+
+interface StatsRound {
+  id: string
+  results: StatsRoundResult[]
+}
+
+interface StatsSubMatch {
+  id: string
+  format: Format
+  rounds: StatsRound[]
+}
+
+interface StatsMatch {
+  id: string
+  subMatches: StatsSubMatch[]
+}
+
+type FormatAggregate = {
+  format: Format
+  teamRoundsWon: number
+  teamRoundsLost: number
+  mapWon: number
+  mapLost: number
+  mapDrawn: number
+  players: Map<string, { tmId: string; name: string; roundsPlayed: number; placementSum: number }>
+}
+
+function roundOutcome(results: StatsRoundResult[]): "W" | "L" | "D" | null {
+  const n = results.length
+  if (n === 0) return null
+  const ours = results.filter((r) => r.isOurTeam)
+  const theirs = results.filter((r) => !r.isOurTeam)
+  if (ours.length === 0 || theirs.length === 0) return null
+  const rank = new Map(results.map((r, i) => [r.id, i + 1]))
+  const pts = ours.reduce((s, r) => s + (n - (rank.get(r.id) ?? n) + 1), 0)
+  const total = (n * (n + 1)) / 2
+  return pts * 2 > total ? "W" : pts * 2 < total ? "L" : "D"
+}
+
+function buildAggregates(matches: StatsMatch[]): FormatAggregate[] {
+  const byFormat = new Map<Format, FormatAggregate>()
+
+  for (const match of matches) {
+    for (const sm of match.subMatches) {
+      if (!byFormat.has(sm.format)) {
+        byFormat.set(sm.format, {
+          format: sm.format,
+          teamRoundsWon: 0, teamRoundsLost: 0,
+          mapWon: 0, mapLost: 0, mapDrawn: 0,
+          players: new Map(),
+        })
+      }
+      const agg = byFormat.get(sm.format)!
+      let smWon = 0, smLost = 0
+
+      for (const round of sm.rounds) {
+        const o = roundOutcome(round.results)
+        if (o === "W") { agg.teamRoundsWon++; smWon++ }
+        else if (o === "L") { agg.teamRoundsLost++; smLost++ }
+
+        round.results.forEach((r, idx) => {
+          if (!r.isOurTeam) return
+          if (!agg.players.has(r.tmId)) {
+            agg.players.set(r.tmId, { tmId: r.tmId, name: r.playerName, roundsPlayed: 0, placementSum: 0 })
+          }
+          const p = agg.players.get(r.tmId)!
+          p.roundsPlayed++
+          p.placementSum += idx + 1
+        })
+      }
+
+      if (sm.rounds.length > 0 && (smWon + smLost) > 0) {
+        if (smWon > smLost) agg.mapWon++
+        else if (smLost > smWon) agg.mapLost++
+        else agg.mapDrawn++
+      }
+    }
+  }
+
+  const order: Format[] = ["TIME_ATTACK_10", "ROUND_1V1", "ROUND_2V2", "ROUND_3V3", "ROUND_4V4", "ROUND_5V5"]
+  return order
+    .filter((f) => byFormat.has(f) && byFormat.get(f)!.players.size > 0)
+    .map((f) => byFormat.get(f)!)
+}
+
+function FormatStatsTable({ agg, lineups }: { agg: FormatAggregate; lineups: TournamentLineup[] }) {
+  const players = Array.from(agg.players.values()).sort((a, b) => a.name.localeCompare(b.name))
+  const lineupOf = (tmId: string) =>
+    lineups.find((l) => l.slots.some((s) => s.player.tmId.toLowerCase() === tmId.toLowerCase()))
+  return (
+    <div>
+      <div className="flex items-center gap-2 mb-2">
+        <Badge variant={agg.format === "TIME_ATTACK_10" ? "primary" : "secondary"}>
+          {formatLabel(agg.format)}
+        </Badge>
+        <span className="text-xs text-[#5e5858]">
+          Map: {agg.mapWon}W – {agg.mapLost}L{agg.mapDrawn > 0 ? ` – ${agg.mapDrawn}D` : ""}
+          &nbsp;·&nbsp;Rounds: {agg.teamRoundsWon}W – {agg.teamRoundsLost}L
+        </span>
+      </div>
+      <div className="overflow-x-auto rounded-lg border border-[#2d2829]">
+        <table className="w-full text-xs">
+          <thead>
+            <tr className="border-b border-[#2d2829] bg-[#1c1819]">
+              <th className="text-left py-2 pl-3 pr-4 font-medium text-[#5e5858] whitespace-nowrap">Spieler</th>
+              <th className="text-left py-2 px-3 font-medium text-[#5e5858] whitespace-nowrap">Lineup</th>
+              <th className="text-right py-2 px-3 font-medium text-[#5e5858] whitespace-nowrap">Gespielt</th>
+              <th className="text-right py-2 px-3 font-medium text-[#5e5858] whitespace-nowrap">Platzsumme</th>
+              <th className="text-right py-2 px-3 font-medium text-[#5e5858] whitespace-nowrap">Ø Platz</th>
+              <th className="text-right py-2 px-3 font-medium text-[#5e5858] whitespace-nowrap">Round W</th>
+              <th className="text-right py-2 pr-3 font-medium text-[#5e5858] whitespace-nowrap">Round L</th>
+            </tr>
+          </thead>
+          <tbody>
+            {players.map((p) => (
+              <tr key={p.tmId} className="border-b border-[#1c1819] hover:bg-[#1c1819]/60">
+                <td className="py-1.5 pl-3 pr-4 text-[#f5f0f0] font-medium">{p.name}</td>
+                <td className="py-1.5 px-3 text-[#c5bfbf] whitespace-nowrap">{lineupOf(p.tmId)?.name ?? "—"}</td>
+                <td className="py-1.5 px-3 text-right text-[#c5bfbf]">{p.roundsPlayed}</td>
+                <td className="py-1.5 px-3 text-right text-[#c5bfbf]">{p.placementSum}</td>
+                <td className="py-1.5 px-3 text-right text-[#c5bfbf] font-mono">
+                  {p.roundsPlayed > 0 ? (p.placementSum / p.roundsPlayed).toFixed(3) : "—"}
+                </td>
+                <td className="py-1.5 px-3 text-right text-[#f5f0f0]">{agg.teamRoundsWon}</td>
+                <td className="py-1.5 pr-3 text-right text-[#f5f0f0]">{agg.teamRoundsLost}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  )
+}
+
+// ---
+
 interface Props {
   tournament: Tournament
   players: Player[]
+  statsMatches: StatsMatch[]
   canManage: boolean
 }
 
@@ -113,11 +262,11 @@ function FormatBuilder({ value, onChange }: { value: Format[]; onChange: (v: For
   )
 }
 
-export function TournamentDetailView({ tournament: initial, players, canManage }: Props) {
+export function TournamentDetailView({ tournament: initial, players, statsMatches, canManage }: Props) {
   const router = useRouter()
-  const [tournament, setTournament] = useState(initial)
-  const [matches, setMatches] = useState(initial.matches)
-  const [lineups, setLineups] = useState<TournamentLineup[]>(initial.tournamentLineups)
+  const [tournament, setTournament] = useSyncedState(initial)
+  const [matches, setMatches] = useSyncedState(initial.matches)
+  const [lineups, setLineups] = useSyncedState<TournamentLineup[]>(initial.tournamentLineups)
 
   // --- Match dialog state ---
   const [showAddMatch, setShowAddMatch] = useState(false)
@@ -361,6 +510,26 @@ export function TournamentDetailView({ tournament: initial, players, canManage }
         </div>
       </div>
 
+      {/* Gesamtstatistik */}
+      {(() => {
+        // Only matches that still exist locally, so deleting a match updates the stats at once
+        const aggregates = buildAggregates(statsMatches.filter((sm) => matches.some((m) => m.id === sm.id)))
+        if (aggregates.length === 0) return null
+        return (
+          <div>
+            <h2 className="text-sm font-semibold text-[#9a9090] uppercase tracking-wider mb-3 flex items-center gap-2">
+              <BarChart2 size={14} />
+              Gesamtstatistik
+            </h2>
+            <div className="space-y-4">
+              {aggregates.map((agg) => (
+                <FormatStatsTable key={agg.format} agg={agg} lineups={lineups} />
+              ))}
+            </div>
+          </div>
+        )
+      })()}
+
       {/* Lineups section */}
       <div>
         <div className="flex items-center justify-between mb-3">
@@ -385,47 +554,51 @@ export function TournamentDetailView({ tournament: initial, players, canManage }
         ) : (
           <div className="grid gap-2 sm:grid-cols-2">
             {lineups.map((lineup) => (
-              <Card key={lineup.id}>
-                <CardContent className="py-3 px-4">
-                  <div className="flex items-start justify-between gap-2 mb-2">
-                    <p className="text-sm font-semibold text-[#f5f0f0]">{lineup.name}</p>
-                    {canManage && (
-                      <div className="flex items-center gap-1 shrink-0">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-6 w-6 p-0 text-[#5e5858] hover:text-[#f5f0f0]"
-                          onClick={() => openEditLineupForm(lineup)}
-                        >
-                          <Pencil size={11} />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-6 w-6 p-0 text-[#5e5858] hover:text-[#ED1F24]"
-                          onClick={() => handleDeleteLineup(lineup.id)}
-                          disabled={deletingLineup === lineup.id}
-                        >
-                          <Trash2 size={11} />
-                        </Button>
+              <div key={lineup.id} className="relative group">
+                <Link href={`/tournaments/${tournament.id}/lineups/${lineup.id}`} className="block">
+                  <Card className="hover:border-[#3a3435] transition-colors cursor-pointer">
+                    <CardContent className="py-3 px-4">
+                      <div className="flex items-start justify-between gap-2 mb-2">
+                        <p className="text-sm font-semibold text-[#f5f0f0]">{lineup.name}</p>
+                        {canManage && (
+                          <div className="flex items-center gap-1 shrink-0" onClick={(e) => e.preventDefault()}>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-6 w-6 p-0 text-[#5e5858] hover:text-[#f5f0f0]"
+                              onClick={(e) => { e.preventDefault(); openEditLineupForm(lineup) }}
+                            >
+                              <Pencil size={11} />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-6 w-6 p-0 text-[#5e5858] hover:text-[#ED1F24]"
+                              onClick={(e) => { e.preventDefault(); handleDeleteLineup(lineup.id) }}
+                              disabled={deletingLineup === lineup.id}
+                            >
+                              <Trash2 size={11} />
+                            </Button>
+                          </div>
+                        )}
                       </div>
-                    )}
-                  </div>
-                  <div className="flex flex-wrap gap-1">
-                    {lineup.slots.map((slot) => (
-                      <span
-                        key={slot.id}
-                        className="inline-flex items-center gap-1 rounded-full bg-[#251f20] border border-[#2d2829] px-2 py-0.5 text-xs text-[#c5bfbf]"
-                      >
-                        <span className="h-3.5 w-3.5 rounded-full bg-[#FBD00D]/20 text-[#FBD00D] text-[9px] font-bold flex items-center justify-center shrink-0">
-                          {slot.player.name.charAt(0).toUpperCase()}
-                        </span>
-                        {slot.player.name}
-                      </span>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
+                      <div className="flex flex-wrap gap-1">
+                        {lineup.slots.map((slot) => (
+                          <span
+                            key={slot.id}
+                            className="inline-flex items-center gap-1 rounded-full bg-[#251f20] border border-[#2d2829] px-2 py-0.5 text-xs text-[#c5bfbf]"
+                          >
+                            <span className="h-3.5 w-3.5 rounded-full bg-[#FBD00D]/20 text-[#FBD00D] text-[9px] font-bold flex items-center justify-center shrink-0">
+                              {slot.player.name.charAt(0).toUpperCase()}
+                            </span>
+                            {slot.player.name}
+                          </span>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+                </Link>
+              </div>
             ))}
           </div>
         )}
@@ -463,7 +636,9 @@ export function TournamentDetailView({ tournament: initial, players, canManage }
                         <div className="min-w-0">
                           <div className="flex items-center gap-2 flex-wrap">
                             <p className="text-sm font-medium text-[#f5f0f0]">
-                              {match.isSeeding ? "Seeding" : match.opponent ?? "Unknown opponent"}
+                              {match.isSeeding
+                                ? "Seeding"
+                                : [lineups.find((l) => l.id === match.tournamentLineupId)?.name, match.opponent].filter(Boolean).join(" vs ") || "Unknown opponent"}
                             </p>
                             {match.isSeeding && (
                               <Badge variant="primary" className="text-[10px] py-0">Seeding</Badge>
@@ -699,6 +874,19 @@ export function TournamentDetailView({ tournament: initial, players, canManage }
               <div className="space-y-2 max-h-64 overflow-y-auto rounded-lg border border-[#2d2829] bg-[#0e0c0d] p-3">
                 {players.map((p) => {
                   const selected = lineupPlayerIds.includes(p.id)
+                  // A player can only be in one lineup per tournament
+                  const otherLineup = lineups.find(
+                    (l) => l.id !== editingLineup?.id && l.slots.some((s) => s.player.id === p.id)
+                  )
+                  if (otherLineup) {
+                    return (
+                      <div key={p.id} className="flex items-center gap-3 opacity-50" title={`Already in lineup ${otherLineup.name}`}>
+                        <input type="checkbox" disabled className="h-4 w-4" />
+                        <span className="text-sm text-[#9a9090]">{p.name}</span>
+                        <span className="text-xs text-[#9a9090] ml-auto">in {otherLineup.name}</span>
+                      </div>
+                    )
+                  }
                   return (
                     <label key={p.id} className="flex items-center gap-3 cursor-pointer group">
                       <input

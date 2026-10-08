@@ -48,7 +48,7 @@ export interface RoundWithResults {
     id: string
     tmId: string
     playerName: string
-    timeMs: number
+    timeMs: number | null
     isOurTeam: boolean
     playerId?: string | null
     player?: { id: string; name: string } | null
