@@ -18,8 +18,10 @@ export default async function MatchDetailPage({ params }: Props) {
       where: { id: matchId },
       include: {
         tournamentLineup: { select: { id: true, name: true, slots: { include: { player: true } } } },
+        stage: { select: { id: true, type: true, number: true } },
         tournament: {
           include: {
+            stages: { select: { id: true, type: true, number: true } },
             tournamentLineups: {
               orderBy: { createdAt: "asc" },
               include: { slots: { include: { player: true } } },

@@ -1,5 +1,7 @@
 "use client"
 
+import { PlayerSearch } from "@/components/player-search"
+import { FormatBuilder } from "@/components/format-builder"
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { useSyncedState } from "@/lib/use-synced-state"
@@ -17,8 +19,15 @@ import { Badge } from "@/components/ui/badge"
 import {
   Plus, ArrowLeft, Calendar, ChevronRight, Swords, Trash2, Pencil, X, Users, BarChart2,
 } from "lucide-react"
-import { formatLabel, formatLabelLong } from "@/lib/utils"
+import { formatLabel } from "@/lib/utils"
 import type { Format } from "@prisma/client"
+import { buildAggregates, matchesOfLineups, matchesOfStages, type StatsMatch } from "@/lib/format-stats"
+import { sortStages, stageName, stagePlanOf, type StageRef } from "@/lib/stages"
+import { useIdListParam } from "@/lib/use-id-list-param"
+import { PillSelect } from "@/components/pill-select"
+import { StageHeading } from "@/components/stage-heading"
+import { StagePlanFields } from "@/components/stage-plan-fields"
+import { FormatStatsTable } from "./format-stats"
 
 interface Player {
   id: string
@@ -46,7 +55,7 @@ interface TournamentLineup {
 
 interface Match {
   id: string
-  isSeeding: boolean
+  stage: StageRef
   opponent?: string | null
   date?: Date | null
   notes?: string | null
@@ -63,157 +72,10 @@ interface Tournament {
   startDate?: Date | null
   endDate?: Date | null
   createdAt: Date
+  stages: StageRef[]
   matches: Match[]
   tournamentLineups: TournamentLineup[]
 }
-
-// --- Stats types ---
-
-interface StatsRoundResult {
-  id: string
-  tmId: string
-  playerName: string
-  timeMs: number | null
-  isOurTeam: boolean
-}
-
-interface StatsRound {
-  id: string
-  results: StatsRoundResult[]
-}
-
-interface StatsSubMatch {
-  id: string
-  format: Format
-  rounds: StatsRound[]
-}
-
-interface StatsMatch {
-  id: string
-  subMatches: StatsSubMatch[]
-}
-
-type FormatAggregate = {
-  format: Format
-  teamRoundsWon: number
-  teamRoundsLost: number
-  mapWon: number
-  mapLost: number
-  mapDrawn: number
-  players: Map<string, { tmId: string; name: string; roundsPlayed: number; placementSum: number }>
-}
-
-function roundOutcome(results: StatsRoundResult[]): "W" | "L" | "D" | null {
-  const n = results.length
-  if (n === 0) return null
-  const ours = results.filter((r) => r.isOurTeam)
-  const theirs = results.filter((r) => !r.isOurTeam)
-  if (ours.length === 0 || theirs.length === 0) return null
-  const rank = new Map(results.map((r, i) => [r.id, i + 1]))
-  const pts = ours.reduce((s, r) => s + (n - (rank.get(r.id) ?? n) + 1), 0)
-  const total = (n * (n + 1)) / 2
-  return pts * 2 > total ? "W" : pts * 2 < total ? "L" : "D"
-}
-
-function buildAggregates(matches: StatsMatch[]): FormatAggregate[] {
-  const byFormat = new Map<Format, FormatAggregate>()
-
-  for (const match of matches) {
-    for (const sm of match.subMatches) {
-      if (!byFormat.has(sm.format)) {
-        byFormat.set(sm.format, {
-          format: sm.format,
-          teamRoundsWon: 0, teamRoundsLost: 0,
-          mapWon: 0, mapLost: 0, mapDrawn: 0,
-          players: new Map(),
-        })
-      }
-      const agg = byFormat.get(sm.format)!
-      let smWon = 0, smLost = 0
-
-      for (const round of sm.rounds) {
-        const o = roundOutcome(round.results)
-        if (o === "W") { agg.teamRoundsWon++; smWon++ }
-        else if (o === "L") { agg.teamRoundsLost++; smLost++ }
-
-        round.results.forEach((r, idx) => {
-          if (!r.isOurTeam) return
-          if (!agg.players.has(r.tmId)) {
-            agg.players.set(r.tmId, { tmId: r.tmId, name: r.playerName, roundsPlayed: 0, placementSum: 0 })
-          }
-          const p = agg.players.get(r.tmId)!
-          p.roundsPlayed++
-          p.placementSum += idx + 1
-        })
-      }
-
-      if (sm.rounds.length > 0 && (smWon + smLost) > 0) {
-        if (smWon > smLost) agg.mapWon++
-        else if (smLost > smWon) agg.mapLost++
-        else agg.mapDrawn++
-      }
-    }
-  }
-
-  const order: Format[] = ["TIME_ATTACK_10", "ROUND_1V1", "ROUND_2V2", "ROUND_3V3", "ROUND_4V4", "ROUND_5V5"]
-  return order
-    .filter((f) => byFormat.has(f) && byFormat.get(f)!.players.size > 0)
-    .map((f) => byFormat.get(f)!)
-}
-
-function FormatStatsTable({ agg, lineups, isGuest }: { agg: FormatAggregate; lineups: TournamentLineup[]; isGuest: (tmId: string) => boolean }) {
-  const players = Array.from(agg.players.values()).sort((a, b) => a.name.localeCompare(b.name))
-  const lineupOf = (tmId: string) =>
-    lineups.find((l) => l.slots.some((s) => s.player.tmId.toLowerCase() === tmId.toLowerCase()))
-  return (
-    <div>
-      <div className="flex items-center gap-2 mb-2">
-        <Badge variant={agg.format === "TIME_ATTACK_10" ? "primary" : "secondary"}>
-          {formatLabel(agg.format)}
-        </Badge>
-        <span className="text-xs text-[#5e5858]">
-          Map: {agg.mapWon}W – {agg.mapLost}L{agg.mapDrawn > 0 ? ` – ${agg.mapDrawn}D` : ""}
-          &nbsp;·&nbsp;Rounds: {agg.teamRoundsWon}W – {agg.teamRoundsLost}L
-        </span>
-      </div>
-      <div className="overflow-x-auto rounded-lg border border-[#2d2829]">
-        <table className="w-full text-xs">
-          <thead>
-            <tr className="border-b border-[#2d2829] bg-[#1c1819]">
-              <th className="text-left py-2 pl-3 pr-4 font-medium text-[#5e5858] whitespace-nowrap">Spieler</th>
-              <th className="text-left py-2 px-3 font-medium text-[#5e5858] whitespace-nowrap">Lineup</th>
-              <th className="text-right py-2 px-3 font-medium text-[#5e5858] whitespace-nowrap">Gespielt</th>
-              <th className="text-right py-2 px-3 font-medium text-[#5e5858] whitespace-nowrap">Platzsumme</th>
-              <th className="text-right py-2 px-3 font-medium text-[#5e5858] whitespace-nowrap">Ø Platz</th>
-              <th className="text-right py-2 px-3 font-medium text-[#5e5858] whitespace-nowrap">Round W</th>
-              <th className="text-right py-2 pr-3 font-medium text-[#5e5858] whitespace-nowrap">Round L</th>
-            </tr>
-          </thead>
-          <tbody>
-            {players.map((p) => (
-              <tr key={p.tmId} className="border-b border-[#1c1819] hover:bg-[#1c1819]/60">
-                <td className="py-1.5 pl-3 pr-4 text-[#f5f0f0] font-medium whitespace-nowrap">
-                  {p.name}
-                  {isGuest(p.tmId) && <GuestBadge className="ml-1.5" />}
-                </td>
-                <td className="py-1.5 px-3 text-[#c5bfbf] whitespace-nowrap">{lineupOf(p.tmId)?.name ?? "—"}</td>
-                <td className="py-1.5 px-3 text-right text-[#c5bfbf]">{p.roundsPlayed}</td>
-                <td className="py-1.5 px-3 text-right text-[#c5bfbf]">{p.placementSum}</td>
-                <td className="py-1.5 px-3 text-right text-[#c5bfbf] font-mono">
-                  {p.roundsPlayed > 0 ? (p.placementSum / p.roundsPlayed).toFixed(3) : "—"}
-                </td>
-                <td className="py-1.5 px-3 text-right text-[#f5f0f0]">{agg.teamRoundsWon}</td>
-                <td className="py-1.5 pr-3 text-right text-[#f5f0f0]">{agg.teamRoundsLost}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  )
-}
-
-// ---
 
 interface Props {
   tournament: Tournament
@@ -222,58 +84,8 @@ interface Props {
   canManage: boolean
 }
 
-const ALL_FORMATS: Format[] = [
-  "TIME_ATTACK_10",
-  "ROUND_1V1",
-  "ROUND_2V2",
-  "ROUND_3V3",
-  "ROUND_4V4",
-  "ROUND_5V5",
-]
-
 function formatBadgeVariant(format: Format): "primary" | "secondary" {
   return format === "TIME_ATTACK_10" ? "primary" : "secondary"
-}
-
-function FormatBuilder({ value, onChange }: { value: Format[]; onChange: (v: Format[]) => void }) {
-  return (
-    <div className="space-y-2">
-      <div className="flex flex-wrap gap-1.5">
-        {ALL_FORMATS.map((f) => (
-          <button
-            key={f}
-            type="button"
-            onClick={() => onChange([...value, f])}
-            className="inline-flex items-center gap-1 rounded-md border border-[#2d2829] bg-[#1c1819] px-2 py-1 text-xs text-[#9a9090] hover:border-[#FBD00D]/50 hover:text-[#f5f0f0] transition-colors"
-          >
-            <Plus size={10} />
-            {formatLabelLong(f)}
-          </button>
-        ))}
-      </div>
-      <div className="min-h-10 rounded-lg border border-[#2d2829] bg-[#0e0c0d] p-2 flex flex-wrap gap-1.5">
-        {value.length === 0 && (
-          <span className="text-xs text-[#5e5858] self-center">Click formats above to build the sequence</span>
-        )}
-        {value.map((f, i) => (
-          <span
-            key={i}
-            className="inline-flex items-center gap-1 rounded-md border border-[#2d2829] bg-[#1c1819] px-2 py-0.5 text-xs text-[#f5f0f0]"
-          >
-            <span className="text-[#5e5858]">{i + 1}.</span>
-            {formatLabel(f)}
-            <button
-              type="button"
-              onClick={() => onChange(value.filter((_, idx) => idx !== i))}
-              className="text-[#5e5858] hover:text-[#ED1F24] ml-0.5"
-            >
-              <X size={10} />
-            </button>
-          </span>
-        ))}
-      </div>
-    </div>
-  )
 }
 
 export function TournamentDetailView({ tournament: initial, players, statsMatches, canManage }: Props) {
@@ -281,6 +93,13 @@ export function TournamentDetailView({ tournament: initial, players, statsMatche
   const [tournament, setTournament] = useSyncedState(initial)
   const [matches, setMatches] = useSyncedState(initial.matches)
   const [lineups, setLineups] = useSyncedState<TournamentLineup[]>(initial.tournamentLineups)
+
+  // In playing order
+  const stages = sortStages(tournament.stages)
+  const statsStages = stages.filter((st) => st.type !== "SEEDING")
+  // What the stats are limited to; nothing selected means all
+  const [statsLineupIds, selectStatsLineups] = useIdListParam("lineups", lineups.map((l) => l.id))
+  const [statsStageIds, selectStatsStages] = useIdListParam("stages", statsStages.map((st) => st.id))
 
   // Within a tournament everyone is member or guest as of its start day
   const guestTmIds = new Set(guestTmIdsAt(players, tournamentReferenceDate(tournament)))
@@ -302,6 +121,7 @@ export function TournamentDetailView({ tournament: initial, players, statsMatche
   const [editEndDate, setEditEndDate] = useState(
     tournament.endDate ? new Date(tournament.endDate).toISOString().split("T")[0] : ""
   )
+  const [editStagePlan, setEditStagePlan] = useState(() => stagePlanOf(tournament.stages))
   const [editError, setEditError] = useState("")
   const [editLoading, setEditLoading] = useState(false)
 
@@ -339,6 +159,7 @@ export function TournamentDetailView({ tournament: initial, players, statsMatche
         description: editDescription || null,
         startDate: editStartDate,
         endDate: editEndDate || null,
+        stages: editStagePlan,
       }),
     })
     setEditLoading(false)
@@ -432,6 +253,7 @@ export function TournamentDetailView({ tournament: initial, players, statsMatche
     setEditDescription(tournament.description ?? "")
     setEditStartDate(tournament.startDate ? new Date(tournament.startDate).toISOString().split("T")[0] : "")
     setEditEndDate(tournament.endDate ? new Date(tournament.endDate).toISOString().split("T")[0] : "")
+    setEditStagePlan(stagePlanOf(tournament.stages))
     setEditError("")
     setShowEdit(true)
   }
@@ -584,19 +406,39 @@ export function TournamentDetailView({ tournament: initial, players, statsMatche
       {/* Gesamtstatistik */}
       {(() => {
         // Only matches that still exist locally, so deleting a match updates the stats at once
-        const aggregates = buildAggregates(statsMatches.filter((sm) => matches.some((m) => m.id === sm.id)))
-        if (aggregates.length === 0) return null
+        const existing = statsMatches.filter((sm) => matches.some((m) => m.id === sm.id))
+        if (buildAggregates(existing).length === 0) return null
+        const aggregates = buildAggregates(matchesOfStages(matchesOfLineups(existing, statsLineupIds), statsStageIds))
+        const lineupName = (tmId: string) =>
+          lineups.find((l) => l.slots.some((s) => s.player.tmId.toLowerCase() === tmId.toLowerCase()))?.name
         return (
           <div>
             <h2 className="text-sm font-semibold text-[#9a9090] uppercase tracking-wider mb-3 flex items-center gap-2">
               <BarChart2 size={14} />
               Gesamtstatistik
             </h2>
-            <div className="space-y-4">
-              {aggregates.map((agg) => (
-                <FormatStatsTable key={agg.format} agg={agg} lineups={lineups} isGuest={isGuest} />
-              ))}
+            <div className="mb-4 flex flex-wrap gap-2">
+              {lineups.length > 0 && (
+                <PillSelect options={lineups.map((l) => ({ id: l.id, label: l.name }))} selected={statsLineupIds} onChange={selectStatsLineups} />
+              )}
+              {statsStages.length > 1 && (
+                <PillSelect
+                  options={statsStages.map((st) => ({ id: st.id, label: stageName(st, stages) }))}
+                  selected={statsStageIds}
+                  onChange={selectStatsStages}
+                />
+              )}
             </div>
+            {aggregates.length === 0 ? (
+              <p className="text-sm text-[#5e5858]">Keine Daten für diese Auswahl.</p>
+            ) : (
+              <div className="space-y-4">
+                {aggregates.map((agg) => (
+                  // With a single lineup selected the column would repeat the same name
+                  <FormatStatsTable key={agg.format} agg={agg} isGuest={isGuest} lineupName={statsLineupIds.length === 1 ? undefined : lineupName} />
+                ))}
+              </div>
+            )}
           </div>
         )
       })()}
@@ -616,52 +458,61 @@ export function TournamentDetailView({ tournament: initial, players, statsMatche
             </CardContent>
           </Card>
         ) : (
-          <div className="space-y-2">
-            {matches.map((match) => (
-              <div key={match.id} className="flex items-center gap-2">
-                <Link href={`/tournaments/${tournament.id}/matches/${match.id}`} className="flex-1 min-w-0">
-                  <Card className="hover:border-[#3a3435] transition-colors cursor-pointer">
-                    <CardContent className="py-3 flex items-center justify-between">
-                      <div className="flex items-center gap-3 min-w-0">
-                        <Swords size={15} className="text-[#9a9090] shrink-0" />
-                        <div className="min-w-0">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <p className="text-sm font-medium text-[#f5f0f0]">
-                              {match.isSeeding
-                                ? "Seeding"
-                                : [lineups.find((l) => l.id === match.tournamentLineupId)?.name, match.opponent].filter(Boolean).join(" vs ") || "Unknown opponent"}
-                            </p>
-                            {match.isSeeding && (
-                              <Badge variant="primary" className="text-[10px] py-0">Seeding</Badge>
-                            )}
-                          </div>
-                          <div className="flex items-center gap-3 text-xs text-[#5e5858]">
-                            {match.date && (
-                              <span>{formatDay(match.date)}</span>
-                            )}
-                            <span>
-                              {match._count.subMatches} sub-match{match._count.subMatches !== 1 ? "es" : ""}
-                            </span>
-                          </div>
-                        </div>
+          <div className="space-y-5">
+            {stages.map((stage) => {
+              const stageMatches = matches.filter((m) => m.stage.id === stage.id)
+              return (
+                <div key={stage.id}>
+                  <StageHeading stage={stage} stages={stages} startDate={tournament.startDate ?? tournament.createdAt} />
+                  {stageMatches.length === 0 ? (
+                    <p className="text-xs text-[#5e5858]">Noch keine Matches.</p>
+                  ) : (
+                    <div className="space-y-2">
+                      {stageMatches.map((match) => (
+                      <div key={match.id} className="flex items-center gap-2">
+                        <Link href={`/tournaments/${tournament.id}/matches/${match.id}`} className="flex-1 min-w-0">
+                          <Card className="hover:border-[#3a3435] transition-colors cursor-pointer">
+                            <CardContent className="py-3 flex items-center justify-between">
+                              <div className="flex items-center gap-3 min-w-0">
+                                <Swords size={15} className="text-[#9a9090] shrink-0" />
+                                <div className="min-w-0">
+                                  <div className="flex items-center gap-2 flex-wrap">
+                                    <p className="text-sm font-medium text-[#f5f0f0]">
+                                      {[lineups.find((l) => l.id === match.tournamentLineupId)?.name, match.stage.type === "SEEDING" ? null : match.opponent].filter(Boolean).join(" vs ") || (match.stage.type === "SEEDING" ? "Seeding" : "Unknown opponent")}
+                                    </p>
+                                  </div>
+                                  <div className="flex items-center gap-3 text-xs text-[#5e5858]">
+                                    {match.date && (
+                                      <span>{formatDay(match.date)}</span>
+                                    )}
+                                    <span>
+                                      {match._count.subMatches} sub-match{match._count.subMatches !== 1 ? "es" : ""}
+                                    </span>
+                                  </div>
+                                </div>
+                              </div>
+                              <ChevronRight size={16} className="text-[#5e5858] shrink-0" />
+                            </CardContent>
+                          </Card>
+                        </Link>
+                        {canManage && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleDeleteMatch(match.id)}
+                            disabled={deletingMatch === match.id}
+                            className="shrink-0 text-[#5e5858] hover:text-[#ED1F24]"
+                          >
+                            <Trash2 size={14} />
+                          </Button>
+                        )}
                       </div>
-                      <ChevronRight size={16} className="text-[#5e5858] shrink-0" />
-                    </CardContent>
-                  </Card>
-                </Link>
-                {canManage && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleDeleteMatch(match.id)}
-                    disabled={deletingMatch === match.id}
-                    className="shrink-0 text-[#5e5858] hover:text-[#ED1F24]"
-                  >
-                    <Trash2 size={14} />
-                  </Button>
-                )}
-              </div>
-            ))}
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )
+            })}
           </div>
         )}
       </div>
@@ -692,6 +543,7 @@ export function TournamentDetailView({ tournament: initial, players, statsMatche
               rows={2}
             />
           </div>
+          <StagePlanFields value={editStagePlan} onChange={setEditStagePlan} />
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <Label htmlFor="edit-start">Start date</Label>
@@ -753,6 +605,32 @@ export function TournamentDetailView({ tournament: initial, players, statsMatche
               onChange={(e) => setLineupName(e.target.value)}
               placeholder='e.g. "Main 4v4 Squad"'
             />
+            {/* The picked players, in the order they were picked */}
+            {lineupPlayerIds.length > 0 && (
+              <div className="flex flex-wrap gap-1.5 pt-1">
+                {lineupPlayerIds.map((id) => {
+                  const player = players.find((p) => p.id === id)
+                  if (!player) return null
+                  return (
+                    <span
+                      key={id}
+                      className="inline-flex items-center gap-1.5 rounded-full border border-[#FBD00D]/30 bg-[#FBD00D]/10 py-0.5 pl-2.5 pr-1.5 text-xs text-[#f5f0f0]"
+                    >
+                      {player.name}
+                      {isGuest(player.tmId) && <GuestBadge />}
+                      <button
+                        type="button"
+                        onClick={() => setLineupPlayerIds((ids) => ids.filter((x) => x !== id))}
+                        aria-label={`${player.name} entfernen`}
+                        className="text-[#9a9090] hover:text-[#ED1F24]"
+                      >
+                        <X size={12} />
+                      </button>
+                    </span>
+                  )
+                })}
+              </div>
+            )}
           </div>
           <div className="space-y-1.5">
             <Label>Players <span className="text-[#5e5858]">({lineupPlayerIds.length} selected)</span></Label>
@@ -762,6 +640,17 @@ export function TournamentDetailView({ tournament: initial, players, statsMatche
                 <Link href="/players" className="text-[#FBD00D] hover:underline">Add players first.</Link>
               </p>
             ) : (
+              <>
+              <PlayerSearch
+                // Only players who are neither picked yet nor in another lineup of this tournament
+                players={players.filter(
+                  (p) =>
+                    !lineupPlayerIds.includes(p.id) &&
+                    !lineups.some((l) => l.id !== editingLineup?.id && l.slots.some((s) => s.player.id === p.id))
+                )}
+                isGuest={isGuest}
+                onPick={(id) => setLineupPlayerIds((ids) => (ids.includes(id) ? ids : [...ids, id]))}
+              />
               <div className="space-y-2 max-h-64 overflow-y-auto rounded-lg border border-[#2d2829] bg-[#0e0c0d] p-3">
                 {playerGroups.map((group) => (
                   <div key={group.label ?? "members"} className="space-y-2">
@@ -807,6 +696,7 @@ export function TournamentDetailView({ tournament: initial, players, statsMatche
                   </div>
                 ))}
               </div>
+              </>
             )}
           </div>
           {lineupError && <p className="text-sm text-[#ED1F24]">{lineupError}</p>}

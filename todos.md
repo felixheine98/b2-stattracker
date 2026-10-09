@@ -1,9 +1,5 @@
 # TODOS
 
-- ganzen statistiken aus meinem sheet umsetzen
-  - per match
-  - per lineup (gesamt)
-  - per tourney (gesamt gesamt)
 - lineup manager hinzufügen (können nur stats hinzufügen in ausgewählter comp+LU)
 - Lineup Builder -> gemeinsames erstellen für lineups, welches direkt in eine comp reingespeichert wird 
 - danach werden in dieser comp nur noch diese 4 lineups gezeigt bzw nur die spieler
@@ -12,7 +8,6 @@
 
 - [ ] csv import für gesamtes match -> danach UI wo man einzelne runden (multi select) rauslöschen kann, falls match dumper nicht 100% korrekt ist
 - [ ] gegner DB anlegen? -> logos, dropdown möglichkeit für fixe teams/lineups 
-- [ ] aufteilung der stats in week1, 2, playoffs etc (bzw filter methode) / per matchday?
 - [ ] persönliche profilansicht mit eigene stats -> lifetime stats, letzte comp oder so
 - [ ] als member -> in tourney übersicht der eigenen stats, danach kann man sich durch die stats durchklicken
 - [ ] kategorisierung der comps nach style? (tech mixed rpg ice fs etc)

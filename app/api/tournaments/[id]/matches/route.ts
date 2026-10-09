@@ -25,7 +25,7 @@ export async function GET(_req: Request, { params }: Params) {
 }
 
 const createSchema = z.object({
-  isSeeding: z.boolean().default(false),
+  stageId: z.string().min(1),
   opponent: z.string().nullable().optional(),
   date: z.string().nullable().optional(),
   notes: z.string().nullable().optional(),
@@ -47,6 +47,9 @@ export async function POST(req: Request, { params }: Params) {
     return NextResponse.json({ error: parsed.error.issues[0].message }, { status: 400 })
   }
 
+  const stage = await db.stage.findUnique({ where: { id: parsed.data.stageId } })
+  if (!stage || stage.tournamentId !== id) return NextResponse.json({ error: "Stage not found" }, { status: 400 })
+
   // Fetch lineup slots if a tournament lineup was selected
   let lineupPlayerIds: string[] = []
   if (parsed.data.lineupId) {
@@ -57,7 +60,7 @@ export async function POST(req: Request, { params }: Params) {
     if (tl) lineupPlayerIds = tl.slots.map((s) => s.playerId)
   }
 
-  const subMatchFormats = parsed.data.isSeeding
+  const subMatchFormats = stage.type === "SEEDING"
     ? [{ format: "TIME_ATTACK_10" as const, order: 0 }]
     : tournament.formats
         .filter((f) => f !== "TIME_ATTACK_10")
@@ -70,7 +73,7 @@ export async function POST(req: Request, { params }: Params) {
   const match = await db.match.create({
     data: {
       tournamentId: id,
-      isSeeding: parsed.data.isSeeding,
+      stageId: stage.id,
       opponent: parsed.data.opponent ?? null,
       date: parsed.data.date ? new Date(parsed.data.date) : null,
       notes: parsed.data.notes ?? null,
@@ -79,7 +82,7 @@ export async function POST(req: Request, { params }: Params) {
         create: subMatchFormats.map((sm) => ({ ...sm, lineup: lineupCreate })),
       },
     },
-    include: { _count: { select: { subMatches: true } } },
+    include: { _count: { select: { subMatches: true } }, stage: { select: { id: true, type: true } }, subMatches: { include: { rounds: { include: { results: true } } } } },
   })
 
   return NextResponse.json(match, { status: 201 })

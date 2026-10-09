@@ -1,24 +1,22 @@
 "use client"
 
+import { Wdl } from "@/components/wdl"
 import { Button } from "@/components/ui/button"
 import { GuestBadge } from "@/components/guest-badge"
 import { Dialog, DialogTitle } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
+import { roundPlacements } from "@/lib/round-score"
+import { entryPositions, entryState, type Cell, type EntryState } from "@/lib/round-entry"
 import { cn, formatLabel, formatTime, parseTime, teamSize } from "@/lib/utils"
 import { ArrowDown, ArrowRight, Hash, Timer } from "lucide-react"
 import { useEffect, useMemo, useRef, useState } from "react"
 import type { Player, Round, SubMatch } from "./match-detail-view"
 
-// One round: playerId -> placement
-type Column = Record<string, number>
+// One round: playerId -> placement or DNF, plus how many opponents did not finish under OPPONENT_DNFS
+type Column = Record<string, Cell>
+const OPPONENT_DNFS = "opponent-dnfs"
 type Direction = "round" | "player"
 type Mode = "positions" | "times"
-
-type ColumnState =
-  | { kind: "empty" }
-  | { kind: "incomplete" }
-  | { kind: "invalid"; duplicates: Set<number> }
-  | { kind: "done"; ours: number; theirs: number; outcome: "W" | "L" | "D" }
 
 interface Props {
   subMatch: SubMatch
@@ -38,16 +36,13 @@ function normalize(columns: Column[]): Column[] {
   return out
 }
 
-function columnState(column: Column, playerIds: string[], size: number): ColumnState {
-  const values = playerIds.map((id) => column[id]).filter((v) => v != null)
-  if (values.length === 0) return { kind: "empty" }
-  const duplicates = new Set(values.filter((v, i) => values.indexOf(v) !== i))
-  if (duplicates.size > 0) return { kind: "invalid", duplicates }
-  if (values.length < size) return { kind: "incomplete" }
-  const n = size * 2
-  const ours = values.reduce((sum, v) => sum + (n - v + 1), 0)
-  const theirs = (n * (n + 1)) / 2 - ours
-  return { kind: "done", ours, theirs, outcome: ours > theirs ? "W" : ours < theirs ? "L" : "D" }
+function columnState(column: Column, playerIds: string[], size: number): EntryState {
+  return entryState(playerIds.map((id) => column[id]), opponentDnfs(column), size)
+}
+
+function opponentDnfs(column: Column): number {
+  const count = column[OPPONENT_DNFS]
+  return typeof count === "number" ? count : 0
 }
 
 function placementColor(position: number): string {
@@ -67,10 +62,13 @@ export function RoundEntryDialog({ subMatch, pool, allPlayers, isGuest, onClose,
     const times: Record<string, string> = {}
     const columns = subMatch.rounds.map((round, c) => {
       const column: Column = {}
+      const dnfs = round.results.filter((r) => !r.isOurTeam && r.dnf).length
+      if (dnfs > 0) column[OPPONENT_DNFS] = dnfs
+      const placements = roundPlacements(round.results)
       round.results.forEach((r, idx) => {
         if (!r.isOurTeam || !r.playerId) return
         if (!ids.includes(r.playerId)) ids.push(r.playerId)
-        column[r.playerId] = idx + 1
+        column[r.playerId] = r.dnf ? "dnf" : placements[idx]
         if (r.timeMs != null) times[`${c}:${r.playerId}`] = formatTime(r.timeMs)
       })
       return column
@@ -118,7 +116,7 @@ export function RoundEntryDialog({ subMatch, pool, allPlayers, isGuest, onClose,
   const drawn = done.filter((s) => s.outcome === "D").length
   const hasProblems = states.some((s) => s.kind === "invalid" || s.kind === "incomplete")
   const hasInvalidTimes = columns.some(
-    (_, c) => states[c].kind === "done" && playerIds.some((id) => parseTime(times[`${c}:${id}`] ?? "") === undefined)
+    (_, c) => states[c].kind === "done" && playerIds.some((id) => columns[c][id] !== "dnf" && parseTime(times[`${c}:${id}`] ?? "") === undefined)
   )
   const canSave =
     ready && !hasProblems && !hasInvalidTimes && !saving && (done.length > 0 || subMatch.rounds.length > 0)
@@ -133,7 +131,7 @@ export function RoundEntryDialog({ subMatch, pool, allPlayers, isGuest, onClose,
     setPlayerIds((ids) => (ids.includes(id) ? ids.filter((x) => x !== id) : ids.length < size ? [...ids, id] : ids))
   }
 
-  function setCells(cells: Array<{ c: number; p: number; value: number | null }>) {
+  function setCells(cells: Array<{ c: number; p: number; value: Cell | null }>) {
     setDirty(true)
     setError("")
     setColumns((prev) => {
@@ -147,8 +145,22 @@ export function RoundEntryDialog({ subMatch, pool, allPlayers, isGuest, onClose,
     })
   }
 
-  function focusCell(c: number, p: number) {
-    setFocusRequest({ c: Math.max(0, c), p: Math.min(Math.max(0, p), size - 1) })
+  function setOpponentDnfs(c: number, raw: string) {
+    const count = Number(raw.replace(/\D/g, "").slice(-1))
+    if (count > size) return
+    setDirty(true)
+    setError("")
+    setColumns((prev) => {
+      const next = prev.map((column) => ({ ...column }))
+      if (count > 0) next[c][OPPONENT_DNFS] = count
+      else delete next[c][OPPONENT_DNFS]
+      return normalize(next)
+    })
+  }
+
+  // Row `size` is the opponent DNF row; typing never lands there, only the arrow keys do
+  function focusCell(c: number, p: number, allowOpponentRow = false) {
+    setFocusRequest({ c: Math.max(0, c), p: Math.min(Math.max(0, p), allowOpponentRow ? size : size - 1) })
   }
 
   function advance(c: number, p: number) {
@@ -171,6 +183,11 @@ export function RoundEntryDialog({ subMatch, pool, allPlayers, isGuest, onClose,
   }
 
   function handleInput(c: number, p: number, raw: string) {
+    if (/[dx]/i.test(raw.slice(-1))) {
+      setCells([{ c, p, value: "dnf" }])
+      advance(c, p)
+      return
+    }
     const digits = raw.replace(/\D/g, "")
     if (!digits) {
       setCells([{ c, p, value: null }])
@@ -187,7 +204,7 @@ export function RoundEntryDialog({ subMatch, pool, allPlayers, isGuest, onClose,
   function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>, c: number, p: number) {
     const move = (dc: number, dp: number) => {
       e.preventDefault()
-      focusCell(Math.min(c + dc, lastCol), p + dp)
+      focusCell(Math.min(c + dc, lastCol), p + dp, true)
     }
     if (e.key === "ArrowRight") move(1, 0)
     else if (e.key === "ArrowLeft") move(-1, 0)
@@ -214,6 +231,7 @@ export function RoundEntryDialog({ subMatch, pool, allPlayers, isGuest, onClose,
       .filter((line) => line.trim())
       .map((line) =>
         (line.includes("\t") ? line.split("\t") : line.trim().split(/[,;\s]+/)).map((token) => {
+          if (/^(d|x|dnf)$/i.test(token.trim())) return "dnf" as const
           const value = /^\d+$/.test(token.trim()) ? Number(token.trim()) : null
           return value != null && value >= 1 && value <= maxPosition ? value : null
         })
@@ -224,7 +242,7 @@ export function RoundEntryDialog({ subMatch, pool, allPlayers, isGuest, onClose,
 
     // Skip leading label cells (player names) so all rows stay aligned
     const offset = Math.min(...rows.map((row) => row.findIndex((v) => v != null)))
-    const cells: Array<{ c: number; p: number; value: number }> = []
+    const cells: Array<{ c: number; p: number; value: Cell }> = []
     rows.slice(0, size - p).forEach((row, i) => {
       row.slice(offset).forEach((value, j) => {
         if (value != null) cells.push({ c: c + j, p: p + i, value })
@@ -283,7 +301,8 @@ export function RoundEntryDialog({ subMatch, pool, allPlayers, isGuest, onClose,
     setError("")
     const rounds = columns
       .map((column, c) => ({
-        positions: playerIds.map((id) => column[id]),
+        ...entryPositions(playerIds.map((id) => column[id]), opponentDnfs(column), size),
+        opponentDnfs: opponentDnfs(column),
         times: playerIds.map((id) => parseTime(times[`${c}:${id}`] ?? "") ?? null),
         source: subMatch.rounds[c]?.number ?? null,
       }))
@@ -404,9 +423,7 @@ export function RoundEntryDialog({ subMatch, pool, allPlayers, isGuest, onClose,
               </div>
               <p className="ml-auto text-sm text-[#9a9090]">
                 {done.length} Runde{done.length !== 1 ? "n" : ""}
-                <span className="ml-3 font-bold text-[#f5f0f0]">
-                  {won}–{lost}{drawn > 0 ? `–${drawn}` : ""}
-                </span>
+                <Wdl won={won} drawn={drawn} lost={lost} unit="Runden" className="ml-3 font-bold text-[#f5f0f0]" />
               </p>
             </div>
 
@@ -430,17 +447,17 @@ export function RoundEntryDialog({ subMatch, pool, allPlayers, isGuest, onClose,
                       {columns.map((column, c) => {
                         const value = column[id]
                         const state = states[c]
-                        const duplicate = state.kind === "invalid" && value != null && state.duplicates.has(value)
+                        const bad = state.kind === "invalid" && typeof value === "number" && state.bad.has(value)
                         if (mode === "times") {
                           const text = times[`${c}:${id}`] ?? ""
-                          const editable = state.kind === "done"
+                          const editable = state.kind === "done" && value !== "dnf"
                           return (
                             <td key={c}>
                               <input
                                 data-cell={`${c}-${p}`}
                                 value={editable ? text : ""}
                                 disabled={!editable}
-                                placeholder={value != null ? `#${value}` : ""}
+                                placeholder={value === "dnf" ? "DNF" : value != null ? `#${value}` : ""}
                                 inputMode="decimal"
                                 autoComplete="off"
                                 aria-label={`Zeit ${playerById.get(id)?.name ?? "Spieler"}, Runde ${c + 1}`}
@@ -464,7 +481,7 @@ export function RoundEntryDialog({ subMatch, pool, allPlayers, isGuest, onClose,
                           <td key={c}>
                             <input
                               data-cell={`${c}-${p}`}
-                              value={value ?? ""}
+                              value={value === "dnf" ? "DNF" : value ?? ""}
                               inputMode="numeric"
                               autoComplete="off"
                               aria-label={`${playerById.get(id)?.name ?? "Spieler"}, Runde ${c + 1}`}
@@ -474,9 +491,9 @@ export function RoundEntryDialog({ subMatch, pool, allPlayers, isGuest, onClose,
                               onFocus={(e) => e.target.select()}
                               className={cn(
                                 "h-9 w-9 rounded-md border bg-[#251f20] text-center font-mono text-sm font-bold caret-transparent focus:outline-none focus:ring-2 focus:ring-[#FBD00D]",
-                                duplicate
+                                bad
                                   ? "border-[#ED1F24] text-[#ED1F24]"
-                                  : cn("border-[#3a3435]", value != null && placementColor(value)),
+                                  : cn("border-[#3a3435]", value === "dnf" ? "text-[10px] text-[#5e5858]" : value != null && placementColor(value)),
                                 c === lastCol && "border-dashed bg-transparent"
                               )}
                             />
@@ -485,6 +502,35 @@ export function RoundEntryDialog({ subMatch, pool, allPlayers, isGuest, onClose,
                       })}
                     </tr>
                   ))}
+                  {mode === "positions" && (
+                    <tr>
+                      <td className="sticky left-0 z-10 bg-[#1c1819] pr-3 text-xs text-[#9a9090] whitespace-nowrap">Gegner DNF</td>
+                      {columns.map((column, c) => (
+                        <td key={c}>
+                          <input
+                            data-cell={`${c}-${size}`}
+                            value={opponentDnfs(column) || ""}
+                            inputMode="numeric"
+                            autoComplete="off"
+                            aria-label={`Gegner DNF, Runde ${c + 1}`}
+                            onChange={(e) => setOpponentDnfs(c, e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === "ArrowRight" || e.key === "ArrowLeft" || e.key === "ArrowUp") {
+                                e.preventDefault()
+                                const dc = e.key === "ArrowRight" ? 1 : e.key === "ArrowLeft" ? -1 : 0
+                                focusCell(Math.min(c + dc, lastCol), e.key === "ArrowUp" ? size - 1 : size, true)
+                              }
+                            }}
+                            onFocus={(e) => e.target.select()}
+                            className={cn(
+                              "h-7 w-9 rounded-md border border-[#2d2829] bg-transparent text-center font-mono text-xs text-[#9a9090] caret-transparent focus:outline-none focus:ring-2 focus:ring-[#FBD00D]",
+                              c === lastCol && "border-dashed"
+                            )}
+                          />
+                        </td>
+                      ))}
+                    </tr>
+                  )}
                   <tr>
                     <td className="sticky left-0 z-10 bg-[#1c1819] pr-3 text-[10px] uppercase tracking-wider text-[#5e5858]">
                       Punkte
@@ -504,7 +550,7 @@ export function RoundEntryDialog({ subMatch, pool, allPlayers, isGuest, onClose,
                         )}
                         {state.kind === "incomplete" && <p className="text-xs text-[#5e5858]">…</p>}
                         {state.kind === "invalid" && (
-                          <p className="text-xs font-bold text-[#ED1F24]" title="Platzierung doppelt vergeben">!</p>
+                          <p className="text-xs font-bold text-[#ED1F24]" title="Platzierung doppelt vergeben oder wegen DNFs nicht möglich">!</p>
                         )}
                       </td>
                     ))}
@@ -515,7 +561,8 @@ export function RoundEntryDialog({ subMatch, pool, allPlayers, isGuest, onClose,
 
             {mode === "positions" ? (
               <p className="text-xs text-[#5e5858]">
-                Platzierung 1–{maxPosition} tippen, der Cursor springt automatisch weiter.
+                Platzierung 1–{maxPosition} tippen, der Cursor springt automatisch weiter. D oder X steht für DNF;
+                wie viele Gegner nicht ins Ziel kamen, steht in der Zeile „Gegner DNF“ (per Pfeiltaste oder Klick).
                 {maxPosition >= 10 && " 0 steht für Platz 10."} Pfeiltasten navigieren, Enter springt
                 {direction === "round" ? " zur nächsten Runde" : " zum nächsten Spieler"}. Kopierte Zeilen aus dem Sheet
                 lassen sich direkt einfügen.
@@ -535,7 +582,7 @@ export function RoundEntryDialog({ subMatch, pool, allPlayers, isGuest, onClose,
         {ready && hasProblems && (
           <p className="text-xs text-[#ED1F24]">
             {states.some((s) => s.kind === "invalid")
-              ? "Mindestens eine Runde enthält eine doppelte Platzierung."
+              ? "Mindestens eine Runde enthält eine doppelte oder wegen DNFs nicht mögliche Platzierung."
               : "Mindestens eine Runde ist noch nicht vollständig."}
           </p>
         )}

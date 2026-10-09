@@ -21,8 +21,10 @@ export default async function TournamentDetailPage({ params }: Props) {
           include: {
             _count: { select: { subMatches: true } },
             tournamentLineup: { select: { name: true } },
+            stage: { select: { id: true, type: true, number: true } },
           },
         },
+        stages: { select: { id: true, type: true, number: true } },
         tournamentLineups: {
           orderBy: { createdAt: "asc" },
           include: { slots: { include: { player: true } } },
@@ -33,6 +35,7 @@ export default async function TournamentDetailPage({ params }: Props) {
     db.match.findMany({
       where: { tournamentId: id },
       include: {
+        stage: { select: { id: true, type: true } },
         subMatches: {
           include: {
             rounds: {

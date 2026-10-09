@@ -89,6 +89,29 @@ model Tournament {
 
   matches         Match[]
   tournamentLineups TournamentLineup[]
+  stages          Stage[]
+}
+
+enum StageType {
+  SEEDING
+  GROUP
+  PLAYOFF
+}
+
+// A tournament is divided into stages: an optional seeding, the match days of the group
+// phase and the playoffs. Names and dates are derived (see lib/stages.ts).
+model Stage {
+  id           String     @id @default(cuid())
+  tournamentId String
+  tournament   Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  type         StageType
+  // Position among the stages of the same type, starting at 1
+  number       Int
+  createdAt    DateTime   @default(now())
+
+  matches Match[]
+
+  @@unique([tournamentId, type, number])
 }
 
 model TournamentLineup {
@@ -118,10 +141,14 @@ model Match {
   tournament          Tournament        @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
   tournamentLineupId  String?
   tournamentLineup    TournamentLineup? @relation(fields: [tournamentLineupId], references: [id], onDelete: SetNull)
-  isSeeding           Boolean           @default(false)
+  // Decides what kind of match this is; a match in the seeding stage is a seeding match
+  stageId             String
+  stage               Stage             @relation(fields: [stageId], references: [id], onDelete: NoAction)
   opponent            String?
   date                DateTime?
   notes               String?
+  // eCircuitMania match page the results were imported from
+  ecmUrl              String?
   createdAt           DateTime          @default(now())
   updatedAt           DateTime          @updatedAt
 
@@ -184,6 +211,8 @@ model RoundResult {
   tmId       String
   playerName String
   timeMs     Int?
+  // Did not finish: placed last and scores no points
+  dnf        Boolean @default(false)
   position   Int?
   isOurTeam  Boolean @default(false)
 

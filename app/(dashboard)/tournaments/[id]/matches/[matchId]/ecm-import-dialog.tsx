@@ -9,6 +9,9 @@ import { useMemo, useState } from "react"
 import type { Player, Round, SubMatch } from "./match-detail-view"
 
 const MAPPING_KEY = "ecm-player-map"
+
+const isDnf = (time: string | undefined) => time?.trim().toUpperCase() === "DNF"
+const isEcmUrl = (url: string | undefined) => !!url && /^https:\/\/([a-z0-9-]+\.)*ecircuitmania\.com\//i.test(url)
 const BOOKMARKLET_URL = `javascript:${encodeURIComponent(ECM_BOOKMARKLET)}`
 
 interface Props {
@@ -16,7 +19,8 @@ interface Props {
   allPlayers: Player[]
   isGuest: (tmId: string) => boolean
   onClose: () => void
-  onImported: (subMatchId: string, rounds: Round[]) => void
+  // url is the eCircuitMania page that was saved along with the rounds
+  onImported: (subMatchId: string, rounds: Round[], url?: string) => void
 }
 
 interface SetAnalysis {
@@ -125,6 +129,7 @@ export function EcmImportDialog({ subMatches, allPlayers, isGuest, onClose, onIm
 
   async function handleImport() {
     if (!payload) return
+    const ecmUrl = isEcmUrl(payload.url) ? payload.url : undefined
     setSaving(true)
     setError("")
     try {
@@ -144,12 +149,14 @@ export function EcmImportDialog({ subMatches, allPlayers, isGuest, onClose, onIm
         body: JSON.stringify({
           playerIds: names.map(playerIdFor),
           track: set.map,
+          ...(ecmUrl && { ecmUrl }),
           rounds: set.rounds.map((round) => ({
             positions: names.map((n) => round.findIndex((e) => e.p === n) + 1),
             times: names.map((n) => parseTime(round.find((e) => e.p === n)?.t ?? "") ?? null),
+            dnf: names.map((n) => isDnf(round.find((e) => e.p === n)?.t)),
             opponents: round
               .filter((e) => !isOurs(e.p))
-              .map((e) => ({ name: e.p, timeMs: parseTime(e.t) ?? null })),
+              .map((e) => ({ name: e.p, timeMs: parseTime(e.t) ?? null, dnf: isDnf(e.t) })),
           })),
         }),
       })
@@ -160,7 +167,7 @@ export function EcmImportDialog({ subMatches, allPlayers, isGuest, onClose, onIm
         return
       }
       const data = await res.json()
-      onImported(targets[i], data.rounds)
+      onImported(targets[i], data.rounds, ecmUrl)
     }
     setSaving(false)
     onClose()

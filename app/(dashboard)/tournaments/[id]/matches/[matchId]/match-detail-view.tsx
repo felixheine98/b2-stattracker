@@ -7,11 +7,15 @@ import { Dialog, DialogTitle } from "@/components/ui/dialog"
 import { Textarea } from "@/components/ui/textarea"
 import { formatLabel, formatLabelLong, formatTime, teamSize } from "@/lib/utils"
 import type { Format } from "@prisma/client"
-import { ArrowLeft, ChevronDown, ChevronUp, Clock, Download, Grid3x3, Trophy, Upload, Users } from "lucide-react"
+import { ArrowLeft, BarChart2, ChevronDown, ChevronUp, Clock, Download, ExternalLink, Grid3x3, Trophy, Upload, Users } from "lucide-react"
 import Link from "next/link"
 import { useSyncedState } from "@/lib/use-synced-state"
 import { PlayerAvatar } from "@/components/player-avatar"
 import { GuestBadge } from "@/components/guest-badge"
+import { Wdl } from "@/components/wdl"
+import { roundPlacements, roundScore } from "@/lib/round-score"
+import { formatDay } from "@/lib/player-status"
+import { sortStages, stageDate, stageName, type StageRef } from "@/lib/stages"
 import { useMemo, useState } from "react"
 import { EcmImportDialog } from "./ecm-import-dialog"
 import { RoundEntryDialog } from "./round-entry-dialog"
@@ -28,6 +32,7 @@ interface RoundResult {
   tmId: string
   playerName: string
   timeMs: number | null
+  dnf?: boolean
   isOurTeam: boolean
   playerId?: string | null
   player?: { id: string; name: string } | null
@@ -61,23 +66,28 @@ interface TournamentLineup {
 
 interface Match {
   id: string
-  isSeeding: boolean
+  stage: StageRef
   opponent?: string | null
   date?: Date | null
   notes?: string | null
+  ecmUrl?: string | null
   tournamentLineup?: TournamentLineup | null
   tournament: {
     id: string
     name: string
     formats: Format[]
+    startDate?: Date | null
+    createdAt: Date
+    stages: StageRef[]
     tournamentLineups: TournamentLineup[]
   }
   subMatches: SubMatch[]
 }
 
-type SortCol = "name" | "played" | "placementSum" | "avg" | "roundW" | "roundL" | "bestTime" | "medianTime" | "avgTime"
+type SortCol = "name" | "played" | "placementSum" | "avg" | "dnfs" | "bestTime" | "medianTime" | "avgTime"
 
-function SubMatchStatsTable({ sm, isGuest }: { sm: SubMatch; isGuest: (tmId: string) => boolean }) {
+// Player stats of one sub-match; the result is part of the heading instead of repeating in every row
+function SubMatchStatsTable({ sm, number, isGuest }: { sm: SubMatch; number: number; isGuest: (tmId: string) => boolean }) {
   const [sortCol, setSortCol] = useState<SortCol>("avg")
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc")
 
@@ -95,6 +105,7 @@ function SubMatchStatsTable({ sm, isGuest }: { sm: SubMatch; isGuest: (tmId: str
     return Array.from(playerMap.values()).map((p) => {
       let roundsPlayed = 0
       let placementSum = 0
+      let dnfs = 0
       const times: number[] = []
       for (const round of sm.rounds) {
         const result = round.results.find(
@@ -102,7 +113,8 @@ function SubMatchStatsTable({ sm, isGuest }: { sm: SubMatch; isGuest: (tmId: str
         )
         if (!result) continue
         roundsPlayed++
-        placementSum += round.results.findIndex((r) => r.id === result.id) + 1
+        placementSum += roundPlacements(round.results)[round.results.indexOf(result)]
+        if (result.dnf) dnfs++
         if (result.timeMs != null) times.push(result.timeMs)
       }
       const sortedTimes = [...times].sort((a, b) => a - b)
@@ -118,6 +130,7 @@ function SubMatchStatsTable({ sm, isGuest }: { sm: SubMatch; isGuest: (tmId: str
         roundsPlayed,
         placementSum,
         avg: roundsPlayed > 0 ? placementSum / roundsPlayed : 0,
+        dnfs,
         bestTime,
         medianTime,
         avgTime,
@@ -132,26 +145,24 @@ function SubMatchStatsTable({ sm, isGuest }: { sm: SubMatch; isGuest: (tmId: str
       else if (sortCol === "played") cmp = a.roundsPlayed - b.roundsPlayed
       else if (sortCol === "placementSum") cmp = a.placementSum - b.placementSum
       else if (sortCol === "avg") cmp = a.avg - b.avg
-      else if (sortCol === "roundW") cmp = teamStats.ourRoundsWon - teamStats.ourRoundsWon
-      else if (sortCol === "roundL") cmp = teamStats.ourRoundsLost - teamStats.ourRoundsLost
+      else if (sortCol === "dnfs") cmp = a.dnfs - b.dnfs
       else if (sortCol === "bestTime") cmp = (a.bestTime ?? Infinity) - (b.bestTime ?? Infinity)
       else if (sortCol === "medianTime") cmp = (a.medianTime ?? Infinity) - (b.medianTime ?? Infinity)
       else if (sortCol === "avgTime") cmp = (a.avgTime ?? Infinity) - (b.avgTime ?? Infinity)
       return sortDir === "asc" ? cmp : -cmp
     })
-  }, [rows, sortCol, sortDir, teamStats])
+  }, [rows, sortCol, sortDir])
 
   function toggleSort(col: SortCol) {
     if (sortCol === col) setSortDir((d) => (d === "asc" ? "desc" : "asc"))
     else { setSortCol(col); setSortDir("asc") }
   }
 
-  const mapOutcome = sm.rounds.length === 0 ? null
-    : teamStats.ourRoundsWon > teamStats.ourRoundsLost ? "W"
-    : teamStats.ourRoundsLost > teamStats.ourRoundsWon ? "L" : "D"
-  const mapColor = mapOutcome === "W" ? "text-[#FBD00D]" : mapOutcome === "L" ? "text-[#ED1F24]" : "text-[#9a9090]"
+  const track = sm.rounds[0]?.track
+  const resultColor = teamStats.ourRoundsWon > teamStats.ourRoundsLost ? "text-[#FBD00D]"
+    : teamStats.ourRoundsLost > teamStats.ourRoundsWon ? "text-[#ED1F24]" : "text-[#9a9090]"
 
-  function Th({ col, label, left }: { col: SortCol; label: string; left?: boolean }) {
+  function th(col: SortCol, label: string, left?: boolean) {
     const active = sortCol === col
     return (
       <th
@@ -171,26 +182,37 @@ function SubMatchStatsTable({ sm, isGuest }: { sm: SubMatch; isGuest: (tmId: str
   }
 
   return (
-    <div className="overflow-x-auto">
-      <table className="w-full text-xs">
+    <div>
+      <div className="flex items-center gap-2 mb-2">
+        <Badge variant={sm.format === "TIME_ATTACK_10" ? "primary" : "secondary"}>
+          {formatLabel(sm.format)}
+        </Badge>
+        <span className="text-sm text-[#f5f0f0]">{track || `#${number}`}</span>
+        <Wdl won={teamStats.ourRoundsWon} drawn={teamStats.ourRoundsDrawn} lost={teamStats.ourRoundsLost} unit="Runden" className={`text-sm font-bold ${resultColor}`} />
+      </div>
+      <div className="overflow-x-auto rounded-lg border border-[#2d2829] px-3">
+      {/* Fixed column widths, so the columns line up across the tables of a match */}
+      <table className="w-full min-w-[720px] table-fixed text-xs">
+        <colgroup>
+          <col className="w-[22%]" />
+          <col span={7} />
+        </colgroup>
         <thead>
           <tr className="border-b border-[#2d2829]">
-            <Th col="name" label="Spieler" left />
-            <Th col="played" label="Gespielt" />
-            <Th col="placementSum" label="Platzsumme" />
-            <Th col="avg" label="Ø Platz" />
-            <th className="py-1.5 px-2 text-right text-[#5e5858] font-medium whitespace-nowrap">Round W</th>
-            <th className="py-1.5 px-2 text-right text-[#5e5858] font-medium whitespace-nowrap">Round L</th>
-            <Th col="bestTime" label="Beste Zeit" />
-            <Th col="medianTime" label="Median Zeit" />
-            <Th col="avgTime" label="Ø Zeit" />
-            <th className="py-1.5 pl-2 text-right text-[#5e5858] font-medium">Map</th>
+            {th("name", "Spieler", true)}
+            {th("played", "Gespielt")}
+            {th("placementSum", "Platzsumme")}
+            {th("avg", "Ø Platz")}
+            {th("dnfs", "DNF")}
+            {th("bestTime", "Beste Zeit")}
+            {th("medianTime", "Median Zeit")}
+            {th("avgTime", "Ø Zeit")}
           </tr>
         </thead>
         <tbody>
           {sorted.length === 0 && (
             <tr>
-              <td colSpan={10} className="py-3 text-center text-[#5e5858]">Noch keine Daten</td>
+              <td colSpan={8} className="py-3 text-center text-[#5e5858]">Noch keine Daten</td>
             </tr>
           )}
           {sorted.map((row) => (
@@ -204,16 +226,15 @@ function SubMatchStatsTable({ sm, isGuest }: { sm: SubMatch; isGuest: (tmId: str
               <td className="py-1.5 px-2 text-right text-[#c5bfbf] font-mono">
                 {row.avg > 0 ? row.avg.toFixed(3) : "—"}
               </td>
-              <td className="py-1.5 px-2 text-right text-[#f5f0f0]">{sm.rounds.length > 0 ? teamStats.ourRoundsWon : "—"}</td>
-              <td className="py-1.5 px-2 text-right text-[#f5f0f0]">{sm.rounds.length > 0 ? teamStats.ourRoundsLost : "—"}</td>
+              <td className="py-1.5 px-2 text-right text-[#c5bfbf]">{row.dnfs}</td>
               <td className="py-1.5 px-2 text-right text-[#FBD00D] font-mono">{row.bestTime != null ? formatTime(row.bestTime) : "—"}</td>
               <td className="py-1.5 px-2 text-right text-[#c5bfbf] font-mono">{row.medianTime != null ? formatTime(Math.round(row.medianTime)) : "—"}</td>
               <td className="py-1.5 px-2 text-right text-[#c5bfbf] font-mono">{row.avgTime != null ? formatTime(Math.round(row.avgTime)) : "—"}</td>
-              <td className={`py-1.5 pl-2 text-right font-bold ${mapColor}`}>{mapOutcome ?? "—"}</td>
             </tr>
           ))}
         </tbody>
       </table>
+      </div>
     </div>
   )
 }
@@ -231,6 +252,28 @@ export function MatchDetailView({ match: initialMatch, allPlayers, guestTmIds, c
   const isGuest = (tmId: string) => guests.has(tmId.toLowerCase())
   const [subMatches, setSubMatches] = useSyncedState(initialMatch.subMatches)
   const matchLineup = initialMatch.tournamentLineup ?? null
+  const [ecmUrl, setEcmUrl] = useState(initialMatch.ecmUrl ?? null)
+  // In playing order
+  const stages = sortStages(initialMatch.tournament.stages)
+  const [stageId, setStageId] = useState(initialMatch.stage.id)
+  const stage = stages.find((st) => st.id === stageId) ?? initialMatch.stage
+  const isSeeding = stage.type === "SEEDING"
+  const [stageError, setStageError] = useState("")
+
+  async function moveToStage(id: string) {
+    setStageError("")
+    const res = await fetch(`/b2-stats/api/tournaments/${initialMatch.tournament.id}/matches/${initialMatch.id}/stage`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ stageId: id }),
+    }).catch(() => null)
+    if (!res?.ok) {
+      const data = await res?.json().catch(() => null)
+      setStageError(data?.error ?? "Verschieben fehlgeschlagen")
+      return
+    }
+    setStageId(id)
+  }
   const [expanded, setExpanded] = useState<Set<string>>(
     new Set(initialMatch.subMatches.map((s) => s.id))
   )
@@ -316,7 +359,7 @@ export function MatchDetailView({ match: initialMatch, allPlayers, guestTmIds, c
 
   const matchStats = computeMatchStats(subMatches)
 
-  const matchTitle = initialMatch.isSeeding
+  const matchTitle = isSeeding
     ? "Seeding"
     : [matchLineup?.name, initialMatch.opponent].filter(Boolean).join(" vs ") || "Unknown opponent"
 
@@ -324,19 +367,54 @@ export function MatchDetailView({ match: initialMatch, allPlayers, guestTmIds, c
     <div className="space-y-6 max-w-5xl">
       {/* Header */}
       <div>
+        {/* Back to the lineup, which in turn leads back to the tournament */}
         <Link
-          href={`/tournaments/${initialMatch.tournament.id}`}
-          className="inline-flex items-center gap-1 text-sm text-[#9a9090] hover:text-[#f5f0f0] mb-4"
+          href={
+            matchLineup
+              ? `/tournaments/${initialMatch.tournament.id}/lineups/${matchLineup.id}`
+              : `/tournaments/${initialMatch.tournament.id}`
+          }
+          className="inline-flex flex-wrap items-center gap-x-2 text-sm text-[#9a9090] hover:text-[#f5f0f0] mb-4"
         >
           <ArrowLeft size={14} />
           {initialMatch.tournament.name}
+          {matchLineup && (
+            <>
+              <span className="text-[#5e5858]">/</span>
+              {matchLineup.name}
+            </>
+          )}
         </Link>
         <div className="flex items-start justify-between gap-4">
           <div>
             <div className="flex items-center gap-2 mb-1 flex-wrap">
               <h1 className="text-2xl font-bold text-[#f5f0f0]">{matchTitle}</h1>
-              {initialMatch.isSeeding && <Badge variant="primary">Seeding</Badge>}
+              {/* A match can be moved between match days and playoffs, but never into or out of the seeding */}
+              {canManage && !isSeeding ? (
+                <Badge variant="primary" className="relative focus-within:ring-2 focus-within:ring-[#FBD00D]">
+                  {stageName(stage, stages)}
+                  <ChevronDown size={12} className="ml-1" />
+                  <select
+                    value={stageId}
+                    onChange={(e) => moveToStage(e.target.value)}
+                    aria-label="Abschnitt"
+                    className="absolute inset-0 w-full cursor-pointer appearance-none rounded-full opacity-0"
+                  >
+                    {stages.filter((st) => st.type !== "SEEDING").map((st) => (
+                      <option key={st.id} value={st.id}>
+                        {stageName(st, stages)}
+                      </option>
+                    ))}
+                  </select>
+                </Badge>
+              ) : (
+                <Badge variant="primary">{stageName(stage, stages)}</Badge>
+              )}
+              <span className="text-xs text-[#5e5858]">
+                {formatDay(stageDate(stage, stages, new Date(initialMatch.tournament.startDate ?? initialMatch.tournament.createdAt)))}
+              </span>
             </div>
+            {stageError && <p className="text-xs text-[#ED1F24]">{stageError}</p>}
             {initialMatch.date && (
               <p className="text-[#9a9090] text-sm">
                 {new Date(initialMatch.date).toLocaleDateString("en-GB", {
@@ -348,6 +426,17 @@ export function MatchDetailView({ match: initialMatch, allPlayers, guestTmIds, c
               </p>
             )}
             {initialMatch.notes && <p className="text-[#5e5858] text-sm mt-1">{initialMatch.notes}</p>}
+            {ecmUrl && (
+              <a
+                href={ecmUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-1 inline-flex max-w-full items-center gap-1.5 text-xs text-[#9a9090] hover:text-[#FBD00D]"
+              >
+                <ExternalLink size={12} className="shrink-0" />
+                <span className="truncate">{ecmUrl.replace(/^https:\/\//, "")}</span>
+              </a>
+            )}
 
             {/* Lineup of this match, fixed when the match is created */}
             {matchLineup && (
@@ -370,7 +459,7 @@ export function MatchDetailView({ match: initialMatch, allPlayers, guestTmIds, c
                 </div>
               </div>
             )}
-            {canManage && !initialMatch.isSeeding && (
+            {canManage && !isSeeding && (
               <Button size="sm" className="mt-3" onClick={() => setShowEcmImport(true)}>
                 <Download size={14} />
                 Von eCM importieren
@@ -382,7 +471,7 @@ export function MatchDetailView({ match: initialMatch, allPlayers, guestTmIds, c
               <CardContent className="py-2 px-4">
                 <div className="text-center">
                   <p className="text-2xl font-bold text-[#f5f0f0]">
-                    {matchStats.subMatchesWon}–{matchStats.subMatchesLost}{matchStats.subMatchesDrawn > 0 ? `–${matchStats.subMatchesDrawn}` : ""}
+                    <Wdl won={matchStats.subMatchesWon} drawn={matchStats.subMatchesDrawn} lost={matchStats.subMatchesLost} unit="Sub-Matches" />
                   </p>
                   <p className="text-xs text-[#5e5858]">sub-match score</p>
                 </div>
@@ -391,6 +480,21 @@ export function MatchDetailView({ match: initialMatch, allPlayers, guestTmIds, c
           )}
         </div>
       </div>
+
+      {/* Player stats, one table per sub-match */}
+      {subMatches.some((sm) => sm.rounds.length > 0) && (
+        <div>
+          <h2 className="text-sm font-semibold text-[#9a9090] uppercase tracking-wider mb-3 flex items-center gap-2">
+            <BarChart2 size={14} />
+            Stats
+          </h2>
+          <div className="space-y-4">
+            {subMatches.map((sm, idx) =>
+              sm.rounds.length > 0 ? <SubMatchStatsTable key={sm.id} sm={sm} number={idx + 1} isGuest={isGuest} /> : null
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Sub-matches */}
       <div className="space-y-3">
@@ -419,7 +523,7 @@ export function MatchDetailView({ match: initialMatch, allPlayers, guestTmIds, c
                   )}
                   {(stats.ourRoundsWon + stats.ourRoundsLost + stats.ourRoundsDrawn) > 0 && (
                     <Badge variant={stats.ourRoundsWon > stats.ourRoundsLost ? "primary" : stats.ourRoundsWon < stats.ourRoundsLost ? "red" : "default"}>
-                      {stats.ourRoundsWon}–{stats.ourRoundsLost}{stats.ourRoundsDrawn > 0 ? `–${stats.ourRoundsDrawn}` : ""}
+                      <Wdl won={stats.ourRoundsWon} drawn={stats.ourRoundsDrawn} lost={stats.ourRoundsLost} unit="Runden" />
                     </Badge>
                   )}
                 </div>
@@ -454,9 +558,6 @@ export function MatchDetailView({ match: initialMatch, allPlayers, guestTmIds, c
                       )}
                     </div>
                   )}
-
-                  {/* Player stats table */}
-                  <SubMatchStatsTable sm={sm} isGuest={isGuest} />
 
                   {/* Import button */}
                   {canManage && (
@@ -494,18 +595,20 @@ export function MatchDetailView({ match: initialMatch, allPlayers, guestTmIds, c
                       {roundsOpen.has(sm.id) && sm.rounds.map((round) => {
                         const ourResults = round.results.filter((r) => r.isOurTeam)
                         const oppResults = round.results.filter((r) => !r.isOurTeam)
-                        const rankMap = new Map(round.results.map((r, idx) => [r.id, idx + 1]))
-                        const outcome = computeRoundOutcome(round.results)
+                        const placements = roundPlacements(round.results)
+                        const rankMap = new Map(round.results.map((r, idx) => [r.id, placements[idx]]))
+                        const score = roundScore(round.results)
 
                         return (
-                          <Card key={round.id} className={outcome === "win" ? "border-[#FBD00D]/30" : ""}>
+                          <Card key={round.id} className={score?.outcome === "W" ? "border-[#FBD00D]/30" : ""}>
                             <CardContent className="pt-4">
                               <div className="flex items-center gap-3 mb-3">
                                 <Badge variant="default">Round {round.number + 1}</Badge>
                                 {round.track && <span className="text-xs text-[#5e5858]">{round.track}</span>}
-                                {outcome === "win" && <Badge variant="primary">WIN</Badge>}
-                                {outcome === "loss" && <Badge variant="red">LOSS</Badge>}
-                                {outcome === "draw" && <Badge variant="default">DRAW</Badge>}
+                                {score?.outcome === "W" && <Badge variant="primary">WIN</Badge>}
+                                {score?.outcome === "L" && <Badge variant="red">LOSS</Badge>}
+                                {score?.outcome === "D" && <Badge variant="default">DRAW</Badge>}
+                                {score && <span className="text-xs font-mono text-[#9a9090]" title="Punkte: wir – Gegner">{score.ours}–{score.theirs}</span>}
                               </div>
                               <div className="grid grid-cols-2 gap-4">
                                 <div>
@@ -526,7 +629,7 @@ export function MatchDetailView({ match: initialMatch, allPlayers, guestTmIds, c
                                             {isGuest(r.tmId) && <GuestBadge className="ml-1.5" />}
                                           </span>
                                           <span className={`font-mono shrink-0 ${rankColor(rank)}`}>
-                                            {r.timeMs != null ? formatTime(r.timeMs) : "—"}
+                                            {r.dnf ? "DNF" : r.timeMs != null ? formatTime(r.timeMs) : "—"}
                                           </span>
                                         </div>
                                       )
@@ -545,7 +648,7 @@ export function MatchDetailView({ match: initialMatch, allPlayers, guestTmIds, c
                                           </span>
                                           <span className="text-[#9a9090] flex-1 truncate">{r.playerName}</span>
                                           <span className={`font-mono shrink-0 ${rankColor(rank)}`}>
-                                            {r.timeMs != null ? formatTime(r.timeMs) : "—"}
+                                            {r.dnf ? "DNF" : r.timeMs != null ? formatTime(r.timeMs) : "—"}
                                           </span>
                                         </div>
                                       )
@@ -580,9 +683,10 @@ export function MatchDetailView({ match: initialMatch, allPlayers, guestTmIds, c
           allPlayers={allPlayers}
           isGuest={isGuest}
           onClose={() => setShowEcmImport(false)}
-          onImported={(subMatchId, rounds) =>
+          onImported={(subMatchId, rounds, url) => {
             setSubMatches((sms) => sms.map((sm) => (sm.id === subMatchId ? { ...sm, rounds } : sm)))
-          }
+            if (url) setEcmUrl(url)
+          }}
         />
       )}
 
@@ -674,20 +778,6 @@ function rankColor(rank: number): string {
   return "text-[#5e5858]"
 }
 
-function computeRoundOutcome(results: RoundResult[]): "win" | "loss" | "draw" | null {
-  const n = results.length
-  if (n === 0) return null
-  const ourResults = results.filter((r) => r.isOurTeam)
-  const oppResults = results.filter((r) => !r.isOurTeam)
-  if (ourResults.length === 0 || oppResults.length === 0) return null
-  const rankMap = new Map(results.map((r, idx) => [r.id, idx + 1]))
-  const ourPoints = ourResults.reduce((sum, r) => sum + (n - (rankMap.get(r.id) ?? n) + 1), 0)
-  const total = (n * (n + 1)) / 2
-  if (ourPoints * 2 > total) return "win"
-  if (ourPoints * 2 < total) return "loss"
-  return "draw"
-}
-
 function computeStats(rounds: Round[]) {
   let ourRoundsWon = 0
   let ourRoundsLost = 0
@@ -696,10 +786,10 @@ function computeStats(rounds: Round[]) {
   let bestOpponentTime: number | undefined
 
   for (const round of rounds) {
-    const outcome = computeRoundOutcome(round.results)
-    if (outcome === "win") ourRoundsWon++
-    else if (outcome === "loss") ourRoundsLost++
-    else if (outcome === "draw") ourRoundsDrawn++
+    const outcome = roundScore(round.results)?.outcome
+    if (outcome === "W") ourRoundsWon++
+    else if (outcome === "L") ourRoundsLost++
+    else if (outcome === "D") ourRoundsDrawn++
 
     const ourBest = round.results.filter((r) => r.isOurTeam)[0]?.timeMs ?? undefined
     const oppBest = round.results.filter((r) => !r.isOurTeam)[0]?.timeMs ?? undefined

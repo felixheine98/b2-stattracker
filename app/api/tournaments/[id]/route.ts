@@ -5,6 +5,7 @@ import { z } from "zod"
 import { Format } from "@prisma/client"
 import { canManage } from "@/lib/roles"
 import { isValidDay } from "@/lib/player-status"
+import { planStageChanges, sortStages, stageName } from "@/lib/stages"
 
 interface Params {
   params: Promise<{ id: string }>
@@ -38,6 +39,14 @@ const patchSchema = z.object({
   // The start date can be changed but not removed
   startDate: z.string().refine(isValidDay, "A valid start date is required").optional(),
   endDate: z.string().nullable().optional(),
+  // Stages are added and removed at the end of their kind
+  stages: z
+    .object({
+      seeding: z.boolean(),
+      matchDays: z.number().int().min(1).max(20),
+      playoffDays: z.number().int().min(0).max(10),
+    })
+    .optional(),
 })
 
 export async function PATCH(req: Request, { params }: Params) {
@@ -52,19 +61,35 @@ export async function PATCH(req: Request, { params }: Params) {
     return NextResponse.json({ error: parsed.error.issues[0].message }, { status: 400 })
   }
 
-  const { name, formats, description, startDate, endDate } = parsed.data
-  const tournament = await db.tournament.update({
-    where: { id },
-    data: {
-      ...(name !== undefined && { name }),
-      ...(formats !== undefined && { formats }),
-      ...(description !== undefined && { description }),
-      ...(startDate !== undefined && { startDate: new Date(startDate) }),
-      ...(endDate !== undefined && { endDate: endDate ? new Date(endDate) : null }),
-    },
-  })
+  const { name, formats, description, startDate, endDate, stages } = parsed.data
 
-  return NextResponse.json(tournament)
+  const existing = await db.stage.findMany({ where: { tournamentId: id }, include: { _count: { select: { matches: true } } } })
+  const changes = stages
+    ? planStageChanges(existing.map((s) => ({ ...s, matchCount: s._count.matches })), stages)
+    : { create: [], remove: [], blocked: [] }
+  // A stage with matches is never removed; nothing is changed until they are moved or deleted
+  if (changes.blocked.length > 0) {
+    const names = sortStages(changes.blocked).map((s) => stageName(s, existing)).join(", ")
+    return NextResponse.json({ error: `Noch Matches vorhanden in: ${names}` }, { status: 409 })
+  }
+
+  const [tournament] = await db.$transaction([
+    db.tournament.update({
+      where: { id },
+      data: {
+        ...(name !== undefined && { name }),
+        ...(formats !== undefined && { formats }),
+        ...(description !== undefined && { description }),
+        ...(startDate !== undefined && { startDate: new Date(startDate) }),
+        ...(endDate !== undefined && { endDate: endDate ? new Date(endDate) : null }),
+      },
+    }),
+    db.stage.deleteMany({ where: { id: { in: changes.remove } } }),
+    db.stage.createMany({ data: changes.create.map((s) => ({ ...s, tournamentId: id })) }),
+  ])
+  const saved = await db.stage.findMany({ where: { tournamentId: id } })
+
+  return NextResponse.json({ ...tournament, stages: saved })
 }
 
 export async function DELETE(_req: Request, { params }: Params) {

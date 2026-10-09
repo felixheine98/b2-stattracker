@@ -17,12 +17,15 @@ export default async function LineupMatchesPage({ params }: Props) {
     db.tournamentLineup.findUnique({
       where: { id: lineupId, tournamentId },
       include: {
-        tournament: { select: { id: true, name: true, formats: true, startDate: true, createdAt: true } },
+        tournament: {
+          select: { id: true, name: true, formats: true, startDate: true, createdAt: true, stages: { select: { id: true, type: true, number: true } } },
+        },
         slots: { include: { player: true } },
         matches: {
           orderBy: { createdAt: "desc" },
           include: {
             _count: { select: { subMatches: true } },
+            stage: { select: { id: true, type: true, number: true } },
             subMatches: {
               orderBy: { order: "asc" },
               include: {

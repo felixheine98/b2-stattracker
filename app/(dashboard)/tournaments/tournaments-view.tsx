@@ -1,5 +1,8 @@
 "use client"
 
+import { FormatBuilder } from "@/components/format-builder"
+import { StagePlanFields } from "@/components/stage-plan-fields"
+import { DEFAULT_STAGE_PLAN } from "@/lib/stages"
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { useSyncedState } from "@/lib/use-synced-state"
@@ -12,8 +15,8 @@ import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Dialog, DialogTitle } from "@/components/ui/dialog"
 import { Badge } from "@/components/ui/badge"
-import { Plus, Trophy, ChevronRight, X } from "lucide-react"
-import { formatLabel, formatLabelLong } from "@/lib/utils"
+import { Plus, Trophy, ChevronRight } from "lucide-react"
+import { formatLabel } from "@/lib/utils"
 import type { Format } from "@prisma/client"
 
 interface Tournament {
@@ -27,63 +30,8 @@ interface Tournament {
   _count: { matches: number }
 }
 
-const ALL_FORMATS: Format[] = [
-  "TIME_ATTACK_10",
-  "ROUND_1V1",
-  "ROUND_2V2",
-  "ROUND_3V3",
-  "ROUND_4V4",
-  "ROUND_5V5",
-]
-
 function formatBadgeVariant(format: Format): "primary" | "secondary" {
   return format === "TIME_ATTACK_10" ? "primary" : "secondary"
-}
-
-function FormatBuilder({ value, onChange }: { value: Format[]; onChange: (v: Format[]) => void }) {
-  return (
-    <div className="space-y-2">
-      <div className="flex flex-wrap gap-1.5">
-        {ALL_FORMATS.map((f) => (
-          <button
-            key={f}
-            type="button"
-            onClick={() => onChange([...value, f])}
-            className="inline-flex items-center gap-1 rounded-full border border-[#3a3435] bg-[#251f20] px-2.5 py-1 text-xs text-[#9a9090] hover:border-[#FBD00D] hover:text-[#FBD00D] transition-colors"
-          >
-            <Plus size={10} />
-            {formatLabelLong(f)}
-          </button>
-        ))}
-      </div>
-      <div className="min-h-10 rounded-lg border border-[#2d2829] bg-[#1c1819] p-2 flex flex-wrap gap-1.5 items-start">
-        {value.length === 0 ? (
-          <p className="text-xs text-[#3a3435] self-center px-1">Click formats above to build the sequence</p>
-        ) : (
-          value.map((f, i) => (
-            <span
-              key={i}
-              className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium border ${
-                f === "TIME_ATTACK_10"
-                  ? "bg-[#FBD00D]/15 text-[#FBD00D] border-[#FBD00D]/30"
-                  : "bg-[#002484]/20 text-[#6b8fff] border-[#002484]/40"
-              }`}
-            >
-              <span className="text-[#5e5858] font-normal mr-0.5">{i + 1}.</span>
-              {formatLabel(f)}
-              <button
-                type="button"
-                onClick={() => onChange(value.filter((_, idx) => idx !== i))}
-                className="ml-0.5 opacity-60 hover:opacity-100 transition-opacity"
-              >
-                <X size={10} />
-              </button>
-            </span>
-          ))
-        )}
-      </div>
-    </div>
-  )
 }
 
 export function TournamentsView({ tournaments: initial, canManage }: { tournaments: Tournament[]; canManage: boolean }) {
@@ -93,9 +41,11 @@ export function TournamentsView({ tournaments: initial, canManage }: { tournamen
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
   const [formats, setFormats] = useState<Format[]>([])
+  const [stagePlan, setStagePlan] = useState(DEFAULT_STAGE_PLAN)
 
   function openForm() {
     setFormats([])
+    setStagePlan(DEFAULT_STAGE_PLAN)
     setError("")
     setShowForm(true)
   }
@@ -118,6 +68,7 @@ export function TournamentsView({ tournaments: initial, canManage }: { tournamen
         description: form.get("description") || null,
         startDate: form.get("startDate") || null,
         endDate: form.get("endDate") || null,
+        stages: stagePlan,
       }),
     })
     setLoading(false)
@@ -207,6 +158,7 @@ export function TournamentsView({ tournaments: initial, canManage }: { tournamen
             <Label htmlFor="description">Description <span className="text-[#5e5858]">(optional)</span></Label>
             <Textarea id="description" name="description" rows={2} />
           </div>
+          <StagePlanFields value={stagePlan} onChange={setStagePlan} />
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <Label htmlFor="startDate">Start date</Label>
