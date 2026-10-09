@@ -1,3 +1,4 @@
+import { syncTournamentSlugs } from "@/lib/slugs-db"
 import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
 import { NextResponse } from "next/server"
@@ -88,8 +89,11 @@ export async function PATCH(req: Request, { params }: Params) {
     db.stage.createMany({ data: changes.create.map((s) => ({ ...s, tournamentId: id })) }),
   ])
   const saved = await db.stage.findMany({ where: { tournamentId: id } })
+  // Name and stages are part of the addresses
+  await syncTournamentSlugs(id)
+  const { slug } = await db.tournament.findUniqueOrThrow({ where: { id }, select: { slug: true } })
 
-  return NextResponse.json({ ...tournament, stages: saved })
+  return NextResponse.json({ ...tournament, slug, stages: saved })
 }
 
 export async function DELETE(_req: Request, { params }: Params) {

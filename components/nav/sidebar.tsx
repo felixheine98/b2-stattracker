@@ -1,5 +1,6 @@
 "use client"
 
+import { BASE_PATH } from "@/lib/base-path"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
@@ -55,7 +56,7 @@ export function Sidebar({ userName, role }: SidebarProps) {
       </button>
       <div className={cn("flex items-center gap-3 py-4 border-b border-[#2d2829]", collapsed ? "justify-center px-2" : "px-5")}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/b2-stats/b2-logo.svg" alt="" className={cn("object-contain", collapsed ? "h-9 w-9" : "h-11 w-11")} />
+        <img src={`${BASE_PATH}/b2-logo.svg`} alt="" className={cn("object-contain", collapsed ? "h-9 w-9" : "h-11 w-11")} />
         {!collapsed && <span className="font-bold text-[#f5f0f0] text-xl tracking-tight">B2 Stats</span>}
       </div>
 
@@ -107,7 +108,7 @@ export function Sidebar({ userName, role }: SidebarProps) {
           </>
         )}
         <button
-          onClick={() => signOut({ callbackUrl: "/b2-stats/login" })}
+          onClick={() => signOut({ callbackUrl: `${BASE_PATH}/login` })}
           title={collapsed ? `Sign out (${userName})` : undefined}
           className={cn(
             "flex w-full items-center gap-3 rounded-md py-2 text-sm font-medium text-[#9a9090] hover:bg-[#251f20] hover:text-[#ED1F24] transition-colors",

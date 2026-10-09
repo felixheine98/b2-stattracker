@@ -1,3 +1,4 @@
+import { syncTournamentSlugs } from "@/lib/slugs-db"
 import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
 import { NextResponse } from "next/server"
@@ -106,7 +107,8 @@ export async function DELETE(_req: Request, { params }: Params) {
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   if (!canManage((session.user as { role?: string }).role)) return NextResponse.json({ error: "Forbidden" }, { status: 403 })
 
-  const { matchId } = await params
+  const { id, matchId } = await params
   await db.match.delete({ where: { id: matchId } })
+  await syncTournamentSlugs(id)
   return new NextResponse(null, { status: 204 })
 }

@@ -1,3 +1,4 @@
+import { syncTournamentSlugs } from "@/lib/slugs-db"
 import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
 import { NextResponse } from "next/server"
@@ -58,5 +59,8 @@ export async function POST(req: Request) {
     },
   })
 
-  return NextResponse.json(tournament, { status: 201 })
+  await syncTournamentSlugs(tournament.id)
+  const { slug } = await db.tournament.findUniqueOrThrow({ where: { id: tournament.id }, select: { slug: true } })
+
+  return NextResponse.json({ ...tournament, slug }, { status: 201 })
 }

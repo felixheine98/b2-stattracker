@@ -53,6 +53,7 @@ export async function POST(req: Request) {
     const player = await db.player.create({
       data: {
         name,
+        initialName: name,
         tmId,
         initialStatus: status,
         country: country ?? null,
@@ -64,7 +65,7 @@ export async function POST(req: Request) {
           ...(tmio.name !== name && { dismissedTmioName: tmio.name }),
         }),
       },
-      include: { statusChanges: true },
+      include: { statusChanges: true, nameChanges: true },
     })
     return NextResponse.json(player, { status: 201 })
   } catch (e: unknown) {

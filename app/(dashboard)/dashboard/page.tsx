@@ -1,3 +1,4 @@
+import { tournamentPath } from "@/lib/paths"
 import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -90,7 +91,7 @@ export default async function DashboardPage() {
         ) : (
           <div className="space-y-2">
             {recentTournaments.map((t) => (
-              <Link key={t.id} href={`/tournaments/${t.id}`}>
+              <Link key={t.id} href={tournamentPath(t)}>
                 <Card className="hover:border-[#3a3435] transition-colors cursor-pointer">
                   <CardContent className="py-3 flex items-center justify-between">
                     <div className="flex items-center gap-3">

@@ -44,7 +44,10 @@ model User {
 model Player {
   id        String   @id @default(cuid())
   tmId      String   @unique
+  // The current name; kept in step with the name history (initialName plus nameChanges)
   name      String
+  // Name the player has "from the beginning"; later renames are PlayerNameChange rows
+  initialName String
   country   String?
   // Result of the last comparison with trackmania.io; null name after a check = not found
   tmioName             String?
@@ -59,6 +62,7 @@ model Player {
   updatedAt DateTime @updatedAt
 
   statusChanges         PlayerStatusChange[]
+  nameChanges           PlayerNameChange[]
   user                  User?
   lineupSlots           LineupSlot[]
   roundResults          RoundResult[]
@@ -77,9 +81,23 @@ model PlayerStatusChange {
   @@unique([playerId, effectiveFrom])
 }
 
+// A rename, valid from the given day on
+model PlayerNameChange {
+  id            String   @id @default(cuid())
+  playerId      String
+  player        Player   @relation(fields: [playerId], references: [id], onDelete: Cascade)
+  name          String
+  effectiveFrom DateTime @db.Date
+  createdAt     DateTime @default(now())
+
+  @@unique([playerId, effectiveFrom])
+}
+
 model Tournament {
   id          String    @id @default(cuid())
   name        String
+  // Readable address part, derived from the name (see lib/slugs.ts); null until first computed
+  slug        String?   @unique
   formats     Format[]
   description String?
   startDate   DateTime?
@@ -119,10 +137,13 @@ model TournamentLineup {
   tournamentId String
   tournament   Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
   name         String
+  slug         String?
   createdAt    DateTime   @default(now())
 
   slots   TournamentLineupSlot[]
   matches Match[]
+
+  @@unique([tournamentId, slug])
 }
 
 model TournamentLineupSlot {
@@ -140,7 +161,9 @@ model Match {
   tournamentId        String
   tournament          Tournament        @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
   tournamentLineupId  String?
-  tournamentLineup    TournamentLineup? @relation(fields: [tournamentLineupId], references: [id], onDelete: SetNull)
+  // Every match belongs to a lineup; a lineup with matches cannot be deleted
+  tournamentLineup    TournamentLineup? @relation(fields: [tournamentLineupId], references: [id], onDelete: NoAction)
+  slug                String?
   // Decides what kind of match this is; a match in the seeding stage is a seeding match
   stageId             String
   stage               Stage             @relation(fields: [stageId], references: [id], onDelete: NoAction)
@@ -153,6 +176,27 @@ model Match {
   updatedAt           DateTime          @updatedAt
 
   subMatches SubMatch[]
+
+  @@unique([tournamentLineupId, slug])
+}
+
+enum SlugKind {
+  TOURNAMENT
+  LINEUP
+  MATCH
+}
+
+// A former address of a tournament, lineup or match, so old links keep working after a rename.
+// scopeId is what the slug was unique in: "" for tournaments, the tournament for lineups, the lineup for matches.
+model SlugAlias {
+  id        String   @id @default(cuid())
+  kind      SlugKind
+  scopeId   String
+  slug      String
+  targetId  String
+  createdAt DateTime @default(now())
+
+  @@unique([kind, scopeId, slug])
 }
 
 model SubMatch {

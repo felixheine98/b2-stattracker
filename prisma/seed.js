@@ -67,7 +67,7 @@ async function main() {
     const player = await prisma.player.upsert({
       where: { tmId: p.tmId },
       update: {},
-      create: { name: p.name, tmId: p.tmId },
+      create: { name: p.name, initialName: p.name, tmId: p.tmId },
       include: { statusChanges: { orderBy: { effectiveFrom: 'desc' }, take: 1 } },
     })
 

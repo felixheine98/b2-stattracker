@@ -1,3 +1,4 @@
+import { syncTournamentSlugs } from "@/lib/slugs-db"
 import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
 import { NextResponse } from "next/server"
@@ -29,7 +30,8 @@ const createSchema = z.object({
   opponent: z.string().nullable().optional(),
   date: z.string().nullable().optional(),
   notes: z.string().nullable().optional(),
-  lineupId: z.string().nullable().optional(),
+  // Every match belongs to a lineup of the tournament
+  lineupId: z.string().min(1),
 })
 
 export async function POST(req: Request, { params }: Params) {
@@ -50,15 +52,12 @@ export async function POST(req: Request, { params }: Params) {
   const stage = await db.stage.findUnique({ where: { id: parsed.data.stageId } })
   if (!stage || stage.tournamentId !== id) return NextResponse.json({ error: "Stage not found" }, { status: 400 })
 
-  // Fetch lineup slots if a tournament lineup was selected
-  let lineupPlayerIds: string[] = []
-  if (parsed.data.lineupId) {
-    const tl = await db.tournamentLineup.findUnique({
-      where: { id: parsed.data.lineupId, tournamentId: id },
-      include: { slots: { select: { playerId: true } } },
-    })
-    if (tl) lineupPlayerIds = tl.slots.map((s) => s.playerId)
-  }
+  const tl = await db.tournamentLineup.findUnique({
+    where: { id: parsed.data.lineupId, tournamentId: id },
+    include: { slots: { select: { playerId: true } } },
+  })
+  if (!tl) return NextResponse.json({ error: "Lineup not found" }, { status: 400 })
+  const lineupPlayerIds = tl.slots.map((s) => s.playerId)
 
   const subMatchFormats = stage.type === "SEEDING"
     ? [{ format: "TIME_ATTACK_10" as const, order: 0 }]
@@ -77,7 +76,7 @@ export async function POST(req: Request, { params }: Params) {
       opponent: parsed.data.opponent ?? null,
       date: parsed.data.date ? new Date(parsed.data.date) : null,
       notes: parsed.data.notes ?? null,
-      tournamentLineupId: parsed.data.lineupId ?? null,
+      tournamentLineupId: tl.id,
       subMatches: {
         create: subMatchFormats.map((sm) => ({ ...sm, lineup: lineupCreate })),
       },
@@ -85,5 +84,8 @@ export async function POST(req: Request, { params }: Params) {
     include: { _count: { select: { subMatches: true } }, stage: { select: { id: true, type: true } }, subMatches: { include: { rounds: { include: { results: true } } } } },
   })
 
-  return NextResponse.json(match, { status: 201 })
+  await syncTournamentSlugs(id)
+  const { slug } = await db.match.findUniqueOrThrow({ where: { id: match.id }, select: { slug: true } })
+
+  return NextResponse.json({ ...match, slug }, { status: 201 })
 }

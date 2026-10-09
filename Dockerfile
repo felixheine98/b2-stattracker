@@ -12,6 +12,9 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 RUN npx prisma generate
+# The path the app is served under is fixed when building (see next.config.ts)
+ARG BASE_PATH=/b2-stats
+ENV BASE_PATH=$BASE_PATH
 RUN npm run build
 
 FROM base AS runner

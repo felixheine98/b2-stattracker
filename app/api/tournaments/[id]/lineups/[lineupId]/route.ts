@@ -1,3 +1,5 @@
+import { syncTournamentSlugs } from "@/lib/slugs-db"
+import { withCompNames } from "@/lib/player-names-db"
 import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
 import { NextResponse } from "next/server"
@@ -63,10 +65,13 @@ export async function PATCH(req: Request, { params }: Params) {
         },
       }),
     },
-    include: { slots: { include: { player: true } } },
+    include: { slots: { include: { player: true } }, tournament: { select: { startDate: true, createdAt: true } } },
   })
 
-  return NextResponse.json(lineup)
+  await syncTournamentSlugs(id)
+  const { slug } = await db.tournamentLineup.findUniqueOrThrow({ where: { id: lineupId }, select: { slug: true } })
+
+  return NextResponse.json(await withCompNames({ ...lineup, slug }, lineup.tournament))
 }
 
 export async function DELETE(_req: Request, { params }: Params) {
@@ -74,7 +79,16 @@ export async function DELETE(_req: Request, { params }: Params) {
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   if (!canManage((session.user as { role?: string }).role)) return NextResponse.json({ error: "Forbidden" }, { status: 403 })
 
-  const { lineupId } = await params
+  const { id, lineupId } = await params
+  // Matches always belong to a lineup, so they have to go (or move) first
+  const matches = await db.match.count({ where: { tournamentLineupId: lineupId } })
+  if (matches > 0) {
+    return NextResponse.json(
+      { error: `Dieses Lineup hat noch ${matches} Match${matches === 1 ? "" : "es"} und kann nicht gelöscht werden.` },
+      { status: 409 }
+    )
+  }
   await db.tournamentLineup.delete({ where: { id: lineupId } })
+  await syncTournamentSlugs(id)
   return new NextResponse(null, { status: 204 })
 }

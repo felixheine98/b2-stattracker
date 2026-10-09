@@ -37,6 +37,50 @@ export function parseEcmPayload(text: string): EcmPayload | null {
   }
 }
 
+const isDnfTime = (time: string) => time.trim().toUpperCase() === "DNF"
+
+interface RoundNote {
+  // Number of the round, starting at 1
+  round: number
+  player: string
+}
+
+// eCircuitMania sometimes lists a round with a player too many or too few. Such rounds are brought
+// to the usual length of the set where it is clear how:
+// - too many: a DNF of a player without a finished time anywhere in the set is dropped
+//   (someone who joined by mistake)
+// - too few: players of the set (anyone with a finished time) missing from the round are added as
+//   DNF on the last place
+//   (a disconnect before the round was recorded)
+// A round that cannot be repaired this way is left as it is.
+export function repairEcmSet(set: EcmSet): { set: EcmSet; dropped: RoundNote[]; added: RoundNote[] } {
+  const lengths = set.rounds.map((r) => r.length)
+  // The usual number of players per round: the most frequent length, the smaller one on a tie
+  const usual = [...new Set(lengths)].sort(
+    (a, b) => lengths.filter((l) => l === b).length - lengths.filter((l) => l === a).length || a - b
+  )[0]
+  const finishers = new Set(set.rounds.flatMap((r) => r.filter((e) => !isDnfTime(e.t)).map((e) => e.p)))
+
+  const dropped: RoundNote[] = []
+  const added: RoundNote[] = []
+  const rounds = set.rounds.map((entries, i) => {
+    if (entries.length > usual) {
+      const stray = entries.filter((e) => isDnfTime(e.t) && !finishers.has(e.p))
+      if (entries.length - stray.length !== usual) return entries
+      dropped.push(...stray.map((e) => ({ round: i + 1, player: e.p })))
+      return entries.filter((e) => !stray.includes(e))
+    }
+    if (entries.length < usual) {
+      const missing = [...finishers].filter((p) => !entries.some((e) => e.p === p))
+      if (entries.length + missing.length !== usual) return entries
+      added.push(...missing.map((p) => ({ round: i + 1, player: p })))
+      return [...entries, ...missing.map((p) => ({ p, t: "DNF" }))]
+    }
+    return entries
+  })
+  return dropped.length + added.length > 0 ? { set: { ...set, rounds }, dropped, added } : { set, dropped, added }
+}
+
 // "Clin_TM" and "Clin", or "Joooooey" and "Jooooey", should be recognised as the same player
 export function normalizeName(name: string): string {
   return name
@@ -48,6 +92,8 @@ export function normalizeName(name: string): string {
 
 // Plain ES5-style JavaScript on purpose: it runs as a bookmarklet on the eCircuitMania page.
 // It relies on visible text and table structure only, not on their generated class names.
+// The roster of a team is the first element with several children after its name; once a match
+// has a result, the score sits between the two.
 export const ECM_BOOKMARKLET = String.raw`(async function(){
 var sleep=function(ms){return new Promise(function(r){setTimeout(r,ms)})};
 var txt=function(e){return e?(e.textContent||'').replace(/\s+/g,' ').trim():''};
@@ -82,8 +128,10 @@ if(!sets.length){alert('Keine Runden gefunden. Ist die Match-Seite geöffnet?');
 var teams=teamNames.map(function(n){
 var players=[];
 Array.prototype.some.call(document.querySelectorAll('span,div'),function(e){
+if(own(e)!==n||e.closest('table'))return false;
 var sib=e.nextElementSibling;
-if(own(e)===n&&sib&&sib.children.length>1&&!e.closest('table')){players=Array.prototype.map.call(sib.children,txt).filter(Boolean);return true}
+while(sib&&sib.children.length<2)sib=sib.nextElementSibling;
+if(sib){players=Array.prototype.map.call(sib.children,txt).filter(Boolean);return true}
 return false});
 return{name:n,players:players}});
 var out=JSON.stringify({ecm:1,url:location.href,teams:teams,sets:sets});

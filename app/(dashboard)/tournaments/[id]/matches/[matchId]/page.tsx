@@ -1,57 +1,22 @@
 import { db } from "@/lib/db"
-import { auth } from "@/lib/auth"
-import { canManage } from "@/lib/roles"
-import { guestTmIdsAt, tournamentReferenceDate } from "@/lib/player-status"
-import { notFound } from "next/navigation"
-import { MatchDetailView } from "./match-detail-view"
+import { matchPath } from "@/lib/paths"
+import { resolveTournament } from "@/lib/slugs-db"
+import { notFound, redirect } from "next/navigation"
 
 interface Props {
   params: Promise<{ id: string; matchId: string }>
 }
 
-export default async function MatchDetailPage({ params }: Props) {
-  const { id: tournamentId, matchId } = await params
-
-  const [session, match, allPlayers] = await Promise.all([
-    auth(),
-    db.match.findUnique({
-      where: { id: matchId },
-      include: {
-        tournamentLineup: { select: { id: true, name: true, slots: { include: { player: true } } } },
-        stage: { select: { id: true, type: true, number: true } },
-        tournament: {
-          include: {
-            stages: { select: { id: true, type: true, number: true } },
-            tournamentLineups: {
-              orderBy: { createdAt: "asc" },
-              include: { slots: { include: { player: true } } },
-            },
-          },
-        },
-        subMatches: {
-          orderBy: { order: "asc" },
-          include: {
-            lineup: { include: { slots: { include: { player: true } } } },
-            rounds: {
-              orderBy: { number: "asc" },
-              include: {
-                results: {
-                  orderBy: [{ position: "asc" }, { timeMs: "asc" }],
-                  include: { player: { select: { id: true, name: true } } },
-                },
-              },
-            },
-          },
-        },
-      },
-    }),
-    db.player.findMany({ orderBy: { name: "asc" }, include: { statusChanges: true } }),
-  ])
-
-  if (!match || match.tournament.id !== tournamentId) notFound()
-
-  // Members and guests as of the tournament's start day
-  const guestTmIds = guestTmIdsAt(allPlayers, tournamentReferenceDate(match.tournament))
-
-  return <MatchDetailView match={match} allPlayers={allPlayers} guestTmIds={guestTmIds} canManage={canManage((session?.user as { role?: string })?.role)} />
+// Former address of the match page (/tournaments/<id>/matches/<id>): old links are sent on
+export default async function OldMatchPage({ params }: Props) {
+  const { id, matchId } = await params
+  const tournament = await resolveTournament(id)
+  const match = tournament
+    ? await db.match.findFirst({
+        where: { id: matchId, tournamentId: tournament.id },
+        select: { id: true, slug: true, tournamentLineup: { select: { id: true, slug: true } } },
+      })
+    : null
+  if (!tournament || !match?.tournamentLineup) notFound()
+  redirect(matchPath(tournament, match.tournamentLineup, match))
 }

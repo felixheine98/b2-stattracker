@@ -1,5 +1,6 @@
 "use client"
 
+import { PlayerName } from "@/components/player-name"
 import { GuestBadge } from "@/components/guest-badge"
 import { Badge } from "@/components/ui/badge"
 import { cn, formatLabel } from "@/lib/utils"
@@ -81,7 +82,7 @@ export function FormatStatsTable({ agg, isGuest, lineupName }: Props) {
             {players.map((p) => (
               <tr key={p.tmId} className="border-b border-[#1c1819] hover:bg-[#1c1819]/60">
                 <td className="py-1.5 pl-3 pr-4 text-[#f5f0f0] font-medium whitespace-nowrap">
-                  {p.name}
+                  <PlayerName name={p.name} currentName={p.currentName} />
                   {isGuest(p.tmId) && <GuestBadge className="ml-1.5" />}
                 </td>
                 {lineupName && <td className="py-1.5 px-3 text-[#c5bfbf] whitespace-nowrap">{lineupName(p.tmId) ?? "—"}</td>}

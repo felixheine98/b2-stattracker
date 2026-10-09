@@ -1,3 +1,4 @@
+import { BASE_PATH } from "@/lib/base-path"
 import { cn } from "@/lib/utils"
 
 interface Props {
@@ -11,7 +12,7 @@ export function PlayerAvatar({ player, className }: Props) {
     return (
       // eslint-disable-next-line @next/next/no-img-element
       <img
-        src={`/b2-stats/flags/${player.country}.svg`}
+        src={`${BASE_PATH}/flags/${player.country}.svg`}
         alt={player.country.toUpperCase()}
         title={player.country.toUpperCase()}
         className={cn("h-6 w-6 shrink-0 rounded-full object-cover ring-1 ring-[#3a3435]", className)}

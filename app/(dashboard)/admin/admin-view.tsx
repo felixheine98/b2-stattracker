@@ -1,5 +1,6 @@
 "use client"
 
+import { BASE_PATH } from "@/lib/base-path"
 import { useSyncedState } from "@/lib/use-synced-state"
 import { cn } from "@/lib/utils"
 import { Badge } from "@/components/ui/badge"
@@ -62,7 +63,7 @@ export function AdminView({ users: initial, currentUserId, isAdmin }: Props) {
 
   async function handleChangeRole(userId: string, role: Role) {
     setUpdatingRole(userId)
-    const res = await fetch(`/b2-stats/api/admin/users/${userId}`, {
+    const res = await fetch(`${BASE_PATH}/api/admin/users/${userId}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ role }),
@@ -76,7 +77,7 @@ export function AdminView({ users: initial, currentUserId, isAdmin }: Props) {
   async function handleDelete(userId: string) {
     if (!confirm("Delete this user? This cannot be undone.")) return
     setDeleting(userId)
-    const res = await fetch(`/b2-stats/api/admin/users/${userId}`, { method: "DELETE" })
+    const res = await fetch(`${BASE_PATH}/api/admin/users/${userId}`, { method: "DELETE" })
     setDeleting(null)
     if (res.ok) setUsers((u) => u.filter((user) => user.id !== userId))
   }
@@ -86,7 +87,7 @@ export function AdminView({ users: initial, currentUserId, isAdmin }: Props) {
     setError("")
     setLoading(true)
     const form = new FormData(e.currentTarget)
-    const res = await fetch("/b2-stats/api/admin/users", {
+    const res = await fetch(`${BASE_PATH}/api/admin/users`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({

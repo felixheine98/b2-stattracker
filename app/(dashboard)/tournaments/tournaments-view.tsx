@@ -1,5 +1,7 @@
 "use client"
 
+import { BASE_PATH } from "@/lib/base-path"
+import { tournamentPath } from "@/lib/paths"
 import { FormatBuilder } from "@/components/format-builder"
 import { StagePlanFields } from "@/components/stage-plan-fields"
 import { DEFAULT_STAGE_PLAN } from "@/lib/stages"
@@ -21,6 +23,7 @@ import type { Format } from "@prisma/client"
 
 interface Tournament {
   id: string
+  slug?: string | null
   name: string
   formats: Format[]
   description?: string | null
@@ -59,7 +62,7 @@ export function TournamentsView({ tournaments: initial, canManage }: { tournamen
     setError("")
     setLoading(true)
     const form = new FormData(e.currentTarget)
-    const res = await fetch("/b2-stats/api/tournaments", {
+    const res = await fetch(`${BASE_PATH}/api/tournaments`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -80,7 +83,7 @@ export function TournamentsView({ tournaments: initial, canManage }: { tournamen
     const data = await res.json()
     setTournaments((t) => [{ ...data, _count: { matches: 0 } }, ...t])
     setShowForm(false)
-    router.push(`/tournaments/${data.id}`)
+    router.push(tournamentPath(data))
   }
 
   return (
@@ -108,7 +111,7 @@ export function TournamentsView({ tournaments: initial, canManage }: { tournamen
       ) : (
         <div className="grid gap-3 sm:grid-cols-2">
           {tournaments.map((t) => (
-            <Link key={t.id} href={`/tournaments/${t.id}`}>
+            <Link key={t.id} href={tournamentPath(t)}>
               <Card className="h-full hover:border-[#3a3435] transition-colors cursor-pointer">
                 <CardHeader>
                   <div className="flex items-start justify-between gap-2">

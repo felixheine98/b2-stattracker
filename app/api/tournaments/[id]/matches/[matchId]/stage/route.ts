@@ -1,3 +1,4 @@
+import { syncTournamentSlugs } from "@/lib/slugs-db"
 import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
 import { NextResponse } from "next/server"
@@ -32,5 +33,8 @@ export async function PUT(req: Request, { params }: Params) {
   }
 
   await db.match.update({ where: { id: matchId }, data: { stageId: target.id } })
-  return NextResponse.json({ stageId: target.id })
+  // The stage is part of the match's address
+  await syncTournamentSlugs(id)
+  const { slug } = await db.match.findUniqueOrThrow({ where: { id: matchId }, select: { slug: true } })
+  return NextResponse.json({ stageId: target.id, slug })
 }

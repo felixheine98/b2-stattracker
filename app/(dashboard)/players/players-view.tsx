@@ -1,5 +1,8 @@
 "use client"
 
+import { BASE_PATH } from "@/lib/base-path"
+import { allNames, type NameChange } from "@/lib/player-names"
+import { NameHistoryDialog } from "./name-history-dialog"
 import { useEffect, useRef, useState, useTransition } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { useSyncedState } from "@/lib/use-synced-state"
@@ -22,7 +25,7 @@ import { Label } from "@/components/ui/label"
 import { Card, CardContent } from "@/components/ui/card"
 import { Dialog, DialogTitle } from "@/components/ui/dialog"
 import { cn } from "@/lib/utils"
-import { ArrowLeftRight, Check, History, KeyRound, Link2, Link2Off, Plus, RefreshCw, Search, Trash2, Trophy, User, Wand2, X } from "lucide-react"
+import { ArrowLeftRight, Check, History, KeyRound, Link2, Link2Off, Pencil, Plus, RefreshCw, Search, Trash2, Trophy, User, Wand2, X } from "lucide-react"
 
 interface UserOption {
   id: string
@@ -45,6 +48,8 @@ interface Player {
   dismissedTmioCountry?: string | null
   initialStatus: PlayerStatus
   statusChanges: StatusChange[]
+  initialName: string
+  nameChanges: NameChange[]
   tournamentLineupSlots?: Array<{
     lineup: {
       name: string
@@ -191,6 +196,9 @@ export function PlayersView({ players: initial, users, canManage }: Props) {
   const newStatus: PlayerStatus = tab === "members" ? "MEMBER" : "GUEST"
   const movePlayer = players.find((p) => p.id === moveId)
   const historyPlayer = players.find((p) => p.id === historyId)
+  // --- Name history / rename ---
+  const [nameDialog, setNameDialog] = useState<{ playerId: string; suggestion?: string } | null>(null)
+  const namePlayer = players.find((p) => p.id === nameDialog?.playerId)
   const relinkPlayer = players.find((p) => p.id === relinkId)
 
   function selectTab(next: Tab) {
@@ -228,7 +236,7 @@ export function PlayersView({ players: initial, users, canManage }: Props) {
   async function runSearch(query: string) {
     setSearchLoading(true)
     setSearchError("")
-    const res = await fetch(`/b2-stats/api/tmio/search?q=${encodeURIComponent(query)}`).catch(() => null)
+    const res = await fetch(`${BASE_PATH}/api/tmio/search?q=${encodeURIComponent(query)}`).catch(() => null)
     // Ignore answers that were overtaken by a newer search
     if (latestQuery.current !== query) return
     setSearchLoading(false)
@@ -279,7 +287,7 @@ export function PlayersView({ players: initial, users, canManage }: Props) {
     if (!relinkPlayer || !picked) return
     setRelinkError("")
     setRelinkLoading(true)
-    const res = await fetch(`/b2-stats/api/players/${relinkPlayer.id}/tmio`, {
+    const res = await fetch(`${BASE_PATH}/api/players/${relinkPlayer.id}/tmio`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ tmId: picked.id }),
@@ -306,7 +314,7 @@ export function PlayersView({ players: initial, users, canManage }: Props) {
     e.preventDefault()
     setError("")
     setLoading(true)
-    const res = await fetch("/b2-stats/api/players", {
+    const res = await fetch(`${BASE_PATH}/api/players`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -382,7 +390,7 @@ export function PlayersView({ players: initial, users, canManage }: Props) {
 
   // Compare one player with trackmania.io; resolves to what happened
   async function syncPlayer(player: Player): Promise<"ok" | "difference" | "notfound" | "gone" | "limit" | "error"> {
-    const res = await fetch(`/b2-stats/api/players/${player.id}/tmio`, { method: "POST" }).catch(() => null)
+    const res = await fetch(`${BASE_PATH}/api/players/${player.id}/tmio`, { method: "POST" }).catch(() => null)
     // 404 means the player was deleted here in the meantime
     if (!res?.ok) return res?.status === 429 ? "limit" : res?.status === 404 ? "gone" : "error"
     const data = await res.json()
@@ -428,7 +436,7 @@ export function PlayersView({ players: initial, users, canManage }: Props) {
   }
 
   async function resolveHint(player: Player, field: "name" | "country", action: "adopt" | "dismiss") {
-    const res = await fetch(`/b2-stats/api/players/${player.id}/tmio`, {
+    const res = await fetch(`${BASE_PATH}/api/players/${player.id}/tmio`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ field, action, value: field === "name" ? player.tmioName : player.tmioCountry }),
@@ -445,13 +453,13 @@ export function PlayersView({ players: initial, users, canManage }: Props) {
   async function handleDelete(id: string) {
     if (!confirm("Delete this player?")) return
     setDeleting(id)
-    await fetch(`/b2-stats/api/players/${id}`, { method: "DELETE" })
+    await fetch(`${BASE_PATH}/api/players/${id}`, { method: "DELETE" })
     setDeleting(null)
     setPlayers((p) => p.filter((pl) => pl.id !== id))
   }
 
   async function handleCountry(playerId: string, country: string | null) {
-    const res = await fetch(`/b2-stats/api/players/${playerId}`, {
+    const res = await fetch(`${BASE_PATH}/api/players/${playerId}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ country }),
@@ -462,7 +470,7 @@ export function PlayersView({ players: initial, users, canManage }: Props) {
 
   async function handleLink(playerId: string, userId: string | null) {
     setLinking(playerId)
-    const res = await fetch(`/b2-stats/api/players/${playerId}`, {
+    const res = await fetch(`${BASE_PATH}/api/players/${playerId}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ userId }),
@@ -517,7 +525,7 @@ export function PlayersView({ players: initial, users, canManage }: Props) {
     if (!movePlayer) return
     setMoveError("")
     setMoveLoading(true)
-    const res = await fetch(`/b2-stats/api/players/${movePlayer.id}/status`, {
+    const res = await fetch(`${BASE_PATH}/api/players/${movePlayer.id}/status`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -545,7 +553,7 @@ export function PlayersView({ players: initial, users, canManage }: Props) {
     if (!historyPlayer) return
     setHistoryError("")
     setHistoryLoading(true)
-    const res = await fetch(`/b2-stats/api/players/${historyPlayer.id}/status/${change.id}`, {
+    const res = await fetch(`${BASE_PATH}/api/players/${historyPlayer.id}/status/${change.id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ effectiveFrom: historyDates[change.id] }),
@@ -565,7 +573,7 @@ export function PlayersView({ players: initial, users, canManage }: Props) {
     if (!confirm("Remove this switch?")) return
     setHistoryError("")
     setHistoryLoading(true)
-    const res = await fetch(`/b2-stats/api/players/${historyPlayer.id}/status/${change.id}`, { method: "DELETE" })
+    const res = await fetch(`${BASE_PATH}/api/players/${historyPlayer.id}/status/${change.id}`, { method: "DELETE" })
     setHistoryLoading(false)
     const data = await res.json().catch(() => null)
     if (!res.ok) {
@@ -696,10 +704,24 @@ export function PlayersView({ players: initial, users, canManage }: Props) {
                     <span className="flex items-center gap-2 whitespace-nowrap">
                       <PlayerAvatar player={player} />
                       {player.name}
+                      <button
+                        type="button"
+                        onClick={() => setNameDialog({ playerId: player.id })}
+                        className="text-[#3a3435] hover:text-[#f5f0f0]"
+                        title={canManage ? "Umbenennen / Namensverlauf" : "Namensverlauf"}
+                      >
+                        <Pencil size={11} />
+                      </button>
                     </span>
+                    {allNames(player).length > 1 && (
+                      <p className="mt-0.5 text-[11px] font-normal text-[#5e5858]">
+                        früher: {allNames(player).filter((n) => n !== player.name).join(", ")}
+                      </p>
+                    )}
                     {nameHint(player) && (
                       <HintLine label={`trackmania.io: ${nameHint(player)}`} canManage={canManage}
-                        onAdopt={() => resolveHint(player, "name", "adopt")}
+                        // A new name is a rename with a date, so it goes through the name history
+                        onAdopt={() => setNameDialog({ playerId: player.id, suggestion: nameHint(player) ?? undefined })}
                         onDismiss={() => resolveHint(player, "name", "dismiss")} />
                     )}
                     {player.tmioCheckedAt && !player.tmioName && (
@@ -962,6 +984,23 @@ export function PlayersView({ players: initial, users, canManage }: Props) {
           </div>
         </div>
       </Dialog>
+
+      {/* Name history and renaming */}
+      {namePlayer && (
+        <NameHistoryDialog
+          // A fresh dialog per player and suggestion, so no input is carried over
+          key={`${namePlayer.id}-${nameDialog?.suggestion ?? ""}`}
+          player={namePlayer}
+          suggestion={nameDialog?.suggestion}
+          canManage={canManage}
+          onClose={() => setNameDialog(null)}
+          onChanged={(history) =>
+            setPlayers((p) =>
+              p.map((pl) => (pl.id === namePlayer.id ? { ...pl, ...history } : pl)).sort((a, b) => a.name.localeCompare(b.name))
+            )
+          }
+        />
+      )}
 
       {/* Status history */}
       <Dialog open={!!historyPlayer} onClose={() => setHistoryId(null)} className="max-w-lg">

@@ -1,5 +1,8 @@
 "use client"
 
+import { BASE_PATH } from "@/lib/base-path"
+import { matchPath, tournamentPath } from "@/lib/paths"
+import { PlayerName } from "@/components/player-name"
 import { GuestBadge } from "@/components/guest-badge"
 import { PlayerAvatar } from "@/components/player-avatar"
 import { useSyncedState } from "@/lib/use-synced-state"
@@ -19,7 +22,7 @@ import { useIdListParam } from "@/lib/use-id-list-param"
 import { PillSelect } from "@/components/pill-select"
 import { StageHeading } from "@/components/stage-heading"
 import { Select } from "@/components/ui/select"
-import { FormatStatsTable } from "../../format-stats"
+import { FormatStatsTable } from "../format-stats"
 import { ArrowLeft, Swords, Users, ChevronRight, Calendar, BarChart2, Plus, Trash2 } from "lucide-react"
 import { formatLabel } from "@/lib/utils"
 import type { Format } from "@prisma/client"
@@ -28,6 +31,7 @@ interface RoundResult {
   id: string
   tmId: string
   playerName: string
+  currentName?: string
   timeMs: number | null
   isOurTeam: boolean
   playerId?: string | null
@@ -48,6 +52,7 @@ interface SubMatch {
 
 interface Match {
   id: string
+  slug?: string | null
   stage: StageRef
   opponent?: string | null
   date?: Date | null
@@ -59,6 +64,7 @@ interface Match {
 interface Player {
   id: string
   name: string
+  currentName?: string
   tmId: string
   country?: string | null
 }
@@ -66,8 +72,9 @@ interface Player {
 interface Props {
   lineup: {
     id: string
+    slug?: string | null
     name: string
-    tournament: { id: string; name: string; formats: Format[]; startDate: Date | null; createdAt: Date; stages: StageRef[] }
+    tournament: { id: string; slug?: string | null; name: string; formats: Format[]; startDate: Date | null; createdAt: Date; stages: StageRef[] }
     slots: Array<{ id: string; player: Player }>
     matches: Match[]
   }
@@ -120,7 +127,7 @@ export function LineupMatchesView({ lineup, guestTmIds, canManage }: Props) {
     setMatchError("")
     setMatchLoading(true)
     const form = new FormData(e.currentTarget)
-    const res = await fetch(`/b2-stats/api/tournaments/${tournament.id}/matches`, {
+    const res = await fetch(`${BASE_PATH}/api/tournaments/${tournament.id}/matches`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -139,13 +146,13 @@ export function LineupMatchesView({ lineup, guestTmIds, canManage }: Props) {
     }
     const data = await res.json()
     setShowAddMatch(false)
-    router.push(`/tournaments/${tournament.id}/matches/${data.id}`)
+    router.push(matchPath(tournament, lineup, data))
   }
 
   async function handleDeleteMatch(matchId: string) {
     if (!confirm("Delete this match and all its data?")) return
     setDeletingMatch(matchId)
-    const res = await fetch(`/b2-stats/api/tournaments/${tournament.id}/matches/${matchId}`, { method: "DELETE" })
+    const res = await fetch(`${BASE_PATH}/api/tournaments/${tournament.id}/matches/${matchId}`, { method: "DELETE" })
     setDeletingMatch(null)
     if (res.ok) setMatches((m) => m.filter((match) => match.id !== matchId))
   }
@@ -155,7 +162,7 @@ export function LineupMatchesView({ lineup, guestTmIds, canManage }: Props) {
       {/* Breadcrumb */}
       <div>
         <Link
-          href={`/tournaments/${tournament.id}`}
+          href={tournamentPath(tournament)}
           className="inline-flex items-center gap-1 text-sm text-[#9a9090] hover:text-[#f5f0f0] mb-4"
         >
           <ArrowLeft size={14} />
@@ -188,7 +195,7 @@ export function LineupMatchesView({ lineup, guestTmIds, canManage }: Props) {
               className="inline-flex items-center gap-1.5 rounded-full bg-[#251f20] border border-[#2d2829] px-3 py-1 text-sm text-[#c5bfbf]"
             >
               <PlayerAvatar player={slot.player} className="h-5 w-5 text-[10px]" />
-              {slot.player.name}
+              <PlayerName name={slot.player.name} currentName={slot.player.currentName} />
               {isGuest(slot.player.tmId) && <GuestBadge />}
             </span>
           ))}
@@ -251,7 +258,7 @@ export function LineupMatchesView({ lineup, guestTmIds, canManage }: Props) {
                     <div className="space-y-2">
                       {stageMatches.map((match) => (
                       <div key={match.id} className="flex items-center gap-2">
-                      <Link href={`/tournaments/${tournament.id}/matches/${match.id}`} className="flex-1 min-w-0">
+                      <Link href={matchPath(tournament, lineup, match)} className="flex-1 min-w-0">
                         <Card className="hover:border-[#3a3435] transition-colors cursor-pointer">
                           <CardContent className="py-3 flex items-center justify-between">
                             <div className="flex items-center gap-3 min-w-0">

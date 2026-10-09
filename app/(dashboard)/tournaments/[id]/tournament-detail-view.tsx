@@ -1,5 +1,8 @@
 "use client"
 
+import { BASE_PATH } from "@/lib/base-path"
+import { lineupPath, matchPath, tournamentPath } from "@/lib/paths"
+import { PlayerName } from "@/components/player-name"
 import { PlayerSearch } from "@/components/player-search"
 import { FormatBuilder } from "@/components/format-builder"
 import { useState } from "react"
@@ -17,7 +20,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Dialog, DialogTitle } from "@/components/ui/dialog"
 import { Badge } from "@/components/ui/badge"
 import {
-  Plus, ArrowLeft, Calendar, ChevronRight, Swords, Trash2, Pencil, X, Users, BarChart2,
+  Plus, ArrowLeft, Calendar, ChevronRight, Swords, Trash2, Pencil, X, User, Users, BarChart2,
 } from "lucide-react"
 import { formatLabel } from "@/lib/utils"
 import type { Format } from "@prisma/client"
@@ -32,7 +35,10 @@ import { FormatStatsTable } from "./format-stats"
 interface Player {
   id: string
   tmId: string
+  // Name on the tournament's start day; currentName is today's, allNames every name ever used
   name: string
+  currentName?: string
+  allNames?: string[]
   country?: string | null
 }
 
@@ -49,12 +55,14 @@ interface TournamentLineupSlot {
 
 interface TournamentLineup {
   id: string
+  slug?: string | null
   name: string
   slots: TournamentLineupSlot[]
 }
 
 interface Match {
   id: string
+  slug?: string | null
   stage: StageRef
   opponent?: string | null
   date?: Date | null
@@ -66,6 +74,7 @@ interface Match {
 
 interface Tournament {
   id: string
+  slug?: string | null
   name: string
   formats: Format[]
   description?: string | null
@@ -150,7 +159,7 @@ export function TournamentDetailView({ tournament: initial, players, statsMatche
     }
     setEditError("")
     setEditLoading(true)
-    const res = await fetch(`/b2-stats/api/tournaments/${tournament.id}`, {
+    const res = await fetch(`${BASE_PATH}/api/tournaments/${tournament.id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -171,11 +180,13 @@ export function TournamentDetailView({ tournament: initial, players, statsMatche
     const data = await res.json()
     setTournament((t) => ({ ...t, ...data }))
     setShowEdit(false)
+    // A new name means a new address
+    if (data.slug !== tournament.slug) router.replace(tournamentPath(data))
   }
 
   async function handleDeleteTournament() {
     setDeleteLoading(true)
-    await fetch(`/b2-stats/api/tournaments/${tournament.id}`, { method: "DELETE" })
+    await fetch(`${BASE_PATH}/api/tournaments/${tournament.id}`, { method: "DELETE" })
     setDeleteLoading(false)
     router.push("/tournaments")
     router.refresh()
@@ -184,7 +195,7 @@ export function TournamentDetailView({ tournament: initial, players, statsMatche
   async function handleDeleteMatch(matchId: string) {
     if (!confirm("Delete this match and all its data?")) return
     setDeletingMatch(matchId)
-    await fetch(`/b2-stats/api/tournaments/${tournament.id}/matches/${matchId}`, { method: "DELETE" })
+    await fetch(`${BASE_PATH}/api/tournaments/${tournament.id}/matches/${matchId}`, { method: "DELETE" })
     setDeletingMatch(null)
     setMatches((m) => m.filter((match) => match.id !== matchId))
   }
@@ -213,7 +224,7 @@ export function TournamentDetailView({ tournament: initial, players, statsMatche
 
     if (editingLineup) {
       const res = await fetch(
-        `/b2-stats/api/tournaments/${tournament.id}/lineups/${editingLineup.id}`,
+        `${BASE_PATH}/api/tournaments/${tournament.id}/lineups/${editingLineup.id}`,
         {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
@@ -225,7 +236,7 @@ export function TournamentDetailView({ tournament: initial, players, statsMatche
       const data = await res.json()
       setLineups((ls) => ls.map((l) => (l.id === editingLineup.id ? data : l)))
     } else {
-      const res = await fetch(`/b2-stats/api/tournaments/${tournament.id}/lineups`, {
+      const res = await fetch(`${BASE_PATH}/api/tournaments/${tournament.id}/lineups`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name: lineupName.trim(), playerIds: lineupPlayerIds }),
@@ -242,8 +253,13 @@ export function TournamentDetailView({ tournament: initial, players, statsMatche
   async function handleDeleteLineup(lineupId: string) {
     if (!confirm("Delete this lineup?")) return
     setDeletingLineup(lineupId)
-    await fetch(`/b2-stats/api/tournaments/${tournament.id}/lineups/${lineupId}`, { method: "DELETE" })
+    const res = await fetch(`${BASE_PATH}/api/tournaments/${tournament.id}/lineups/${lineupId}`, { method: "DELETE" })
     setDeletingLineup(null)
+    if (!res.ok) {
+      const data = await res.json().catch(() => null)
+      alert(data?.error ?? "Lineup konnte nicht gelöscht werden")
+      return
+    }
     setLineups((ls) => ls.filter((l) => l.id !== lineupId))
   }
 
@@ -344,11 +360,17 @@ export function TournamentDetailView({ tournament: initial, players, statsMatche
               const matchCount = matches.filter((m) => m.tournamentLineupId === lineup.id).length
               return (
               <div key={lineup.id} className="relative group">
-                <Link href={`/tournaments/${tournament.id}/lineups/${lineup.id}`} className="block">
+                <Link href={lineupPath(tournament, lineup)} className="block">
                   <Card className="border-[#3a3435] hover:border-[#FBD00D]/50 transition-colors cursor-pointer">
                     <CardContent className="p-4">
                       <div className="flex items-start justify-between gap-2 mb-3">
-                        <p className="text-base font-semibold text-[#f5f0f0]">{lineup.name}</p>
+                        <p className="text-base font-semibold text-[#f5f0f0]">
+                          {lineup.name}
+                          <span className="ml-2 inline-flex items-center gap-1 align-middle text-xs font-normal text-[#9a9090]">
+                            {lineup.slots.length}
+                            <User size={12} />
+                          </span>
+                        </p>
                         {canManage && (
                           <div className="flex items-center gap-1 shrink-0" onClick={(e) => e.preventDefault()}>
                             <Button
@@ -378,7 +400,7 @@ export function TournamentDetailView({ tournament: initial, players, statsMatche
                             className="inline-flex items-center gap-1 rounded-full bg-[#251f20] border border-[#2d2829] px-2 py-0.5 text-xs text-[#c5bfbf]"
                           >
                             <PlayerAvatar player={slot.player} className="h-3.5 w-3.5 text-[9px]" />
-                            {slot.player.name}
+                            <PlayerName name={slot.player.name} currentName={slot.player.currentName} />
                             {isGuest(slot.player.tmId) && <GuestBadge />}
                           </span>
                         ))}
@@ -470,7 +492,7 @@ export function TournamentDetailView({ tournament: initial, players, statsMatche
                     <div className="space-y-2">
                       {stageMatches.map((match) => (
                       <div key={match.id} className="flex items-center gap-2">
-                        <Link href={`/tournaments/${tournament.id}/matches/${match.id}`} className="flex-1 min-w-0">
+                        <Link href={matchPath(tournament, lineups.find((l) => l.id === match.tournamentLineupId) ?? { id: match.tournamentLineupId ?? "" }, match)} className="flex-1 min-w-0">
                           <Card className="hover:border-[#3a3435] transition-colors cursor-pointer">
                             <CardContent className="py-3 flex items-center justify-between">
                               <div className="flex items-center gap-3 min-w-0">

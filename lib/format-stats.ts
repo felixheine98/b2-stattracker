@@ -9,6 +9,8 @@ interface StatsRoundResult {
   playerName: string
   isOurTeam: boolean
   dnf?: boolean | null
+  // Today's name, when the data carries tournament names
+  currentName?: string
 }
 
 export interface StatsMatch {
@@ -25,6 +27,7 @@ export interface StatsMatch {
 interface PlayerAggregate {
   tmId: string
   name: string
+  currentName?: string
   roundsPlayed: number
   placementSum: number
   // Rounds the player took part in
@@ -83,7 +86,7 @@ export function buildAggregates(matches: StatsMatch[]): FormatAggregate[] {
         round.results.forEach((r, idx) => {
           if (!r.isOurTeam) return
           if (!agg.players.has(r.tmId)) {
-            agg.players.set(r.tmId, { tmId: r.tmId, name: r.playerName, roundsPlayed: 0, placementSum: 0, roundsWon: 0, roundsLost: 0, dnfs: 0 })
+            agg.players.set(r.tmId, { tmId: r.tmId, name: r.playerName, currentName: r.currentName, roundsPlayed: 0, placementSum: 0, roundsWon: 0, roundsLost: 0, dnfs: 0 })
           }
           const p = agg.players.get(r.tmId)!
           p.roundsPlayed++

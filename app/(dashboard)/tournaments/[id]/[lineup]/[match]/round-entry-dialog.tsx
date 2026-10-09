@@ -1,5 +1,6 @@
 "use client"
 
+import { BASE_PATH } from "@/lib/base-path"
 import { Wdl } from "@/components/wdl"
 import { Button } from "@/components/ui/button"
 import { GuestBadge } from "@/components/guest-badge"
@@ -307,7 +308,7 @@ export function RoundEntryDialog({ subMatch, pool, allPlayers, isGuest, onClose,
         source: subMatch.rounds[c]?.number ?? null,
       }))
       .filter((_, c) => states[c].kind === "done")
-    const res = await fetch(`/b2-stats/api/submatches/${subMatch.id}/rounds`, {
+    const res = await fetch(`${BASE_PATH}/api/submatches/${subMatch.id}/rounds`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ playerIds, rounds, track }),

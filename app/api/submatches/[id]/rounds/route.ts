@@ -1,3 +1,4 @@
+import { withCompNames } from "@/lib/player-names-db"
 import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
 import { NextResponse } from "next/server"
@@ -51,7 +52,7 @@ export async function PUT(req: Request, { params }: Params) {
   const { id } = await params
   const subMatch = await db.subMatch.findUnique({
     where: { id },
-    include: { match: { select: { opponent: true } } },
+    include: { match: { select: { opponent: true, tournament: { select: { startDate: true, createdAt: true } } } } },
   })
   if (!subMatch) return NextResponse.json({ error: "Sub-match not found" }, { status: 404 })
 
@@ -158,5 +159,5 @@ export async function PUT(req: Request, { params }: Params) {
     },
   })
 
-  return NextResponse.json({ rounds: saved })
+  return NextResponse.json({ rounds: await withCompNames(saved, subMatch.match.tournament) })
 }

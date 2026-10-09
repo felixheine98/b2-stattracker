@@ -1,5 +1,8 @@
 "use client"
 
+import { BASE_PATH } from "@/lib/base-path"
+import { lineupPath, matchPath, tournamentPath } from "@/lib/paths"
+import { PlayerName } from "@/components/player-name"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
@@ -9,12 +12,13 @@ import { formatLabel, formatLabelLong, formatTime, teamSize } from "@/lib/utils"
 import type { Format } from "@prisma/client"
 import { ArrowLeft, BarChart2, ChevronDown, ChevronUp, Clock, Download, ExternalLink, Grid3x3, Trophy, Upload, Users } from "lucide-react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { useSyncedState } from "@/lib/use-synced-state"
 import { PlayerAvatar } from "@/components/player-avatar"
 import { GuestBadge } from "@/components/guest-badge"
 import { Wdl } from "@/components/wdl"
 import { roundPlacements, roundScore } from "@/lib/round-score"
-import { formatDay } from "@/lib/player-status"
+import { dayKey, formatDay } from "@/lib/player-status"
 import { sortStages, stageDate, stageName, type StageRef } from "@/lib/stages"
 import { useMemo, useState } from "react"
 import { EcmImportDialog } from "./ecm-import-dialog"
@@ -23,7 +27,10 @@ import { RoundEntryDialog } from "./round-entry-dialog"
 export interface Player {
   id: string
   tmId: string
+  // Name on the tournament's start day; currentName is today's, allNames every name ever used
   name: string
+  currentName?: string
+  allNames?: string[]
   country?: string | null
 }
 
@@ -31,6 +38,7 @@ interface RoundResult {
   id: string
   tmId: string
   playerName: string
+  currentName?: string
   timeMs: number | null
   dnf?: boolean
   isOurTeam: boolean
@@ -60,12 +68,14 @@ export interface SubMatch {
 
 interface TournamentLineup {
   id: string
+  slug?: string | null
   name: string
   slots: Array<{ id: string; player: Player }>
 }
 
 interface Match {
   id: string
+  slug?: string | null
   stage: StageRef
   opponent?: string | null
   date?: Date | null
@@ -74,6 +84,7 @@ interface Match {
   tournamentLineup?: TournamentLineup | null
   tournament: {
     id: string
+    slug?: string | null
     name: string
     formats: Format[]
     startDate?: Date | null
@@ -94,11 +105,11 @@ function SubMatchStatsTable({ sm, number, isGuest }: { sm: SubMatch; number: num
   const teamStats = useMemo(() => computeStats(sm.rounds), [sm.rounds])
 
   const rows = useMemo(() => {
-    const playerMap = new Map<string, { id: string | null; tmId: string; name: string }>()
+    const playerMap = new Map<string, { id: string | null; tmId: string; name: string; currentName?: string }>()
     for (const round of sm.rounds) {
       for (const r of round.results) {
         if (r.isOurTeam && !playerMap.has(r.tmId)) {
-          playerMap.set(r.tmId, { id: r.playerId ?? null, tmId: r.tmId, name: r.playerName })
+          playerMap.set(r.tmId, { id: r.playerId ?? null, tmId: r.tmId, name: r.playerName, currentName: r.currentName })
         }
       }
     }
@@ -127,6 +138,7 @@ function SubMatchStatsTable({ sm, number, isGuest }: { sm: SubMatch; number: num
       return {
         tmId: p.tmId,
         name: p.name,
+        currentName: p.currentName,
         roundsPlayed,
         placementSum,
         avg: roundsPlayed > 0 ? placementSum / roundsPlayed : 0,
@@ -218,7 +230,7 @@ function SubMatchStatsTable({ sm, number, isGuest }: { sm: SubMatch; number: num
           {sorted.map((row) => (
             <tr key={row.tmId} className="border-b border-[#1c1819] hover:bg-[#1c1819]/50">
               <td className="py-1.5 pr-4 text-[#f5f0f0] font-medium whitespace-nowrap">
-                {row.name}
+                <PlayerName name={row.name} currentName={row.currentName} />
                 {isGuest(row.tmId) && <GuestBadge className="ml-1.5" />}
               </td>
               <td className="py-1.5 px-2 text-right text-[#c5bfbf]">{row.roundsPlayed}</td>
@@ -248,6 +260,7 @@ interface Props {
 }
 
 export function MatchDetailView({ match: initialMatch, allPlayers, guestTmIds, canManage }: Props) {
+  const router = useRouter()
   const guests = new Set(guestTmIds)
   const isGuest = (tmId: string) => guests.has(tmId.toLowerCase())
   const [subMatches, setSubMatches] = useSyncedState(initialMatch.subMatches)
@@ -262,7 +275,7 @@ export function MatchDetailView({ match: initialMatch, allPlayers, guestTmIds, c
 
   async function moveToStage(id: string) {
     setStageError("")
-    const res = await fetch(`/b2-stats/api/tournaments/${initialMatch.tournament.id}/matches/${initialMatch.id}/stage`, {
+    const res = await fetch(`${BASE_PATH}/api/tournaments/${initialMatch.tournament.id}/matches/${initialMatch.id}/stage`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ stageId: id }),
@@ -273,6 +286,11 @@ export function MatchDetailView({ match: initialMatch, allPlayers, guestTmIds, c
       return
     }
     setStageId(id)
+    // The stage is part of the match's address
+    const data = await res.json().catch(() => null)
+    if (matchLineup && data?.slug && data.slug !== initialMatch.slug) {
+      router.replace(matchPath(initialMatch.tournament, matchLineup, { id: initialMatch.id, slug: data.slug }))
+    }
   }
   const [expanded, setExpanded] = useState<Set<string>>(
     new Set(initialMatch.subMatches.map((s) => s.id))
@@ -336,7 +354,7 @@ export function MatchDetailView({ match: initialMatch, allPlayers, guestTmIds, c
     if (!importDialog) return
     setImportError("")
     setImportLoading(true)
-    const res = await fetch(`/b2-stats/api/submatches/${importDialog.subMatchId}/import`, {
+    const res = await fetch(`${BASE_PATH}/api/submatches/${importDialog.subMatchId}/import`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ csv: csvText }),
@@ -371,8 +389,8 @@ export function MatchDetailView({ match: initialMatch, allPlayers, guestTmIds, c
         <Link
           href={
             matchLineup
-              ? `/tournaments/${initialMatch.tournament.id}/lineups/${matchLineup.id}`
-              : `/tournaments/${initialMatch.tournament.id}`
+              ? lineupPath(initialMatch.tournament, matchLineup)
+              : tournamentPath(initialMatch.tournament)
           }
           className="inline-flex flex-wrap items-center gap-x-2 text-sm text-[#9a9090] hover:text-[#f5f0f0] mb-4"
         >
@@ -452,7 +470,7 @@ export function MatchDetailView({ match: initialMatch, allPlayers, guestTmIds, c
                       className="inline-flex items-center gap-1.5 rounded-full bg-[#251f20] border border-[#2d2829] px-2.5 py-1 text-xs text-[#c5bfbf]"
                     >
                       <PlayerAvatar player={slot.player} className="h-4 w-4 text-[9px]" />
-                      {slot.player.name}
+                      <PlayerName name={slot.player.name} currentName={slot.player.currentName} />
                       {isGuest(slot.player.tmId) && <GuestBadge />}
                     </span>
                   ))}
@@ -625,7 +643,7 @@ export function MatchDetailView({ match: initialMatch, allPlayers, guestTmIds, c
                                             #{rank}
                                           </span>
                                           <span className="text-[#f5f0f0] flex-1 truncate">
-                                            {r.playerName}
+                                            <PlayerName name={r.playerName} currentName={r.currentName} />
                                             {isGuest(r.tmId) && <GuestBadge className="ml-1.5" />}
                                           </span>
                                           <span className={`font-mono shrink-0 ${rankColor(rank)}`}>
@@ -681,6 +699,7 @@ export function MatchDetailView({ match: initialMatch, allPlayers, guestTmIds, c
         <EcmImportDialog
           subMatches={subMatches}
           allPlayers={allPlayers}
+          startDay={dayKey(initialMatch.tournament.startDate ?? initialMatch.tournament.createdAt)}
           isGuest={isGuest}
           onClose={() => setShowEcmImport(false)}
           onImported={(subMatchId, rounds, url) => {

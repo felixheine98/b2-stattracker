@@ -82,9 +82,14 @@ export async function PATCH(req: Request, { params }: Params) {
     return NextResponse.json({ error: "The trackmania.io value has changed in the meantime", player: current }, { status: 409 })
   }
 
+  // A new name is a rename with a date and goes through the name history instead
+  if (action === "adopt" && field === "name") {
+    return NextResponse.json({ error: "Rename the player through the name history" }, { status: 400 })
+  }
+
   const data =
     action === "adopt"
-      ? field === "name" ? { name: value } : { country: value }
+      ? { country: value }
       : field === "name" ? { dismissedTmioName: value } : { dismissedTmioCountry: value }
 
   const updated = await db.player.update({ where: { id }, data, select: RESULT })

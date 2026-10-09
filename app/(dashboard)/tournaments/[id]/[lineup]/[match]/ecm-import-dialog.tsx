@@ -1,9 +1,12 @@
 "use client"
 
+import { BASE_PATH } from "@/lib/base-path"
+import { localTodayKey } from "@/lib/player-status"
+import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogTitle } from "@/components/ui/dialog"
 import { Textarea } from "@/components/ui/textarea"
-import { ECM_BOOKMARKLET, normalizeName, parseEcmPayload, type EcmPayload, type EcmSet } from "@/lib/ecm"
+import { repairEcmSet, ECM_BOOKMARKLET, normalizeName, parseEcmPayload, type EcmPayload, type EcmSet } from "@/lib/ecm"
 import { formatLabel, parseTime, teamSize } from "@/lib/utils"
 import { useMemo, useState } from "react"
 import type { Player, Round, SubMatch } from "./match-detail-view"
@@ -17,6 +20,8 @@ const BOOKMARKLET_URL = `javascript:${encodeURIComponent(ECM_BOOKMARKLET)}`
 interface Props {
   subMatches: SubMatch[]
   allPlayers: Player[]
+  // Start day of the tournament (YYYY-MM-DD): the day a name taken over from eCM counts from
+  startDay: string
   isGuest: (tmId: string) => boolean
   onClose: () => void
   // url is the eCircuitMania page that was saved along with the rounds
@@ -55,7 +60,8 @@ function loadSavedMapping(): Record<string, string> {
   }
 }
 
-export function EcmImportDialog({ subMatches, allPlayers, isGuest, onClose, onImported }: Props) {
+export function EcmImportDialog({ subMatches, allPlayers, startDay, isGuest, onClose, onImported }: Props) {
+  const router = useRouter()
   const [text, setText] = useState("")
   const [teamChoice, setTeamChoice] = useState<number | null>(null)
   const [mappingEdits, setMappingEdits] = useState<Record<string, string>>({})
@@ -65,19 +71,27 @@ export function EcmImportDialog({ subMatches, allPlayers, isGuest, onClose, onIm
   const [error, setError] = useState("")
   const [copied, setCopied] = useState(false)
 
-  const payload: EcmPayload | null = useMemo(() => parseEcmPayload(text), [text])
+  // Rounds with a player too many or too few are repaired where possible; repairs[i] says how for set i
+  const { payload, repairs } = useMemo(() => {
+    const parsed = parseEcmPayload(text)
+    const repairs = parsed?.sets.map(repairEcmSet) ?? []
+    const payload: EcmPayload | null = parsed && { ...parsed, sets: repairs.map((r) => r.set) }
+    return { payload, repairs }
+  }, [text])
 
   // React refuses javascript: URLs in JSX, so the bookmarklet link is set on the element directly
   const setBookmarkletHref = (el: HTMLAnchorElement | null) => {
     el?.setAttribute("href", BOOKMARKLET_URL)
   }
 
+  // A player is recognised by any name they ever had, not only the one shown in this tournament
+  const namesOf = (p: Player) => p.allNames ?? [p.name]
   const playerByNormalized = useMemo(
-    () => new Map(allPlayers.map((p) => [normalizeName(p.name), p])),
+    () => new Map(allPlayers.flatMap((p) => (p.allNames ?? [p.name]).map((n) => [normalizeName(n), p] as const))),
     [allPlayers]
   )
   const autoMatch = (name: string) =>
-    allPlayers.find((p) => p.name.toLowerCase() === name.toLowerCase()) ?? playerByNormalized.get(normalizeName(name))
+    allPlayers.find((p) => namesOf(p).some((n) => n.toLowerCase() === name.toLowerCase())) ?? playerByNormalized.get(normalizeName(name))
 
   // Our team is the one whose roster contains more known players
   const autoTeam = useMemo(() => {
@@ -116,6 +130,33 @@ export function EcmImportDialog({ subMatches, allPlayers, isGuest, onClose, onIm
       problems.push(`${payload!.sets[i].label}: Sub-Match mehrfach gewählt`)
     }
   })
+  // eCM names that differ from the name the mapped player has in this tournament
+  const [renaming, setRenaming] = useState<string | null>(null)
+  const [renamed, setRenamed] = useState<string[]>([])
+  const nameDiffs = neededNames.flatMap((ecmName) => {
+    const player = allPlayers.find((p) => p.id === playerIdFor(ecmName))
+    return player && player.name !== ecmName && !renamed.includes(ecmName) ? [{ ecmName, player }] : []
+  })
+
+  // Enter the eCM name as the player's name from the tournament's start day on; today's name stays
+  async function adoptEcmName(ecmName: string, playerId: string) {
+    setRenaming(ecmName)
+    setError("")
+    const res = await fetch(`${BASE_PATH}/api/players/${playerId}/names`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: ecmName, effectiveFrom: startDay, keepCurrentFrom: localTodayKey() }),
+    }).catch(() => null)
+    setRenaming(null)
+    if (!res?.ok) {
+      const data = await res?.json().catch(() => null)
+      setError(data?.error ?? "Name konnte nicht eingetragen werden")
+      return
+    }
+    setRenamed((names) => [...names, ecmName])
+    router.refresh()
+  }
+
   const canImport = selected.some(Boolean) && problems.length === 0 && !saving
 
   async function copyBookmarklet() {
@@ -143,7 +184,7 @@ export function EcmImportDialog({ subMatches, allPlayers, isGuest, onClose, onIm
     for (const [i, set] of payload.sets.entries()) {
       if (!selected[i]) continue
       const names = analyses[i].ourNames
-      const res = await fetch(`/b2-stats/api/submatches/${targets[i]}/rounds`, {
+      const res = await fetch(`${BASE_PATH}/api/submatches/${targets[i]}/rounds`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -242,7 +283,19 @@ export function EcmImportDialog({ subMatches, allPlayers, isGuest, onClose, onIm
             {payload.sets.map((set, i) => {
               const a = analyses[i]
               return (
-                <div key={i} className="flex items-center gap-3 rounded-lg border border-[#2d2829] px-3 py-2 text-sm">
+                <div key={i} className="flex flex-wrap items-center gap-x-3 rounded-lg border border-[#2d2829] px-3 py-2 text-sm">
+                  {repairs[i].dropped.length > 0 && (
+                    <p className="order-last w-full pt-1 text-xs text-[#cd7f32]">
+                      Ignoriert, weil überzählig und nie im Ziel:{" "}
+                      {repairs[i].dropped.map((d) => `${d.player} (Runde ${d.round})`).join(", ")}
+                    </p>
+                  )}
+                  {repairs[i].added.length > 0 && (
+                    <p className="order-last w-full pt-1 text-xs text-[#cd7f32]">
+                      Fehlt bei eCM, als DNF ergänzt:{" "}
+                      {repairs[i].added.map((d) => `${d.player} (Runde ${d.round})`).join(", ")}
+                    </p>
+                  )}
                   <span className="font-medium text-[#f5f0f0]">{set.label}</span>
                   <span className="text-[#9a9090]">{set.map}</span>
                   {a.error ? (
@@ -304,6 +357,25 @@ export function EcmImportDialog({ subMatches, allPlayers, isGuest, onClose, onIm
                   </label>
                 ))}
               </div>
+            </div>
+          )}
+
+          {nameDiffs.length > 0 && startDay <= localTodayKey() && (
+            <div className="space-y-1">
+              <p className="text-xs font-semibold uppercase tracking-wider text-[#9a9090]">Abweichende Namen</p>
+              {nameDiffs.map(({ ecmName, player }) => (
+                <p key={ecmName} className="flex flex-wrap items-center gap-x-2 text-xs text-[#cd7f32]">
+                  eCM: {ecmName} · bei euch in dieser Comp: {player.name}
+                  <button
+                    type="button"
+                    onClick={() => adoptEcmName(ecmName, player.id)}
+                    disabled={renaming === ecmName}
+                    className="text-[#FBD00D] hover:underline disabled:opacity-50"
+                  >
+                    als Namen ab Comp-Start eintragen
+                  </button>
+                </p>
+              ))}
             </div>
           )}
 

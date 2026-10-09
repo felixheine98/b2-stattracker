@@ -1,3 +1,5 @@
+import { syncTournamentSlugs } from "@/lib/slugs-db"
+import { withCompNames } from "@/lib/player-names-db"
 import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
 import { NextResponse } from "next/server"
@@ -58,5 +60,8 @@ export async function POST(req: Request, { params }: Params) {
     include: { slots: { include: { player: true } } },
   })
 
-  return NextResponse.json(lineup, { status: 201 })
+  await syncTournamentSlugs(id)
+  const { slug } = await db.tournamentLineup.findUniqueOrThrow({ where: { id: lineup.id }, select: { slug: true } })
+
+  return NextResponse.json(await withCompNames({ ...lineup, slug }, tournament), { status: 201 })
 }

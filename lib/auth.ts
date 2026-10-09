@@ -1,3 +1,4 @@
+import { BASE_PATH } from "@/lib/base-path"
 import NextAuth from "next-auth"
 import Credentials from "next-auth/providers/credentials"
 import { db } from "./db"
@@ -64,6 +65,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     },
   },
   pages: {
-    signIn: "/b2-stats/login",
+    signIn: `${BASE_PATH}/login`,
   },
 })

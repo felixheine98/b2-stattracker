@@ -18,4 +18,9 @@ describe("searchPlayers", () => {
   it("finds nothing for an empty search", () => {
     expect(names("  ")).toEqual([])
   })
+
+  it("also finds a player by a name they had before", () => {
+    const renamed = [...players, { id: "rain", name: "raiin.wav", allNames: ["Raiiinnnn", "raiin.wav"] }]
+    expect(searchPlayers(renamed, "raiii").map((p) => p.name)).toEqual(["raiin.wav"])
+  })
 })
