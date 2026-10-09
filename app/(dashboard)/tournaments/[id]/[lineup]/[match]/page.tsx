@@ -1,3 +1,4 @@
+import { mayEditLineup, type SessionUser } from "@/lib/lineup-access-db"
 import { db } from "@/lib/db"
 import { auth } from "@/lib/auth"
 import { canManage } from "@/lib/roles"
@@ -32,7 +33,7 @@ export default async function MatchDetailPage({ params, searchParams }: Props) {
     db.match.findUnique({
       where: { id: matchId },
       include: {
-        tournamentLineup: { select: { id: true, slug: true, name: true, slots: { include: { player: true } } } },
+        tournamentLineup: { select: { id: true, slug: true, name: true, slots: { include: { player: true } }, managers: { select: { userId: true } } } },
         stage: { select: { id: true, type: true, number: true } },
         tournament: {
           include: {
@@ -68,8 +69,14 @@ export default async function MatchDetailPage({ params, searchParams }: Props) {
   // Members and guests as of the tournament's start day
   const guestTmIds = guestTmIdsAt(allPlayers, tournamentReferenceDate(match.tournament))
 
+  // Admins and managers, and whoever is responsible for the lineup of this match, may maintain its results
+  const user = (session?.user as SessionUser | undefined) ?? null
+  const canEdit = match.tournamentLineup
+    ? mayEditLineup(user, { managers: match.tournamentLineup.managers, tournament: match.tournament })
+    : canManage(user?.role)
+
   // Everyone is shown under the name they had when the tournament started
   const named = await withCompNames({ match, allPlayers }, match.tournament)
 
-  return <MatchDetailView match={named.match} allPlayers={named.allPlayers} guestTmIds={guestTmIds} autoEcmImport={autoEcmImport} canManage={canManage((session?.user as { role?: string })?.role)} />
+  return <MatchDetailView match={named.match} allPlayers={named.allPlayers} guestTmIds={guestTmIds} autoEcmImport={autoEcmImport} canEdit={canEdit} canManage={canManage(user?.role)} />
 }

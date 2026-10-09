@@ -23,6 +23,8 @@ interface UserRow {
   role: Role
   createdAt: Date
   player: { id: string; name: string } | null
+  // Lineups this account is responsible for (missing on accounts created in this session)
+  managedLineups?: Array<{ lineup: { id: string; name: string; tournament: { name: string } } }>
 }
 
 const ROLE_BADGE: Record<Role, "red" | "primary" | "secondary"> = {
@@ -146,6 +148,11 @@ export function AdminView({ users: initial, currentUserId, isAdmin }: Props) {
                   <td className="px-4 py-3 max-md:order-1 max-md:block max-md:min-w-0 max-md:p-0">
                     <div className="font-medium text-[#f5f0f0] max-md:text-base">{user.name}</div>
                     {user.email && <div className="text-xs text-[#5e5858]">{user.email}</div>}
+                    {!!user.managedLineups?.length && (
+                      <div className="text-xs text-[#9a9090]">
+                        Zuständig für: {user.managedLineups.map((m) => `${m.lineup.tournament.name} / ${m.lineup.name}`).join(", ")}
+                      </div>
+                    )}
                   </td>
                   <td className="px-4 py-3 font-mono text-xs text-[#9a9090] max-md:order-3 max-md:block max-md:min-w-0 max-md:truncate max-md:p-0">{user.username}</td>
                   <td className="px-4 py-3 text-[#9a9090] max-md:order-4 max-md:block max-md:p-0 max-md:text-right max-md:text-xs">

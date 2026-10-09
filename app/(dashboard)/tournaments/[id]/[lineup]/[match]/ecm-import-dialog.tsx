@@ -22,6 +22,8 @@ interface Props {
   allPlayers: Player[]
   // Start day of the tournament (YYYY-MM-DD): the day a name taken over from eCM counts from
   startDay: string
+  // Admin or manager: may enter an eCM name into a player's name history
+  canManage: boolean
   isGuest: (tmId: string) => boolean
   onClose: () => void
   // url is the eCircuitMania page that was saved along with the rounds
@@ -60,7 +62,7 @@ function loadSavedMapping(): Record<string, string> {
   }
 }
 
-export function EcmImportDialog({ subMatches, allPlayers, startDay, isGuest, onClose: close, onImported }: Props) {
+export function EcmImportDialog({ subMatches, allPlayers, startDay, canManage, isGuest, onClose: close, onImported }: Props) {
   const router = useRouter()
   const onClose = () => {
     sessionStorage.removeItem(ECM_PENDING_KEY)
@@ -337,7 +339,7 @@ export function EcmImportDialog({ subMatches, allPlayers, startDay, isGuest, onC
             </div>
           )}
 
-          {nameDiffs.length > 0 && startDay <= localTodayKey() && (
+          {canManage && nameDiffs.length > 0 && startDay <= localTodayKey() && (
             <div className="space-y-1">
               <p className="text-xs font-semibold uppercase tracking-wider text-[#9a9090]">Abweichende Namen</p>
               {nameDiffs.map(({ ecmName, player }) => (
@@ -356,6 +358,9 @@ export function EcmImportDialog({ subMatches, allPlayers, startDay, isGuest, onC
             </div>
           )}
 
+          {!canManage && problems.some((p) => p.includes("nicht alle Spieler zugeordnet")) && (
+            <p className="text-xs text-[#9a9090]">Fehlt ein Spieler in der Auswahl, muss ihn ein Manager erst anlegen.</p>
+          )}
           {problems.map((problem) => (
             <p key={problem} className="text-xs text-[#ED1F24]">{problem}</p>
           ))}

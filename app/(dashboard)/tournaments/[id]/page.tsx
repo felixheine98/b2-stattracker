@@ -1,3 +1,4 @@
+import { LINEUP_MANAGERS_INCLUDE } from "@/lib/lineup-access-db"
 import { db } from "@/lib/db"
 import { auth } from "@/lib/auth"
 import { canManage } from "@/lib/roles"
@@ -35,7 +36,7 @@ export default async function TournamentDetailPage({ params }: Props) {
         stages: { select: { id: true, type: true, number: true } },
         tournamentLineups: {
           orderBy: { createdAt: "asc" },
-          include: { slots: { include: { player: true } } },
+          include: { slots: { include: { player: true } }, ...LINEUP_MANAGERS_INCLUDE },
         },
       },
     }),
@@ -58,8 +59,14 @@ export default async function TournamentDetailPage({ params }: Props) {
 
   if (!tournament) notFound()
 
+  const mayManage = canManage((session?.user as { role?: string })?.role)
+  // Accounts to choose the people responsible for a lineup from
+  const users = mayManage
+    ? await db.user.findMany({ orderBy: { name: "asc" }, select: { id: true, name: true, username: true, role: true, playerId: true } })
+    : []
+
   // Everyone is shown under the name they had when the tournament started
   const named = await withCompNames({ tournament, players, statsMatches }, tournament)
 
-  return <TournamentDetailView tournament={named.tournament} players={named.players} statsMatches={named.statsMatches} canManage={canManage((session?.user as { role?: string })?.role)} />
+  return <TournamentDetailView tournament={named.tournament} players={named.players} statsMatches={named.statsMatches} users={users} canManage={mayManage} />
 }

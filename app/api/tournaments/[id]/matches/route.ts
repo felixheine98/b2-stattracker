@@ -3,7 +3,7 @@ import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
 import { NextResponse } from "next/server"
 import { z } from "zod"
-import { canManage } from "@/lib/roles"
+import { mayEditLineupById, type SessionUser } from "@/lib/lineup-access-db"
 
 interface Params {
   params: Promise<{ id: string }>
@@ -37,7 +37,6 @@ const createSchema = z.object({
 export async function POST(req: Request, { params }: Params) {
   const session = await auth()
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-  if (!canManage((session.user as { role?: string }).role)) return NextResponse.json({ error: "Forbidden" }, { status: 403 })
 
   const { id } = await params
   const tournament = await db.tournament.findUnique({ where: { id } })
@@ -57,6 +56,8 @@ export async function POST(req: Request, { params }: Params) {
     include: { slots: { select: { playerId: true } } },
   })
   if (!tl) return NextResponse.json({ error: "Lineup not found" }, { status: 400 })
+  // Admins, managers and whoever is responsible for this lineup
+  if (!(await mayEditLineupById(session.user as SessionUser, tl.id))) return NextResponse.json({ error: "Forbidden" }, { status: 403 })
   const lineupPlayerIds = tl.slots.map((s) => s.playerId)
 
   const subMatchFormats = stage.type === "SEEDING"

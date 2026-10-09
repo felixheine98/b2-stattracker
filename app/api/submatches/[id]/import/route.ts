@@ -2,7 +2,7 @@ import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
 import { NextResponse } from "next/server"
 import { parseCSV } from "@/lib/utils"
-import { canManage } from "@/lib/roles"
+import { mayEditLineupById, type SessionUser } from "@/lib/lineup-access-db"
 
 interface Params {
   params: Promise<{ id: string }>
@@ -11,7 +11,6 @@ interface Params {
 export async function POST(req: Request, { params }: Params) {
   const session = await auth()
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-  if (!canManage((session.user as { role?: string }).role)) return NextResponse.json({ error: "Forbidden" }, { status: 403 })
 
   const { id } = await params
 
@@ -22,6 +21,10 @@ export async function POST(req: Request, { params }: Params) {
     },
   })
   if (!subMatch) return NextResponse.json({ error: "Sub-match not found" }, { status: 404 })
+
+  // Admins, managers and whoever is responsible for the lineup of this match
+  const match = await db.match.findUnique({ where: { id: subMatch.matchId }, select: { tournamentLineupId: true } })
+  if (!(await mayEditLineupById(session.user as SessionUser, match?.tournamentLineupId))) return NextResponse.json({ error: "Forbidden" }, { status: 403 })
 
   const body = await req.json()
   const csv: string = body.csv

@@ -256,12 +256,15 @@ interface Props {
   allPlayers: Player[]
   // Lower-cased TM IDs of players who are guests in this tournament
   guestTmIds: string[]
+  // May maintain the results of this match (managers, and whoever is responsible for its lineup)
+  canEdit: boolean
+  // Admin or manager: may also change players, e.g. take over a name from eCM
   canManage: boolean
   // Open the eCM import dialog right away (the import page sends people here with the data)
   autoEcmImport?: boolean
 }
 
-export function MatchDetailView({ match: initialMatch, allPlayers, guestTmIds, canManage, autoEcmImport = false }: Props) {
+export function MatchDetailView({ match: initialMatch, allPlayers, guestTmIds, canEdit, canManage, autoEcmImport = false }: Props) {
   const router = useRouter()
   const guests = new Set(guestTmIds)
   const isGuest = (tmId: string) => guests.has(tmId.toLowerCase())
@@ -307,7 +310,7 @@ export function MatchDetailView({ match: initialMatch, allPlayers, guestTmIds, c
   const [importDragOver, setImportDragOver] = useState(false)
 
   // Coming from the import page (?ecm=1) the dialog is open right away
-  const [showEcmImport, setShowEcmImport] = useState(autoEcmImport && canManage)
+  const [showEcmImport, setShowEcmImport] = useState(autoEcmImport && canEdit)
 
   function closeEcmImport() {
     setShowEcmImport(false)
@@ -416,7 +419,7 @@ export function MatchDetailView({ match: initialMatch, allPlayers, guestTmIds, c
             <div className="flex items-center gap-2 mb-1 flex-wrap">
               <h1 className="text-2xl font-bold text-[#f5f0f0]">{matchTitle}</h1>
               {/* A match can be moved between match days and playoffs, but never into or out of the seeding */}
-              {canManage && !isSeeding ? (
+              {canEdit && !isSeeding ? (
                 <Badge variant="primary" className="relative focus-within:ring-2 focus-within:ring-[#FBD00D]">
                   {stageName(stage, stages)}
                   <ChevronDown size={12} className="ml-1" />
@@ -485,7 +488,7 @@ export function MatchDetailView({ match: initialMatch, allPlayers, guestTmIds, c
                 </div>
               </div>
             )}
-            {canManage && !isSeeding && (
+            {canEdit && !isSeeding && (
               <Button size="sm" className="mt-3" onClick={() => setShowEcmImport(true)}>
                 <Download size={14} />
                 Von eCM importieren
@@ -586,7 +589,7 @@ export function MatchDetailView({ match: initialMatch, allPlayers, guestTmIds, c
                   )}
 
                   {/* Import button */}
-                  {canManage && (
+                  {canEdit && (
                     <div className="flex justify-end gap-2">
                       {teamSize(sm.format) != null && (
                         <Button variant="outline" size="sm" onClick={() => setRoundEntryId(sm.id)}>
@@ -732,6 +735,7 @@ export function MatchDetailView({ match: initialMatch, allPlayers, guestTmIds, c
           subMatches={subMatches}
           allPlayers={allPlayers}
           startDay={dayKey(initialMatch.tournament.startDate ?? initialMatch.tournament.createdAt)}
+          canManage={canManage}
           isGuest={isGuest}
           onClose={closeEcmImport}
           onImported={(subMatchId, rounds, url) => {

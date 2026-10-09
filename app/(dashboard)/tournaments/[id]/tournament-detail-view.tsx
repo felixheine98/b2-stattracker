@@ -22,7 +22,7 @@ import { Badge } from "@/components/ui/badge"
 import {
   Plus, ArrowLeft, Calendar, ChevronRight, Swords, Trash2, Pencil, X, User, Users, BarChart2,
 } from "lucide-react"
-import { formatLabel } from "@/lib/utils"
+import { cn, formatLabel } from "@/lib/utils"
 import type { Format } from "@prisma/client"
 import { buildAggregates, matchesOfLineups, matchesOfStages, type StatsMatch } from "@/lib/format-stats"
 import { sortStages, stageName, stagePlanOf, type StageRef } from "@/lib/stages"
@@ -53,10 +53,20 @@ interface TournamentLineupSlot {
   player: Player
 }
 
+interface AccountRef {
+  id: string
+  name: string
+  username: string
+  role: string
+  playerId: string | null
+}
+
 interface TournamentLineup {
   id: string
   slug?: string | null
   name: string
+  // Accounts responsible for the lineup
+  managers?: Array<{ user: AccountRef }>
   slots: TournamentLineupSlot[]
 }
 
@@ -90,6 +100,8 @@ interface Props {
   tournament: Tournament
   players: PlayerWithStatus[]
   statsMatches: StatsMatch[]
+  // All accounts, to pick the people responsible for a lineup (empty unless canManage)
+  users: AccountRef[]
   canManage: boolean
 }
 
@@ -97,7 +109,7 @@ function formatBadgeVariant(format: Format): "primary" | "secondary" {
   return format === "TIME_ATTACK_10" ? "primary" : "secondary"
 }
 
-export function TournamentDetailView({ tournament: initial, players, statsMatches, canManage }: Props) {
+export function TournamentDetailView({ tournament: initial, players, statsMatches, users, canManage }: Props) {
   const router = useRouter()
   const [tournament, setTournament] = useSyncedState(initial)
   const [matches, setMatches] = useSyncedState(initial.matches)
@@ -146,6 +158,7 @@ export function TournamentDetailView({ tournament: initial, players, statsMatche
   const [editingLineup, setEditingLineup] = useState<TournamentLineup | null>(null)
   const [lineupName, setLineupName] = useState("")
   const [lineupPlayerIds, setLineupPlayerIds] = useState<string[]>([])
+  const [lineupManagerIds, setLineupManagerIds] = useState<string[]>([])
   const [lineupError, setLineupError] = useState("")
   const [lineupLoading, setLineupLoading] = useState(false)
   const [deletingLineup, setDeletingLineup] = useState<string | null>(null)
@@ -204,6 +217,7 @@ export function TournamentDetailView({ tournament: initial, players, statsMatche
     setEditingLineup(null)
     setLineupName("")
     setLineupPlayerIds([])
+    setLineupManagerIds([])
     setLineupError("")
     setShowLineupForm(true)
   }
@@ -212,6 +226,7 @@ export function TournamentDetailView({ tournament: initial, players, statsMatche
     setEditingLineup(lineup)
     setLineupName(lineup.name)
     setLineupPlayerIds(lineup.slots.map((s) => s.player.id))
+    setLineupManagerIds(lineup.managers?.map((m) => m.user.id) ?? [])
     setLineupError("")
     setShowLineupForm(true)
   }
@@ -228,7 +243,7 @@ export function TournamentDetailView({ tournament: initial, players, statsMatche
         {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ name: lineupName.trim(), playerIds: lineupPlayerIds }),
+          body: JSON.stringify({ name: lineupName.trim(), playerIds: lineupPlayerIds, managerUserIds: lineupManagerIds }),
         }
       )
       setLineupLoading(false)
@@ -239,7 +254,7 @@ export function TournamentDetailView({ tournament: initial, players, statsMatche
       const res = await fetch(`${BASE_PATH}/api/tournaments/${tournament.id}/lineups`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: lineupName.trim(), playerIds: lineupPlayerIds }),
+        body: JSON.stringify({ name: lineupName.trim(), playerIds: lineupPlayerIds, managerUserIds: lineupManagerIds }),
       })
       setLineupLoading(false)
       if (!res.ok) { const d = await res.json(); setLineupError(d.error ?? "Failed to save"); return }
@@ -397,7 +412,13 @@ export function TournamentDetailView({ tournament: initial, players, statsMatche
                         {lineup.slots.map((slot) => (
                           <span
                             key={slot.id}
-                            className="inline-flex items-center gap-1 rounded-full bg-[#251f20] border border-[#2d2829] px-2 py-0.5 text-xs text-[#c5bfbf]"
+                            className={cn(
+                              "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs",
+                              // Players who are responsible for the lineup stand out
+                              lineup.managers?.some((m) => m.user.playerId === slot.player.id)
+                                ? "border-[#FBD00D]/50 bg-[#FBD00D]/10 text-[#f5f0f0]"
+                                : "border-[#2d2829] bg-[#251f20] text-[#c5bfbf]"
+                            )}
                           >
                             <PlayerAvatar player={slot.player} className="h-3.5 w-3.5 text-[9px]" />
                             <PlayerName name={slot.player.name} currentName={slot.player.currentName} />
@@ -718,6 +739,58 @@ export function TournamentDetailView({ tournament: initial, players, statsMatche
                 ))}
               </div>
               </>
+            )}
+          </div>
+          <div className="space-y-1.5">
+            <Label>Zuständig <span className="text-[#5e5858]">(optional)</span></Label>
+            <p className="text-xs text-[#5e5858]">
+              Wer hier steht, darf Matches dieses Lineups anlegen und Ergebnisse pflegen, bis eine Woche nach Ende der Comp.
+            </p>
+            {lineupManagerIds.length > 0 && (
+              <div className="flex flex-wrap gap-1.5">
+                {lineupManagerIds.map((id) => {
+                  const user = users.find((u) => u.id === id)
+                  if (!user) return null
+                  return (
+                    <span key={id} className="inline-flex items-center gap-1.5 rounded-full border border-[#FBD00D]/30 bg-[#FBD00D]/10 py-0.5 pl-2.5 pr-1.5 text-xs text-[#f5f0f0]">
+                      {user.name}
+                      <button
+                        type="button"
+                        onClick={() => setLineupManagerIds((ids) => ids.filter((x) => x !== id))}
+                        aria-label={`${user.name} entfernen`}
+                        className="text-[#9a9090] hover:text-[#ED1F24]"
+                      >
+                        <X size={12} />
+                      </button>
+                    </span>
+                  )
+                })}
+              </div>
+            )}
+            <PlayerSearch
+              players={users.filter((u) => !lineupManagerIds.includes(u.id)).map((u) => ({ id: u.id, name: u.name, tmId: "", allNames: [u.name, u.username] }))}
+              isGuest={() => false}
+              onPick={(id) => setLineupManagerIds((ids) => (ids.includes(id) ? ids : [...ids, id]))}
+              placeholder="Account suchen, Enter wählt aus"
+              emptyText="Kein Account gefunden."
+            />
+            {/* The accounts of the lineup's players are the most likely choice */}
+            {users.some((u) => u.playerId && lineupPlayerIds.includes(u.playerId) && !lineupManagerIds.includes(u.id)) && (
+              <div className="flex flex-wrap items-center gap-1.5 text-xs text-[#5e5858]">
+                Aus dem Lineup:
+                {users
+                  .filter((u) => u.playerId && lineupPlayerIds.includes(u.playerId) && !lineupManagerIds.includes(u.id))
+                  .map((u) => (
+                    <button
+                      key={u.id}
+                      type="button"
+                      onClick={() => setLineupManagerIds((ids) => [...ids, u.id])}
+                      className="rounded-full border border-[#2d2829] px-2.5 py-0.5 text-[#9a9090] hover:border-[#3a3435] hover:text-[#f5f0f0]"
+                    >
+                      + {u.name}
+                    </button>
+                  ))}
+              </div>
             )}
           </div>
           {lineupError && <p className="text-sm text-[#ED1F24]">{lineupError}</p>}

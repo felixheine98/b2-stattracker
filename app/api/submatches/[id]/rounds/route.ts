@@ -3,7 +3,7 @@ import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
 import { NextResponse } from "next/server"
 import { z } from "zod"
-import { canManage } from "@/lib/roles"
+import { mayEditLineupById, type SessionUser } from "@/lib/lineup-access-db"
 import { teamSize } from "@/lib/utils"
 
 interface Params {
@@ -47,14 +47,15 @@ const schema = z.object({
 export async function PUT(req: Request, { params }: Params) {
   const session = await auth()
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-  if (!canManage((session.user as { role?: string }).role)) return NextResponse.json({ error: "Forbidden" }, { status: 403 })
 
   const { id } = await params
   const subMatch = await db.subMatch.findUnique({
     where: { id },
-    include: { match: { select: { opponent: true, tournament: { select: { startDate: true, createdAt: true } } } } },
+    include: { match: { select: { opponent: true, tournamentLineupId: true, tournament: { select: { startDate: true, createdAt: true } } } } },
   })
   if (!subMatch) return NextResponse.json({ error: "Sub-match not found" }, { status: 404 })
+  // Admins, managers and whoever is responsible for the lineup of this match
+  if (!(await mayEditLineupById(session.user as SessionUser, subMatch.match.tournamentLineupId))) return NextResponse.json({ error: "Forbidden" }, { status: 403 })
 
   const size = teamSize(subMatch.format)
   if (!size) return NextResponse.json({ error: "Manual round entry is not available for this format" }, { status: 400 })

@@ -39,6 +39,8 @@ model User {
 
   player   Player? @relation(fields: [playerId], references: [id])
   playerId String? @unique
+
+  managedLineups TournamentLineupManager[]
 }
 
 model Player {
@@ -140,10 +142,24 @@ model TournamentLineup {
   slug         String?
   createdAt    DateTime   @default(now())
 
-  slots   TournamentLineupSlot[]
-  matches Match[]
+  slots    TournamentLineupSlot[]
+  matches  Match[]
+  managers TournamentLineupManager[]
 
   @@unique([tournamentId, slug])
+}
+
+// An account responsible for a lineup. A player account in here is a "lineup manager": it may
+// maintain the matches and results of this one lineup (see lib/lineup-access.ts).
+model TournamentLineupManager {
+  id        String           @id @default(cuid())
+  lineupId  String
+  lineup    TournamentLineup @relation(fields: [lineupId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime         @default(now())
+
+  @@unique([lineupId, userId])
 }
 
 model TournamentLineupSlot {

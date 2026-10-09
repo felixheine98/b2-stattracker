@@ -3,7 +3,7 @@ import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
 import { NextResponse } from "next/server"
 import { z } from "zod"
-import { canManage } from "@/lib/roles"
+import { mayEditLineupById, type SessionUser } from "@/lib/lineup-access-db"
 
 interface Params {
   params: Promise<{ id: string; matchId: string }>
@@ -16,7 +16,6 @@ const schema = z.object({ stageId: z.string().min(1) })
 export async function PUT(req: Request, { params }: Params) {
   const session = await auth()
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-  if (!canManage((session.user as { role?: string }).role)) return NextResponse.json({ error: "Forbidden" }, { status: 403 })
 
   const { id, matchId } = await params
   const parsed = schema.safeParse(await req.json())
@@ -27,6 +26,8 @@ export async function PUT(req: Request, { params }: Params) {
     db.stage.findUnique({ where: { id: parsed.data.stageId } }),
   ])
   if (!match || match.tournamentId !== id) return NextResponse.json({ error: "Match not found" }, { status: 404 })
+  // Admins, managers and whoever is responsible for the lineup of this match
+  if (!(await mayEditLineupById(session.user as SessionUser, match.tournamentLineupId))) return NextResponse.json({ error: "Forbidden" }, { status: 403 })
   if (!target || target.tournamentId !== id) return NextResponse.json({ error: "Stage not found" }, { status: 400 })
   if (match.stage.type === "SEEDING" || target.type === "SEEDING") {
     return NextResponse.json({ error: "Seeding-Matches lassen sich nicht verschieben" }, { status: 400 })

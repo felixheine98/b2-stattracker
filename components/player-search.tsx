@@ -12,10 +12,12 @@ interface Props {
   players: Array<{ id: string; name: string; tmId: string }>
   isGuest: (tmId: string) => boolean
   onPick: (id: string) => void
+  placeholder?: string
+  emptyText?: string
 }
 
 // Type a name, move through the suggestions with the arrow keys and pick one with Enter
-export function PlayerSearch({ players, isGuest, onPick }: Props) {
+export function PlayerSearch({ players, isGuest, onPick, placeholder = "Spieler suchen, Enter wählt aus", emptyText = "Kein freier Spieler gefunden." }: Props) {
   const [query, setQuery] = useState("")
   const [active, setActive] = useState(0)
   const matches = searchPlayers(players, query).slice(0, 8)
@@ -46,14 +48,14 @@ export function PlayerSearch({ players, isGuest, onPick }: Props) {
         value={query}
         onChange={(e) => { setQuery(e.target.value); setActive(0) }}
         onKeyDown={handleKeyDown}
-        placeholder="Spieler suchen, Enter wählt aus"
+        placeholder={placeholder}
         autoComplete="off"
-        aria-label="Spieler suchen"
+        aria-label={placeholder}
         className="pl-9"
       />
       {query.trim() && (
         <div className="absolute left-0 right-0 top-full z-20 mt-1 rounded-lg border border-[#3a3435] bg-[#1c1819] p-1 shadow-lg">
-          {matches.length === 0 && <p className="px-2.5 py-1.5 text-xs text-[#5e5858]">Kein freier Spieler gefunden.</p>}
+          {matches.length === 0 && <p className="px-2.5 py-1.5 text-xs text-[#5e5858]">{emptyText}</p>}
           {matches.map((p, i) => (
             <button
               key={p.id}

@@ -1,3 +1,4 @@
+import { LINEUP_MANAGERS_INCLUDE } from "@/lib/lineup-access-db"
 import { syncTournamentSlugs } from "@/lib/slugs-db"
 import { withCompNames } from "@/lib/player-names-db"
 import { auth } from "@/lib/auth"
@@ -28,6 +29,8 @@ export async function GET(_req: Request, { params }: Params) {
 const createSchema = z.object({
   name: z.string().min(1, "Name is required"),
   playerIds: z.array(z.string()).min(1, "Select at least one player"),
+  // Accounts responsible for the lineup
+  managerUserIds: z.array(z.string()).default([]),
 })
 
 export async function POST(req: Request, { params }: Params) {
@@ -56,8 +59,9 @@ export async function POST(req: Request, { params }: Params) {
       slots: {
         create: playerIds.map((playerId) => ({ playerId })),
       },
+      managers: { create: [...new Set(parsed.data.managerUserIds)].map((userId) => ({ userId })) },
     },
-    include: { slots: { include: { player: true } } },
+    include: { slots: { include: { player: true } }, ...LINEUP_MANAGERS_INCLUDE },
   })
 
   await syncTournamentSlugs(id)

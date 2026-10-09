@@ -1,3 +1,4 @@
+import { LINEUP_MANAGERS_INCLUDE, mayEditLineup, type SessionUser } from "@/lib/lineup-access-db"
 import { db } from "@/lib/db"
 import { auth } from "@/lib/auth"
 import { canManage } from "@/lib/roles"
@@ -28,9 +29,10 @@ export default async function LineupMatchesPage({ params }: Props) {
       where: { id: lineupId, tournamentId },
       include: {
         tournament: {
-          select: { id: true, slug: true, name: true, formats: true, startDate: true, createdAt: true, stages: { select: { id: true, type: true, number: true } } },
+          select: { id: true, slug: true, name: true, formats: true, startDate: true, endDate: true, createdAt: true, stages: { select: { id: true, type: true, number: true } } },
         },
         slots: { include: { player: true } },
+        ...LINEUP_MANAGERS_INCLUDE,
         matches: {
           orderBy: { createdAt: "desc" },
           include: {
@@ -60,5 +62,19 @@ export default async function LineupMatchesPage({ params }: Props) {
   // Everyone is shown under the name they had when the tournament started
   const named = await withCompNames(lineup, lineup.tournament)
 
-  return <LineupMatchesView lineup={named} guestTmIds={guestTmIds} canManage={canManage((session?.user as { role?: string })?.role)} />
+  // Admins and managers may do everything; whoever is responsible for this lineup may add matches and results
+  const user = (session?.user as SessionUser | undefined) ?? null
+  const responsible = !!user?.id && lineup.managers.some((m) => m.user.id === user.id)
+  const canEdit = mayEditLineup(user, { managers: lineup.managers.map((m) => ({ userId: m.user.id })), tournament: lineup.tournament })
+
+  return (
+    <LineupMatchesView
+      lineup={named}
+      guestTmIds={guestTmIds}
+      canManage={canManage(user?.role)}
+      canEdit={canEdit}
+      // Responsible for the lineup, but the week after the tournament's end is over
+      editExpired={responsible && !canEdit}
+    />
+  )
 }

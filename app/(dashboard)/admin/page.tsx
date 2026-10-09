@@ -18,6 +18,8 @@ export default async function AdminPage() {
       role: true,
       createdAt: true,
       player: { select: { id: true, name: true } },
+      // Lineups this account is responsible for
+      managedLineups: { select: { lineup: { select: { id: true, name: true, tournament: { select: { name: true } } } } } },
     },
     orderBy: { createdAt: "asc" },
   })

@@ -1,3 +1,4 @@
+import { LINEUP_MANAGERS_INCLUDE } from "@/lib/lineup-access-db"
 import { syncTournamentSlugs } from "@/lib/slugs-db"
 import { withCompNames } from "@/lib/player-names-db"
 import { auth } from "@/lib/auth"
@@ -34,6 +35,8 @@ export async function GET(_req: Request, { params }: Params) {
 const updateSchema = z.object({
   name: z.string().min(1).optional(),
   playerIds: z.array(z.string()).min(1).optional(),
+  // Accounts responsible for the lineup
+  managerUserIds: z.array(z.string()).optional(),
 })
 
 export async function PATCH(req: Request, { params }: Params) {
@@ -64,8 +67,14 @@ export async function PATCH(req: Request, { params }: Params) {
           create: playerIds.map((playerId) => ({ playerId })),
         },
       }),
+      ...(parsed.data.managerUserIds !== undefined && {
+        managers: {
+          deleteMany: {},
+          create: [...new Set(parsed.data.managerUserIds)].map((userId) => ({ userId })),
+        },
+      }),
     },
-    include: { slots: { include: { player: true } }, tournament: { select: { startDate: true, createdAt: true } } },
+    include: { slots: { include: { player: true } }, tournament: { select: { startDate: true, createdAt: true } }, ...LINEUP_MANAGERS_INCLUDE },
   })
 
   await syncTournamentSlugs(id)

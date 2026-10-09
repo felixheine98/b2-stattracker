@@ -1,5 +1,6 @@
 "use client"
 
+import { Badge } from "@/components/ui/badge"
 import { BASE_PATH } from "@/lib/base-path"
 import { matchPath, tournamentPath } from "@/lib/paths"
 import { PlayerName } from "@/components/player-name"
@@ -23,8 +24,8 @@ import { StatsFilter } from "@/components/stats-filter"
 import { StageHeading } from "@/components/stage-heading"
 import { Select } from "@/components/ui/select"
 import { FormatStatsTable } from "../format-stats"
-import { ArrowLeft, Swords, Users, ChevronRight, Calendar, BarChart2, Plus, Trash2 } from "lucide-react"
-import { formatLabel } from "@/lib/utils"
+import { ArrowLeft, Swords, Users, ChevronRight, Calendar, BarChart2, Plus, Trash2, ShieldCheck } from "lucide-react"
+import { cn, formatLabel } from "@/lib/utils"
 import type { Format } from "@prisma/client"
 
 interface RoundResult {
@@ -76,14 +77,21 @@ interface Props {
     name: string
     tournament: { id: string; slug?: string | null; name: string; formats: Format[]; startDate: Date | null; createdAt: Date; stages: StageRef[] }
     slots: Array<{ id: string; player: Player }>
+    // Accounts responsible for the lineup
+    managers: Array<{ user: { id: string; name: string; role: string; playerId: string | null } }>
     matches: Match[]
   }
   // Lower-cased TM IDs of players who are guests in this tournament
   guestTmIds: string[]
+  // Admin or manager: everything, including deleting matches
   canManage: boolean
+  // May add matches and maintain results of this lineup (managers, and whoever is responsible for it)
+  canEdit: boolean
+  editExpired?: boolean
 }
 
-export function LineupMatchesView({ lineup, guestTmIds, canManage }: Props) {
+export function LineupMatchesView({ lineup, guestTmIds, canManage, canEdit, editExpired }: Props) {
+  const responsiblePlayerIds = new Set(lineup.managers.map((m) => m.user.playerId))
   const guests = new Set(guestTmIds)
   const isGuest = (tmId: string) => guests.has(tmId.toLowerCase())
   const router = useRouter()
@@ -173,7 +181,7 @@ export function LineupMatchesView({ lineup, guestTmIds, canManage }: Props) {
             <h1 className="text-2xl font-bold text-[#f5f0f0] mb-1">{lineup.name}</h1>
             <p className="text-xs text-[#5e5858]">Lineup · {tournament.name}</p>
           </div>
-          {canManage && (
+          {canEdit && (
             <Button onClick={openAddMatch} className="shrink-0">
               <Plus size={16} />
               Add Match
@@ -192,14 +200,40 @@ export function LineupMatchesView({ lineup, guestTmIds, canManage }: Props) {
           {lineup.slots.map((slot) => (
             <span
               key={slot.id}
-              className="inline-flex items-center gap-1.5 rounded-full bg-[#251f20] border border-[#2d2829] px-3 py-1 text-sm text-[#c5bfbf]"
+              className={cn(
+                "inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-sm",
+                // Players who are responsible for the lineup stand out
+                responsiblePlayerIds.has(slot.player.id)
+                  ? "border-[#FBD00D]/50 bg-[#FBD00D]/10 text-[#f5f0f0]"
+                  : "border-[#2d2829] bg-[#251f20] text-[#c5bfbf]"
+              )}
             >
               <PlayerAvatar player={slot.player} className="h-5 w-5 text-[10px]" />
               <PlayerName name={slot.player.name} currentName={slot.player.currentName} />
               {isGuest(slot.player.tmId) && <GuestBadge />}
+              {responsiblePlayerIds.has(slot.player.id) && <ShieldCheck size={13} className="text-[#FBD00D]" aria-label="zuständig" />}
             </span>
           ))}
         </div>
+        {lineup.managers.length > 0 && (
+          <p className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-1.5 text-sm text-[#9a9090]">
+            <ShieldCheck size={14} className="text-[#FBD00D]" />
+            Zuständig:
+            {lineup.managers.map(({ user }) => (
+              <span key={user.id} className="inline-flex items-center gap-1.5 text-[#f5f0f0]">
+                {user.name}
+                <Badge variant={user.role === "PLAYER" ? "primary" : "default"}>
+                  {user.role === "ADMIN" ? "Admin" : user.role === "MANAGER" ? "Manager" : "Lineup-Manager"}
+                </Badge>
+              </span>
+            ))}
+          </p>
+        )}
+        {editExpired && (
+          <p className="mt-2 text-xs text-[#cd7f32]">
+            Die Comp ist seit mehr als einer Woche abgeschlossen. Änderungen an Matches und Ergebnissen laufen jetzt über einen Manager.
+          </p>
+        )}
       </div>
 
       {/* Aggregate stats */}
@@ -307,7 +341,7 @@ export function LineupMatchesView({ lineup, guestTmIds, canManage }: Props) {
       </div>
 
       {/* Add Match Dialog */}
-      <Dialog open={canManage && showAddMatch} onClose={() => setShowAddMatch(false)}>
+      <Dialog open={canEdit && showAddMatch} onClose={() => setShowAddMatch(false)}>
         <DialogTitle>Add Match</DialogTitle>
         <form onSubmit={handleCreateMatch} className="space-y-4">
           <div className="space-y-1.5">
