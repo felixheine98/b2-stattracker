@@ -19,7 +19,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { buildAggregates, matchesOfStages } from "@/lib/format-stats"
 import { sortStages, stageDate, stageName, suggestStage, type StageRef } from "@/lib/stages"
 import { useIdListParam } from "@/lib/use-id-list-param"
-import { PillSelect } from "@/components/pill-select"
+import { StatsFilter } from "@/components/stats-filter"
 import { StageHeading } from "@/components/stage-heading"
 import { Select } from "@/components/ui/select"
 import { FormatStatsTable } from "../format-stats"
@@ -210,11 +210,11 @@ export function LineupMatchesView({ lineup, guestTmIds, canManage }: Props) {
             Gesamtstatistik
           </h2>
           {statsStages.length > 1 && (
-            <PillSelect
-              options={statsStages.map((st) => ({ id: st.id, label: stageName(st, stages) }))}
-              selected={statsStageIds}
-              onChange={selectStatsStages}
+            <StatsFilter
               className="mb-4"
+              groups={[
+                { label: "Abschnitt", options: statsStages.map((st) => ({ id: st.id, label: stageName(st, stages) })), selected: statsStageIds, onChange: selectStatsStages },
+              ]}
             />
           )}
           {aggregates.length === 0 ? (
@@ -356,7 +356,7 @@ export function LineupMatchesView({ lineup, guestTmIds, canManage }: Props) {
             <Textarea id="notes" name="notes" rows={2} />
           </div>
           {matchError && <p className="text-sm text-[#ED1F24]">{matchError}</p>}
-          <div className="flex gap-2 justify-end">
+          <div className="dialog-footer flex gap-2 justify-end">
             <Button variant="ghost" type="button" onClick={() => setShowAddMatch(false)}>Cancel</Button>
             <Button type="submit" disabled={matchLoading}>{matchLoading ? "Creating…" : "Create Match"}</Button>
           </div>

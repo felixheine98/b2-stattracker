@@ -1,12 +1,13 @@
 "use client"
 
+import { EcmBookmarkletSetup } from "@/components/ecm-bookmarklet-setup"
 import { BASE_PATH } from "@/lib/base-path"
 import { localTodayKey } from "@/lib/player-status"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogTitle } from "@/components/ui/dialog"
 import { Textarea } from "@/components/ui/textarea"
-import { repairEcmSet, ECM_BOOKMARKLET, normalizeName, parseEcmPayload, type EcmPayload, type EcmSet } from "@/lib/ecm"
+import { repairEcmSet, ECM_PENDING_KEY, normalizeName, parseEcmPayload, type EcmPayload, type EcmSet } from "@/lib/ecm"
 import { formatLabel, parseTime, teamSize } from "@/lib/utils"
 import { useMemo, useState } from "react"
 import type { Player, Round, SubMatch } from "./match-detail-view"
@@ -15,7 +16,6 @@ const MAPPING_KEY = "ecm-player-map"
 
 const isDnf = (time: string | undefined) => time?.trim().toUpperCase() === "DNF"
 const isEcmUrl = (url: string | undefined) => !!url && /^https:\/\/([a-z0-9-]+\.)*ecircuitmania\.com\//i.test(url)
-const BOOKMARKLET_URL = `javascript:${encodeURIComponent(ECM_BOOKMARKLET)}`
 
 interface Props {
   subMatches: SubMatch[]
@@ -60,16 +60,20 @@ function loadSavedMapping(): Record<string, string> {
   }
 }
 
-export function EcmImportDialog({ subMatches, allPlayers, startDay, isGuest, onClose, onImported }: Props) {
+export function EcmImportDialog({ subMatches, allPlayers, startDay, isGuest, onClose: close, onImported }: Props) {
   const router = useRouter()
-  const [text, setText] = useState("")
+  const onClose = () => {
+    sessionStorage.removeItem(ECM_PENDING_KEY)
+    close()
+  }
+  // Data handed over by the import page (see app/(dashboard)/ecm-import); stays there until the dialog is done
+  const [text, setText] = useState(() => (typeof window === "undefined" ? "" : sessionStorage.getItem(ECM_PENDING_KEY) ?? ""))
   const [teamChoice, setTeamChoice] = useState<number | null>(null)
   const [mappingEdits, setMappingEdits] = useState<Record<string, string>>({})
   const [savedMapping] = useState(loadSavedMapping)
   const [targetEdits, setTargetEdits] = useState<Record<number, string>>({})
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState("")
-  const [copied, setCopied] = useState(false)
 
   // Rounds with a player too many or too few are repaired where possible; repairs[i] says how for set i
   const { payload, repairs } = useMemo(() => {
@@ -78,11 +82,6 @@ export function EcmImportDialog({ subMatches, allPlayers, startDay, isGuest, onC
     const payload: EcmPayload | null = parsed && { ...parsed, sets: repairs.map((r) => r.set) }
     return { payload, repairs }
   }, [text])
-
-  // React refuses javascript: URLs in JSX, so the bookmarklet link is set on the element directly
-  const setBookmarkletHref = (el: HTMLAnchorElement | null) => {
-    el?.setAttribute("href", BOOKMARKLET_URL)
-  }
 
   // A player is recognised by any name they ever had, not only the one shown in this tournament
   const namesOf = (p: Player) => p.allNames ?? [p.name]
@@ -159,15 +158,6 @@ export function EcmImportDialog({ subMatches, allPlayers, startDay, isGuest, onC
 
   const canImport = selected.some(Boolean) && problems.length === 0 && !saving
 
-  async function copyBookmarklet() {
-    try {
-      await navigator.clipboard.writeText(BOOKMARKLET_URL)
-      setCopied(true)
-    } catch {
-      setError("Kopieren nicht möglich – bitte den Link in die Lesezeichenleiste ziehen.")
-    }
-  }
-
   async function handleImport() {
     if (!payload) return
     const ecmUrl = isEcmUrl(payload.url) ? payload.url : undefined
@@ -223,36 +213,23 @@ export function EcmImportDialog({ subMatches, allPlayers, startDay, isGuest, onC
 
       {!payload ? (
         <div className="space-y-4">
-          <ol className="list-decimal space-y-2 pl-5 text-sm text-[#c5bfbf]">
-            <li>
-              Einmalig: diesen Link in die Lesezeichenleiste ziehen:{" "}
-              <a
-                ref={setBookmarkletHref}
-                onClick={(e) => e.preventDefault()}
-                className="inline-block cursor-grab rounded-md border border-[#FBD00D]/50 bg-[#FBD00D]/10 px-2 py-0.5 text-xs font-medium text-[#FBD00D]"
-              >
-                eCM → Stattracker
-              </a>
-              <button type="button" onClick={copyBookmarklet} className="ml-2 text-xs text-[#5e5858] hover:text-[#f5f0f0]">
-                {copied ? "Adresse kopiert ✓" : "oder Adresse kopieren"}
-              </button>
-            </li>
-            <li className="list-none text-xs text-[#5e5858]">
-              Lesezeichenleiste einblenden: ⌘⇧B (Mac) bzw. Strg+Umschalt+B. Alternativ ein beliebiges Lesezeichen
-              anlegen, bearbeiten und die kopierte Adresse als URL einfügen.
-            </li>
-            <li>Die Match-Seite auf ecircuitmania.com öffnen und das Lesezeichen anklicken.</li>
-            <li>Im Fenster oben rechts auf „Kopieren“ klicken und das Ergebnis hier einfügen.</li>
-          </ol>
+          <p className="text-sm text-[#c5bfbf]">
+            Am schnellsten geht es mit dem Lesezeichen: Es liest die Match-Seite auf ecircuitmania.com aus und bringt
+            dich mit den Daten direkt hierher.
+          </p>
+          <EcmBookmarkletSetup />
+          <p className="text-xs text-[#5e5858]">
+            Nur falls das Lesezeichen ein Fenster zum Kopieren zeigt (sehr großes Match): die kopierten Daten hier einfügen.
+          </p>
           <Textarea
             value={text}
             onChange={(e) => setText(e.target.value)}
-            rows={5}
+            rows={3}
             className="font-mono text-xs"
             placeholder="Kopierte Daten hier einfügen (Strg+V)"
           />
           {text.trim() && <p className="text-sm text-[#ED1F24]">Das sind keine Daten aus dem eCM-Lesezeichen.</p>}
-          <div className="flex justify-end">
+          <div className="dialog-footer flex justify-end">
             <Button variant="ghost" onClick={onClose}>Abbrechen</Button>
           </div>
         </div>
@@ -331,7 +308,7 @@ export function EcmImportDialog({ subMatches, allPlayers, startDay, isGuest, onC
           {neededNames.length > 0 && (
             <div className="space-y-1.5">
               <p className="text-xs font-semibold uppercase tracking-wider text-[#9a9090]">Spieler zuordnen</p>
-              <div className="grid grid-cols-2 gap-x-4 gap-y-1.5">
+              <div className="grid grid-cols-1 gap-x-4 sm:grid-cols-2 gap-y-1.5">
                 {neededNames.map((name) => (
                   <label key={name} className="flex items-center justify-between gap-2 text-sm text-[#c5bfbf]">
                     {name}
@@ -384,7 +361,7 @@ export function EcmImportDialog({ subMatches, allPlayers, startDay, isGuest, onC
           ))}
           {error && <p className="text-sm text-[#ED1F24]">{error}</p>}
 
-          <div className="flex gap-2 justify-end">
+          <div className="dialog-footer flex gap-2 justify-end">
             <Button variant="ghost" onClick={() => setText("")}>Zurück</Button>
             <Button onClick={handleImport} disabled={!canImport}>
               {saving ? "Importiert…" : `${selected.filter(Boolean).length} Set(s) importieren`}

@@ -88,7 +88,7 @@ export function TournamentsView({ tournaments: initial, canManage }: { tournamen
 
   return (
     <div className="space-y-6 max-w-4xl">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold text-[#f5f0f0]">Tournaments</h1>
           <p className="text-[#9a9090] text-sm mt-0.5">{tournaments.length} tournaments</p>
@@ -162,7 +162,7 @@ export function TournamentsView({ tournaments: initial, canManage }: { tournamen
             <Textarea id="description" name="description" rows={2} />
           </div>
           <StagePlanFields value={stagePlan} onChange={setStagePlan} />
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div className="space-y-1.5">
               <Label htmlFor="startDate">Start date</Label>
               <Input id="startDate" name="startDate" type="date" defaultValue={localTodayKey()} required />
@@ -173,7 +173,7 @@ export function TournamentsView({ tournaments: initial, canManage }: { tournamen
             </div>
           </div>
           {error && <p className="text-sm text-[#ED1F24]">{error}</p>}
-          <div className="flex gap-2 justify-end pt-1">
+          <div className="dialog-footer flex gap-2 justify-end pt-1">
             <Button variant="ghost" type="button" onClick={() => setShowForm(false)}>Cancel</Button>
             <Button type="submit" disabled={loading}>{loading ? "Creating…" : "Create Tournament"}</Button>
           </div>

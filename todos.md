@@ -17,3 +17,4 @@
 - [ ] best performer pro match/week/tourney? -> den auf übersicht auch anzeigen?
 - [ ] validierung von importierten daten zu eingegebenen daten (match) -> passt das gegner team etc
 - [ ] per map statistiken (pro comp für 1 lineup, pro week für alle lineups)
+- bei turnier gesamtstatistik -> filter default auf eigenes team (wenn in einem LU dabei)

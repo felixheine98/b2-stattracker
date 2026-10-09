@@ -90,8 +90,33 @@ export function normalizeName(name: string): string {
     .replace(/(.)\1+/g, "$1")
 }
 
+// Where the bookmarklet takes the data it has read: the import page of this app
+export const ECM_IMPORT_PATH = "/ecm-import"
+
+// The javascript: address to save as a bookmark; target is the full address of the import page
+export function ecmBookmarkletUrl(target: string): string {
+  return `javascript:${encodeURIComponent(ECM_BOOKMARKLET.replace("__ECM_TARGET__", target))}`
+}
+
+// The data the bookmarklet appended to the import page's address (base64url of the JSON), or null
+export function decodeEcmFragment(fragment: string): string | null {
+  const encoded = fragment.replace(/^#/, "")
+  if (!encoded) return null
+  try {
+    const binary = atob(encoded.replace(/-/g, "+").replace(/_/g, "/"))
+    return new TextDecoder("utf-8", { fatal: true }).decode(Uint8Array.from(binary, (c) => c.charCodeAt(0)))
+  } catch {
+    return null
+  }
+}
+
+// Handed from the import page to the match page, which opens the import dialog with it
+export const ECM_PENDING_KEY = "ecm-pending-import"
+
 // Plain ES5-style JavaScript on purpose: it runs as a bookmarklet on the eCircuitMania page.
 // It relies on visible text and table structure only, not on their generated class names.
+// When done it opens the import page of this app with the data in the address; only a match
+// too large for that falls back to a window to copy the data from.
 // The roster of a team is the first element with several children after its name; once a match
 // has a result, the score sits between the two.
 export const ECM_BOOKMARKLET = String.raw`(async function(){
@@ -135,10 +160,12 @@ if(sib){players=Array.prototype.map.call(sib.children,txt).filter(Boolean);retur
 return false});
 return{name:n,players:players}});
 var out=JSON.stringify({ecm:1,url:location.href,teams:teams,sets:sets});
+var b64=btoa(unescape(encodeURIComponent(out))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+if(b64.length<60000){location.href='__ECM_TARGET__#'+b64;return}
 var total=sets.reduce(function(a,x){return a+x.rounds.length},0);
 var box=document.createElement('div');
 box.style.cssText='position:fixed;z-index:2147483647;top:20px;right:20px;width:360px;padding:16px;background:#1c1819;color:#f5f0f0;border:1px solid #FBD00D;border-radius:10px;font:14px sans-serif;box-shadow:0 10px 40px rgba(0,0,0,.6)';
-var head=document.createElement('div');head.textContent=sets.length+' Sets, '+total+' Runden gelesen';head.style.cssText='font-weight:bold;margin-bottom:8px';
+var head=document.createElement('div');head.textContent=sets.length+' Sets, '+total+' Runden gelesen – zu viel für den direkten Weg, bitte kopieren und im Import einfügen';head.style.cssText='font-weight:bold;margin-bottom:8px';
 var ta=document.createElement('textarea');ta.value=out;ta.readOnly=true;ta.style.cssText='width:100%;height:80px;box-sizing:border-box;background:#0e0c0d;color:#9a9090;border:1px solid #3a3435;border-radius:6px;font:11px monospace';
 var copy=document.createElement('button');copy.textContent='Kopieren';copy.style.cssText='margin-top:8px;padding:6px 14px;background:#FBD00D;color:#1a1718;border:0;border-radius:6px;font-weight:bold;cursor:pointer';
 var close=document.createElement('button');close.textContent='Schließen';close.style.cssText='margin:8px 0 0 8px;padding:6px 14px;background:transparent;color:#9a9090;border:1px solid #3a3435;border-radius:6px;cursor:pointer';

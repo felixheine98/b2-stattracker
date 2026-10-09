@@ -151,7 +151,7 @@ export function NameHistoryDialog({ player, suggestion, canManage, onClose, onCh
         )}
 
         {error && <p className="text-sm text-[#ED1F24]">{error}</p>}
-        <div className="flex justify-end">
+        <div className="dialog-footer flex justify-end">
           <Button variant="ghost" onClick={onClose}>Close</Button>
         </div>
       </div>

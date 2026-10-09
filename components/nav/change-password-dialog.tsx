@@ -44,7 +44,7 @@ export function ChangePasswordDialog({ onClose }: { onClose: () => void }) {
       {saved ? (
         <div className="space-y-4">
           <p className="text-sm text-[#c5bfbf]">Dein Passwort ist geändert. Es gilt ab der nächsten Anmeldung.</p>
-          <div className="flex justify-end">
+          <div className="dialog-footer flex justify-end">
             <Button onClick={onClose}>Schließen</Button>
           </div>
         </div>
@@ -64,7 +64,7 @@ export function ChangePasswordDialog({ onClose }: { onClose: () => void }) {
             <Input id="pw-repeat" type="password" value={repeat} onChange={(e) => setRepeat(e.target.value)} autoComplete="new-password" required />
           </div>
           {error && <p className="text-sm text-[#ED1F24]">{error}</p>}
-          <div className="flex gap-2 justify-end">
+          <div className="dialog-footer flex gap-2 justify-end">
             <Button variant="ghost" type="button" onClick={onClose}>Abbrechen</Button>
             <Button type="submit" disabled={loading}>{loading ? "Speichert…" : "Passwort ändern"}</Button>
           </div>

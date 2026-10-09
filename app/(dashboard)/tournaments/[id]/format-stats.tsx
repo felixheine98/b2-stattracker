@@ -68,7 +68,7 @@ export function FormatStatsTable({ agg, isGuest, lineupName }: Props) {
         <table className="w-full text-xs">
           <thead>
             <tr className="border-b border-[#2d2829] bg-[#1c1819]">
-              {th("name", "Spieler", "text-left pl-3 pr-4")}
+              {th("name", "Spieler", "sticky left-0 z-[1] bg-[#1c1819] text-left pl-3 pr-4")}
               {lineupName && th("lineup", "Lineup", "text-left px-3")}
               {th("played", "Gespielt", "text-right px-3")}
               {th("placementSum", "Platzsumme", "text-right px-3")}
@@ -81,7 +81,7 @@ export function FormatStatsTable({ agg, isGuest, lineupName }: Props) {
           <tbody>
             {players.map((p) => (
               <tr key={p.tmId} className="border-b border-[#1c1819] hover:bg-[#1c1819]/60">
-                <td className="py-1.5 pl-3 pr-4 text-[#f5f0f0] font-medium whitespace-nowrap">
+                <td className="sticky left-0 z-[1] bg-[#0e0b0b] py-1.5 pl-3 pr-4 text-[#f5f0f0] font-medium whitespace-nowrap max-md:shadow-[1px_0_0_#2d2829]">
                   <PlayerName name={p.name} currentName={p.currentName} />
                   {isGuest(p.tmId) && <GuestBadge className="ml-1.5" />}
                 </td>

@@ -74,7 +74,7 @@ export function ResetPasswordDialog({ user, onClose }: Props) {
           </p>
         )}
         {error && <p className="text-sm text-[#ED1F24]">{error}</p>}
-        <div className="flex gap-2 justify-end">
+        <div className="dialog-footer flex gap-2 justify-end">
           <Button variant="ghost" onClick={onClose}>{saved ? "Schließen" : "Abbrechen"}</Button>
           {!saved && <Button onClick={save} disabled={loading || password.length < 8}>{loading ? "Speichert…" : "Passwort setzen"}</Button>}
         </div>

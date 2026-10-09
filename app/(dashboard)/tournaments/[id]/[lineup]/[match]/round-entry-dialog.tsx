@@ -9,8 +9,9 @@ import { Input } from "@/components/ui/input"
 import { roundPlacements } from "@/lib/round-score"
 import { entryPositions, entryState, type Cell, type EntryState } from "@/lib/round-entry"
 import { cn, formatLabel, formatTime, parseTime, teamSize } from "@/lib/utils"
-import { ArrowDown, ArrowRight, Hash, Timer } from "lucide-react"
-import { useEffect, useMemo, useRef, useState } from "react"
+import { ArrowDown, ArrowRight, Delete, Hash, Timer } from "lucide-react"
+import { useIsMobile } from "@/lib/use-is-mobile"
+import { useEffect, useMemo, useState } from "react"
 import type { Player, Round, SubMatch } from "./match-detail-view"
 
 // One round: playerId -> placement or DNF, plus how many opponents did not finish under OPPONENT_DNFS
@@ -44,6 +45,25 @@ function columnState(column: Column, playerIds: string[], size: number): EntrySt
 function opponentDnfs(column: Column): number {
   const count = column[OPPONENT_DNFS]
   return typeof count === "number" ? count : 0
+}
+
+// A key of the phone keypad. It must not take the focus away from the grid cell it writes to.
+function KeypadKey({ onPress, disabled, small, label, children }: { onPress: () => void; disabled?: boolean; small?: boolean; label?: string; children: React.ReactNode }) {
+  return (
+    <button
+      type="button"
+      aria-label={label}
+      disabled={disabled}
+      onPointerDown={(e) => e.preventDefault()}
+      onClick={onPress}
+      className={cn(
+        "flex h-11 items-center justify-center rounded-lg border border-[#3a3435] bg-[#251f20] font-bold text-[#f5f0f0] active:bg-[#3a3435] disabled:opacity-30",
+        small ? "text-xs text-[#9a9090]" : "text-lg"
+      )}
+    >
+      {children}
+    </button>
+  )
 }
 
 function placementColor(position: number): string {
@@ -92,16 +112,22 @@ export function RoundEntryDialog({ subMatch, pool, allPlayers, isGuest, onClose,
     c: initial.columns.length - 1,
     p: 0,
   })
-  const gridRef = useRef<HTMLDivElement>(null)
+  const [grid, setGrid] = useState<HTMLDivElement | null>(null)
+  // Phones type placements on the keypad below the grid instead of the system keyboard.
+  // current is the cell the keypad writes to; row `size` is the opponent DNF row.
+  const isMobile = useIsMobile()
+  const [current, setCurrent] = useState({ c: initial.columns.length - 1, p: 0 })
 
+  // Runs again once the grid exists: the dialog and the grid are not rendered on the very first pass
   useEffect(() => {
-    if (!focusRequest) return
-    const el = gridRef.current?.querySelector<HTMLInputElement>(
-      `[data-cell="${focusRequest.c}-${focusRequest.p}"]`
-    )
-    el?.focus()
-    el?.select()
-  }, [focusRequest])
+    if (!focusRequest || !grid) return
+    const el = grid.querySelector<HTMLInputElement>(`[data-cell="${focusRequest.c}-${focusRequest.p}"]`)
+    if (!el) return
+    el.focus({ preventScroll: true })
+    el.select()
+    // Keep the cell in view, clear of the player names that stay in place on the left
+    el.scrollIntoView({ block: "nearest", inline: "center" })
+  }, [focusRequest, grid])
 
   const playerById = useMemo(() => new Map(allPlayers.map((p) => [p.id, p])), [allPlayers])
   const selectablePlayers = showAllPlayers
@@ -199,6 +225,29 @@ export function RoundEntryDialog({ subMatch, pool, allPlayers, isGuest, onClose,
     if (value === 0 && maxPosition >= 10) value = 10
     if (value < 1 || value > maxPosition) return
     setCells([{ c, p, value }])
+    advance(c, p)
+  }
+
+  // A key of the phone keypad, applied to the current cell
+  function pressKey(key: number | "dnf" | "back") {
+    const { c, p } = current
+    if (p === size) {
+      if (key === "back") setOpponentDnfs(c, "0")
+      else if (typeof key === "number") setOpponentDnfs(c, String(key))
+      return
+    }
+    if (key === "back") {
+      if (columns[c]?.[playerIds[p]] != null) {
+        setCells([{ c, p, value: null }])
+        return
+      }
+      const prev = previousCell(c, p)
+      if (!prev) return
+      setCells([{ ...prev, value: null }])
+      focusCell(prev.c, prev.p)
+      return
+    }
+    setCells([{ c, p, value: key === "dnf" ? "dnf" : key }])
     advance(c, p)
   }
 
@@ -428,7 +477,7 @@ export function RoundEntryDialog({ subMatch, pool, allPlayers, isGuest, onClose,
               </p>
             </div>
 
-            <div ref={gridRef} className="overflow-x-auto pb-1">
+            <div ref={setGrid} className="overflow-x-auto pb-1">
               <table className="border-separate border-spacing-1">
                 <thead>
                   <tr>
@@ -483,19 +532,23 @@ export function RoundEntryDialog({ subMatch, pool, allPlayers, isGuest, onClose,
                             <input
                               data-cell={`${c}-${p}`}
                               value={value === "dnf" ? "DNF" : value ?? ""}
-                              inputMode="numeric"
+                              inputMode={isMobile ? "none" : "numeric"}
+                              // Phones fill the cell from the keypad; read-only keeps keyboard and focus zoom away
+                              readOnly={isMobile}
                               autoComplete="off"
                               aria-label={`${playerById.get(id)?.name ?? "Spieler"}, Runde ${c + 1}`}
                               onChange={(e) => handleInput(c, p, e.target.value)}
                               onKeyDown={(e) => handleKeyDown(e, c, p)}
                               onPaste={(e) => handlePaste(e, c, p)}
-                              onFocus={(e) => e.target.select()}
+                              onFocus={(e) => { setCurrent({ c, p }); e.target.select() }}
                               className={cn(
                                 "h-9 w-9 rounded-md border bg-[#251f20] text-center font-mono text-sm font-bold caret-transparent focus:outline-none focus:ring-2 focus:ring-[#FBD00D]",
                                 bad
                                   ? "border-[#ED1F24] text-[#ED1F24]"
                                   : cn("border-[#3a3435]", value === "dnf" ? "text-[10px] text-[#5e5858]" : value != null && placementColor(value)),
-                                c === lastCol && "border-dashed bg-transparent"
+                                c === lastCol && "border-dashed bg-transparent",
+                                // On phones the keypad keeps writing to this cell even when it lost the focus
+                                isMobile && current.c === c && current.p === p && "ring-2 ring-[#FBD00D]"
                               )}
                             />
                           </td>
@@ -511,7 +564,8 @@ export function RoundEntryDialog({ subMatch, pool, allPlayers, isGuest, onClose,
                           <input
                             data-cell={`${c}-${size}`}
                             value={opponentDnfs(column) || ""}
-                            inputMode="numeric"
+                            inputMode={isMobile ? "none" : "numeric"}
+                            readOnly={isMobile}
                             autoComplete="off"
                             aria-label={`Gegner DNF, Runde ${c + 1}`}
                             onChange={(e) => setOpponentDnfs(c, e.target.value)}
@@ -522,10 +576,11 @@ export function RoundEntryDialog({ subMatch, pool, allPlayers, isGuest, onClose,
                                 focusCell(Math.min(c + dc, lastCol), e.key === "ArrowUp" ? size - 1 : size, true)
                               }
                             }}
-                            onFocus={(e) => e.target.select()}
+                            onFocus={(e) => { setCurrent({ c, p: size }); e.target.select() }}
                             className={cn(
                               "h-7 w-9 rounded-md border border-[#2d2829] bg-transparent text-center font-mono text-xs text-[#9a9090] caret-transparent focus:outline-none focus:ring-2 focus:ring-[#FBD00D]",
-                              c === lastCol && "border-dashed"
+                              c === lastCol && "border-dashed",
+                              isMobile && current.c === c && current.p === size && "ring-2 ring-[#FBD00D]"
                             )}
                           />
                         </td>
@@ -560,7 +615,12 @@ export function RoundEntryDialog({ subMatch, pool, allPlayers, isGuest, onClose,
               </table>
             </div>
 
-            {mode === "positions" ? (
+            {mode === "positions" && isMobile ? (
+              <p className="text-xs text-[#5e5858]">
+                Feld antippen und den Platz unten wählen, die Markierung springt automatisch weiter. Für Gegner-DNFs
+                das Feld in der Zeile „Gegner DNF“ antippen und die Anzahl wählen.
+              </p>
+            ) : mode === "positions" ? (
               <p className="text-xs text-[#5e5858]">
                 Platzierung 1–{maxPosition} tippen, der Cursor springt automatisch weiter. D oder X steht für DNF;
                 wie viele Gegner nicht ins Ziel kamen, steht in der Zeile „Gegner DNF“ (per Pfeiltaste oder Klick).
@@ -589,11 +649,22 @@ export function RoundEntryDialog({ subMatch, pool, allPlayers, isGuest, onClose,
         )}
         {error && <p className="text-sm text-[#ED1F24]">{error}</p>}
 
-        <div className="flex gap-2 justify-end">
-          <Button variant="ghost" onClick={requestClose}>Abbrechen</Button>
-          <Button onClick={save} disabled={!canSave}>
-            {saving ? "Speichert…" : "Speichern"}
-          </Button>
+        <div className="dialog-footer flex flex-col gap-2.5 md:flex-row md:justify-end">
+          {isMobile && ready && mode === "positions" && (
+            <div className="grid grid-cols-5 gap-1.5">
+              {Array.from({ length: maxPosition }, (_, i) => i + 1).map((n) => (
+                <KeypadKey key={n} onPress={() => pressKey(n)} disabled={current.p === size && n > size}>{n}</KeypadKey>
+              ))}
+              <KeypadKey onPress={() => pressKey("dnf")} disabled={current.p === size} small>DNF</KeypadKey>
+              <KeypadKey onPress={() => pressKey("back")} small label="Löschen"><Delete size={18} /></KeypadKey>
+            </div>
+          )}
+          <div className="flex gap-2 md:justify-end max-md:[&>*]:flex-1">
+            <Button variant="ghost" onClick={requestClose}>Abbrechen</Button>
+            <Button onClick={save} disabled={!canSave}>
+              {saving ? "Speichert…" : "Speichern"}
+            </Button>
+          </div>
         </div>
       </div>
     </Dialog>

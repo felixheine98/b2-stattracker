@@ -27,7 +27,7 @@ import type { Format } from "@prisma/client"
 import { buildAggregates, matchesOfLineups, matchesOfStages, type StatsMatch } from "@/lib/format-stats"
 import { sortStages, stageName, stagePlanOf, type StageRef } from "@/lib/stages"
 import { useIdListParam } from "@/lib/use-id-list-param"
-import { PillSelect } from "@/components/pill-select"
+import { StatsFilter } from "@/components/stats-filter"
 import { StageHeading } from "@/components/stage-heading"
 import { StagePlanFields } from "@/components/stage-plan-fields"
 import { FormatStatsTable } from "./format-stats"
@@ -439,18 +439,17 @@ export function TournamentDetailView({ tournament: initial, players, statsMatche
               <BarChart2 size={14} />
               Gesamtstatistik
             </h2>
-            <div className="mb-4 flex flex-wrap gap-2">
-              {lineups.length > 0 && (
-                <PillSelect options={lineups.map((l) => ({ id: l.id, label: l.name }))} selected={statsLineupIds} onChange={selectStatsLineups} />
-              )}
-              {statsStages.length > 1 && (
-                <PillSelect
-                  options={statsStages.map((st) => ({ id: st.id, label: stageName(st, stages) }))}
-                  selected={statsStageIds}
-                  onChange={selectStatsStages}
-                />
-              )}
-            </div>
+            <StatsFilter
+              className="mb-4"
+              groups={[
+                ...(lineups.length > 0
+                  ? [{ label: "Lineup", options: lineups.map((l) => ({ id: l.id, label: l.name })), selected: statsLineupIds, onChange: selectStatsLineups }]
+                  : []),
+                ...(statsStages.length > 1
+                  ? [{ label: "Abschnitt", options: statsStages.map((st) => ({ id: st.id, label: stageName(st, stages) })), selected: statsStageIds, onChange: selectStatsStages }]
+                  : []),
+              ]}
+            />
             {aggregates.length === 0 ? (
               <p className="text-sm text-[#5e5858]">Keine Daten für diese Auswahl.</p>
             ) : (
@@ -566,7 +565,7 @@ export function TournamentDetailView({ tournament: initial, players, statsMatche
             />
           </div>
           <StagePlanFields value={editStagePlan} onChange={setEditStagePlan} />
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div className="space-y-1.5">
               <Label htmlFor="edit-start">Start date</Label>
               <Input
@@ -587,7 +586,7 @@ export function TournamentDetailView({ tournament: initial, players, statsMatche
             </div>
           </div>
           {editError && <p className="text-sm text-[#ED1F24]">{editError}</p>}
-          <div className="flex gap-2 justify-end">
+          <div className="dialog-footer flex gap-2 justify-end">
             <Button variant="ghost" onClick={() => setShowEdit(false)}>Cancel</Button>
             <Button onClick={handleEditSave} disabled={editLoading || !editName.trim() || editFormats.length === 0}>
               {editLoading ? "Saving…" : "Save Changes"}
@@ -603,7 +602,7 @@ export function TournamentDetailView({ tournament: initial, players, statsMatche
           This will permanently delete <span className="text-[#f5f0f0] font-medium">{tournament.name}</span> and all
           its lineups, matches, sub-matches, and round results. This action cannot be undone.
         </p>
-        <div className="flex gap-2 justify-end">
+        <div className="dialog-footer flex gap-2 justify-end">
           <Button variant="ghost" onClick={() => setShowDeleteConfirm(false)}>Cancel</Button>
           <Button
             onClick={handleDeleteTournament}
@@ -722,7 +721,7 @@ export function TournamentDetailView({ tournament: initial, players, statsMatche
             )}
           </div>
           {lineupError && <p className="text-sm text-[#ED1F24]">{lineupError}</p>}
-          <div className="flex gap-2 justify-end">
+          <div className="dialog-footer flex gap-2 justify-end">
             <Button variant="ghost" onClick={() => setShowLineupForm(false)}>Cancel</Button>
             <Button
               onClick={handleSaveLineup}

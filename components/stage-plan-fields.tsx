@@ -12,7 +12,7 @@ export function StagePlanFields({ value, onChange }: Props) {
   return (
     <div className="space-y-1.5">
       <Label>Aufbau</Label>
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
         <label className="flex h-9 items-center gap-2 rounded-md border border-[#3a3435] bg-[#251f20] px-3 text-sm text-[#f5f0f0]">
           <input
             type="checkbox"

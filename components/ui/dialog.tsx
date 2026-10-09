@@ -29,11 +29,13 @@ export function Dialog({ open, onClose, children, className }: DialogProps) {
   if (!mounted || !open) return null
 
   return createPortal(
-    <div className="fixed inset-0 z-9999 flex items-center justify-center">
+    // On phones a dialog fills the screen; its content scrolls and the buttons (.dialog-footer) stay at the bottom
+    <div className="fixed inset-0 z-9999 flex items-stretch justify-center md:items-center md:p-4">
       <div className="absolute inset-0 bg-black/60" onClick={onClose} />
       <div
         className={cn(
-          "relative z-10 w-full max-w-md rounded-xl border border-[#2d2829] bg-[#1c1819] p-6 shadow-2xl",
+          "relative z-10 w-full max-w-md overflow-y-auto overflow-x-hidden rounded-xl border border-[#2d2829] bg-[#1c1819] p-6 shadow-2xl md:max-h-full",
+          "max-md:max-w-none max-md:rounded-none max-md:border-0 max-md:p-4",
           className
         )}
       >

@@ -34,7 +34,7 @@ export default async function DashboardPage() {
         <p className="text-[#9a9090] text-sm mt-0.5">Here's an overview of your team's activity.</p>
       </div>
 
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between">

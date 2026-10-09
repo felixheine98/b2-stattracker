@@ -4,16 +4,11 @@ import { BASE_PATH } from "@/lib/base-path"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
-import { KeyRound, LayoutDashboard, Users, Trophy, LogOut, ShieldCheck, PanelLeftClose, PanelLeftOpen } from "lucide-react"
+import { KeyRound, LogOut, ShieldCheck, PanelLeftClose, PanelLeftOpen } from "lucide-react"
+import { navItems } from "./nav-items"
 import { useState, useSyncExternalStore } from "react"
 import { ChangePasswordDialog } from "./change-password-dialog"
 import { signOut } from "next-auth/react"
-
-const navItems = [
-  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/players", label: "Players", icon: Users },
-  { href: "/tournaments", label: "Tournaments", icon: Trophy },
-]
 
 // Whether the sidebar is collapsed to its icons, remembered per browser
 const COLLAPSED_KEY = "sidebar-collapsed"
@@ -46,7 +41,9 @@ export function Sidebar({ userName, role }: SidebarProps) {
   }
 
   return (
-    <aside className={cn("relative flex h-screen shrink-0 flex-col border-r border-[#2d2829] bg-[#1c1819] transition-[width]", collapsed ? "w-14" : "w-56")}>
+    <aside className={cn("relative hidden h-dvh shrink-0 flex-col border-r border-[#2d2829] bg-[#1c1819] transition-[width]", collapsed ? "w-14" : "w-56",
+      // Phones use the bottom bar instead (components/nav/mobile-nav.tsx)
+      "md:flex")}>
       {/* Sits just outside the sidebar, in the top left corner of the page (the layout leaves room for it) */}
       <button
         onClick={toggleCollapsed}

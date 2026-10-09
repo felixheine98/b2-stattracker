@@ -601,14 +601,14 @@ export function PlayersView({ players: initial, users, canManage }: Props) {
 
   return (
     <div className="space-y-6 max-w-5xl">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold text-[#f5f0f0]">Players</h1>
           <p className="text-[#9a9090] text-sm mt-0.5">
             {members.length} team member{members.length !== 1 ? "s" : ""}, {guests.length} guest{guests.length !== 1 ? "s" : ""}
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           {canManage && tab === "members" && autoLinkCount > 0 && (
             <Button variant="outline" onClick={handleAutoLink} disabled={autoLinking}>
               <Wand2 size={15} />
@@ -624,7 +624,7 @@ export function PlayersView({ players: initial, users, canManage }: Props) {
             ) : (
               <Button variant="outline" onClick={handleSyncAll} disabled={!!syncingId} title="Compare names and countries with trackmania.io">
                 <RefreshCw size={15} />
-                Sync with trackmania.io
+                Sync<span className="max-md:hidden"> with trackmania.io</span>
               </Button>
             )
           )}
@@ -681,9 +681,10 @@ export function PlayersView({ players: initial, users, canManage }: Props) {
         </Card>
       ) : (
         // The cells size themselves by the width of this box (@5xl / @7xl), so the table fits without scrolling
-        <div className="@container rounded-xl border border-[#2d2829] overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
+        <div className="@container rounded-xl border border-[#2d2829] overflow-x-auto max-md:overflow-visible max-md:border-0">
+          {/* From 768px a table; on phones the same rows are laid out as one card per player */}
+          <table className="w-full text-sm max-md:block">
+            <thead className="max-md:hidden">
               <tr className="border-b border-[#2d2829] bg-[#251f20]">
                 <th className="text-left px-3 py-3 @7xl:px-4 text-[#9a9090] font-medium">Name</th>
                 <th className="text-left px-3 py-3 @7xl:px-4 text-[#9a9090] font-medium">Land</th>
@@ -694,13 +695,13 @@ export function PlayersView({ players: initial, users, canManage }: Props) {
                 <th className="px-3 py-3 @7xl:px-4" />
               </tr>
             </thead>
-            <tbody>
+            <tbody className="max-md:flex max-md:flex-col max-md:gap-3">
               {visible.map((player, i) => (
                 <tr
                   key={player.id}
-                  className={`border-b border-[#2d2829] last:border-0 ${i % 2 === 0 ? "bg-[#1c1819]" : "bg-[#1c1819]/60"}`}
+                  className={`border-b border-[#2d2829] last:border-0 ${i % 2 === 0 ? "bg-[#1c1819]" : "bg-[#1c1819]/60"} max-md:grid max-md:grid-cols-2 max-md:gap-x-3 max-md:gap-y-3 max-md:rounded-xl max-md:border max-md:bg-[#1c1819] max-md:p-3.5 max-md:last:border`}
                 >
-                  <td className="px-3 py-3 @7xl:px-4 font-medium text-[#f5f0f0]">
+                  <td className="px-3 py-3 @7xl:px-4 font-medium text-[#f5f0f0] max-md:order-1 max-md:col-span-2 max-md:block max-md:p-0 max-md:text-base">
                     <span className="flex items-center gap-2 whitespace-nowrap">
                       <PlayerAvatar player={player} />
                       {player.name}
@@ -733,13 +734,14 @@ export function PlayersView({ players: initial, users, canManage }: Props) {
                       </p>
                     )}
                   </td>
-                  <td className="px-3 py-3 @7xl:px-4">
+                  <td className="px-3 py-3 @7xl:px-4 max-md:order-4 max-md:block max-md:min-w-0 max-md:p-0">
+                    <span className="mb-1 block text-[10px] uppercase tracking-wider text-[#5e5858] md:hidden">Land</span>
                     {canManage ? (
                       <select
                         value={player.country ?? ""}
                         onChange={(e) => handleCountry(player.id, e.target.value || null)}
                         aria-label={`Land von ${player.name}`}
-                        className="h-8 w-28 @5xl:w-32 text-ellipsis rounded-md border border-[#3a3435] bg-[#251f20] px-2 text-xs text-[#f5f0f0] focus:outline-none focus:ring-2 focus:ring-[#FBD00D]"
+                        className="h-8 w-28 @5xl:w-32 max-md:h-9 max-md:w-full text-ellipsis rounded-md border border-[#3a3435] bg-[#251f20] px-2 text-xs text-[#f5f0f0] focus:outline-none focus:ring-2 focus:ring-[#FBD00D]"
                       >
                         <option value="">— kein Land —</option>
                         {countryOptions(player.country).map((c) => (
@@ -755,10 +757,11 @@ export function PlayersView({ players: initial, users, canManage }: Props) {
                         onDismiss={() => resolveHint(player, "country", "dismiss")} />
                     )}
                   </td>
-                  <td className="px-3 py-3 @7xl:px-4 font-mono text-xs text-[#5e5858]">
-                    <span className="block w-[9ch] truncate @7xl:w-auto" title={player.tmId}>{player.tmId}</span>
+                  <td className="px-3 py-3 @7xl:px-4 font-mono text-xs text-[#5e5858] max-md:order-3 max-md:block max-md:min-w-0 max-md:p-0 max-md:text-right">
+                    <span className="block w-[9ch] truncate @7xl:w-auto max-md:ml-auto max-md:w-[14ch]" title={player.tmId}>{player.tmId}</span>
                   </td>
-                  <td className="px-3 py-3 @7xl:px-4">
+                  <td className="px-3 py-3 @7xl:px-4 max-md:order-5 max-md:block max-md:min-w-0 max-md:p-0">
+                    <span className="mb-1 block text-[10px] uppercase tracking-wider text-[#5e5858] md:hidden">{tab === "members" ? "Account" : "Login"}</span>
                     {tab === "guests" ? (
                       // Guests keep a login they had as a member; a new one cannot be linked
                       player.user ? (
@@ -787,7 +790,7 @@ export function PlayersView({ players: initial, users, canManage }: Props) {
                           value={player.user?.id ?? ""}
                           onChange={(e) => handleLink(player.id, e.target.value || null)}
                           disabled={linking === player.id}
-                          className="h-7 w-32 text-ellipsis rounded border border-[#3a3435] bg-[#251f20] px-2 text-xs text-[#f5f0f0] focus:outline-none focus:ring-1 focus:ring-[#FBD00D] disabled:opacity-50"
+                          className="h-7 w-32 max-md:h-9 max-md:min-w-0 max-md:flex-1 text-ellipsis rounded border border-[#3a3435] bg-[#251f20] px-2 text-xs text-[#f5f0f0] focus:outline-none focus:ring-1 focus:ring-[#FBD00D] disabled:opacity-50"
                         >
                           <option value="">— no account —</option>
                           {availableUsers(player).map((u) => (
@@ -816,7 +819,7 @@ export function PlayersView({ players: initial, users, canManage }: Props) {
                       </span>
                     )}
                   </td>
-                  <td className="px-3 py-3 @7xl:px-4">
+                  <td className="px-3 py-3 @7xl:px-4 max-md:order-2 max-md:block max-md:min-w-0 max-md:p-0">
                     <button
                       type="button"
                       onClick={() => openHistory(player)}
@@ -827,10 +830,13 @@ export function PlayersView({ players: initial, users, canManage }: Props) {
                       {statusSummary(player)}
                     </button>
                   </td>
-                  <td className="px-3 py-3 @7xl:px-4 text-right text-[#9a9090]">{player._count?.roundResults ?? 0}</td>
-                  <td className="px-3 py-3 @7xl:px-4 text-right">
+                  <td className="px-3 py-3 @7xl:px-4 text-right text-[#9a9090] max-md:order-6 max-md:col-span-2 max-md:block max-md:p-0 max-md:text-left max-md:text-xs">
+                    {player._count?.roundResults ?? 0}
+                    <span className="md:hidden"> Ergebnisse</span>
+                  </td>
+                  <td className={cn("px-3 py-3 @7xl:px-4 text-right max-md:order-7 max-md:col-span-2 max-md:block max-md:border-t max-md:border-[#2d2829] max-md:p-0 max-md:pt-2.5", !canManage && "max-md:hidden")}>
                     {canManage && (
-                      <div className="flex items-center justify-end gap-1">
+                      <div className="flex items-center justify-end gap-1 max-md:justify-between">
                         <Button
                           variant="ghost"
                           size="sm"
@@ -840,6 +846,7 @@ export function PlayersView({ players: initial, users, canManage }: Props) {
                           title="Compare with trackmania.io"
                         >
                           <RefreshCw size={14} className={syncingId === player.id ? "animate-spin" : ""} />
+                          <span className="md:hidden">Abgleich</span>
                         </Button>
                         <Button
                           variant="outline"
@@ -849,7 +856,7 @@ export function PlayersView({ players: initial, users, canManage }: Props) {
                           title={tab === "members" ? "To guests" : "To members"}
                         >
                           <ArrowLeftRight size={13} />
-                          <span className="hidden @7xl:inline">{tab === "members" ? "To guests" : "To members"}</span>
+                          <span className="hidden @7xl:inline max-md:inline">{tab === "members" ? "To guests" : "To members"}</span>
                         </Button>
                         <Button
                           variant="ghost"
@@ -859,6 +866,7 @@ export function PlayersView({ players: initial, users, canManage }: Props) {
                           className="text-[#5e5858] hover:text-[#ED1F24]"
                         >
                           <Trash2 size={14} />
+                          <span className="md:hidden">Löschen</span>
                         </Button>
                       </div>
                     )}
@@ -908,7 +916,7 @@ export function PlayersView({ players: initial, users, canManage }: Props) {
             </p>
           </div>
           {error && <p className="text-sm text-[#ED1F24]">{error}</p>}
-          <div className="flex gap-2 justify-end">
+          <div className="dialog-footer flex gap-2 justify-end">
             <Button variant="ghost" type="button" onClick={closeForm}>Cancel</Button>
             <Button type="submit" disabled={loading}>
               {loading ? "Saving…" : tab === "members" ? "Add Member" : "Add Guest"}
@@ -933,7 +941,7 @@ export function PlayersView({ players: initial, users, canManage }: Props) {
             </p>
           )}
           {relinkError && <p className="text-sm text-[#ED1F24]">{relinkError}</p>}
-          <div className="flex gap-2 justify-end">
+          <div className="dialog-footer flex gap-2 justify-end">
             <Button variant="ghost" type="button" onClick={closeRelink}>Cancel</Button>
             <Button type="button" onClick={handleRelink} disabled={!picked || relinkLoading}>
               {relinkLoading ? "Saving…" : "Use this account"}
@@ -976,7 +984,7 @@ export function PlayersView({ players: initial, users, canManage }: Props) {
             </p>
           )}
           {moveError && <p className="text-sm text-[#ED1F24]">{moveError}</p>}
-          <div className="flex gap-2 justify-end">
+          <div className="dialog-footer flex gap-2 justify-end">
             <Button variant="ghost" onClick={() => setMoveId(null)}>Cancel</Button>
             <Button onClick={handleMove} disabled={moveLoading || !moveDate}>
               {moveLoading ? "Moving…" : moveTarget === "GUEST" ? "Move to guests" : "Move to members"}
@@ -1062,7 +1070,7 @@ export function PlayersView({ players: initial, users, canManage }: Props) {
               <p className="text-xs text-[#5e5858]">No switches and no tournaments yet.</p>
             )}
             {historyError && <p className="text-sm text-[#ED1F24]">{historyError}</p>}
-            <div className="flex justify-end">
+            <div className="dialog-footer flex justify-end">
               <Button variant="ghost" onClick={() => setHistoryId(null)}>Close</Button>
             </div>
           </div>

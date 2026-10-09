@@ -46,3 +46,42 @@ h1, h2, h3, h4, h5, h6 {
 ::-webkit-scrollbar-track { background: var(--surface); }
 ::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 3px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--fg-subtle); }
+
+/* Button row of a dialog. On phones, where dialogs fill the screen, it stays visible at the bottom. */
+@media (max-width: 767px) {
+  .dialog-footer {
+    position: sticky;
+    bottom: 0;
+    margin: 1rem -1rem -1rem;
+    padding: 0.75rem 1rem;
+    padding-bottom: calc(0.75rem + env(safe-area-inset-bottom));
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    z-index: 5;
+  }
+  .dialog-footer > * {
+    flex: 1;
+  }
+}
+
+/* Date fields on phones (iOS) are wider than their column by default and would make a dialog scroll sideways */
+input[type="date"] {
+  min-width: 0;
+  max-width: 100%;
+}
+
+/* iPhones zoom into a text field when its font is smaller than 16px. On phones all fields that
+   open a keyboard or picker get that size, so the page stays put when one is tapped. */
+@media (max-width: 767px) {
+  input:not([type="checkbox"]):not([type="radio"]),
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+}
+
+/* Two quick taps (as when typing on the round keypad) would otherwise zoom the page on phones.
+   Zooming with two fingers stays possible. */
+html {
+  touch-action: manipulation;
+}

@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Dialog, DialogTitle } from "@/components/ui/dialog"
 import { Textarea } from "@/components/ui/textarea"
-import { formatLabel, formatLabelLong, formatTime, teamSize } from "@/lib/utils"
+import { cn, formatLabel, formatLabelLong, formatTime, teamSize } from "@/lib/utils"
 import type { Format } from "@prisma/client"
 import { ArrowLeft, BarChart2, ChevronDown, ChevronUp, Clock, Download, ExternalLink, Grid3x3, Trophy, Upload, Users } from "lucide-react"
 import Link from "next/link"
@@ -179,7 +179,7 @@ function SubMatchStatsTable({ sm, number, isGuest }: { sm: SubMatch; number: num
     return (
       <th
         onClick={() => toggleSort(col)}
-        className={`py-1.5 px-2 font-medium cursor-pointer select-none whitespace-nowrap group ${left ? "text-left pl-0 pr-4" : "text-right"}`}
+        className={`py-1.5 px-2 font-medium cursor-pointer select-none whitespace-nowrap group ${left ? "sticky left-0 z-[1] bg-[#0e0b0b] text-left pl-3 pr-4" : "text-right"}`}
       >
         <span className="inline-flex items-center gap-1 justify-end">
           <span className={`transition-colors ${active ? "text-[#f5f0f0]" : "text-[#5e5858] group-hover:text-[#9a9090]"}`}>
@@ -202,7 +202,7 @@ function SubMatchStatsTable({ sm, number, isGuest }: { sm: SubMatch; number: num
         <span className="text-sm text-[#f5f0f0]">{track || `#${number}`}</span>
         <Wdl won={teamStats.ourRoundsWon} drawn={teamStats.ourRoundsDrawn} lost={teamStats.ourRoundsLost} unit="Runden" className={`text-sm font-bold ${resultColor}`} />
       </div>
-      <div className="overflow-x-auto rounded-lg border border-[#2d2829] px-3">
+      <div className="overflow-x-auto rounded-lg border border-[#2d2829]">
       {/* Fixed column widths, so the columns line up across the tables of a match */}
       <table className="w-full min-w-[720px] table-fixed text-xs">
         <colgroup>
@@ -229,7 +229,7 @@ function SubMatchStatsTable({ sm, number, isGuest }: { sm: SubMatch; number: num
           )}
           {sorted.map((row) => (
             <tr key={row.tmId} className="border-b border-[#1c1819] hover:bg-[#1c1819]/50">
-              <td className="py-1.5 pr-4 text-[#f5f0f0] font-medium whitespace-nowrap">
+              <td className="sticky left-0 z-[1] bg-[#0e0b0b] py-1.5 pl-3 pr-4 text-[#f5f0f0] font-medium whitespace-nowrap max-md:shadow-[1px_0_0_#2d2829]">
                 <PlayerName name={row.name} currentName={row.currentName} />
                 {isGuest(row.tmId) && <GuestBadge className="ml-1.5" />}
               </td>
@@ -257,9 +257,11 @@ interface Props {
   // Lower-cased TM IDs of players who are guests in this tournament
   guestTmIds: string[]
   canManage: boolean
+  // Open the eCM import dialog right away (the import page sends people here with the data)
+  autoEcmImport?: boolean
 }
 
-export function MatchDetailView({ match: initialMatch, allPlayers, guestTmIds, canManage }: Props) {
+export function MatchDetailView({ match: initialMatch, allPlayers, guestTmIds, canManage, autoEcmImport = false }: Props) {
   const router = useRouter()
   const guests = new Set(guestTmIds)
   const isGuest = (tmId: string) => guests.has(tmId.toLowerCase())
@@ -304,7 +306,13 @@ export function MatchDetailView({ match: initialMatch, allPlayers, guestTmIds, c
   const [importFileName, setImportFileName] = useState("")
   const [importDragOver, setImportDragOver] = useState(false)
 
-  const [showEcmImport, setShowEcmImport] = useState(false)
+  // Coming from the import page (?ecm=1) the dialog is open right away
+  const [showEcmImport, setShowEcmImport] = useState(autoEcmImport && canManage)
+
+  function closeEcmImport() {
+    setShowEcmImport(false)
+    if (autoEcmImport) window.history.replaceState(null, "", window.location.pathname)
+  }
 
   // Manual round entry
   const [roundEntryId, setRoundEntryId] = useState<string | null>(null)
@@ -404,7 +412,7 @@ export function MatchDetailView({ match: initialMatch, allPlayers, guestTmIds, c
           )}
         </Link>
         <div className="flex items-start justify-between gap-4">
-          <div>
+          <div className="min-w-0">
             <div className="flex items-center gap-2 mb-1 flex-wrap">
               <h1 className="text-2xl font-bold text-[#f5f0f0]">{matchTitle}</h1>
               {/* A match can be moved between match days and playoffs, but never into or out of the seeding */}
@@ -526,15 +534,15 @@ export function MatchDetailView({ match: initialMatch, allPlayers, guestTmIds, c
               {/* Sub-match header */}
               <button
                 type="button"
-                className="w-full flex items-center justify-between px-4 py-3 bg-[#1c1819] hover:bg-[#211e1f] transition-colors text-left"
+                className="w-full flex items-center justify-between gap-2 px-4 py-3 bg-[#1c1819] hover:bg-[#211e1f] transition-colors text-left"
                 onClick={() => toggleExpanded(sm.id)}
               >
-                <div className="flex items-center gap-3">
+                <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1">
                   <span className="text-xs font-medium text-[#5e5858] w-5">{idx + 1}.</span>
                   <Badge variant={sm.format === "TIME_ATTACK_10" ? "primary" : "secondary"}>
                     {formatLabel(sm.format)}
                   </Badge>
-                  <span className="text-sm text-[#9a9090]">{formatLabelLong(sm.format)}</span>
+                  <span className="text-sm text-[#9a9090] max-md:hidden">{formatLabelLong(sm.format)}</span>
                   {sm.rounds[0]?.track && <span className="text-sm text-[#f5f0f0]">{sm.rounds[0].track}</span>}
                   {totalRounds > 0 && (
                     <span className="text-xs text-[#5e5858]">{totalRounds} round{totalRounds !== 1 ? "s" : ""}</span>
@@ -628,7 +636,31 @@ export function MatchDetailView({ match: initialMatch, allPlayers, guestTmIds, c
                                 {score?.outcome === "D" && <Badge variant="default">DRAW</Badge>}
                                 {score && <span className="text-xs font-mono text-[#9a9090]" title="Punkte: wir – Gegner">{score.ours}–{score.theirs}</span>}
                               </div>
-                              <div className="grid grid-cols-2 gap-4">
+                              {/* Phones: one list in finishing order, our players highlighted */}
+                              <ol className="space-y-1 md:hidden">
+                                {round.results.map((r) => {
+                                  const rank = rankMap.get(r.id) ?? 0
+                                  return (
+                                    <li
+                                      key={r.id}
+                                      className={cn(
+                                        "flex items-center gap-2 rounded-md px-2 py-1 text-sm",
+                                        r.isOurTeam ? "bg-[#FBD00D]/10 text-[#f5f0f0]" : "text-[#9a9090]"
+                                      )}
+                                    >
+                                      <span className={`w-6 shrink-0 text-xs font-bold font-mono ${rankColor(rank)}`}>#{rank}</span>
+                                      <span className="min-w-0 flex-1 truncate">
+                                        {r.isOurTeam ? <PlayerName name={r.playerName} currentName={r.currentName} /> : r.playerName}
+                                        {r.isOurTeam && isGuest(r.tmId) && <GuestBadge className="ml-1.5" />}
+                                      </span>
+                                      <span className={`shrink-0 font-mono text-xs ${rankColor(rank)}`}>
+                                        {r.dnf ? "DNF" : r.timeMs != null ? formatTime(r.timeMs) : "—"}
+                                      </span>
+                                    </li>
+                                  )
+                                })}
+                              </ol>
+                              <div className="hidden grid-cols-2 gap-4 md:grid">
                                 <div>
                                   <p className="text-xs text-[#FBD00D] font-medium mb-2 flex items-center gap-1">
                                     <Trophy size={10} />
@@ -701,7 +733,7 @@ export function MatchDetailView({ match: initialMatch, allPlayers, guestTmIds, c
           allPlayers={allPlayers}
           startDay={dayKey(initialMatch.tournament.startDate ?? initialMatch.tournament.createdAt)}
           isGuest={isGuest}
-          onClose={() => setShowEcmImport(false)}
+          onClose={closeEcmImport}
           onImported={(subMatchId, rounds, url) => {
             setSubMatches((sms) => sms.map((sm) => (sm.id === subMatchId ? { ...sm, rounds } : sm)))
             if (url) setEcmUrl(url)
@@ -778,7 +810,7 @@ export function MatchDetailView({ match: initialMatch, allPlayers, guestTmIds, c
             placeholder={"Time,Track,PlayerID,PlayerName,Record,RoundNumber\n1739732697,SMS - Origin,15b02a29-...,Tommy.TM,61167,0\n..."}
           />
           {importError && <p className="text-sm text-[#ED1F24]">{importError}</p>}
-          <div className="flex gap-2 justify-end">
+          <div className="dialog-footer flex gap-2 justify-end">
             <Button variant="ghost" onClick={() => { setImportDialog(null); setCsvText("") }}>Cancel</Button>
             <Button onClick={handleImport} disabled={!csvText.trim() || importLoading}>
               {importLoading ? "Importing…" : "Import"}

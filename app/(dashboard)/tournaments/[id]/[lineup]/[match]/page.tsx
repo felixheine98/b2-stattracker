@@ -10,9 +10,11 @@ import { MatchDetailView } from "./match-detail-view"
 
 interface Props {
   params: Promise<{ id: string; lineup: string; match: string }>
+  searchParams: Promise<{ ecm?: string }>
 }
 
-export default async function MatchDetailPage({ params }: Props) {
+export default async function MatchDetailPage({ params, searchParams }: Props) {
+  const autoEcmImport = (await searchParams).ecm === "1"
   // The address holds slugs; IDs and former slugs are redirected to the current address
   const { id: tournamentParam, lineup: lineupParam, match: matchParam } = await params
   const foundTournament = await resolveTournament(tournamentParam)
@@ -69,5 +71,5 @@ export default async function MatchDetailPage({ params }: Props) {
   // Everyone is shown under the name they had when the tournament started
   const named = await withCompNames({ match, allPlayers }, match.tournament)
 
-  return <MatchDetailView match={named.match} allPlayers={named.allPlayers} guestTmIds={guestTmIds} canManage={canManage((session?.user as { role?: string })?.role)} />
+  return <MatchDetailView match={named.match} allPlayers={named.allPlayers} guestTmIds={guestTmIds} autoEcmImport={autoEcmImport} canManage={canManage((session?.user as { role?: string })?.role)} />
 }

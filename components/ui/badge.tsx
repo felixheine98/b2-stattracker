@@ -9,7 +9,7 @@ export function Badge({ className, variant = "default", ...props }: BadgeProps) 
   return (
     <span
       className={cn(
-        "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium",
+        "inline-flex items-center whitespace-nowrap rounded-full px-2.5 py-0.5 text-xs font-medium",
         {
           "bg-[#251f20] text-[#9a9090] border border-[#3a3435]": variant === "default",
           "bg-[#FBD00D]/15 text-[#FBD00D] border border-[#FBD00D]/30": variant === "primary" || variant === "yellow",
