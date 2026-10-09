@@ -9,8 +9,9 @@ import { Dialog, DialogTitle } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select } from "@/components/ui/select"
-import { ChevronDown, Plus, Shield, ShieldCheck, Trash2, User } from "lucide-react"
+import { ChevronDown, KeyRound, Plus, Shield, ShieldCheck, Trash2, User } from "lucide-react"
 import { useState } from "react"
+import { ResetPasswordDialog } from "./reset-password-dialog"
 
 type Role = "ADMIN" | "MANAGER" | "PLAYER"
 
@@ -56,6 +57,7 @@ export function AdminView({ users: initial, currentUserId, isAdmin }: Props) {
   const [loading, setLoading] = useState(false)
   const [deleting, setDeleting] = useState<string | null>(null)
   const [updatingRole, setUpdatingRole] = useState<string | null>(null)
+  const [resetUser, setResetUser] = useState<UserRow | null>(null)
 
   const sortedUsers = [...users].sort(
     (a, b) => ROLE_ORDER[a.role] - ROLE_ORDER[b.role] || a.name.localeCompare(b.name, undefined, { sensitivity: "base" })
@@ -183,7 +185,18 @@ export function AdminView({ users: initial, currentUserId, isAdmin }: Props) {
                       </Badge>
                     )}
                   </td>
-                  <td className="px-4 py-3 text-right">
+                  <td className="px-4 py-3 text-right whitespace-nowrap">
+                    {!isSelf && (isAdmin || user.role === "PLAYER") && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setResetUser(user)}
+                        title="Passwort zurücksetzen"
+                        className="text-[#5e5858] hover:text-[#FBD00D]"
+                      >
+                        <KeyRound size={14} />
+                      </Button>
+                    )}
                     {!isSelf && (isAdmin || user.role === "PLAYER") && (
                       <Button
                         variant="ghost"
@@ -202,6 +215,8 @@ export function AdminView({ users: initial, currentUserId, isAdmin }: Props) {
           </tbody>
         </table>
       </div>
+
+      {resetUser && <ResetPasswordDialog key={resetUser.id} user={resetUser} onClose={() => setResetUser(null)} />}
 
       <Dialog open={showForm} onClose={() => setShowForm(false)}>
         <DialogTitle>Add User</DialogTitle>
