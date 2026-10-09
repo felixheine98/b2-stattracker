@@ -1,13 +1,14 @@
 "use client"
 
 import { useSyncedState } from "@/lib/use-synced-state"
+import { cn } from "@/lib/utils"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogTitle } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select } from "@/components/ui/select"
-import { Plus, Shield, ShieldCheck, Trash2, User } from "lucide-react"
+import { ChevronDown, Plus, Shield, ShieldCheck, Trash2, User } from "lucide-react"
 import { useState } from "react"
 
 type Role = "ADMIN" | "MANAGER" | "PLAYER"
@@ -26,6 +27,12 @@ const ROLE_BADGE: Record<Role, "red" | "primary" | "secondary"> = {
   ADMIN: "red",
   MANAGER: "primary",
   PLAYER: "secondary",
+}
+
+const ROLE_ORDER: Record<Role, number> = {
+  ADMIN: 0,
+  MANAGER: 1,
+  PLAYER: 2,
 }
 
 const ROLE_ICON: Record<Role, typeof ShieldCheck> = {
@@ -48,6 +55,10 @@ export function AdminView({ users: initial, currentUserId, isAdmin }: Props) {
   const [loading, setLoading] = useState(false)
   const [deleting, setDeleting] = useState<string | null>(null)
   const [updatingRole, setUpdatingRole] = useState<string | null>(null)
+
+  const sortedUsers = [...users].sort(
+    (a, b) => ROLE_ORDER[a.role] - ROLE_ORDER[b.role] || a.name.localeCompare(b.name, undefined, { sensitivity: "base" })
+  )
 
   async function handleChangeRole(userId: string, role: Role) {
     setUpdatingRole(userId)
@@ -123,7 +134,7 @@ export function AdminView({ users: initial, currentUserId, isAdmin }: Props) {
             </tr>
           </thead>
           <tbody>
-            {users.map((user) => {
+            {sortedUsers.map((user) => {
               const RoleIcon = ROLE_ICON[user.role]
               const isSelf = user.id === currentUserId
               return (
@@ -147,16 +158,28 @@ export function AdminView({ users: initial, currentUserId, isAdmin }: Props) {
                         {user.role}
                       </Badge>
                     ) : (
-                      <Select
-                        value={user.role}
-                        onChange={(e) => handleChangeRole(user.id, e.target.value as Role)}
-                        disabled={updatingRole === user.id}
-                        className="h-7 text-xs w-32"
+                      <Badge
+                        variant={ROLE_BADGE[user.role]}
+                        className={cn(
+                          "relative focus-within:ring-2 focus-within:ring-[#FBD00D]",
+                          updatingRole === user.id && "opacity-50"
+                        )}
                       >
-                        <option value="PLAYER">PLAYER</option>
-                        <option value="MANAGER">MANAGER</option>
-                        <option value="ADMIN">ADMIN</option>
-                      </Select>
+                        <RoleIcon size={10} className="mr-1" />
+                        {user.role}
+                        <ChevronDown size={10} className="ml-1" />
+                        <select
+                          value={user.role}
+                          onChange={(e) => handleChangeRole(user.id, e.target.value as Role)}
+                          disabled={updatingRole === user.id}
+                          aria-label="Role"
+                          className="absolute inset-0 w-full cursor-pointer appearance-none rounded-full opacity-0 disabled:cursor-not-allowed"
+                        >
+                          <option value="PLAYER">PLAYER</option>
+                          <option value="MANAGER">MANAGER</option>
+                          <option value="ADMIN">ADMIN</option>
+                        </select>
+                      </Badge>
                     )}
                   </td>
                   <td className="px-4 py-3 text-right">

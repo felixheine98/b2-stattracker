@@ -68,6 +68,16 @@ interface TmioResult {
 
 type Tab = "members" | "guests"
 
+// Search text for a player whose name differs on trackmania.io: the longest part of the name,
+// without separators, digits and a "TM" prefix or suffix (NismoTM -> Nismo)
+function searchKeyword(name: string): string {
+  const parts = name
+    .split(/[^\p{L}]+/u)
+    .map((part) => part.replace(/^tm(?=.{3})|(?<=.{3})tm$/i, ""))
+    .filter((part) => part.length >= 3)
+  return parts.sort((x, y) => y.length - x.length)[0] ?? name.trim()
+}
+
 // trackmania.io allows 40 requests per minute
 const SYNC_DELAY_MS = 1600
 
@@ -142,6 +152,11 @@ export function PlayersView({ players: initial, users, canManage }: Props) {
   const searchTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
   const latestQuery = useRef("")
 
+  // --- Find a player's trackmania.io account and correct the TM ID ---
+  const [relinkId, setRelinkId] = useState<string | null>(null)
+  const [relinkError, setRelinkError] = useState("")
+  const [relinkLoading, setRelinkLoading] = useState(false)
+
   // --- Comparison with trackmania.io ---
   const [syncProgress, setSyncProgress] = useState<{ done: number; total: number } | null>(null)
   const [syncMessage, setSyncMessage] = useState("")
@@ -176,6 +191,7 @@ export function PlayersView({ players: initial, users, canManage }: Props) {
   const newStatus: PlayerStatus = tab === "members" ? "MEMBER" : "GUEST"
   const movePlayer = players.find((p) => p.id === moveId)
   const historyPlayer = players.find((p) => p.id === historyId)
+  const relinkPlayer = players.find((p) => p.id === relinkId)
 
   function selectTab(next: Tab) {
     window.history.replaceState(null, "", next === "guests" ? "?tab=guests" : window.location.pathname)
@@ -239,6 +255,46 @@ export function PlayersView({ players: initial, users, canManage }: Props) {
     searchTimer.current = setTimeout(() => runSearch(value.trim()), 500)
   }
 
+  function openRelink(player: Player) {
+    resetSearch()
+    setRelinkId(player.id)
+    setRelinkError("")
+    setSearchResults(null)
+    setSearchError("")
+    setPicked(null)
+    const keyword = searchKeyword(player.name)
+    setSearchQuery(keyword)
+    if (keyword.length >= 3) {
+      latestQuery.current = keyword
+      runSearch(keyword)
+    }
+  }
+
+  function closeRelink() {
+    resetSearch()
+    setRelinkId(null)
+  }
+
+  async function handleRelink() {
+    if (!relinkPlayer || !picked) return
+    setRelinkError("")
+    setRelinkLoading(true)
+    const res = await fetch(`/b2-stats/api/players/${relinkPlayer.id}/tmio`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ tmId: picked.id }),
+    }).catch(() => null)
+    setRelinkLoading(false)
+    const data = await res?.json().catch(() => null)
+    if (!res?.ok) {
+      setRelinkError(data?.error ?? "Failed to update the TM ID")
+      return
+    }
+    setPlayers((p) => p.map((pl) => (pl.id === relinkPlayer.id ? { ...pl, ...data } : pl)))
+    setSyncMessage(`${relinkPlayer.name} is now linked to ${data.tmioName} on trackmania.io.`)
+    closeRelink()
+  }
+
   function pickResult(result: TmioResult) {
     setPicked(result)
     setFormName(result.name)
@@ -269,6 +325,59 @@ export function PlayersView({ players: initial, users, canManage }: Props) {
     const data = await res.json()
     setPlayers((p) => [...p, { ...data, user: null, _count: { roundResults: 0 } }].sort((a, b) => a.name.localeCompare(b.name)))
     closeForm()
+  }
+
+  // Search box and result list, shared by the add dialog and the TM ID correction
+  function searchField(id: string, onPick: (result: TmioResult) => void, emptyText: string) {
+    return (
+      <>
+        <div className="relative">
+          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#5e5858]" />
+          <Input
+            id={id}
+            value={searchQuery}
+            onChange={(e) => handleSearchChange(e.target.value)}
+            onKeyDown={(e) => { if (e.key === "Enter") e.preventDefault() }}
+            placeholder="Name, player ID or trackmania.io link"
+            autoComplete="off"
+            className="pl-9"
+          />
+        </div>
+        {searchLoading && <p className="text-xs text-[#5e5858]">Searching…</p>}
+        {searchError && <p className="text-xs text-[#ED1F24]">{searchError}</p>}
+        {searchResults && searchResults.length === 0 && !searchLoading && (
+          <p className="text-xs text-[#5e5858]">{emptyText}</p>
+        )}
+        {searchResults && searchResults.length > 0 && (
+          <div className="max-h-52 space-y-1 overflow-y-auto rounded-lg border border-[#2d2829] bg-[#0e0c0d] p-1.5">
+            {searchResults.map((result) => (
+              <button
+                key={result.id}
+                type="button"
+                onClick={() => onPick(result)}
+                disabled={!!result.existing}
+                className={cn(
+                  "flex w-full items-center gap-2.5 rounded-md border px-2.5 py-1.5 text-left text-sm transition-colors disabled:opacity-50",
+                  picked?.id === result.id
+                    ? "border-[#FBD00D]/50 bg-[#FBD00D]/10"
+                    : "border-transparent hover:bg-[#251f20]"
+                )}
+              >
+                <PlayerAvatar player={result} className="h-5 w-5 text-[10px]" />
+                <span className="font-medium text-[#f5f0f0]">{result.name}</span>
+                {result.clubTag && <span className="rounded bg-[#251f20] px-1.5 text-[10px] text-[#9a9090]">{result.clubTag}</span>}
+                <span className="ml-auto truncate text-xs text-[#5e5858]">
+                  {result.existing
+                    ? `already added as ${STATUS_LABEL[result.existing.status].toLowerCase()}`
+                    : [result.region, result.countryName].filter(Boolean).join(", ")}
+                </span>
+                {picked?.id === result.id && <Check size={14} className="shrink-0 text-[#FBD00D]" />}
+              </button>
+            ))}
+          </div>
+        )}
+      </>
+    )
   }
 
   // Compare one player with trackmania.io; resolves to what happened
@@ -388,6 +497,12 @@ export function PlayersView({ players: initial, users, canManage }: Props) {
   // Show unlinked users plus whoever is already linked to this player
   function availableUsers(player: Player) {
     return users.filter((u) => !linkedUserIds.has(u.id) || u.id === player.user?.id)
+  }
+
+  // The username is only needed to tell apart accounts sharing a display name
+  function userLabel(u: { name: string; username: string }) {
+    const duplicate = users.filter((other) => other.name === u.name).length > 1
+    return duplicate ? `${u.name} (${u.username})` : u.name
   }
 
   const autoLinkCount = members.filter((p) => autoLinkMatch(p)).length
@@ -588,7 +703,12 @@ export function PlayersView({ players: initial, users, canManage }: Props) {
                         onDismiss={() => resolveHint(player, "name", "dismiss")} />
                     )}
                     {player.tmioCheckedAt && !player.tmioName && (
-                      <p className="mt-1 text-[11px] font-normal text-[#cd7f32]">not found on trackmania.io</p>
+                      <p className="mt-1 flex flex-wrap items-center gap-x-2 text-[11px] font-normal text-[#cd7f32]">
+                        not found on trackmania.io
+                        {canManage && (
+                          <button type="button" onClick={() => openRelink(player)} className="text-[#FBD00D] hover:underline">Search</button>
+                        )}
+                      </p>
                     )}
                   </td>
                   <td className="px-3 py-3 @7xl:px-4">
@@ -597,7 +717,7 @@ export function PlayersView({ players: initial, users, canManage }: Props) {
                         value={player.country ?? ""}
                         onChange={(e) => handleCountry(player.id, e.target.value || null)}
                         aria-label={`Land von ${player.name}`}
-                        className="h-8 w-24 @5xl:w-32 rounded-md border border-[#3a3435] bg-[#251f20] px-2 text-xs text-[#f5f0f0] focus:outline-none focus:ring-2 focus:ring-[#FBD00D]"
+                        className="h-8 w-28 @5xl:w-32 text-ellipsis rounded-md border border-[#3a3435] bg-[#251f20] px-2 text-xs text-[#f5f0f0] focus:outline-none focus:ring-2 focus:ring-[#FBD00D]"
                       >
                         <option value="">— kein Land —</option>
                         {countryOptions(player.country).map((c) => (
@@ -645,12 +765,12 @@ export function PlayersView({ players: initial, users, canManage }: Props) {
                           value={player.user?.id ?? ""}
                           onChange={(e) => handleLink(player.id, e.target.value || null)}
                           disabled={linking === player.id}
-                          className="h-7 max-w-36 @5xl:max-w-44 @7xl:max-w-none rounded border border-[#3a3435] bg-[#251f20] px-2 text-xs text-[#f5f0f0] focus:outline-none focus:ring-1 focus:ring-[#FBD00D] disabled:opacity-50"
+                          className="h-7 w-32 text-ellipsis rounded border border-[#3a3435] bg-[#251f20] px-2 text-xs text-[#f5f0f0] focus:outline-none focus:ring-1 focus:ring-[#FBD00D] disabled:opacity-50"
                         >
                           <option value="">— no account —</option>
                           {availableUsers(player).map((u) => (
                             <option key={u.id} value={u.id}>
-                              {u.name} ({u.username})
+                              {userLabel(u)}
                             </option>
                           ))}
                         </select>
@@ -734,51 +854,7 @@ export function PlayersView({ players: initial, users, canManage }: Props) {
         <form onSubmit={handleCreate} className="space-y-4">
           <div className="space-y-1.5">
             <Label htmlFor="tmio-search">Find on trackmania.io</Label>
-            <div className="relative">
-              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#5e5858]" />
-              <Input
-                id="tmio-search"
-                value={searchQuery}
-                onChange={(e) => handleSearchChange(e.target.value)}
-                onKeyDown={(e) => { if (e.key === "Enter") e.preventDefault() }}
-                placeholder="Name, player ID or trackmania.io link"
-                autoComplete="off"
-                className="pl-9"
-              />
-            </div>
-            {searchLoading && <p className="text-xs text-[#5e5858]">Searching…</p>}
-            {searchError && <p className="text-xs text-[#ED1F24]">{searchError}</p>}
-            {searchResults && searchResults.length === 0 && !searchLoading && (
-              <p className="text-xs text-[#5e5858]">No player found. You can still enter name and ID below.</p>
-            )}
-            {searchResults && searchResults.length > 0 && (
-              <div className="max-h-52 space-y-1 overflow-y-auto rounded-lg border border-[#2d2829] bg-[#0e0c0d] p-1.5">
-                {searchResults.map((result) => (
-                  <button
-                    key={result.id}
-                    type="button"
-                    onClick={() => pickResult(result)}
-                    disabled={!!result.existing}
-                    className={cn(
-                      "flex w-full items-center gap-2.5 rounded-md border px-2.5 py-1.5 text-left text-sm transition-colors disabled:opacity-50",
-                      picked?.id === result.id
-                        ? "border-[#FBD00D]/50 bg-[#FBD00D]/10"
-                        : "border-transparent hover:bg-[#251f20]"
-                    )}
-                  >
-                    <PlayerAvatar player={result} className="h-5 w-5 text-[10px]" />
-                    <span className="font-medium text-[#f5f0f0]">{result.name}</span>
-                    {result.clubTag && <span className="rounded bg-[#251f20] px-1.5 text-[10px] text-[#9a9090]">{result.clubTag}</span>}
-                    <span className="ml-auto truncate text-xs text-[#5e5858]">
-                      {result.existing
-                        ? `already added as ${STATUS_LABEL[result.existing.status].toLowerCase()}`
-                        : [result.region, result.countryName].filter(Boolean).join(", ")}
-                    </span>
-                    {picked?.id === result.id && <Check size={14} className="shrink-0 text-[#FBD00D]" />}
-                  </button>
-                ))}
-              </div>
-            )}
+            {searchField("tmio-search", pickResult, "No player found. You can still enter name and ID below.")}
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="name">Display Name</Label>
@@ -817,6 +893,31 @@ export function PlayersView({ players: initial, users, canManage }: Props) {
             </Button>
           </div>
         </form>
+      </Dialog>
+
+      {/* Find the trackmania.io account of a player that was not found */}
+      <Dialog open={canManage && !!relinkPlayer} onClose={closeRelink} className="max-w-lg">
+        <DialogTitle>Find {relinkPlayer?.name} on trackmania.io</DialogTitle>
+        <div className="space-y-4">
+          <p className="text-sm text-[#9a9090]">
+            The saved TM ID is unknown to trackmania.io. Pick the right account to correct it; name, lineups and results stay as they are.
+          </p>
+          <div className="space-y-1.5">
+            {searchField("tmio-relink-search", setPicked, "No player found. Try another part of the name.")}
+          </div>
+          {picked && relinkPlayer && (
+            <p className="break-all font-mono text-[11px] text-[#5e5858]">
+              {relinkPlayer.tmId} → <span className="text-[#f5f0f0]">{picked.id}</span>
+            </p>
+          )}
+          {relinkError && <p className="text-sm text-[#ED1F24]">{relinkError}</p>}
+          <div className="flex gap-2 justify-end">
+            <Button variant="ghost" type="button" onClick={closeRelink}>Cancel</Button>
+            <Button type="button" onClick={handleRelink} disabled={!picked || relinkLoading}>
+              {relinkLoading ? "Saving…" : "Use this account"}
+            </Button>
+          </div>
+        </div>
       </Dialog>
 
       {/* Move between members and guests */}

@@ -1,0 +1,14 @@
+[0;1;32m●[0m t3code.service - T3 Code server
+     Loaded: loaded (]8;;file://reh/home/felix/.config/systemd/user/t3code.service/home/felix/.config/systemd/user/t3code.service]8;;; [0;1;32menabled[0m; preset: [0;1;32menabled[0m)
+     Active: [0;1;32mactive (running)[0m since Fri 2026-10-09 00:32:59 CEST; 2min 19s ago
+   Main PID: 3151494 (node-MainThread)
+      Tasks: 37[0;38;5;245m (limit: 19120)[0m
+     Memory: 356.3M
+        CPU: 5.790s
+     CGroup: /user.slice/user-1000.slice/user@1000.service/app.slice/t3code.service
+             ├─[0;38;5;245m3151494 /home/felix/.t3/runtime/versions/0.0.45/t3 __service-launcher[0m
+             ├─[0;38;5;245m3151511 /home/felix/.t3/runtime/versions/0.0.45/t3 serve[0m
+             ├─[0;38;5;245m3151569 /home/felix/.t3/runtime/versions/0.0.45/resource-monitor/linux-x64/t3-resource-monitor[0m
+             └─[0;38;5;245m3151961 /home/felix/.t3/tools/cloudflared/2026.5.2/linux-x64/cloudflared tunnel --no-autoupdate --loglevel info --output default run[0m
+
+Okt 09 00:32:59 reh systemd[2482708]: Started t3code.service - T3 Code server.
