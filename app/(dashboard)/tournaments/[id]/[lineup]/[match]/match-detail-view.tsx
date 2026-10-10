@@ -416,7 +416,7 @@ export function MatchDetailView({ match: initialMatch, allPlayers, guestTmIds, c
           )}
         </Link>
         <div className="flex flex-wrap items-start justify-between gap-4">
-          <div className="min-w-0">
+          <div className="min-w-0 flex-1 basis-full lg:basis-0">
             <div className="flex items-center gap-2 mb-1 flex-wrap">
               <h1 className="text-2xl font-bold text-[#f5f0f0]">{matchTitle}</h1>
               {/* A match can be moved between match days and playoffs, but never into or out of the seeding */}
@@ -496,18 +496,21 @@ export function MatchDetailView({ match: initialMatch, allPlayers, guestTmIds, c
               </Button>
             )}
           </div>
-          {matchStats.subMatchesPlayed > 0 && (
-            <Card className="shrink-0">
-              <CardContent className="py-2 px-4">
-                <div className="text-center">
-                  <p className="text-2xl font-bold text-[#f5f0f0]">
-                    <Wdl won={matchStats.subMatchesWon} drawn={matchStats.subMatchesDrawn} lost={matchStats.subMatchesLost} unit="Sub-Matches" />
-                  </p>
-                  <p className="text-xs text-[#5e5858]">sub-match score</p>
-                </div>
-              </CardContent>
-            </Card>
-          )}
+          <div className="flex w-full flex-wrap items-center justify-end gap-3 sm:ml-auto sm:w-auto">
+            {matchStats.subMatchesPlayed > 0 && (
+              <Card className="shrink-0">
+                <CardContent className="py-2 px-4">
+                  <div className="text-center">
+                    <p className="text-2xl font-bold text-[#f5f0f0]">
+                      <Wdl won={matchStats.subMatchesWon} drawn={matchStats.subMatchesDrawn} lost={matchStats.subMatchesLost} unit="Sub-Matches" />
+                    </p>
+                    <p className="text-xs text-[#5e5858]">sub-match score</p>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+            {!isSeeding && <MatchOpponentPanel competitionId={initialMatch.tournament.id} matchId={initialMatch.id} canEdit={canEdit} results={subMatches} />}
+          </div>
         </div>
       </div>
 
@@ -525,8 +528,6 @@ export function MatchDetailView({ match: initialMatch, allPlayers, guestTmIds, c
           </div>
         </div>
       )}
-
-      {!isSeeding && <MatchOpponentPanel competitionId={initialMatch.tournament.id} matchId={initialMatch.id} canEdit={canEdit} results={subMatches} />}
 
       {/* Sub-matches */}
       <div className="space-y-3">
