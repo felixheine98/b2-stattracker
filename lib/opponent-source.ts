@@ -22,12 +22,35 @@ export async function readTeamSheet() {
   const response = await fetch(TEAM_SHEET_URL, { cache: "no-store", signal: AbortSignal.timeout(20_000) })
   return parseTeamSheet(new TextDecoder().decode(await readLimited(response, 8 * 1024 * 1024)))
 }
+function checkedLogoUrl(value: string): URL {
+  let source: URL
+  try { source = new URL(value) } catch { throw new Error("Unbekannte Logoquelle.") }
+  const googleSheet = source.hostname === "docs.google.com" && source.pathname.startsWith("/sheets-images-rt/")
+  const googleImage = /^lh\d+(?:-rt)?\.googleusercontent\.com$/.test(source.hostname) && source.pathname.startsWith("/rd-sheets-images-rt/")
+  if (source.protocol !== "https:" || source.username || source.password || source.port || !(googleSheet || googleImage)) throw new Error("Unbekannte Logoquelle.")
+  return source
+}
+export async function readSheetLogo(url: string) {
+  let source = checkedLogoUrl(url)
+  const signal = AbortSignal.timeout(15_000)
+  for (let redirects = 0; redirects <= 3; redirects++) {
+    const response = await fetch(source, { cache: "no-store", redirect: "manual", signal })
+    if ([301, 302, 303, 307, 308].includes(response.status)) {
+      await response.body?.cancel()
+      const location = response.headers.get("location")
+      if (!location) throw new Error("Die Logoquelle liefert keine gültige Weiterleitung.")
+      source = checkedLogoUrl(new URL(location, source).toString())
+      continue
+    }
+    if (!response.ok) throw new Error(`Das Logo konnte nicht geladen werden (HTTP ${response.status}).`)
+    const type = response.headers.get("content-type")?.split(";")[0].trim()
+    if (!type || !["image/png", "image/jpeg", "image/webp"].includes(type)) throw new Error("Die Logoquelle liefert kein unterstütztes Bild.")
+    return { type, bytes: await readLimited(response, 1024 * 1024) }
+  }
+  throw new Error("Die Logoquelle liefert zu viele Weiterleitungen.")
+}
 export async function copySheetLogo(url: string | null): Promise<string | null> {
   if (!url) return null
-  const source = new URL(url)
-  if (source.protocol !== "https:" || !(source.hostname === "docs.google.com" && source.pathname.startsWith("/sheets-images-rt/"))) throw new Error("Unbekannte Logoquelle.")
-  const res = await fetch(source, { cache: "no-store", redirect: "error", signal: AbortSignal.timeout(15_000) })
-  const type = res.headers.get("content-type")?.split(";")[0]
-  if (!type || !["image/png", "image/jpeg", "image/webp"].includes(type)) throw new Error("Die Logoquelle liefert kein unterstütztes Bild.")
-  return `data:${type};base64,${Buffer.from(await readLimited(res, 1024 * 1024)).toString("base64")}`
+  const image = await readSheetLogo(url)
+  return `data:${image.type};base64,${Buffer.from(image.bytes).toString("base64")}`
 }
