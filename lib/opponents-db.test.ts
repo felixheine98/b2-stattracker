@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest"
 vi.mock("./db", () => ({ db: {} }))
-import { resolveMatchOpponent, resolveOpponentPlayer, assignmentConflicts } from "./opponents-db"
+import { resolveMatchOpponent, resolveOpponentPlayer, assignmentConflicts, linkOpponentLineups } from "./opponents-db"
 import type { Prisma } from "@prisma/client"
 const tx = (value: object) => value as Prisma.TransactionClient
 
@@ -50,5 +50,24 @@ describe("actual opponent identities", () => {
     expect(assignmentConflicts([{ id: "x", roundId: "r" }], [{ id: "other", roundId: "r" }])).toBe(true)
     expect(assignmentConflicts([{ id: "x", roundId: "r" }, { id: "y", roundId: "r" }], [])).toBe(true)
     expect(assignmentConflicts([{ id: "x", roundId: "r" }], [{ id: "x", roundId: "r" }])).toBe(false)
+  })
+})
+
+describe("linking an existing participation to a team", () => {
+  it("links selected lineups without replacing their roster or matches", async () => {
+    const updateMany = vi.fn().mockResolvedValue({ count: 2 })
+    const db = tx({ opponentTeam: { findUnique: vi.fn().mockResolvedValue({ id: "team" }) }, opponentLineup: { findMany: vi.fn().mockResolvedValue([{ id: "a", teamId: null }, { id: "b", teamId: "team" }]), updateMany } })
+    await linkOpponentLineups(db, "team", ["a", "b", "a"])
+    expect(updateMany).toHaveBeenCalledWith({ where: { id: { in: ["a", "b"] }, OR: [{ teamId: null }, { teamId: "team" }] }, data: { teamId: "team" } })
+  })
+  it("does not take a lineup away from another team", async () => {
+    const updateMany = vi.fn()
+    const db = tx({ opponentTeam: { findUnique: vi.fn().mockResolvedValue({ id: "team" }) }, opponentLineup: { findMany: vi.fn().mockResolvedValue([{ id: "a", teamId: "other" }]), updateMany } })
+    await expect(linkOpponentLineups(db, "team", ["a"])).rejects.toThrow("anderen Team")
+    expect(updateMany).not.toHaveBeenCalled()
+  })
+  it("rejects deleted or invalid selections", async () => {
+    const db = tx({ opponentTeam: { findUnique: vi.fn().mockResolvedValue({ id: "team" }) }, opponentLineup: { findMany: vi.fn().mockResolvedValue([]) } })
+    await expect(linkOpponentLineups(db, "team", ["missing"])).rejects.toThrow("nicht mehr")
   })
 })

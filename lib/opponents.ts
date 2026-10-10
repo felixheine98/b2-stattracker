@@ -109,3 +109,7 @@ export function opponentStats(matches: OpponentStatsMatch[]) {
     return { ...rest, measured: times.length, best: times[0], average: times.reduce((a, b) => a + b, 0) / times.length, median: times.length % 2 ? times[mid] : (times[mid - 1] + times[mid]) / 2 }
   }) }
 }
+
+export function matchingTeamLineups<T extends { name: string; teamId: string | null }>(name: string, lineups: T[]): T[] {
+  return lineups.filter(l => !l.teamId && opponentNameKey(l.name) === opponentNameKey(name))
+}

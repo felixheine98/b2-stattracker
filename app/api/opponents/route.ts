@@ -2,7 +2,7 @@ import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
 import type { SessionUser } from "@/lib/lineup-access-db"
 import { mayMaintainOpponent } from "@/lib/opponents-access-db"
-import { createRosterPlayer, OpponentError, resolveMatchOpponent, rosterInclude } from "@/lib/opponents-db"
+import { createRosterPlayer, linkOpponentLineups, OpponentError, resolveMatchOpponent, rosterInclude } from "@/lib/opponents-db"
 import { opponentNameKey } from "@/lib/opponents"
 import { NextResponse } from "next/server"
 import { z } from "zod"
@@ -13,6 +13,7 @@ const members = z.array(z.string().min(1)).max(200).optional()
 const schema = z.discriminatedUnion("action", [
   z.object({ action: z.literal("team.create"), name: text, logo }),
   z.object({ action: z.literal("team.edit"), id: text, name: text.optional(), logo, archived: z.boolean().optional(), playerIds: members }),
+  z.object({ action: z.literal("team.linkLineups"), id: text, lineupIds: z.array(text).min(1).max(200) }),
   z.object({ action: z.literal("team.delete"), id: text }),
   z.object({ action: z.literal("team.merge"), id: text, targetId: text }),
   z.object({ action: z.literal("lineup.create"), tournamentId: text, teamId: text.nullish(), name: text.optional(), previousId: text.optional(), copyRoster: z.boolean().optional() }),
@@ -51,6 +52,12 @@ export async function POST(req: Request) {
     }
     if (!(await mayMaintainOpponent(user, tournamentId))) throw new OpponentError("Forbidden", 403)
     if (["team.delete", "team.merge", "lineup.delete"].includes(input.action) && user.role !== "ADMIN") throw new OpponentError("Nur Admins dürfen Einträge löschen oder Teams zusammenführen.", 403)
+    if (input.action === "team.linkLineups") {
+      const selected = await db.opponentLineup.findMany({ where: { id: { in: input.lineupIds } }, select: { tournamentId: true } })
+      for (const competition of new Set(selected.map(l => l.tournamentId))) {
+        if (!await mayMaintainOpponent(user, competition)) throw new OpponentError("Forbidden", 403)
+      }
+    }
     const result = await db.$transaction(async tx => {
       switch (input.action) {
         case "team.create": return tx.opponentTeam.create({ data: { name: input.name, logo: input.logo } })
@@ -58,6 +65,7 @@ export async function POST(req: Request) {
           const team = await tx.opponentTeam.findUniqueOrThrow({ where: { id: input.id } })
           return tx.opponentTeam.update({ where: { id: team.id }, data: { name: input.name, logo: input.logo, archived: input.archived, ...(input.name && input.name !== team.name && { aliases: { set: [...new Set([...team.aliases, team.name])] } }), ...(input.playerIds && { slots: { deleteMany: {}, create: [...new Set(input.playerIds)].map(playerId => ({ playerId })) } }) } })
         }
+        case "team.linkLineups": return { id: input.id, linked: await linkOpponentLineups(tx, input.id, input.lineupIds) }
         case "team.delete": {
           if (await tx.opponentLineup.count({ where: { teamId: input.id } })) throw new OpponentError("Team hat Competition-Lineups. Bitte archivieren.", 409)
           return tx.opponentTeam.delete({ where: { id: input.id } })

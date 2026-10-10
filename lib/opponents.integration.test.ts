@@ -2,7 +2,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest"
 import { PrismaClient } from "@prisma/client"
 import { execFileSync } from "node:child_process"
 import { readFileSync } from "node:fs"
-import { resolveOpponentPlayer, assignOpponentIdentities, reopenMatch, resolveMatchOpponent } from "./opponents-db"
+import { resolveOpponentPlayer, assignOpponentIdentities, reopenMatch, resolveMatchOpponent, linkOpponentLineups } from "./opponents-db"
 import { confirmMatch } from "./match-confirmation"
 
 // Opt-in, real PostgreSQL checks. Every table and fixture lives in a fresh schema;
@@ -65,6 +65,15 @@ describe.skipIf(process.env.OPPONENT_DB_TESTS !== "1")("opponents with PostgreSQ
     const created = await client.$transaction(tx => resolveMatchOpponent(tx, f.comp.id, { teamId: team.id }))
     await client.opponentTeamSlot.deleteMany({ where: { teamId: team.id } })
     expect(await client.opponentLineupSlot.count({ where: { lineupId: created!.id, playerId: f.target.id } })).toBe(1)
+  })
+  it("exposes existing matches under the linked team without changing historical rosters or results", async () => {
+    const f = await fixture()
+    await client.opponentLineupSlot.create({ data: { lineupId: f.lineup.id, playerId: f.person.id } })
+    const team = await client.opponentTeam.create({ data: { name: "Mix", slots: { create: { playerId: f.target.id } } } })
+    await client.$transaction(tx => linkOpponentLineups(tx, team.id, [f.lineup.id]))
+    expect(await client.match.count({ where: { opponentLineup: { teamId: team.id } } })).toBe(1)
+    expect(await client.opponentLineupSlot.findFirst({ where: { lineupId: f.lineup.id } })).toMatchObject({ playerId: f.person.id })
+    expect(await client.roundResult.findUnique({ where: { id: f.selected.id } })).toMatchObject({ playerId: f.person.id })
   })
   it("reopens result edits and rejects confirmation of an obsolete revision while preserving the previous audit", async () => {
     const f = await fixture()

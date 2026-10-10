@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { confirmedTmId, opponentNameKey, resolveOpponentName, suggestMatchOutcome, opponentStats, rosterDifference, relatedLineupIds, findRosterIdentity } from "./opponents"
+import { confirmedTmId, opponentNameKey, resolveOpponentName, suggestMatchOutcome, opponentStats, rosterDifference, relatedLineupIds, findRosterIdentity, matchingTeamLineups } from "./opponents"
 
 describe("opponent identity", () => {
   it("accepts real account IDs only, never synthetic name/position IDs", () => {
@@ -55,4 +55,9 @@ describe("opponent statistics", () => {
     expect(stats.players).toEqual([])
     expect(stats.maps).toEqual([])
   })
+})
+
+it("suggests only unlinked lineups whose full name matches the imported team", () => {
+  const rows = [{ id: "a", name: " Good   Focus ", teamId: null }, { id: "b", name: "Good Focus Academy", teamId: null }, { id: "c", name: "Good Focus", teamId: "other" }]
+  expect(matchingTeamLineups("GOOD FOCUS", rows)).toEqual([rows[0]])
 })

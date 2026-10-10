@@ -106,3 +106,16 @@ export async function assignOpponentIdentities(input: { tmId: string; resultIds:
 export async function createRosterPlayer(tx: Prisma.TransactionClient, name: string, country?: string | null) {
   return tx.player.create({ data: { tmId: `unknown-${crypto.randomUUID()}`, name, initialName: name, country: country ?? null, isOpponentOnly: true } })
 }
+
+// Attach the participation itself: match IDs, actual results and planned roster stay intact.
+export async function linkOpponentLineups(tx: Prisma.TransactionClient, teamId: string, lineupIds: string[]) {
+  const ids = [...new Set(lineupIds)]
+  if (!ids.length) return 0
+  if (!await tx.opponentTeam.findUnique({ where: { id: teamId } })) throw new OpponentError("Team nicht gefunden.", 404)
+  const lineups = await tx.opponentLineup.findMany({ where: { id: { in: ids } }, select: { id: true, teamId: true } })
+  if (lineups.length !== ids.length) throw new OpponentError("Ein ausgewähltes Lineup ist nicht mehr verfügbar.", 409)
+  if (lineups.some(l => l.teamId && l.teamId !== teamId)) throw new OpponentError("Ein ausgewähltes Lineup gehört bereits zu einem anderen Team.", 409)
+  const updated = await tx.opponentLineup.updateMany({ where: { id: { in: ids }, OR: [{ teamId: null }, { teamId }] }, data: { teamId } })
+  if (updated.count !== ids.length) throw new OpponentError("Die Lineup-Zuordnung wurde inzwischen geändert. Bitte neu laden.", 409)
+  return updated.count
+}

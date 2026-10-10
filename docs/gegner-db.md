@@ -4,6 +4,7 @@ Unter **Gegner** können feste Teams und Competition-Lineups gepflegt werden. Ei
 
 ## Bedienung
 
+- **Bestehende Lineups zuordnen** verbindet bereits erfasste Competition-Teilnahmen mit einem festen Team. Die bisherigen Begegnungen erscheinen dadurch im Teamprofil; der damalige Kader und alle Rundenergebnisse bleiben erhalten.
 - Ein festes Team liefert den Anfangskader für neue Competition-Lineups. Bestehende Lineups übernehmen spätere Teamänderungen erst über **Gegner bearbeiten → Teamkader abgleichen**.
 - **In neuer Comp übernehmen** verbindet Teilnahmen und kopiert auf Wunsch den geplanten Kader. Die Historie kann verbundene Teilnahmen einbeziehen; Notizen bleiben bei ihrer jeweiligen Teilnahme.
 - CSV-IDs bestätigen einen Account direkt. Namen aus eCM und dem Spreadsheet bleiben zunächst unbestätigt. **TM.io zuordnen** erlaubt die ausdrückliche Auswahl einzelner Einsätze über Competitions hinweg und optionaler Kadereinträge. Anonyme Gegner werden nicht als Personen erfasst. Gegner allein erscheinen nicht im eigenen Spielerpool.
@@ -14,7 +15,7 @@ Unter **Gegner** können feste Teams und Competition-Lineups gepflegt werden. Ei
 
 Die Quelle ist die [öffentliche Trackmania-Teamliste](https://docs.google.com/spreadsheets/d/1VRB3b8dS38T8CadWAu-SZj8A5BK7eEwA3jFb-O0Aufo/edit#gid=492976099).
 
-**Teamliste** lädt eine Suchvorschau. Erst **Team übernehmen** speichert die gewählten Blöcke und Mitglieder. Weitere Gruppen, Academy oder Staff müssen ausdrücklich ausgewählt werden. Das Logo wird als eigene Bildkopie gespeichert.
+**Teamliste** lädt eine Suchvorschau. Erst **Team übernehmen** speichert die gewählten Blöcke und Mitglieder. Weitere Gruppen, Academy oder Staff müssen ausdrücklich ausgewählt werden. Das Logo wird als eigene Bildkopie gespeichert. Gleichnamige bisher unzugeordnete Competition-Lineups werden in der Vorschau zur Zuordnung angeboten; die Auswahl kann abgewählt werden.
 
 **Änderungen prüfen** lädt die Quelle erneut. Name, Logo und Kader werden einzeln bestätigt; bewusst abgewählte Personen bleiben abgewählt, neue Quellmitglieder werden angeboten. Lokale Ergänzungen können erhalten bleiben. Es gibt keinen Gesamtimport oder Hintergrundabgleich. Competition-Kader und historische Einsätze werden dabei nicht verändert.
 

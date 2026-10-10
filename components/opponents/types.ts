@@ -16,3 +16,5 @@ export interface HistoryMatch extends OpponentStatsMatch {
   opponent: string | null; opponentLineupId: string | null; date: Date | string | null; slug?: string | null
   tournament: { id: string; name: string; slug?: string | null }; tournamentLineup: { id: string; name: string; slug?: string | null } | null
 }
+
+export interface LinkableLineup { id: string; name: string; teamId: string | null; tournament: { name: string }; _count?: { matches: number } }
