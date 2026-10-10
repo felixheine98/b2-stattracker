@@ -2,7 +2,7 @@
 
 import { EcmBookmarkletSetup } from "@/components/ecm-bookmarklet-setup"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
+import { OpponentPicker, type OpponentValue } from "@/components/opponents/opponent-picker"
 import { Label } from "@/components/ui/label"
 import { Select } from "@/components/ui/select"
 import { BASE_PATH } from "@/lib/base-path"
@@ -26,7 +26,7 @@ interface Tournament {
     id: string
     slug: string | null
     name: string
-    matches: Array<{ id: string; slug: string | null; opponent: string | null; stageId: string }>
+    matches: Array<{ id: string; slug: string | null; opponent: string | null; opponentLineupId?: string | null; opponentLineup?: { name: string; aliases: string[] } | null; stageId: string }>
   }>
 }
 
@@ -51,7 +51,8 @@ export function EcmImportView({ tournaments }: { tournaments: Tournament[] }) {
   const [pickedLineup, setPickedLineup] = useState<string | null>(null)
   const [pickedMatch, setPickedMatch] = useState<string | null>(null)
   const [pickedStage, setPickedStage] = useState<string | null>(null)
-  const [opponentEdit, setOpponentEdit] = useState<string | null>(null)
+  const [opponentChoice, setOpponentChoice] = useState<OpponentValue | null>(null)
+  const [rememberAlias, setRememberAlias] = useState(false)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState("")
 
@@ -61,7 +62,7 @@ export function EcmImportView({ tournaments }: { tournaments: Tournament[] }) {
   const stages = sortStages(tournament?.stages ?? [])
   const startDate = tournament ? new Date(tournament.startDate ?? tournament.createdAt) : new Date()
   // The other team is the opponent; without a suggestion it is the second team on the page
-  const opponent = opponentEdit ?? suggestion?.opponent ?? teams.find((t) => t !== lineup?.name) ?? ""
+  const opponent = opponentChoice?.name ?? suggestion?.opponent ?? teams.find((t) => t !== lineup?.name) ?? ""
   const suggestedMatches = suggestion?.lineupId === lineup?.id ? suggestion?.matchIds ?? [] : []
   const matchId = pickedMatch ?? suggestedMatches[0] ?? NEW_MATCH
   const stage =
@@ -85,6 +86,8 @@ export function EcmImportView({ tournaments }: { tournaments: Tournament[] }) {
         body: JSON.stringify({
           stageId: stage.id,
           opponent: opponent.trim() || null,
+          opponentLineupId: opponentChoice?.lineupId,
+          opponentTeamId: opponentChoice?.teamId,
           date: stageDate(stage, stages, startDate).toISOString().slice(0, 10),
           notes: null,
           lineupId: lineup.id,
@@ -97,6 +100,13 @@ export function EcmImportView({ tournaments }: { tournaments: Tournament[] }) {
         return
       }
       target = data
+    }
+    if (rememberAlias && target) {
+      const originalName = suggestion?.opponent ?? teams.find(t => t !== lineup.name)
+      if (originalName) {
+        const saved = await fetch(`${BASE_PATH}/api/tournaments/${tournament.id}/matches/${target.id}/opponent`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "edit", alias: originalName }) })
+        if (!saved.ok) { const body = await saved.json().catch(() => null); setError(body?.error ?? "Importname konnte nicht gespeichert werden."); setSaving(false); return }
+      }
     }
     // The match page picks the data up and opens the import dialog with it
     sessionStorage.setItem(ECM_PENDING_KEY, text)
@@ -145,7 +155,7 @@ export function EcmImportView({ tournaments }: { tournaments: Tournament[] }) {
                 id="ecm-tournament"
                 className={selectClass}
                 value={tournament.id}
-                onChange={(e) => { setPickedTournament(e.target.value); setPickedLineup(null); setPickedMatch(null); setPickedStage(null) }}
+                onChange={(e) => { setPickedTournament(e.target.value); setOpponentChoice(null); setRememberAlias(false); setPickedLineup(null); setPickedMatch(null); setPickedStage(null) }}
               >
                 {tournaments.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
               </Select>
@@ -207,11 +217,13 @@ export function EcmImportView({ tournaments }: { tournaments: Tournament[] }) {
                 </div>
                 <div className="space-y-1.5">
                   <Label htmlFor="ecm-opponent">Gegner</Label>
-                  <Input id="ecm-opponent" value={opponent} onChange={(e) => setOpponentEdit(e.target.value)} />
+                  <OpponentPicker inputId="ecm-opponent" competitionId={tournament.id} value={opponentChoice ?? { name: opponent }} onChange={setOpponentChoice} />
                 </div>
               </div>
             )}
           </div>
+
+          <label className="flex items-start gap-2 text-sm text-[#9a9090]"><input type="checkbox" checked={rememberAlias} onChange={e => setRememberAlias(e.target.checked)} />Importnamen für den ausgewählten Gegner in dieser Competition merken</label>
 
           {error && <p className="text-sm text-[#ED1F24]">{error}</p>}
           <Button onClick={proceed} disabled={saving} className="w-full sm:w-auto">

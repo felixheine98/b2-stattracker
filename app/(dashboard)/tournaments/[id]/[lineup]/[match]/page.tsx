@@ -61,7 +61,7 @@ export default async function MatchDetailPage({ params, searchParams }: Props) {
         },
       },
     }),
-    db.player.findMany({ orderBy: { name: "asc" }, include: { statusChanges: true } }),
+    db.player.findMany({ where: { isOpponentOnly: false }, orderBy: { name: "asc" }, include: { statusChanges: true } }),
   ])
 
   if (!match || match.tournament.id !== tournamentId) notFound()

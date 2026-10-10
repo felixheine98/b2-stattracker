@@ -1,3 +1,4 @@
+import { resolveOpponentPlayer, reopenMatch } from "@/lib/opponents-db"
 import { withCompNames } from "@/lib/player-names-db"
 import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
@@ -51,7 +52,7 @@ export async function PUT(req: Request, { params }: Params) {
   const { id } = await params
   const subMatch = await db.subMatch.findUnique({
     where: { id },
-    include: { match: { select: { opponent: true, tournamentLineupId: true, tournament: { select: { startDate: true, createdAt: true } } } } },
+    include: { match: { select: { opponent: true, opponentLineupId: true, tournamentLineupId: true, tournament: { select: { startDate: true, createdAt: true } } } } },
   })
   if (!subMatch) return NextResponse.json({ error: "Sub-match not found" }, { status: 404 })
   // Admins, managers and whoever is responsible for the lineup of this match
@@ -87,7 +88,7 @@ export async function PUT(req: Request, { params }: Params) {
     if (!valid) return NextResponse.json({ error: `Round ${i + 1} has invalid placements` }, { status: 400 })
   }
 
-  const players = await db.player.findMany({ where: { id: { in: playerIds } } })
+  const players = await db.player.findMany({ where: { isOpponentOnly: false, id: { in: playerIds } } })
   if (players.length !== size) return NextResponse.json({ error: "Unknown player" }, { status: 400 })
   const playerById = new Map(players.map((p) => [p.id, p]))
   const opponentName = subMatch.match.opponent || "Gegner"
@@ -98,10 +99,12 @@ export async function PUT(req: Request, { params }: Params) {
   })
   const existingByNumber = new Map(existing.map((r) => [r.number, r]))
 
-  await db.$transaction([
-    db.round.deleteMany({ where: { subMatchId: id } }),
-    ...(ecmUrl ? [db.match.update({ where: { id: subMatch.matchId }, data: { ecmUrl } })] : []),
-    ...rounds.map(({ positions, times, dnf, opponentDnfs, source, opponents }, number) => {
+  await db.$transaction(async tx => {
+    await reopenMatch(tx, subMatch.matchId)
+    await tx.round.deleteMany({ where: { subMatchId: id } })
+    if (ecmUrl) await tx.match.update({ where: { id: subMatch.matchId }, data: { ecmUrl } })
+    const people = new Map<string, Awaited<ReturnType<typeof resolveOpponentPlayer>>>()
+    for (const [number, { positions, times, dnf, opponentDnfs, source, opponents }] of rounds.entries()) {
       // Placements not taken by our players belong to the opponent
       const opponentPositions = Array.from({ length: maxPosition }, (_, i) => i + 1).filter(
         (p) => !positions.includes(p)
@@ -114,7 +117,15 @@ export async function PUT(req: Request, { params }: Params) {
         opponents ? opponents[i].dnf ?? false
         : opponentDnfs != null ? i >= size - opponentDnfs
         : knownOpponents?.[i].dnf ?? false
-      return db.round.create({
+      const opponentResults = []
+      for (const [i, position] of opponentPositions.entries()) {
+        const sourceId = opponents ? `ecm-${opponents[i].name}` : knownOpponents?.[i].tmId ?? `opponent-${position}`
+        const name = opponents?.[i].name ?? knownOpponents?.[i].playerName ?? opponentName
+        if (!people.has(`${number}:${sourceId}`)) people.set(`${number}:${sourceId}`, await resolveOpponentPlayer(tx, subMatch.match.opponentLineupId, sourceId, name, { subMatchId: subMatch.id, number }))
+        const person = people.get(`${number}:${sourceId}`)
+        opponentResults.push({ tmId: person?.tmId ?? sourceId, playerId: person?.id ?? knownOpponents?.[i].playerId ?? null, playerName: name, timeMs: opponentDnf(i) ? null : opponents ? opponents[i].timeMs : knownOpponents?.[i].timeMs ?? null, dnf: opponentDnf(i), position, isOurTeam: false })
+      }
+      await tx.round.create({
         data: {
           subMatchId: id,
           number,
@@ -134,20 +145,13 @@ export async function PUT(req: Request, { params }: Params) {
                   isOurTeam: true,
                 }
               }),
-              ...opponentPositions.map((position, i) => ({
-                tmId: opponents ? `ecm-${opponents[i].name}` : knownOpponents?.[i].tmId ?? `opponent-${position}`,
-                playerName: opponents?.[i].name ?? knownOpponents?.[i].playerName ?? opponentName,
-                timeMs: opponentDnf(i) ? null : opponents ? opponents[i].timeMs : knownOpponents?.[i].timeMs ?? null,
-                dnf: opponentDnf(i),
-                position,
-                isOurTeam: false,
-              })),
+              ...opponentResults,
             ],
           },
         },
       })
-    }),
-  ])
+    }
+  }, { timeout: 30000 })
 
   const saved = await db.round.findMany({
     where: { subMatchId: id },

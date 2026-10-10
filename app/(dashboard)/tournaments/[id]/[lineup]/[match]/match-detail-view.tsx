@@ -1,5 +1,6 @@
 "use client"
 
+import { MatchOpponentPanel } from "@/components/opponents/match-opponent-panel"
 import { BASE_PATH } from "@/lib/base-path"
 import { lineupPath, matchPath, tournamentPath } from "@/lib/paths"
 import { PlayerName } from "@/components/player-name"
@@ -414,7 +415,7 @@ export function MatchDetailView({ match: initialMatch, allPlayers, guestTmIds, c
             </>
           )}
         </Link>
-        <div className="flex items-start justify-between gap-4">
+        <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="min-w-0">
             <div className="flex items-center gap-2 mb-1 flex-wrap">
               <h1 className="text-2xl font-bold text-[#f5f0f0]">{matchTitle}</h1>
@@ -524,6 +525,8 @@ export function MatchDetailView({ match: initialMatch, allPlayers, guestTmIds, c
           </div>
         </div>
       )}
+
+      {!isSeeding && <MatchOpponentPanel competitionId={initialMatch.tournament.id} matchId={initialMatch.id} canEdit={canEdit} results={subMatches} />}
 
       {/* Sub-matches */}
       <div className="space-y-3">

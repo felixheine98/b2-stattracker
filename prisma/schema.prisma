@@ -46,6 +46,10 @@ model User {
 model Player {
   id        String   @id @default(cuid())
   tmId      String   @unique
+  // Opponent identities share the person table, but are excluded from our pool.
+  // Unconfirmed names get a scoped unknown-* key until a TM.io assignment is confirmed.
+  isOpponentOnly Boolean @default(false)
+  opponentNames String[] @default([])
   // The current name; kept in step with the name history (initialName plus nameChanges)
   name      String
   // Name the player has "from the beginning"; later renames are PlayerNameChange rows
@@ -69,6 +73,9 @@ model Player {
   lineupSlots           LineupSlot[]
   roundResults          RoundResult[]
   tournamentLineupSlots TournamentLineupSlot[]
+  opponentTeamSlots     OpponentTeamSlot[]
+  opponentLineupSlots   OpponentLineupSlot[]
+  opponentIdentities    OpponentIdentity[]
 }
 
 // A switch between team member and guest, valid from the given day on
@@ -110,6 +117,7 @@ model Tournament {
   matches         Match[]
   tournamentLineups TournamentLineup[]
   stages          Stage[]
+  opponentLineups OpponentLineup[]
 }
 
 enum StageType {
@@ -184,6 +192,12 @@ model Match {
   stageId             String
   stage               Stage             @relation(fields: [stageId], references: [id], onDelete: NoAction)
   opponent            String?
+  opponentLineupId    String?
+  opponentLineup      OpponentLineup? @relation(fields: [opponentLineupId], references: [id], onDelete: Restrict)
+  closedAt            DateTime?
+  confirmedOutcome    String?
+  // Increased within result writes, so confirmation cannot race with an import.
+  resultRevision      Int @default(0)
   date                DateTime?
   notes               String?
   // eCircuitMania match page the results were imported from
@@ -192,8 +206,85 @@ model Match {
   updatedAt           DateTime          @updatedAt
 
   subMatches SubMatch[]
+  confirmations MatchConfirmation[]
 
   @@unique([tournamentLineupId, slug])
+}
+
+model OpponentTeam {
+  id           String @id @default(cuid())
+  name         String
+  aliases      String[] @default([])
+  logo         String?
+  archived     Boolean @default(false)
+  source       Json?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  lineups      OpponentLineup[]
+  slots        OpponentTeamSlot[]
+}
+
+model OpponentLineup {
+  id           String @id @default(cuid())
+  tournamentId String
+  tournament   Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  teamId       String?
+  team         OpponentTeam? @relation(fields: [teamId], references: [id], onDelete: Restrict)
+  name         String
+  nameKey      String
+  aliases      String[] @default([])
+  logo         String?
+  notes        String?
+  archived     Boolean @default(false)
+  previousId   String?
+  previous     OpponentLineup? @relation("OpponentContinuity", fields: [previousId], references: [id], onDelete: SetNull)
+  next         OpponentLineup[] @relation("OpponentContinuity")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  slots        OpponentLineupSlot[]
+  identities   OpponentIdentity[]
+  matches      Match[]
+
+  @@unique([tournamentId, nameKey])
+}
+
+model OpponentTeamSlot {
+  id       String @id @default(cuid())
+  teamId   String
+  team     OpponentTeam @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  playerId String
+  player   Player @relation(fields: [playerId], references: [id], onDelete: Restrict)
+  @@unique([teamId, playerId])
+}
+
+model OpponentLineupSlot {
+  id       String @id @default(cuid())
+  lineupId String
+  lineup   OpponentLineup @relation(fields: [lineupId], references: [id], onDelete: Cascade)
+  playerId String
+  player   Player @relation(fields: [playerId], references: [id], onDelete: Restrict)
+  @@unique([lineupId, playerId])
+}
+
+// Keeps confirmed identity assignments through replacement imports, independently of the planned roster.
+model OpponentIdentity {
+  id         String @id @default(cuid())
+  lineupId   String
+  lineup     OpponentLineup @relation(fields: [lineupId], references: [id], onDelete: Cascade)
+  sourceId   String
+  playerId   String
+  player     Player @relation(fields: [playerId], references: [id], onDelete: Restrict)
+  @@unique([lineupId, sourceId])
+}
+
+model MatchConfirmation {
+  id       String @id @default(cuid())
+  matchId  String
+  match    Match @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  outcome  String
+  revision Int
+  userId   String
+  createdAt DateTime @default(now())
 }
 
 enum SlugKind {

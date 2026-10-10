@@ -1,5 +1,6 @@
 "use client"
 
+import { OpponentPicker, type OpponentValue } from "@/components/opponents/opponent-picker"
 import { Badge } from "@/components/ui/badge"
 import { BASE_PATH } from "@/lib/base-path"
 import { matchPath, tournamentPath } from "@/lib/paths"
@@ -108,6 +109,7 @@ export function LineupMatchesView({ lineup, guestTmIds, canManage, canEdit, edit
   const nonSeedingFormats = tournament.formats.filter((f) => f !== "TIME_ATTACK_10")
 
   // --- Add match dialog state ---
+  const [opponentValue, setOpponentValue] = useState<OpponentValue>({ name: "" })
   const [showAddMatch, setShowAddMatch] = useState(false)
   const [stageId, setStageId] = useState("")
   const [matchDate, setMatchDate] = useState("")
@@ -126,6 +128,7 @@ export function LineupMatchesView({ lineup, guestTmIds, canManage, canEdit, edit
   function openAddMatch() {
     selectStage(suggestStage(stages, matches.map((m) => m.stage.id))?.id ?? "")
     setMatchError("")
+    setOpponentValue({ name: "" })
     setShowAddMatch(true)
   }
 
@@ -140,7 +143,9 @@ export function LineupMatchesView({ lineup, guestTmIds, canManage, canEdit, edit
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         stageId,
-        opponent: form.get("opponent") || null,
+        opponent: opponentValue.name || null,
+        opponentLineupId: opponentValue.lineupId,
+        opponentTeamId: opponentValue.teamId,
         date: matchDate || null,
         notes: form.get("notes") || null,
         lineupId: lineup.id,
@@ -176,7 +181,7 @@ export function LineupMatchesView({ lineup, guestTmIds, canManage, canEdit, edit
           <ArrowLeft size={14} />
           {tournament.name}
         </Link>
-        <div className="flex items-start justify-between gap-4">
+        <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="min-w-0">
             <h1 className="text-2xl font-bold text-[#f5f0f0] mb-1">{lineup.name}</h1>
             <p className="text-xs text-[#5e5858]">Lineup · {tournament.name}</p>
@@ -377,7 +382,7 @@ export function LineupMatchesView({ lineup, guestTmIds, canManage, canEdit, edit
           {!isSeeding && (
             <div className="space-y-1.5">
               <Label htmlFor="opponent">Opponent team</Label>
-              <Input id="opponent" name="opponent" placeholder="Team Rockets" />
+              <OpponentPicker competitionId={tournament.id} value={opponentValue} onChange={setOpponentValue} />
             </div>
           )}
           <div className="space-y-1.5">

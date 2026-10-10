@@ -51,7 +51,7 @@ export default async function LineupMatchesPage({ params }: Props) {
         },
       },
     }),
-    db.player.findMany({ select: { tmId: true, initialStatus: true, statusChanges: true } }),
+    db.player.findMany({ where: { isOpponentOnly: false }, select: { tmId: true, initialStatus: true, statusChanges: true } }),
   ])
 
   if (!lineup) notFound()

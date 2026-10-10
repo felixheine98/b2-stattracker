@@ -1,0 +1,1 @@
+ALTER TABLE "Player" ADD COLUMN "opponentNames" TEXT[] NOT NULL DEFAULT ARRAY[]::TEXT[];

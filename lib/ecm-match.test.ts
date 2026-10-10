@@ -45,6 +45,14 @@ describe("suggestEcmTarget", () => {
   it("suggests nothing when neither team is one of our lineups", () => {
     expect(suggestEcmTarget(["Onyx White", "eSport Line"], tournaments)).toBeNull()
   })
+  it("recognizes an explicitly saved opponent alias", () => {
+    const data = [{ id: "c", tournamentLineups: [{ id: "l", name: "B2", matches: [{ id: "m", opponent: "Rockets Alpha", opponentLineupId: "opp", opponentLineup: { name: "Rockets Alpha", aliases: ["Old Rockets"] } }] }] }]
+    expect(suggestEcmTarget(["B2", "Old Rockets"], data)?.matchIds).toEqual(["m"])
+  })
+  it("does not auto-select matches when an alias points at multiple opponent lineups", () => {
+    const data = [{ id: "c", tournamentLineups: [{ id: "l", name: "B2", matches: ["a", "b"].map(id => ({ id, opponent: id, opponentLineupId: id, opponentLineup: { name: id, aliases: ["Same"] } })) }] }]
+    expect(suggestEcmTarget(["B2", "Same"], data)?.matchIds).toEqual([])
+  })
 })
 
 describe("decodeEcmFragment", () => {

@@ -9,7 +9,7 @@ export async function GET() {
   const session = await auth()
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
-  const players = await db.player.findMany({
+  const players = await db.player.findMany({ where: { isOpponentOnly: false },
     include: {
       user: { select: { id: true, name: true, email: true } },
       statusChanges: { orderBy: { effectiveFrom: "asc" } },
@@ -50,13 +50,14 @@ export async function POST(req: Request) {
 
   try {
     const { name, tmId, status, country, tmio } = parsed.data
-    const player = await db.player.create({
-      data: {
+    const opponent = await db.player.findUnique({ where: { tmId } })
+    const data = {
         name,
         initialName: name,
         tmId,
         initialStatus: status,
         country: country ?? null,
+        isOpponentOnly: false,
         ...(tmio && {
           tmioName: tmio.name,
           tmioCountry: tmio.country,
@@ -64,9 +65,11 @@ export async function POST(req: Request) {
           // A name changed while adding is deliberate, so no hint for it
           ...(tmio.name !== name && { dismissedTmioName: tmio.name }),
         }),
-      },
-      include: { statusChanges: true, nameChanges: true },
-    })
+    }
+    const include = { statusChanges: true, nameChanges: true } as const
+    const player = opponent?.isOpponentOnly
+      ? await db.player.update({ where: { id: opponent.id }, data, include })
+      : await db.player.create({ data, include })
     return NextResponse.json(player, { status: 201 })
   } catch (e: unknown) {
     if ((e as { code?: string }).code === "P2002") {

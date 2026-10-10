@@ -30,7 +30,7 @@ export default async function EcmImportPage() {
           slug: true,
           name: true,
           managers: { select: { userId: true } },
-          matches: { orderBy: { createdAt: "asc" }, select: { id: true, slug: true, opponent: true, stageId: true } },
+          matches: { orderBy: { createdAt: "asc" }, select: { id: true, slug: true, opponent: true, opponentLineupId: true, opponentLineup: { select: { name: true, aliases: true } }, stageId: true } },
         },
       },
     },

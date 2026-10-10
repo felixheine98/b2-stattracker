@@ -6,7 +6,7 @@ import { PlayersView } from "./players-view"
 export default async function PlayersPage() {
   const [session, players, users] = await Promise.all([
     auth(),
-    db.player.findMany({
+    db.player.findMany({ where: { isOpponentOnly: false },
       include: {
         user: { select: { id: true, name: true, email: true, username: true } },
         statusChanges: { orderBy: { effectiveFrom: "asc" } },

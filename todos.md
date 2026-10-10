@@ -3,10 +3,10 @@
 - Lineup Builder -> gemeinsames erstellen für lineups, welches direkt in eine comp reingespeichert wird 
 - danach werden in dieser comp nur noch diese 4 lineups gezeigt bzw nur die spieler
 
-- match nachträglich bearbeiten (datum, gegner, notizen)
+- [x] Match nachträglich bearbeiten (Datum, Gegner, Notizen)
 
 - [ ] csv import für gesamtes match -> danach UI wo man einzelne runden (multi select) rauslöschen kann, falls match dumper nicht 100% korrekt ist
-- [ ] gegner DB anlegen? -> logos, dropdown möglichkeit für fixe teams/lineups 
+- [x] Gegner-DB umgesetzt: [vereinbartes Konzept](docs/gegner-db-konzept.md) – feste Teams, Competition-Lineups/Mixes, Logos, Spielerzuordnung und Stats; gezielte manuelle Übernahme aus dem Team-Spreadsheet
 - [ ] spieler-profile: eigene seite pro spieler (idee boris; gibt dem spielertab mehr zweck als nur spieler/gäste anlegen)
   - gespielte turniere (mit lineup, als member/gast)
   - kumulierte stats über alle comps (lifetime): pace, durchschnittsplatz in comps, pbs auf comp-maps; dazu letzte comp

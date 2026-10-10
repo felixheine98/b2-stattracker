@@ -25,7 +25,7 @@ export async function GET(req: Request) {
 
   // Mark players that already exist here so they are not added twice
   const existing = await db.player.findMany({
-    where: { tmId: { in: found.map((p) => p.id), mode: "insensitive" } },
+    where: { isOpponentOnly: false, tmId: { in: found.map((p) => p.id), mode: "insensitive" } },
     include: { statusChanges: true },
   })
   const results = found.map((p) => {

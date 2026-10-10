@@ -1,3 +1,4 @@
+import { OpponentError, resolveMatchOpponent } from "@/lib/opponents-db"
 import { syncTournamentSlugs } from "@/lib/slugs-db"
 import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
@@ -27,7 +28,9 @@ export async function GET(_req: Request, { params }: Params) {
 
 const createSchema = z.object({
   stageId: z.string().min(1),
-  opponent: z.string().nullable().optional(),
+  opponent: z.string().trim().max(100).nullable().optional(),
+  opponentLineupId: z.string().nullable().optional(),
+  opponentTeamId: z.string().nullable().optional(),
   date: z.string().nullable().optional(),
   notes: z.string().nullable().optional(),
   // Every match belongs to a lineup of the tournament
@@ -70,11 +73,16 @@ export async function POST(req: Request, { params }: Params) {
     ? { create: { slots: { create: lineupPlayerIds.map((playerId) => ({ playerId })) } } }
     : undefined
 
-  const match = await db.match.create({
+  let match
+  try {
+  match = await db.$transaction(async tx => {
+  const opponent = stage.type === "SEEDING" ? null : await resolveMatchOpponent(tx, id, { lineupId: parsed.data.opponentLineupId, teamId: parsed.data.opponentTeamId, name: parsed.data.opponent })
+  return tx.match.create({
     data: {
       tournamentId: id,
       stageId: stage.id,
-      opponent: parsed.data.opponent ?? null,
+      opponent: opponent?.name ?? null,
+      opponentLineupId: opponent?.id ?? null,
       date: parsed.data.date ? new Date(parsed.data.date) : null,
       notes: parsed.data.notes ?? null,
       tournamentLineupId: tl.id,
@@ -84,6 +92,13 @@ export async function POST(req: Request, { params }: Params) {
     },
     include: { _count: { select: { subMatches: true } }, stage: { select: { id: true, type: true } }, subMatches: { include: { rounds: { include: { results: true } } } } },
   })
+
+  })
+  } catch (e) {
+    if (e instanceof OpponentError) return NextResponse.json({ error: e.message }, { status: e.status })
+    if ((e as { code?: string }).code === "P2002") return NextResponse.json({ error: "Gegner wurde gleichzeitig angelegt. Bitte erneut auswählen." }, { status: 409 })
+    throw e
+  }
 
   await syncTournamentSlugs(id)
   const { slug } = await db.match.findUniqueOrThrow({ where: { id: match.id }, select: { slug: true } })

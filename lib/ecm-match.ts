@@ -6,7 +6,7 @@ interface Tournament {
   tournamentLineups: Array<{
     id: string
     name: string
-    matches: Array<{ id: string; opponent: string | null }>
+    matches: Array<{ id: string; opponent: string | null; opponentLineupId?: string | null; opponentLineup?: { name: string; aliases: string[] } | null }>
   }>
 }
 
@@ -29,7 +29,9 @@ export function suggestEcmTarget(teams: string[], tournaments: Tournament[]): Ec
       const own = teams.find((t) => slugify(t) === slugify(lineup.name))
       const opponent = teams.find((t) => t !== own)
       if (!own || !opponent) continue
-      const matchIds = lineup.matches.filter((m) => slugify(m.opponent ?? "") === slugify(opponent)).map((m) => m.id)
+      const matching = lineup.matches.filter((m) => [m.opponent ?? "", m.opponentLineup?.name ?? "", ...(m.opponentLineup?.aliases ?? [])].some(n => slugify(n) === slugify(opponent)))
+      const identities = new Set(matching.map(m => m.opponentLineupId ?? m.opponent))
+      const matchIds = identities.size <= 1 ? matching.map(m => m.id) : []
       const target = { tournamentId: tournament.id, lineupId: lineup.id, opponent, matchIds }
       if (matchIds.length > 0) return target
       fallback ??= target

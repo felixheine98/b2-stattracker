@@ -12,7 +12,7 @@ export default async function DashboardPage() {
   const session = await auth()
 
   const [players, tournamentCount, matchCount, recentTournaments] = await Promise.all([
-    db.player.findMany({ select: { initialStatus: true, statusChanges: true } }),
+    db.player.findMany({ where: { isOpponentOnly: false }, select: { initialStatus: true, statusChanges: true } }),
     db.tournament.count(),
     db.match.count(),
     db.tournament.findMany({

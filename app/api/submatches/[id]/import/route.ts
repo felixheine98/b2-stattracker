@@ -1,3 +1,4 @@
+import { resolveOpponentPlayer, reopenMatch } from "@/lib/opponents-db"
 import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
 import { NextResponse } from "next/server"
@@ -23,7 +24,7 @@ export async function POST(req: Request, { params }: Params) {
   if (!subMatch) return NextResponse.json({ error: "Sub-match not found" }, { status: 404 })
 
   // Admins, managers and whoever is responsible for the lineup of this match
-  const match = await db.match.findUnique({ where: { id: subMatch.matchId }, select: { tournamentLineupId: true } })
+  const match = await db.match.findUnique({ where: { id: subMatch.matchId }, select: { tournamentLineupId: true, opponentLineupId: true } })
   if (!(await mayEditLineupById(session.user as SessionUser, match?.tournamentLineupId))) return NextResponse.json({ error: "Forbidden" }, { status: 403 })
 
   const body = await req.json()
@@ -55,46 +56,45 @@ export async function POST(req: Request, { params }: Params) {
     roundMap.get(row.roundNumber)!.push(row)
   }
 
-  await db.round.deleteMany({ where: { subMatchId: id } })
+  const createdRounds = await db.$transaction(async tx => {
+    await reopenMatch(tx, subMatch.matchId)
+    await tx.round.deleteMany({ where: { subMatchId: id } })
+    const createdRounds = []
+    const people = new Map<string, Awaited<ReturnType<typeof resolveOpponentPlayer>>>()
+    for (const [roundNumber, roundRows] of roundMap) {
+      const track = roundRows[0]?.track ?? null
+      const timestamp = roundRows[0]?.time ? new Date(roundRows[0].time * 1000) : null
 
-  const createdRounds = []
-  for (const [roundNumber, roundRows] of roundMap) {
-    const track = roundRows[0]?.track ?? null
-    const timestamp = roundRows[0]?.time ? new Date(roundRows[0].time * 1000) : null
-
-    const round = await db.round.create({
-      data: {
-        subMatchId: id,
-        number: roundNumber,
-        track,
-        timestamp,
-        results: {
-          create: roundRows.map((row) => {
-            const isOurTeam = ourTmIds.has(row.playerId.toLowerCase())
-            return {
-              tmId: row.playerId,
-              playerName: row.playerName,
-              timeMs: row.record,
-              isOurTeam,
-              playerId: isOurTeam
-                ? subMatch.lineup?.slots.find(
-                    (s) => s.player.tmId.toLowerCase() === row.playerId.toLowerCase()
-                  )?.player.id ?? null
-                : null,
-            }
-          }),
+      const results = []
+      for (const row of roundRows) {
+        const isOurTeam = ourTmIds.has(row.playerId.toLowerCase())
+        if (!isOurTeam && !people.has(`${roundNumber}:${row.playerId}`)) people.set(`${roundNumber}:${row.playerId}`, await resolveOpponentPlayer(tx, match?.opponentLineupId ?? null, row.playerId, row.playerName, { subMatchId: subMatch.id, number: roundNumber }))
+        const person = people.get(`${roundNumber}:${row.playerId}`)
+        results.push({ tmId: person?.tmId ?? row.playerId.toLowerCase(), playerName: row.playerName, timeMs: row.record > 0 ? row.record : null, dnf: row.record <= 0, isOurTeam, playerId: isOurTeam ? subMatch.lineup?.slots.find(s => s.player.tmId.toLowerCase() === row.playerId.toLowerCase())?.player.id ?? null : person?.id ?? null })
+      }
+      const round = await tx.round.create({
+        data: {
+          subMatchId: id,
+          number: roundNumber,
+          track,
+          timestamp,
+          results: {
+            create: results,
+          },
         },
-      },
-      include: {
-        results: {
-          orderBy: [{ position: "asc" }, { timeMs: "asc" }],
-          include: { player: { select: { id: true, name: true } } },
+        include: {
+          results: {
+            orderBy: [{ position: "asc" }, { timeMs: "asc" }],
+            include: { player: { select: { id: true, name: true } } },
+          },
         },
-      },
-    })
+      })
 
-    createdRounds.push(round)
-  }
+      createdRounds.push(round)
+    }
+
+    return createdRounds
+  }, { timeout: 30000 })
 
   const sortedRounds = createdRounds.sort((a, b) => a.number - b.number)
   return NextResponse.json({ rounds: sortedRounds, imported: rows.length })
