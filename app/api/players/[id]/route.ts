@@ -9,7 +9,7 @@ interface Params {
   params: Promise<{ id: string }>
 }
 
-// Link or unlink a user account to this player profile, or set the player's country
+// Link or unlink a user account to this player profile, set the player's country or mark them as team manager
 export async function PATCH(req: Request, { params }: Params) {
   const session = await auth()
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
@@ -17,8 +17,9 @@ export async function PATCH(req: Request, { params }: Params) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 })
 
   const { id } = await params
-  const body = await req.json() as { userId?: string | null; country?: string | null }
+  const body = await req.json() as { userId?: string | null; country?: string | null; teamManager?: boolean }
   const { userId, country } = body
+  const teamManager = typeof body.teamManager === "boolean" ? body.teamManager : undefined
 
   // Validate everything before writing, so a rejected request changes nothing
   const target = await db.player.findUnique({ where: { id }, include: { statusChanges: true, user: { select: { id: true } } } })
@@ -41,6 +42,7 @@ export async function PATCH(req: Request, { params }: Params) {
 
   await db.$transaction([
     ...(country !== undefined ? [db.player.update({ where: { id }, data: { country } })] : []),
+    ...(teamManager !== undefined ? [db.player.update({ where: { id }, data: { teamManager } })] : []),
     // Clear any existing link to this player first
     ...(userId !== undefined ? [db.user.updateMany({ where: { playerId: id }, data: { playerId: null } })] : []),
     ...(userId ? [db.user.update({ where: { id: userId }, data: { playerId: id } })] : []),

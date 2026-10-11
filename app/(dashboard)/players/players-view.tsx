@@ -4,7 +4,7 @@ import { BASE_PATH } from "@/lib/base-path"
 import { allNames, type NameChange } from "@/lib/player-names"
 import { NameHistoryDialog } from "./name-history-dialog"
 import { STATUS_LABEL, StatusHistoryDialog, StatusMoveDialog, statusSummary } from "./status-dialogs"
-import { useEffect, useRef, useState, useTransition } from "react"
+import { Fragment, useEffect, useRef, useState, useTransition } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { playerPath } from "@/lib/paths"
@@ -19,7 +19,8 @@ import { Label } from "@/components/ui/label"
 import { Card, CardContent } from "@/components/ui/card"
 import { Dialog, DialogTitle } from "@/components/ui/dialog"
 import { cn } from "@/lib/utils"
-import { ArrowLeftRight, Check, History, KeyRound, Link2, Link2Off, Pencil, Plus, RefreshCw, Search, Trash2, User, Wand2, X } from "lucide-react"
+import { ArrowLeftRight, Check, History, KeyRound, Link2, Link2Off, Pencil, Plus, RefreshCw, Search, ShieldCheck, Trash2, User, Wand2, X } from "lucide-react"
+import { searchPlayers } from "@/lib/player-search"
 
 interface UserOption {
   id: string
@@ -54,6 +55,8 @@ interface Player {
   user?: { id: string; name: string; email: string | null; username: string } | null
   // Tournaments with at least one round driven for us
   tournamentsPlayed?: number
+  // Manages the team: listed apart at the top of the members
+  teamManager?: boolean
 }
 
 // A player found on trackmania.io
@@ -167,11 +170,16 @@ export function PlayersView({ players: initial, users, canManage }: Props) {
 
   // Which accounts are taken follows the local player list, so links made here apply at once
   const linkedUserIds = new Set(players.flatMap((p) => (p.user ? [p.user.id] : [])))
-  const members = players.filter((p) => currentStatus(p) === "MEMBER")
-  const trials = players.filter((p) => currentStatus(p) === "TRIAL")
-  const guests = players.filter((p) => currentStatus(p) === "GUEST")
-  const formers = players.filter((p) => currentStatus(p) === "FORMER")
-  const visible = { members, trial: trials, guests, former: formers }[tab]
+  // --- Quick search: narrows every tab to the players whose current or a former name fits ---
+  const [filter, setFilter] = useState("")
+  const found = filter.trim() ? searchPlayers(players.map((p) => ({ ...p, allNames: allNames(p) })), filter) : players
+  const members = found.filter((p) => currentStatus(p) === "MEMBER")
+  const trials = found.filter((p) => currentStatus(p) === "TRIAL")
+  const guests = found.filter((p) => currentStatus(p) === "GUEST")
+  const formers = found.filter((p) => currentStatus(p) === "FORMER")
+  // The team's managers stand apart at the top of the members
+  const managers = members.filter((p) => p.teamManager)
+  const visible = { members: [...managers, ...members.filter((p) => !p.teamManager)], trial: trials, guests, former: formers }[tab]
   const newStatus = TAB_STATUS[tab]
   const addLabel = `${STATUS_LABEL[newStatus]} hinzufügen`
   const movePlayer = players.find((p) => p.id === moveId)
@@ -450,6 +458,16 @@ export function PlayersView({ players: initial, users, canManage }: Props) {
     setPlayers((p) => p.map((pl) => (pl.id === playerId ? { ...pl, country } : pl)))
   }
 
+  async function handleTeamManager(playerId: string, teamManager: boolean) {
+    const res = await fetch(`${BASE_PATH}/api/players/${playerId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ teamManager }),
+    })
+    if (!res.ok) return
+    setPlayers((p) => p.map((pl) => (pl.id === playerId ? { ...pl, teamManager } : pl)))
+  }
+
   async function handleLink(playerId: string, userId: string | null) {
     setLinking(playerId)
     const res = await fetch(`${BASE_PATH}/api/players/${playerId}`, {
@@ -496,6 +514,8 @@ export function PlayersView({ players: initial, users, canManage }: Props) {
   }
 
   const autoLinkCount = members.filter((p) => autoLinkMatch(p)).length
+  // The numbers in the heading count everyone, whatever is being searched
+  const count = (status: PlayerStatus) => players.filter((p) => currentStatus(p) === status).length
 
   return (
     <div className="space-y-6 max-w-5xl">
@@ -503,7 +523,7 @@ export function PlayersView({ players: initial, users, canManage }: Props) {
         <div>
           <h1 className="text-2xl font-bold text-[#f5f0f0]">Spieler</h1>
           <p className="text-[#9a9090] text-sm mt-0.5">
-            {members.length} Member, {trials.length} im Trial, {guests.length} {guests.length === 1 ? "Gast" : "Gäste"}
+            {count("MEMBER")} Member, {count("TRIAL")} im Trial, {count("GUEST")} {count("GUEST") === 1 ? "Gast" : "Gäste"}
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
@@ -535,6 +555,7 @@ export function PlayersView({ players: initial, users, canManage }: Props) {
         </div>
       </div>
 
+      <div className="flex flex-wrap items-center justify-between gap-3">
       <div className="inline-flex max-w-full flex-wrap rounded-lg border border-[#2d2829] p-1" role="tablist">
         {([
           ["members", "Member", members.length],
@@ -558,6 +579,21 @@ export function PlayersView({ players: initial, users, canManage }: Props) {
           </button>
         ))}
       </div>
+      {/* Quick search over all tabs: the numbers on the tabs show where the hits are */}
+      <div className="relative w-full sm:w-64">
+        <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#5e5858]" />
+        <Input
+          type="search"
+          value={filter}
+          onChange={(e) => setFilter(e.target.value)}
+          onKeyDown={(e) => { if (e.key === "Escape") setFilter("") }}
+          placeholder="Spieler suchen"
+          aria-label="Spieler suchen"
+          autoComplete="off"
+          className="pl-9"
+        />
+      </div>
+      </div>
 
       {syncMessage && (
         <p className="flex items-center justify-between gap-3 rounded-lg border border-[#2d2829] bg-[#1c1819] px-4 py-2 text-sm text-[#c5bfbf]">
@@ -573,7 +609,9 @@ export function PlayersView({ players: initial, users, canManage }: Props) {
           <CardContent className="py-12 text-center">
             <User size={32} className="mx-auto text-[#5e5858] mb-3" />
             <p className="text-[#9a9090] text-sm">
-              {tab === "members"
+              {filter.trim()
+                ? "In diesem Tab passt kein Spieler zur Suche. Die Zahlen an den Tabs zeigen, wo es Treffer gibt."
+                : tab === "members"
                 ? "Noch keine Member. Leg den ersten an."
                 : tab === "trial"
                 ? "Niemand im Trial. Spieler im Trial werden wie Member eingeplant, bis sie fest dazugehören."
@@ -600,8 +638,16 @@ export function PlayersView({ players: initial, users, canManage }: Props) {
             </thead>
             <tbody className="max-md:flex max-md:flex-col max-md:gap-3">
               {visible.map((player, i) => (
+                <Fragment key={player.id}>
+                {/* Members: the managers first, under a heading of their own */}
+                {tab === "members" && managers.length > 0 && (i === 0 || i === managers.length) && (
+                  <tr className="border-b border-[#2d2829] bg-[#251f20]/60 max-md:block max-md:border-0 max-md:bg-transparent">
+                    <td colSpan={7} className="px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-[#9a9090] @7xl:px-4 max-md:block max-md:px-0.5 max-md:py-0">
+                      {i === 0 ? "Manager" : "Member"}
+                    </td>
+                  </tr>
+                )}
                 <tr
-                  key={player.id}
                   className={`border-b border-[#2d2829] last:border-0 ${i % 2 === 0 ? "bg-[#1c1819]" : "bg-[#1c1819]/60"} max-md:grid max-md:grid-cols-2 max-md:gap-x-3 max-md:gap-y-3 max-md:rounded-xl max-md:border max-md:bg-[#1c1819] max-md:p-3.5 max-md:last:border`}
                 >
                   <td className="px-3 py-3 @7xl:px-4 font-medium text-[#f5f0f0] max-md:order-1 max-md:col-span-2 max-md:block max-md:p-0 max-md:text-base">
@@ -734,6 +780,19 @@ export function PlayersView({ players: initial, users, canManage }: Props) {
                           <RefreshCw size={14} className={syncingId === player.id ? "animate-spin" : ""} />
                           <span className="md:hidden">Abgleich</span>
                         </Button>
+                        {tab === "members" && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleTeamManager(player.id, !player.teamManager)}
+                            aria-pressed={!!player.teamManager}
+                            className={player.teamManager ? "text-[#FBD00D] hover:text-[#FBD00D]" : "text-[#5e5858] hover:text-[#f5f0f0]"}
+                            title={player.teamManager ? "Nicht mehr als Manager führen" : "Als Manager führen"}
+                          >
+                            <ShieldCheck size={14} />
+                            <span className="md:hidden">Manager</span>
+                          </Button>
+                        )}
                         <Button
                           variant="outline"
                           size="sm"
@@ -758,6 +817,7 @@ export function PlayersView({ players: initial, users, canManage }: Props) {
                     )}
                   </td>
                 </tr>
+                </Fragment>
               ))}
             </tbody>
           </table>
