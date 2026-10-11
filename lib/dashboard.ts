@@ -1,0 +1,194 @@
+// What the dashboard shows about tournaments: which ones are current, how each lineup stands,
+// and who drove best. Seeding matches are left out, as in all stats.
+import type { StatsMatch } from "./format-stats"
+import { suggestMatchOutcome } from "./opponents"
+import { addGap, emptyPace, finishTime, pacePct, roundBest, type PaceSum } from "./pace"
+import { dayKey } from "./player-status"
+import { roundScore } from "./round-score"
+
+export interface DashMatch extends Omit<StatsMatch, "tournamentLineupId"> {
+  tournamentLineupId: string | null
+  opponent?: string | null
+  date?: Date | string | null
+  createdAt: Date | string
+  // Set once the match is closed with a confirmed result (W, L or D)
+  closedAt?: Date | string | null
+  confirmedOutcome?: string | null
+}
+
+type Outcome = "W" | "L" | "D"
+
+interface TeamRecord {
+  matchesWon: number
+  matchesDrawn: number
+  matchesLost: number
+  mapsWon: number
+  mapsDrawn: number
+  mapsLost: number
+  roundsWon: number
+  roundsLost: number
+}
+
+export interface LineupRecord extends TeamRecord {
+  lineupId: string
+  // The match played last; confirmed tells a closed match from a result that is only worked out
+  lastMatch: { id: string; opponent: string | null; outcome: Outcome | null; confirmed: boolean; mapsWon: number; mapsLost: number } | null
+}
+
+const emptyRecord = (): TeamRecord => ({ matchesWon: 0, matchesDrawn: 0, matchesLost: 0, mapsWon: 0, mapsDrawn: 0, mapsLost: 0, roundsWon: 0, roundsLost: 0 })
+
+interface Tally {
+  mapsWon: number
+  mapsDrawn: number
+  mapsLost: number
+  roundsWon: number
+  roundsLost: number
+  // Had at least one round with both teams
+  played: boolean
+}
+
+function tally(match: DashMatch): Tally {
+  const t: Tally = { mapsWon: 0, mapsDrawn: 0, mapsLost: 0, roundsWon: 0, roundsLost: 0, played: false }
+  for (const sm of match.subMatches) {
+    let won = 0, lost = 0, scored = false
+    for (const round of sm.rounds) {
+      const outcome = roundScore(round.results)?.outcome
+      if (!outcome) continue
+      scored = true
+      if (outcome === "W") won++
+      else if (outcome === "L") lost++
+    }
+    if (!scored) continue
+    t.played = true
+    t.roundsWon += won
+    t.roundsLost += lost
+    if (won > lost) t.mapsWon++
+    else if (lost > won) t.mapsLost++
+    else t.mapsDrawn++
+  }
+  return t
+}
+
+// The result of a match: the one confirmed when closing it, otherwise the one its sub-matches give
+function outcomeOf(match: DashMatch): { outcome: Outcome | null; confirmed: boolean } {
+  const confirmed = match.closedAt && (match.confirmedOutcome === "W" || match.confirmedOutcome === "L" || match.confirmedOutcome === "D")
+  if (confirmed) return { outcome: match.confirmedOutcome as Outcome, confirmed: true }
+  return { outcome: suggestMatchOutcome(match.subMatches), confirmed: false }
+}
+
+function add(record: TeamRecord, match: DashMatch, t: Tally): void {
+  const { outcome } = outcomeOf(match)
+  if (outcome === "W") record.matchesWon++
+  else if (outcome === "L") record.matchesLost++
+  else if (outcome === "D") record.matchesDrawn++
+  record.mapsWon += t.mapsWon
+  record.mapsDrawn += t.mapsDrawn
+  record.mapsLost += t.mapsLost
+  record.roundsWon += t.roundsWon
+  record.roundsLost += t.roundsLost
+}
+
+const counted = (match: DashMatch) => match.stage.type !== "SEEDING"
+const playedAt = (match: DashMatch) => new Date(match.date ?? match.createdAt).getTime()
+
+// How each of the given lineups stands, in their order
+export function lineupRecords(matches: DashMatch[], lineupIds: string[]): LineupRecord[] {
+  return lineupIds.map((lineupId) => {
+    const record: LineupRecord = { lineupId, ...emptyRecord(), lastMatch: null }
+    let last: DashMatch | null = null
+    for (const match of matches) {
+      if (match.tournamentLineupId !== lineupId || !counted(match)) continue
+      const t = tally(match)
+      const closed = outcomeOf(match).confirmed
+      if (!t.played && !closed) continue
+      add(record, match, t)
+      if (!last || playedAt(match) >= playedAt(last)) last = match
+    }
+    if (last) {
+      const t = tally(last)
+      record.lastMatch = { id: last.id, opponent: last.opponent ?? null, ...outcomeOf(last), mapsWon: t.mapsWon, mapsLost: t.mapsLost }
+    }
+    return record
+  })
+}
+
+// The record over all the given matches, whatever the lineup
+export function overallRecord(matches: DashMatch[]): TeamRecord {
+  const record = emptyRecord()
+  for (const match of matches) {
+    if (!counted(match)) continue
+    const t = tally(match)
+    if (t.played || outcomeOf(match).confirmed) add(record, match, t)
+  }
+  return record
+}
+
+export interface Performer {
+  tmId: string
+  name: string
+  currentName?: string
+  // Lineup the player drove most of the rounds for
+  lineupId: string | null
+  // Average gap to the fastest time of each round, in percent
+  pace: number
+  // Timed rounds
+  rounds: number
+}
+
+// Whoever of ours has the best pace over the given matches; nobody while no round has a time
+export function bestPerformer(matches: DashMatch[]): Performer | null {
+  const players = new Map<string, { name: string; currentName?: string; pace: PaceSum; lineups: Map<string, number> }>()
+  for (const match of matches) {
+    if (!counted(match)) continue
+    for (const sm of match.subMatches) {
+      for (const round of sm.rounds) {
+        const best = roundBest(round.results)
+        for (const r of round.results) {
+          const time = finishTime(r)
+          if (!r.isOurTeam || time === null || best === null) continue
+          const player = players.get(r.tmId) ?? { name: r.playerName, currentName: r.currentName, pace: emptyPace(), lineups: new Map() }
+          addGap(player.pace, time, best)
+          if (match.tournamentLineupId) player.lineups.set(match.tournamentLineupId, (player.lineups.get(match.tournamentLineupId) ?? 0) + 1)
+          players.set(r.tmId, player)
+        }
+      }
+    }
+  }
+  let top: Performer | null = null
+  for (const [tmId, player] of players) {
+    const pace = pacePct(player.pace)
+    if (pace === null || (top && pace >= top.pace)) continue
+    const lineupId = [...player.lineups.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] ?? null
+    top = { tmId, name: player.name, currentName: player.currentName, lineupId, pace, rounds: player.pace.rounds }
+  }
+  return top
+}
+
+// The stage played last: the last one in playing order (stageOrder) with a round that counts
+export function latestStageId(matches: DashMatch[], stageOrder: string[]): string | null {
+  const played = new Set(matches.filter((m) => counted(m) && tally(m).played).map((m) => m.stage.id))
+  return [...stageOrder].reverse().find((id) => played.has(id)) ?? null
+}
+
+interface DatedTournament {
+  id: string
+  startDate: Date | string | null
+  endDate: Date | string | null
+  createdAt: Date | string
+  lineupCount: number
+}
+
+// The tournaments the dashboard shows: every one that is running today (it has lineups and
+// today lies within its dates; without an end date from its start on), the one that started
+// last first, and the one that ended most recently. Tournaments still being planned are not among them.
+export function dashboardTournaments<T extends DatedTournament>(tournaments: T[], today: Date | string): { current: T[]; last: T | null } {
+  const day = dayKey(today)
+  const start = (t: T) => dayKey(t.startDate ?? t.createdAt)
+  const started = tournaments.filter((t) => t.lineupCount > 0 && start(t) <= day)
+  const current = started
+    .filter((t) => !t.endDate || dayKey(t.endDate) >= day)
+    .sort((a, b) => start(b).localeCompare(start(a)))
+  const ended = started.filter((t) => t.endDate && dayKey(t.endDate) < day)
+  const last = ended.sort((a, b) => dayKey(b.endDate!).localeCompare(dayKey(a.endDate!)))[0] ?? null
+  return { current, last }
+}

@@ -6,13 +6,15 @@
 - [ ] kategorisierung der comps nach style? (tech mixed rpg ice fs etc)
 - [ ] Design/UI/UX Verbesserungen
   - light theme + weitere themes (dark bleibt default)
-- [ ] übersichts seite (dashboard) -> letzte comp anzeigen + paar overall stats / stat highlights, pro user evtl spezialisiert auf seine eigenen stats; aufbau so, dass er auch mit mehreren comps funktioniert (einträge untereinander)
-- [ ] best performer pro match/week/tourney? -> den auf übersicht auch anzeigen?
 - [ ] validierung von importierten daten zu eingegebenen daten (match) -> passt das gegner team etc
 - [ ] tournaments seite bei mehreren comps: bleibt eine einfache liste der turniere, anordnung prüfen wenn es mehr werden
 - [ ] lineup einteilung für einzelne matches bzw match days
 
 ## Teilweise erledigt
+
+- [ ] best performer pro match/week/tourney
+  - [x] pro tourney und pro abschnitt (week) auf dem dashboard, nach pace
+  - [ ] pro match
 
 - [ ] spieler-profile: eigene seite pro spieler (idee boris; gibt dem spielertab mehr zweck als nur spieler/gäste anlegen)
   - [x] gespielte turniere (mit lineup, als member/gast)
@@ -34,3 +36,4 @@
   - [x] pro spieler im profil (pb, Ø rückstand in s, rang im team)
   - [x] pro comp für 1 lineup, pro week für alle lineups (umschalter "nach map" im stats-bereich von lineup- und turnierseite, filter lineup/abschnitt/format)
   - [x] team-sicht pro map in der lineup-übersicht: eine zeile pro map mit maps w/l, rounds w/l, beste und Ø zeit (ohne einzelne spieler)
+- [x] übersichts seite (dashboard): overall-kacheln, aktuelle turniere und letztes turnier mit bilanz pro lineup, best performer und eigenen stats; app komplett auf englisch
