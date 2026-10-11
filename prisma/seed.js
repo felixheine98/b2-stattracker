@@ -26,7 +26,7 @@ const PLAYERS = [
   { name: 'Leonowitsch',     tmId: 'ba41544d-8f6d-48bd-ba27-9cd00d795dc6' },
   { name: 'Linkcrafter',     tmId: '86a91736-89cd-427e-b4ca-bc8a5d7137a9' },
   { name: 'Mobbi._.',        tmId: '63b5f159-9195-423f-8ae7-f0bba8fea36a' },
-  { name: 'NismoTM',         tmId: '32671f34-92f1-4646-ab95-5dff579c772f' },
+  { name: 'NismoTM',         tmId: '32671f34-92f4-4646-ab95-5dff579c772f' },
   { name: 'Niwes.',          tmId: '0341b936-c6e9-4ff5-9149-5e2b387a384b' },
   { name: 'PASZS',           tmId: 'db827c44-6b6c-4737-939d-7f7a6aae2c4b' },
   { name: 'ParZival_TM',     tmId: 'b52cc9c4-4e4f-48ce-ace6-b4a6ced9bfc3' },
@@ -51,7 +51,11 @@ const PLAYERS = [
   { name: 'Chomp.Tm',        tmId: '83b5f677-3296-4d2a-ad6b-5a100565de22' },
 ]
 
-async function main() {
+async function seedPlayers() {
+  // The list sets up an empty database only. Later, players are managed in the app: one that
+  // was deleted, or whose Trackmania ID was corrected, must not come back on every restart.
+  if ((await prisma.player.count()) > 0) return
+
   console.log(`Seeding ${PLAYERS.length} players…`)
   let created = 0
   let skipped = 0
@@ -103,6 +107,10 @@ async function main() {
   }
 
   console.log(`Seed done — ${created} created, ${skipped} skipped.`)
+}
+
+async function main() {
+  await seedPlayers()
 
   // Every tournament needs a start date: it decides who counts as member or guest
   const tournaments = await prisma.tournament.findMany({ where: { startDate: null }, select: { id: true, createdAt: true } })
