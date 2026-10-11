@@ -14,9 +14,9 @@ describe("opponent request responses", () => {
     const response = new Response("<html>Login</html>")
     Object.defineProperty(response, "url", { value: "https://example.com/stats/login" })
     Object.defineProperty(response, "redirected", { value: true })
-    await expect(readOpponentResponse(response)).rejects.toThrow("Sitzung")
+    await expect(readOpponentResponse(response)).rejects.toThrow("session")
   })
   it("handles an unexpected successful HTML response", async () => {
-    await expect(readOpponentResponse(new Response("<html>Unexpected</html>"))).rejects.toThrow("unerwartete Antwort")
+    await expect(readOpponentResponse(new Response("<html>Unexpected</html>"))).rejects.toThrow("unexpected answer")
   })
 })

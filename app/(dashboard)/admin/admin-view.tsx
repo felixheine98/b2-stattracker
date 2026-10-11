@@ -150,13 +150,13 @@ export function AdminView({ users: initial, currentUserId, isAdmin }: Props) {
                     {user.email && <div className="text-xs text-[#5e5858]">{user.email}</div>}
                     {!!user.managedLineups?.length && (
                       <div className="text-xs text-[#9a9090]">
-                        Zuständig für: {user.managedLineups.map((m) => `${m.lineup.tournament.name} / ${m.lineup.name}`).join(", ")}
+                        Responsible for: {user.managedLineups.map((m) => `${m.lineup.tournament.name} / ${m.lineup.name}`).join(", ")}
                       </div>
                     )}
                   </td>
                   <td className="px-4 py-3 font-mono text-xs text-[#9a9090] max-md:order-3 max-md:block max-md:min-w-0 max-md:truncate max-md:p-0">{user.username}</td>
                   <td className="px-4 py-3 text-[#9a9090] max-md:order-4 max-md:block max-md:p-0 max-md:text-right max-md:text-xs">
-                    <span className="text-[#5e5858] md:hidden">Spieler: </span>
+                    <span className="text-[#5e5858] md:hidden">Player: </span>
                     {user.player ? (
                       <span className="text-[#f5f0f0]">{user.player.name}</span>
                     ) : (
@@ -200,11 +200,11 @@ export function AdminView({ users: initial, currentUserId, isAdmin }: Props) {
                         variant="ghost"
                         size="sm"
                         onClick={() => setResetUser(user)}
-                        title="Passwort zurücksetzen"
+                        title="Reset password"
                         className="text-[#5e5858] hover:text-[#FBD00D]"
                       >
                         <KeyRound size={14} />
-                        <span className="md:hidden">Passwort zurücksetzen</span>
+                        <span className="md:hidden">Reset password</span>
                       </Button>
                     )}
                     {!isSelf && (isAdmin || user.role === "PLAYER") && (
@@ -216,7 +216,7 @@ export function AdminView({ users: initial, currentUserId, isAdmin }: Props) {
                         className="text-[#5e5858] hover:text-[#ED1F24]"
                       >
                         <Trash2 size={14} />
-                        <span className="md:hidden">Löschen</span>
+                        <span className="md:hidden">Delete</span>
                       </Button>
                     )}
                   </td>

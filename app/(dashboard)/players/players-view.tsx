@@ -110,8 +110,8 @@ function HintLine({ label, canManage, onAdopt, onDismiss }: { label: string; can
       {label}
       {canManage && (
         <>
-          <button type="button" onClick={onAdopt} className="text-[#FBD00D] hover:underline">Übernehmen</button>
-          <button type="button" onClick={onDismiss} className="text-[#9a9090] hover:underline">Ausblenden</button>
+          <button type="button" onClick={onAdopt} className="text-[#FBD00D] hover:underline">Adopt</button>
+          <button type="button" onClick={onDismiss} className="text-[#9a9090] hover:underline">Hide</button>
         </>
       )}
     </p>
@@ -183,7 +183,7 @@ export function PlayersView({ players: initial, users, canManage }: Props) {
   const managers = members.filter(isManager).sort((a, b) => Number(b.user?.role === "ADMIN") - Number(a.user?.role === "ADMIN"))
   const visible = { members: [...managers, ...members.filter((p) => !isManager(p))], trial: trials, guests, former: formers }[tab]
   const newStatus = TAB_STATUS[tab]
-  const addLabel = `${STATUS_LABEL[newStatus]} hinzufügen`
+  const addLabel = `Add ${STATUS_LABEL[newStatus].toLowerCase()}`
   const movePlayer = players.find((p) => p.id === moveId)
   const historyPlayer = players.find((p) => p.id === historyId)
   // --- Name history / rename ---
@@ -234,7 +234,7 @@ export function PlayersView({ players: initial, users, canManage }: Props) {
     const data = await res?.json().catch(() => null)
     if (!res?.ok || !Array.isArray(data?.results)) {
       setSearchResults(null)
-      setSearchError(data?.error ?? "Suche fehlgeschlagen")
+      setSearchError(data?.error ?? "Search failed")
       return
     }
     setSearchResults(data.results)
@@ -286,11 +286,11 @@ export function PlayersView({ players: initial, users, canManage }: Props) {
     setRelinkLoading(false)
     const data = await res?.json().catch(() => null)
     if (!res?.ok) {
-      setRelinkError(data?.error ?? "Die TM-ID konnte nicht geändert werden")
+      setRelinkError(data?.error ?? "Failed to update the TM ID")
       return
     }
     setPlayers((p) => p.map((pl) => (pl.id === relinkPlayer.id ? { ...pl, ...data } : pl)))
-    setSyncMessage(`${relinkPlayer.name} ist jetzt mit ${data.tmioName} auf trackmania.io verknüpft.`)
+    setSyncMessage(`${relinkPlayer.name} is now linked to ${data.tmioName} on trackmania.io.`)
     closeRelink()
   }
 
@@ -319,7 +319,7 @@ export function PlayersView({ players: initial, users, canManage }: Props) {
     setLoading(false)
     if (!res.ok) {
       const data = await res.json().catch(() => null)
-      setError(data?.error ?? "Der Spieler konnte nicht angelegt werden")
+      setError(data?.error ?? "Failed to create the player")
       return
     }
     const data = await res.json()
@@ -338,12 +338,12 @@ export function PlayersView({ players: initial, users, canManage }: Props) {
             value={searchQuery}
             onChange={(e) => handleSearchChange(e.target.value)}
             onKeyDown={(e) => { if (e.key === "Enter") e.preventDefault() }}
-            placeholder="Name, Spieler-ID oder trackmania.io-Link"
+            placeholder="Name, player ID or trackmania.io link"
             autoComplete="off"
             className="pl-9"
           />
         </div>
-        {searchLoading && <p className="text-xs text-[#5e5858]">Sucht …</p>}
+        {searchLoading && <p className="text-xs text-[#5e5858]">Searching…</p>}
         {searchError && <p className="text-xs text-[#ED1F24]">{searchError}</p>}
         {searchResults && searchResults.length === 0 && !searchLoading && (
           <p className="text-xs text-[#5e5858]">{emptyText}</p>
@@ -368,7 +368,7 @@ export function PlayersView({ players: initial, users, canManage }: Props) {
                 {result.clubTag && <span className="rounded bg-[#251f20] px-1.5 text-[10px] text-[#9a9090]">{result.clubTag}</span>}
                 <span className="ml-auto truncate text-xs text-[#5e5858]">
                   {result.existing
-                    ? `schon angelegt (${STATUS_LABEL[result.existing.status]})`
+                    ? `already added (${STATUS_LABEL[result.existing.status].toLowerCase()})`
                     : [result.region, result.countryName].filter(Boolean).join(", ")}
                 </span>
                 {picked?.id === result.id && <Check size={14} className="shrink-0 text-[#FBD00D]" />}
@@ -397,11 +397,11 @@ export function PlayersView({ players: initial, users, canManage }: Props) {
     setSyncMessage("")
     const outcome = await syncPlayer(player)
     setSyncingId(null)
-    if (outcome === "limit") setSyncMessage("Anfragelimit von trackmania.io erreicht, versuch es in einer Minute noch einmal.")
-    else if (outcome === "error") setSyncMessage(`${player.name} konnte nicht mit trackmania.io abgeglichen werden.`)
-    else if (outcome === "notfound") setSyncMessage(`${player.name} wurde auf trackmania.io nicht gefunden.`)
-    else if (outcome === "difference") setSyncMessage(`${player.name} geprüft: weicht von trackmania.io ab, siehe Hinweis in der Zeile.`)
-    else if (outcome === "ok") setSyncMessage(`${player.name} geprüft: keine Abweichungen.`)
+    if (outcome === "limit") setSyncMessage("trackmania.io request limit reached, try again in a minute.")
+    else if (outcome === "error") setSyncMessage(`Could not check ${player.name} on trackmania.io.`)
+    else if (outcome === "notfound") setSyncMessage(`${player.name} was not found on trackmania.io.`)
+    else if (outcome === "difference") setSyncMessage(`${player.name} checked: differs from trackmania.io, see the hint in the row.`)
+    else if (outcome === "ok") setSyncMessage(`${player.name} checked: no differences.`)
   }
 
   async function handleSyncAll() {
@@ -412,9 +412,9 @@ export function PlayersView({ players: initial, users, canManage }: Props) {
     const counts = { ok: 0, difference: 0, notfound: 0, gone: 0, error: 0 }
     let stopped = ""
     for (const [i, player] of list.entries()) {
-      if (cancelSync.current) { stopped = " Vorzeitig abgebrochen."; break }
+      if (cancelSync.current) { stopped = " Stopped early."; break }
       const outcome = await syncPlayer(player)
-      if (outcome === "limit") { stopped = " Abgebrochen: Anfragelimit von trackmania.io erreicht, versuch es in einer Minute noch einmal."; break }
+      if (outcome === "limit") { stopped = " Stopped: trackmania.io request limit reached, try again in a minute."; break }
       counts[outcome]++
       setSyncProgress({ done: i + 1, total: list.length })
       if (i < list.length - 1) await new Promise((resolve) => setTimeout(resolve, SYNC_DELAY_MS))
@@ -422,8 +422,8 @@ export function PlayersView({ players: initial, users, canManage }: Props) {
     setSyncProgress(null)
     const checked = counts.ok + counts.difference + counts.notfound
     setSyncMessage(
-      `${checked} von ${list.length - counts.gone} geprüft, ${counts.difference} mit Abweichungen, ${counts.notfound} nicht gefunden` +
-        (counts.error > 0 ? `, ${counts.error} fehlgeschlagen` : "") + "." + stopped
+      `${checked} of ${list.length - counts.gone} checked, ${counts.difference} with differences, ${counts.notfound} not found` +
+        (counts.error > 0 ? `, ${counts.error} failed` : "") + "." + stopped
     )
   }
 
@@ -443,7 +443,7 @@ export function PlayersView({ players: initial, users, canManage }: Props) {
   }
 
   async function handleDelete(id: string) {
-    if (!confirm("Diesen Spieler löschen?")) return
+    if (!confirm("Delete this player?")) return
     setDeleting(id)
     await fetch(`${BASE_PATH}/api/players/${id}`, { method: "DELETE" })
     setDeleting(null)
@@ -513,28 +513,28 @@ export function PlayersView({ players: initial, users, canManage }: Props) {
     <div className="space-y-6 max-w-5xl">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-[#f5f0f0]">Spieler</h1>
+          <h1 className="text-2xl font-bold text-[#f5f0f0]">Players</h1>
           <p className="text-[#9a9090] text-sm mt-0.5">
-            {count("MEMBER")} Member, {count("TRIAL")} im Trial, {count("GUEST")} {count("GUEST") === 1 ? "Gast" : "Gäste"}
+            {count("MEMBER")} member{count("MEMBER") !== 1 ? "s" : ""}, {count("TRIAL")} on trial, {count("GUEST")} guest{count("GUEST") !== 1 ? "s" : ""}
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           {canManage && tab === "members" && autoLinkCount > 0 && (
             <Button variant="outline" onClick={handleAutoLink} disabled={autoLinking}>
               <Wand2 size={15} />
-              Automatisch verknüpfen ({autoLinkCount})
+              Auto-link ({autoLinkCount})
             </Button>
           )}
           {canManage && (syncProgress || visible.length > 0) && (
             syncProgress ? (
               <Button variant="outline" onClick={() => { cancelSync.current = true }}>
                 <RefreshCw size={15} className="animate-spin" />
-                {syncProgress.done}/{syncProgress.total} · Stopp
+                {syncProgress.done}/{syncProgress.total} · Stop
               </Button>
             ) : (
-              <Button variant="outline" onClick={handleSyncAll} disabled={!!syncingId} title="Namen und Länder mit trackmania.io abgleichen">
+              <Button variant="outline" onClick={handleSyncAll} disabled={!!syncingId} title="Compare names and countries with trackmania.io">
                 <RefreshCw size={15} />
-                Abgleich<span className="max-md:hidden"> mit trackmania.io</span>
+                Sync<span className="max-md:hidden"> with trackmania.io</span>
               </Button>
             )
           )}
@@ -550,10 +550,10 @@ export function PlayersView({ players: initial, users, canManage }: Props) {
       <div className="flex flex-wrap items-center justify-between gap-3">
       <div className="inline-flex max-w-full flex-wrap rounded-lg border border-[#2d2829] p-1" role="tablist">
         {([
-          ["members", "Member", members.length],
+          ["members", "Members", members.length],
           ["trial", "Trial", trials.length],
-          ["guests", "Gäste", guests.length],
-          ["former", "Ehemalige", formers.length],
+          ["guests", "Guests", guests.length],
+          ["former", "Former", formers.length],
         ] as const).map(([value, label, count]) => (
           <button
             key={value}
@@ -579,8 +579,8 @@ export function PlayersView({ players: initial, users, canManage }: Props) {
           value={filter}
           onChange={(e) => setFilter(e.target.value)}
           onKeyDown={(e) => { if (e.key === "Escape") setFilter("") }}
-          placeholder="Spieler suchen"
-          aria-label="Spieler suchen"
+          placeholder="Find a player"
+          aria-label="Find a player"
           autoComplete="off"
           className="pl-9"
         />
@@ -590,7 +590,7 @@ export function PlayersView({ players: initial, users, canManage }: Props) {
       {syncMessage && (
         <p className="flex items-center justify-between gap-3 rounded-lg border border-[#2d2829] bg-[#1c1819] px-4 py-2 text-sm text-[#c5bfbf]">
           {syncMessage}
-          <button type="button" onClick={() => setSyncMessage("")} className="text-[#5e5858] hover:text-[#f5f0f0]" title="Schließen">
+          <button type="button" onClick={() => setSyncMessage("")} className="text-[#5e5858] hover:text-[#f5f0f0]" title="Close">
             <X size={14} />
           </button>
         </p>
@@ -602,14 +602,14 @@ export function PlayersView({ players: initial, users, canManage }: Props) {
             <User size={32} className="mx-auto text-[#5e5858] mb-3" />
             <p className="text-[#9a9090] text-sm">
               {filter.trim()
-                ? "In diesem Tab passt kein Spieler zur Suche. Die Zahlen an den Tabs zeigen, wo es Treffer gibt."
+                ? "No player in this tab matches the search. The numbers on the tabs show where the hits are."
                 : tab === "members"
-                ? "Noch keine Member. Leg den ersten an."
+                ? "No members yet. Add the first one."
                 : tab === "trial"
-                ? "Niemand im Trial. Spieler im Trial werden wie Member eingeplant, bis sie fest dazugehören."
+                ? "Nobody on trial. Players on trial are planned like members until they join for good."
                 : tab === "guests"
-                ? "Noch keine Gäste. Gäste helfen in euren Lineups aus, ohne zum Team zu gehören."
-                : "Keine Ehemaligen. Hier steht, wer nicht mehr für das Team fährt: Profil und Ergebnisse bleiben erhalten."}
+                ? "No guests yet. Guests stand in for your lineups without being part of the team."
+                : "No former players. This lists who no longer drives for the team; profile and results are kept."}
             </p>
           </CardContent>
         </Card>
@@ -622,9 +622,9 @@ export function PlayersView({ players: initial, users, canManage }: Props) {
               <tr className="border-b border-[#2d2829] bg-[#251f20]">
                 <th className="text-left px-3 py-3 @7xl:px-4 text-[#9a9090] font-medium">Name</th>
                 <th className="text-left px-3 py-3 @7xl:px-4 text-[#9a9090] font-medium">TM ID</th>
-                {tab !== "former" && <th className="text-left px-3 py-3 @7xl:px-4 text-[#9a9090] font-medium">{tab === "members" ? "Verknüpfter Account" : "Login"}</th>}
+                {tab !== "former" && <th className="text-left px-3 py-3 @7xl:px-4 text-[#9a9090] font-medium">{tab === "members" ? "Linked account" : "Login"}</th>}
                 <th className="text-left px-3 py-3 @7xl:px-4 text-[#9a9090] font-medium">Status</th>
-                <th className="text-right px-3 py-3 @7xl:px-4 text-[#9a9090] font-medium whitespace-nowrap">Turniere gespielt</th>
+                <th className="text-right px-3 py-3 @7xl:px-4 text-[#9a9090] font-medium whitespace-nowrap">Tournaments played</th>
                 <th className="px-3 py-3 @7xl:px-4" />
               </tr>
             </thead>
@@ -651,14 +651,14 @@ export function PlayersView({ players: initial, users, canManage }: Props) {
                         type="button"
                         onClick={() => setNameDialog({ playerId: player.id })}
                         className="text-[#3a3435] hover:text-[#f5f0f0]"
-                        title={canManage ? "Umbenennen / Namensverlauf" : "Namensverlauf"}
+                        title={canManage ? "Rename / name history" : "Name history"}
                       >
                         <Pencil size={11} />
                       </button>
                     </span>
                     {allNames(player).length > 1 && (
                       <p className="mt-0.5 text-[11px] font-normal text-[#5e5858]">
-                        früher: {allNames(player).filter((n) => n !== player.name).join(", ")}
+                        formerly: {allNames(player).filter((n) => n !== player.name).join(", ")}
                       </p>
                     )}
                     {nameHint(player) && (
@@ -676,7 +676,7 @@ export function PlayersView({ players: initial, users, canManage }: Props) {
                       <p className="mt-1 flex flex-wrap items-center gap-x-2 text-[11px] font-normal text-[#cd7f32]">
                         not found on trackmania.io
                         {canManage && (
-                          <button type="button" onClick={() => openRelink(player)} className="text-[#FBD00D] hover:underline">Suchen</button>
+                          <button type="button" onClick={() => openRelink(player)} className="text-[#FBD00D] hover:underline">Search</button>
                         )}
                       </p>
                     )}
@@ -699,7 +699,7 @@ export function PlayersView({ players: initial, users, canManage }: Props) {
                               onClick={() => handleLink(player.id, null)}
                               disabled={linking === player.id}
                               className="text-[#5e5858] hover:text-[#ED1F24] disabled:opacity-40"
-                              title="Verknüpfung lösen"
+                              title="Unlink"
                             >
                               <Link2Off size={13} />
                             </button>
@@ -716,7 +716,7 @@ export function PlayersView({ players: initial, users, canManage }: Props) {
                           disabled={linking === player.id}
                           className="h-7 w-32 max-md:h-9 max-md:min-w-0 max-md:flex-1 text-ellipsis rounded border border-[#3a3435] bg-[#251f20] px-2 text-xs text-[#f5f0f0] focus:outline-none focus:ring-1 focus:ring-[#FBD00D] disabled:opacity-50"
                         >
-                          <option value="">— kein Account —</option>
+                          <option value="">— no account —</option>
                           {availableUsers(player).map((u) => (
                             <option key={u.id} value={u.id}>
                               {userLabel(u)}
@@ -728,7 +728,7 @@ export function PlayersView({ players: initial, users, canManage }: Props) {
                             onClick={() => handleLink(player.id, null)}
                             disabled={linking === player.id}
                             className="text-[#5e5858] hover:text-[#ED1F24] disabled:opacity-40"
-                            title="Verknüpfung lösen"
+                            title="Unlink"
                           >
                             <Link2Off size={13} />
                           </button>
@@ -748,7 +748,7 @@ export function PlayersView({ players: initial, users, canManage }: Props) {
                       type="button"
                       onClick={() => setHistoryId(player.id)}
                       className="inline-flex items-center gap-1.5 text-left text-xs text-[#9a9090] hover:text-[#f5f0f0]"
-                      title="Statusverlauf anzeigen"
+                      title="Show status history"
                     >
                       <History size={12} className="shrink-0" />
                       {statusSummary(player)}
@@ -756,7 +756,7 @@ export function PlayersView({ players: initial, users, canManage }: Props) {
                   </td>
                   <td className="px-3 py-3 @7xl:px-4 text-right text-[#9a9090] max-md:order-6 max-md:col-span-2 max-md:block max-md:p-0 max-md:text-left max-md:text-xs">
                     {player.tournamentsPlayed ?? 0}
-                    <span className="md:hidden"> {player.tournamentsPlayed === 1 ? "Turnier" : "Turniere"} gespielt</span>
+                    <span className="md:hidden"> tournament{player.tournamentsPlayed === 1 ? "" : "s"} played</span>
                   </td>
                   <td className={cn("px-3 py-3 @7xl:px-4 text-right max-md:order-7 max-md:col-span-2 max-md:block max-md:border-t max-md:border-[#2d2829] max-md:p-0 max-md:pt-2.5", !canManage && "max-md:hidden")}>
                     {canManage && (
@@ -767,20 +767,20 @@ export function PlayersView({ players: initial, users, canManage }: Props) {
                           onClick={() => handleSyncOne(player)}
                           disabled={!!syncProgress || !!syncingId}
                           className="text-[#5e5858] hover:text-[#f5f0f0]"
-                          title="Mit trackmania.io abgleichen"
+                          title="Compare with trackmania.io"
                         >
                           <RefreshCw size={14} className={syncingId === player.id ? "animate-spin" : ""} />
-                          <span className="md:hidden">Abgleich</span>
+                          <span className="md:hidden">Sync</span>
                         </Button>
                         <Button
                           variant="outline"
                           size="sm"
                           onClick={() => setMoveId(player.id)}
                           className="whitespace-nowrap"
-                          title="Status ändern"
+                          title="Change status"
                         >
                           <ArrowLeftRight size={13} />
-                          <span className="hidden @7xl:inline max-md:inline">{tab === "trial" ? "Zu Membern" : "Status"}</span>
+                          <span className="hidden @7xl:inline max-md:inline">{tab === "trial" ? "To members" : "Status"}</span>
                         </Button>
                         <Button
                           variant="ghost"
@@ -790,7 +790,7 @@ export function PlayersView({ players: initial, users, canManage }: Props) {
                           className="text-[#5e5858] hover:text-[#ED1F24]"
                         >
                           <Trash2 size={14} />
-                          <span className="md:hidden">Löschen</span>
+                          <span className="md:hidden">Delete</span>
                         </Button>
                       </div>
                     )}
@@ -808,15 +808,15 @@ export function PlayersView({ players: initial, users, canManage }: Props) {
         <DialogTitle>{addLabel}</DialogTitle>
         <form onSubmit={handleCreate} className="space-y-4">
           <div className="space-y-1.5">
-            <Label htmlFor="tmio-search">Auf trackmania.io suchen</Label>
-            {searchField("tmio-search", pickResult, "Kein Spieler gefunden. Name und ID lassen sich unten trotzdem eintragen.")}
+            <Label htmlFor="tmio-search">Find on trackmania.io</Label>
+            {searchField("tmio-search", pickResult, "No player found. You can still enter name and ID below.")}
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="name">Anzeigename</Label>
+            <Label htmlFor="name">Display name</Label>
             <Input id="name" value={formName} onChange={(e) => setFormName(e.target.value)} placeholder="Tommy.TM" required />
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="tmId">Trackmania-Spieler-ID</Label>
+            <Label htmlFor="tmId">Trackmania player ID</Label>
             <div className="flex items-center gap-2">
               <Input
                 id="tmId"
@@ -829,29 +829,29 @@ export function PlayersView({ players: initial, users, canManage }: Props) {
                 className={cn("font-mono text-xs", picked && "opacity-70")}
               />
               {picked && (
-                <Button type="button" variant="ghost" size="sm" onClick={() => { setPicked(null); setFormTmId("") }} title="ID stattdessen von Hand eintragen">
+                <Button type="button" variant="ghost" size="sm" onClick={() => { setPicked(null); setFormTmId("") }} title="Enter the ID by hand instead">
                   <X size={14} />
                 </Button>
               )}
             </div>
             <p className="text-xs text-[#5e5858]">
               {picked
-                ? `Von trackmania.io übernommen${picked.country ? `, Land ${countryName(picked.country)}` : ""}.`
-                : "Wird beim Auswählen eines Suchergebnisses ausgefüllt, oder füg die UUID von Hand ein."}
+                ? `Taken from trackmania.io${picked.country ? `, country ${countryName(picked.country)}` : ""}.`
+                : "Filled in when you pick a search result, or paste the UUID by hand."}
             </p>
           </div>
           {newStatus !== "GUEST" && (
             <div className="space-y-1.5">
-              <Label htmlFor="since">{newStatus === "TRIAL" ? "Im Trial seit" : "Member seit"}</Label>
+              <Label htmlFor="since">{newStatus === "TRIAL" ? "On trial since" : "Member since"}</Label>
               <Input id="since" type="date" value={formSince} max={localTodayKey()} onChange={(e) => setFormSince(e.target.value)} />
-              <p className="text-xs text-[#5e5858]">Leer lassen bei jemandem, der von Anfang an im Team ist.</p>
+              <p className="text-xs text-[#5e5858]">Leave empty for someone who has been with the team from the start.</p>
             </div>
           )}
           {error && <p className="text-sm text-[#ED1F24]">{error}</p>}
           <div className="dialog-footer flex gap-2 justify-end">
-            <Button variant="ghost" type="button" onClick={closeForm}>Abbrechen</Button>
+            <Button variant="ghost" type="button" onClick={closeForm}>Cancel</Button>
             <Button type="submit" disabled={loading}>
-              {loading ? "Speichert …" : addLabel}
+              {loading ? "Saving…" : addLabel}
             </Button>
           </div>
         </form>
@@ -859,13 +859,13 @@ export function PlayersView({ players: initial, users, canManage }: Props) {
 
       {/* Find the trackmania.io account of a player that was not found */}
       <Dialog open={canManage && !!relinkPlayer} onClose={closeRelink} className="max-w-lg">
-        <DialogTitle>{relinkPlayer?.name} auf trackmania.io suchen</DialogTitle>
+        <DialogTitle>Find {relinkPlayer?.name} on trackmania.io</DialogTitle>
         <div className="space-y-4">
           <p className="text-sm text-[#9a9090]">
-            Die gespeicherte TM-ID kennt trackmania.io nicht. Wähl den richtigen Account, um sie zu korrigieren. Name, Lineups und Ergebnisse bleiben unverändert.
+            The saved TM ID is unknown to trackmania.io. Pick the right account to correct it; name, lineups and results stay as they are.
           </p>
           <div className="space-y-1.5">
-            {searchField("tmio-relink-search", setPicked, "Kein Spieler gefunden. Versuch es mit einem anderen Teil des Namens.")}
+            {searchField("tmio-relink-search", setPicked, "No player found. Try another part of the name.")}
           </div>
           {picked && relinkPlayer && (
             <p className="break-all font-mono text-[11px] text-[#5e5858]">
@@ -874,9 +874,9 @@ export function PlayersView({ players: initial, users, canManage }: Props) {
           )}
           {relinkError && <p className="text-sm text-[#ED1F24]">{relinkError}</p>}
           <div className="dialog-footer flex gap-2 justify-end">
-            <Button variant="ghost" type="button" onClick={closeRelink}>Abbrechen</Button>
+            <Button variant="ghost" type="button" onClick={closeRelink}>Cancel</Button>
             <Button type="button" onClick={handleRelink} disabled={!picked || relinkLoading}>
-              {relinkLoading ? "Speichert …" : "Diesen Account verwenden"}
+              {relinkLoading ? "Saving…" : "Use this account"}
             </Button>
           </div>
         </div>

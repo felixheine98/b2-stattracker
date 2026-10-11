@@ -78,7 +78,7 @@ describe("suspiciousRounds", () => {
 
   it("says why a round was picked", () => {
     const [block] = parseMatchCsv([dump])
-    expect([...suspiciousRounds(block, 3).values()][0]).toContain("2 von 6")
+    expect([...suspiciousRounds(block, 3).values()][0]).toContain("2 of 6")
   })
 })
 

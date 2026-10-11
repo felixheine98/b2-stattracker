@@ -245,14 +245,14 @@ export function LineupMatchesView({ lineup, guestTmIds, trialTmIds, profilePaths
               </Link>
               {isGuest(slot.player.tmId) && <GuestBadge />}
 {isTrial(slot.player.tmId) && <TrialBadge />}
-              {responsiblePlayerIds.has(slot.player.id) && <ShieldCheck size={13} className="text-[#FBD00D]" aria-label="zuständig" />}
+              {responsiblePlayerIds.has(slot.player.id) && <ShieldCheck size={13} className="text-[#FBD00D]" aria-label="responsible" />}
             </span>
           ))}
         </div>
         {lineup.managers.length > 0 && (
           <p className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-1.5 text-sm text-[#9a9090]">
             <ShieldCheck size={14} className="text-[#FBD00D]" />
-            Zuständig:
+            Responsible:
             {lineup.managers.map(({ user }) => (
               <span key={user.id} className="inline-flex items-center gap-1.5 text-[#f5f0f0]">
                 {user.name}
@@ -265,7 +265,7 @@ export function LineupMatchesView({ lineup, guestTmIds, trialTmIds, profilePaths
         )}
         {editExpired && (
           <p className="mt-2 text-xs text-[#cd7f32]">
-            Die Comp ist seit mehr als einer Woche abgeschlossen. Änderungen an Matches und Ergebnissen laufen jetzt über einen Manager.
+            The tournament ended more than a week ago. Changes to matches and results now go through a manager.
           </p>
         )}
       </div>
@@ -276,7 +276,7 @@ export function LineupMatchesView({ lineup, guestTmIds, trialTmIds, profilePaths
           <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
             <h2 className="text-sm font-semibold text-[#9a9090] uppercase tracking-wider flex items-center gap-2">
               <BarChart2 size={14} />
-              Gesamtstatistik
+              Overall stats
             </h2>
             <StatsViewToggle byMap={statsByMap} onChange={(byMap) => selectStatsView(byMap ? ["map"] : [])} />
           </div>
@@ -285,7 +285,7 @@ export function LineupMatchesView({ lineup, guestTmIds, trialTmIds, profilePaths
               className="mb-4"
               groups={[
                 ...(statsStages.length > 1
-                  ? [{ label: "Abschnitt", options: statsStages.map((st) => ({ id: st.id, label: stageName(st, stages) })), selected: statsStageIds, onChange: selectStatsStages }]
+                  ? [{ label: "Stage", options: statsStages.map((st) => ({ id: st.id, label: stageName(st, stages) })), selected: statsStageIds, onChange: selectStatsStages }]
                   : []),
                 ...(statsFormats.length > 1
                   ? [{ label: "Format", options: statsFormats.map((f) => ({ id: f, label: formatLabel(f) })), selected: statsFormatIds, onChange: selectStatsFormats }]
@@ -294,10 +294,10 @@ export function LineupMatchesView({ lineup, guestTmIds, trialTmIds, profilePaths
             />
           )}
           {aggregates.length === 0 ? (
-            <p className="text-sm text-[#5e5858]">Keine Daten für diese Auswahl.</p>
+            <p className="text-sm text-[#5e5858]">No data for this selection.</p>
           ) : (
             <div className="mb-4 space-y-2">
-              <h3 className="text-xs font-semibold uppercase tracking-wider text-[#5e5858]">Maps im Überblick</h3>
+              <h3 className="text-xs font-semibold uppercase tracking-wider text-[#5e5858]">Maps at a glance</h3>
               <MapOverviewTable maps={mapAggregates} />
             </div>
           )}
@@ -341,7 +341,7 @@ export function LineupMatchesView({ lineup, guestTmIds, trialTmIds, profilePaths
                 <div key={stage.id}>
                   <StageHeading stage={stage} stages={stages} startDate={startDate} />
                   {stageMatches.length === 0 ? (
-                    <p className="text-xs text-[#5e5858]">Noch keine Matches.</p>
+                    <p className="text-xs text-[#5e5858]">No matches yet.</p>
                   ) : (
                     <div className="space-y-2">
                       {stageMatches.map((match) => (
@@ -415,7 +415,7 @@ export function LineupMatchesView({ lineup, guestTmIds, trialTmIds, profilePaths
             </div>
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="stage">Abschnitt</Label>
+            <Label htmlFor="stage">Stage</Label>
             <Select id="stage" value={stageId} onChange={(e) => selectStage(e.target.value)} required>
               {stages.map((st) => (
                 <option key={st.id} value={st.id}>
@@ -438,19 +438,19 @@ export function LineupMatchesView({ lineup, guestTmIds, trialTmIds, profilePaths
           )}
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-[7rem_1fr]">
             <div className="space-y-1.5">
-              <Label htmlFor="number">Nummer</Label>
+              <Label htmlFor="number">Number</Label>
               <Input id="number" type="number" min={1} max={999} inputMode="numeric" value={matchNumber} onChange={(e) => setMatchNumber(e.target.value)} placeholder="#" />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="label">Bezeichnung <span className="text-[#5e5858]">(optional)</span></Label>
-              <Input id="label" name="label" maxLength={60} placeholder="z. B. Upper Final" />
+              <Label htmlFor="label">Name <span className="text-[#5e5858]">(optional)</span></Label>
+              <Input id="label" name="label" maxLength={60} placeholder="e.g. Upper Final" />
             </div>
           </div>
-          <p className="-mt-2 text-xs text-[#5e5858]">Die Nummer zählt über das ganze Turnier weiter. Innerhalb eines Abschnitts stehen die Matches in dieser Reihenfolge.</p>
+          <p className="-mt-2 text-xs text-[#5e5858]">The number counts on through the whole tournament. Within a stage the matches are listed in this order.</p>
           <div className="space-y-1.5">
             <Label htmlFor="date">Date</Label>
             <Input id="date" name="date" type="date" value={matchDate} onChange={(e) => setMatchDate(e.target.value)} />
-            <p className="text-xs text-[#5e5858]">Vorbelegt mit dem Tag des Abschnitts; nur ändern, wenn das Match an einem anderen Tag gespielt wird.</p>
+            <p className="text-xs text-[#5e5858]">Prefilled with the day of the stage; only change it if the match is played on another day.</p>
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="notes">Notes <span className="text-[#5e5858]">(optional)</span></Label>

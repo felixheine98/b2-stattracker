@@ -19,7 +19,7 @@ export function ChangePasswordDialog({ onClose }: { onClose: () => void }) {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (password !== repeat) {
-      setError("Die beiden neuen Passwörter stimmen nicht überein")
+      setError("The two new passwords do not match")
       return
     }
     setError("")
@@ -32,7 +32,7 @@ export function ChangePasswordDialog({ onClose }: { onClose: () => void }) {
     setLoading(false)
     if (!res?.ok) {
       const data = await res?.json().catch(() => null)
-      setError(data?.error ?? "Passwort konnte nicht geändert werden")
+      setError(data?.error ?? "Failed to change the password")
       return
     }
     setSaved(true)
@@ -40,33 +40,33 @@ export function ChangePasswordDialog({ onClose }: { onClose: () => void }) {
 
   return (
     <Dialog open onClose={onClose}>
-      <DialogTitle>Passwort ändern</DialogTitle>
+      <DialogTitle>Change password</DialogTitle>
       {saved ? (
         <div className="space-y-4">
-          <p className="text-sm text-[#c5bfbf]">Dein Passwort ist geändert. Es gilt ab der nächsten Anmeldung.</p>
+          <p className="text-sm text-[#c5bfbf]">Your password is changed. It applies from the next sign-in.</p>
           <div className="dialog-footer flex justify-end">
-            <Button onClick={onClose}>Schließen</Button>
+            <Button onClick={onClose}>Close</Button>
           </div>
         </div>
       ) : (
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-1.5">
-            <Label htmlFor="pw-current">Aktuelles Passwort</Label>
+            <Label htmlFor="pw-current">Current password</Label>
             <Input id="pw-current" type="password" value={current} onChange={(e) => setCurrent(e.target.value)} autoComplete="current-password" required />
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="pw-new">Neues Passwort</Label>
+            <Label htmlFor="pw-new">New password</Label>
             <Input id="pw-new" type="password" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="new-password" minLength={8} required />
-            <p className="text-xs text-[#5e5858]">Mindestens 8 Zeichen.</p>
+            <p className="text-xs text-[#5e5858]">At least 8 characters.</p>
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="pw-repeat">Neues Passwort wiederholen</Label>
+            <Label htmlFor="pw-repeat">Repeat new password</Label>
             <Input id="pw-repeat" type="password" value={repeat} onChange={(e) => setRepeat(e.target.value)} autoComplete="new-password" required />
           </div>
           {error && <p className="text-sm text-[#ED1F24]">{error}</p>}
           <div className="dialog-footer flex gap-2 justify-end">
-            <Button variant="ghost" type="button" onClick={onClose}>Abbrechen</Button>
-            <Button type="submit" disabled={loading}>{loading ? "Speichert…" : "Passwort ändern"}</Button>
+            <Button variant="ghost" type="button" onClick={onClose}>Cancel</Button>
+            <Button type="submit" disabled={loading}>{loading ? "Saving…" : "Change password"}</Button>
           </div>
         </form>
       )}

@@ -61,9 +61,9 @@ export function adoptionPlan<P extends { id: string }, R extends Row<P>>(variant
 
 // Name for a new variant, or for a copy of the one called copyOf
 export function nextVariantName(existing: string[], copyOf?: string): string {
-  if (!copyOf) return `Variante ${existing.length + 1}`
-  let name = `${copyOf} (Kopie)`
-  for (let n = 2; existing.includes(name); n++) name = `${copyOf} (Kopie ${n})`
+  if (!copyOf) return `Variant ${existing.length + 1}`
+  let name = `${copyOf} (copy)`
+  for (let n = 2; existing.includes(name); n++) name = `${copyOf} (copy ${n})`
   return name
 }
 

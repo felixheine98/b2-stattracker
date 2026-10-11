@@ -21,9 +21,9 @@ export function answerColor(answer: Answer): string {
 }
 
 export function answerLabel(answer: Answer, levels: LevelRef[]): string {
-  if (answer === "OPEN") return "offen"
+  if (answer === "OPEN") return "No answer yet"
   if (answer === "FIX" || answer === "MAYBE" || answer === "OUT") return AVAILABILITY_LABEL[answer]
-  return levels.find((l) => `level:${l.id}` === answer)?.name ?? "offen"
+  return levels.find((l) => `level:${l.id}` === answer)?.name ?? "No answer yet"
 }
 
 interface Props {
@@ -76,7 +76,7 @@ export function AvailabilityInput({ tournamentId, playerId, answer, note, levels
       failed = await mutate((s) => ({ ...s, rows: s.rows.map((r) => (r.player.id === playerId ? { ...r, ...change } : r)) }), request)
     } else {
       const res = await request()
-      failed = res?.ok ? null : (((await res?.json().catch(() => null))?.error as string | undefined) ?? "Speichern fehlgeschlagen")
+      failed = res?.ok ? null : (((await res?.json().catch(() => null))?.error as string | undefined) ?? "Failed to save")
     }
     if (failed) {
       setError(failed)
@@ -132,8 +132,8 @@ export function AvailabilityInput({ tournamentId, playerId, answer, note, levels
             onBlur={() => { if (noteText.trim() !== savedNote) save({ note: noteText.trim() }) }}
             onKeyDown={(e) => { if (e.key === "Enter") e.currentTarget.blur() }}
             maxLength={300}
-            placeholder="Notiz (z. B. erst ab Match Day 2)"
-            aria-label="Notiz"
+            placeholder="Note (e.g. only from match day 2)"
+            aria-label="Note"
             className="h-8 min-w-0 flex-1 rounded-md border border-dashed border-[#2d2829] bg-transparent px-2.5 text-xs text-[#c5bfbf] placeholder:text-[#5e5858] focus:border-solid focus:border-[#FBD00D] focus:outline-none"
           />
         ) : (

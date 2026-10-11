@@ -4,7 +4,7 @@ import type { Prisma } from "@prisma/client"
 describe("confirmed match outcomes", () => {
   it("rejects a stale revision without recording a confirmation", async () => {
     const create = vi.fn(), tx = { match: { updateMany: vi.fn().mockResolvedValue({ count: 0 }) }, matchConfirmation: { create } } as unknown as Prisma.TransactionClient
-    await expect(confirmMatch(tx, { matchId: "m", revision: 2, outcome: "W", userId: "u" })).rejects.toThrow("geändert")
+    await expect(confirmMatch(tx, { matchId: "m", revision: 2, outcome: "W", userId: "u" })).rejects.toThrow("changed")
     expect(create).not.toHaveBeenCalled()
   })
   it("stores the confirmed outcome and its immutable revision/user audit together", async () => {

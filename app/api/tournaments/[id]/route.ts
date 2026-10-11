@@ -71,7 +71,7 @@ export async function PATCH(req: Request, { params }: Params) {
   // A stage with matches is never removed; nothing is changed until they are moved or deleted
   if (changes.blocked.length > 0) {
     const names = sortStages(changes.blocked).map((s) => stageName(s, existing)).join(", ")
-    return NextResponse.json({ error: `Noch Matches vorhanden in: ${names}` }, { status: 409 })
+    return NextResponse.json({ error: `There are still matches in: ${names}` }, { status: 409 })
   }
 
   const [tournament] = await db.$transaction([

@@ -43,7 +43,7 @@ describe("search", () => {
   })
 
   it("puts archived and unconfirmed entries last in their group", () => {
-    expect(titles([entry("team", "Onyx Old", { marker: "archiviert" }), entry("team", "Team Onyx")], "onyx")).toEqual([
+    expect(titles([entry("team", "Onyx Old", { marker: "archived" }), entry("team", "Team Onyx")], "onyx")).toEqual([
       ["team", ["Team Onyx", "Onyx Old"]],
     ])
   })

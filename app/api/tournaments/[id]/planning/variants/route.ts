@@ -34,7 +34,7 @@ export async function GET(_req: Request, { params }: Params) {
 
   const { id } = await params
   const loaded = await loadPlanning(id)
-  if (!loaded) return NextResponse.json({ error: "Für diese Comp läuft keine Planung" }, { status: 404 })
+  if (!loaded) return NextResponse.json({ error: "There is no planning for this tournament" }, { status: 404 })
   return NextResponse.json({ variants: await loadVariants(loaded.planning.id) })
 }
 
@@ -51,8 +51,8 @@ export async function POST(req: Request, { params }: Params) {
   const action = parsed.data
 
   const loaded = await loadPlanning(id)
-  if (!loaded) return NextResponse.json({ error: "Für diese Comp läuft keine Planung" }, { status: 404 })
-  if (loaded.archived) return NextResponse.json({ error: "Die Planung ist abgeschlossen: die Comp hat ihre Lineups." }, { status: 409 })
+  if (!loaded) return NextResponse.json({ error: "There is no planning for this tournament" }, { status: 404 })
+  if (loaded.archived) return NextResponse.json({ error: "The planning is closed: the tournament has its lineups." }, { status: 409 })
   const planningId = loaded.planning.id
   // Working on the variants again (the tournament lost its lineups) voids an earlier adoption
   if (loaded.planning.adoptedVariantId) await db.planning.update({ where: { id: planningId }, data: { adoptedVariantId: null } })
@@ -60,7 +60,7 @@ export async function POST(req: Request, { params }: Params) {
   // Everything addressed has to belong to this planning
   const ownVariant = (variantId: string) => db.planningVariant.findFirst({ where: { id: variantId, planningId } })
   const ownLineup = (lineupId: string) => db.planningVariantLineup.findFirst({ where: { id: lineupId, variant: { planningId } } })
-  const missing = () => NextResponse.json({ error: "Das gibt es nicht mehr – bitte die Seite neu laden." }, { status: 404 })
+  const missing = () => NextResponse.json({ error: "This no longer exists – please reload the page." }, { status: 404 })
 
   switch (action.type) {
     case "createVariant": {

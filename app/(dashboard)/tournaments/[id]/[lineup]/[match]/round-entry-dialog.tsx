@@ -149,7 +149,7 @@ export function RoundEntryDialog({ subMatch, pool, allPlayers, isGuest, onClose,
     ready && !hasProblems && !hasInvalidTimes && !saving && (done.length > 0 || subMatch.rounds.length > 0)
 
   function requestClose() {
-    if (dirty && !window.confirm("Eingaben verwerfen?")) return
+    if (dirty && !window.confirm("Discard what you entered?")) return
     onClose()
   }
 
@@ -365,7 +365,7 @@ export function RoundEntryDialog({ subMatch, pool, allPlayers, isGuest, onClose,
     setSaving(false)
     if (!res.ok) {
       const data = await res.json().catch(() => null)
-      setError(data?.error ?? "Speichern fehlgeschlagen")
+      setError(data?.error ?? "Failed to save")
       return
     }
     const data = await res.json()
@@ -375,7 +375,7 @@ export function RoundEntryDialog({ subMatch, pool, allPlayers, isGuest, onClose,
   return (
     <Dialog open onClose={requestClose} className="max-w-4xl">
       <DialogTitle>
-        Runden eintippen
+        Enter rounds
         <span className="ml-2 text-sm font-normal text-[#9a9090]">— {formatLabel(subMatch.format)}</span>
       </DialogTitle>
 
@@ -383,12 +383,12 @@ export function RoundEntryDialog({ subMatch, pool, allPlayers, isGuest, onClose,
         <div className="flex flex-wrap items-end gap-4">
           <div className="w-56">
             <p className="text-xs text-[#9a9090] mb-1.5">Map</p>
-            <Input value={track} onChange={(e) => { setTrack(e.target.value); setDirty(true) }} placeholder="z.B. Palmotropico" />
+            <Input value={track} onChange={(e) => { setTrack(e.target.value); setDirty(true) }} placeholder="e.g. Palmotropico" />
           </div>
           <div className="flex-1 min-w-64">
             <div className="flex items-center justify-between mb-1.5">
               <p className="text-xs text-[#9a9090]">
-                Spieler <span className={ready ? "text-[#5e5858]" : "text-[#FBD00D]"}>{playerIds.length}/{size}</span>
+                Players <span className={ready ? "text-[#5e5858]" : "text-[#FBD00D]"}>{playerIds.length}/{size}</span>
               </p>
               {pool.length > 0 && (
                 <button
@@ -396,7 +396,7 @@ export function RoundEntryDialog({ subMatch, pool, allPlayers, isGuest, onClose,
                   onClick={() => setShowAllPlayers((v) => !v)}
                   className="text-xs text-[#5e5858] hover:text-[#f5f0f0]"
                 >
-                  {showAllPlayers ? "Nur Lineup" : "Alle Spieler"}
+                  {showAllPlayers ? "Lineup only" : "All players"}
                 </button>
               )}
             </div>
@@ -428,15 +428,15 @@ export function RoundEntryDialog({ subMatch, pool, allPlayers, isGuest, onClose,
 
         {!ready ? (
           <p className="rounded-lg border border-dashed border-[#2d2829] py-8 text-center text-sm text-[#9a9090]">
-            Wähle die {size} Spieler, die diese Map gefahren sind.
+            Pick the {size} players who drove this map.
           </p>
         ) : (
           <>
             <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
               <div className="inline-flex rounded-md border border-[#2d2829] p-0.5 text-xs">
                 {([
-                  ["positions", "Platzierungen", Hash],
-                  ["times", "Zeiten", Timer],
+                  ["positions", "Placements", Hash],
+                  ["times", "Times", Timer],
                 ] as const).map(([value, label, Icon]) => (
                   <button
                     key={value}
@@ -454,8 +454,8 @@ export function RoundEntryDialog({ subMatch, pool, allPlayers, isGuest, onClose,
               </div>
               <div className="inline-flex rounded-md border border-[#2d2829] p-0.5 text-xs">
                 {([
-                  ["round", "Runde für Runde", ArrowDown],
-                  ["player", "Spieler für Spieler", ArrowRight],
+                  ["round", "Round by round", ArrowDown],
+                  ["player", "Player by player", ArrowRight],
                 ] as const).map(([value, label, Icon]) => (
                   <button
                     key={value}
@@ -472,8 +472,8 @@ export function RoundEntryDialog({ subMatch, pool, allPlayers, isGuest, onClose,
                 ))}
               </div>
               <p className="ml-auto text-sm text-[#9a9090]">
-                {done.length} Runde{done.length !== 1 ? "n" : ""}
-                <Wdl won={won} drawn={drawn} lost={lost} unit="Runden" className="ml-3 font-bold text-[#f5f0f0]" />
+                {done.length} round{done.length !== 1 ? "s" : ""}
+                <Wdl won={won} drawn={drawn} lost={lost} unit="Rounds" className="ml-3 font-bold text-[#f5f0f0]" />
               </p>
             </div>
 
@@ -510,7 +510,7 @@ export function RoundEntryDialog({ subMatch, pool, allPlayers, isGuest, onClose,
                                 placeholder={value === "dnf" ? "DNF" : value != null ? `#${value}` : ""}
                                 inputMode="decimal"
                                 autoComplete="off"
-                                aria-label={`Zeit ${playerById.get(id)?.name ?? "Spieler"}, Runde ${c + 1}`}
+                                aria-label={`Time of ${playerById.get(id)?.name ?? "player"}, round ${c + 1}`}
                                 onChange={(e) => setTimeCells([{ c, p, text: e.target.value }])}
                                 onBlur={() => {
                                   const ms = parseTime(text)
@@ -536,7 +536,7 @@ export function RoundEntryDialog({ subMatch, pool, allPlayers, isGuest, onClose,
                               // Phones fill the cell from the keypad; read-only keeps keyboard and focus zoom away
                               readOnly={isMobile}
                               autoComplete="off"
-                              aria-label={`${playerById.get(id)?.name ?? "Spieler"}, Runde ${c + 1}`}
+                              aria-label={`${playerById.get(id)?.name ?? "Player"}, round ${c + 1}`}
                               onChange={(e) => handleInput(c, p, e.target.value)}
                               onKeyDown={(e) => handleKeyDown(e, c, p)}
                               onPaste={(e) => handlePaste(e, c, p)}
@@ -558,7 +558,7 @@ export function RoundEntryDialog({ subMatch, pool, allPlayers, isGuest, onClose,
                   ))}
                   {mode === "positions" && (
                     <tr>
-                      <td className="sticky left-0 z-10 bg-[#1c1819] pr-3 text-xs text-[#9a9090] whitespace-nowrap">Gegner DNF</td>
+                      <td className="sticky left-0 z-10 bg-[#1c1819] pr-3 text-xs text-[#9a9090] whitespace-nowrap">Opponent DNF</td>
                       {columns.map((column, c) => (
                         <td key={c}>
                           <input
@@ -567,7 +567,7 @@ export function RoundEntryDialog({ subMatch, pool, allPlayers, isGuest, onClose,
                             inputMode={isMobile ? "none" : "numeric"}
                             readOnly={isMobile}
                             autoComplete="off"
-                            aria-label={`Gegner DNF, Runde ${c + 1}`}
+                            aria-label={`Opponent DNF, round ${c + 1}`}
                             onChange={(e) => setOpponentDnfs(c, e.target.value)}
                             onKeyDown={(e) => {
                               if (e.key === "ArrowRight" || e.key === "ArrowLeft" || e.key === "ArrowUp") {
@@ -589,7 +589,7 @@ export function RoundEntryDialog({ subMatch, pool, allPlayers, isGuest, onClose,
                   )}
                   <tr>
                     <td className="sticky left-0 z-10 bg-[#1c1819] pr-3 text-[10px] uppercase tracking-wider text-[#5e5858]">
-                      Punkte
+                      Points
                     </td>
                     {states.map((state, c) => (
                       <td key={c} className="h-9 text-center align-top">
@@ -606,7 +606,7 @@ export function RoundEntryDialog({ subMatch, pool, allPlayers, isGuest, onClose,
                         )}
                         {state.kind === "incomplete" && <p className="text-xs text-[#5e5858]">…</p>}
                         {state.kind === "invalid" && (
-                          <p className="text-xs font-bold text-[#ED1F24]" title="Platzierung doppelt vergeben oder wegen DNFs nicht möglich">!</p>
+                          <p className="text-xs font-bold text-[#ED1F24]" title="Placement given twice or not possible because of DNFs">!</p>
                         )}
                       </td>
                     ))}
@@ -617,34 +617,34 @@ export function RoundEntryDialog({ subMatch, pool, allPlayers, isGuest, onClose,
 
             {mode === "positions" && isMobile ? (
               <p className="text-xs text-[#5e5858]">
-                Feld antippen und den Platz unten wählen, die Markierung springt automatisch weiter. Für Gegner-DNFs
-                das Feld in der Zeile „Gegner DNF“ antippen und die Anzahl wählen.
+                Tap a cell and pick the place below; the marker moves on by itself. For opponent DNFs
+                tap the cell in the row “Opponent DNF” and pick the number.
               </p>
             ) : mode === "positions" ? (
               <p className="text-xs text-[#5e5858]">
-                Platzierung 1–{maxPosition} tippen, der Cursor springt automatisch weiter. D oder X steht für DNF;
-                wie viele Gegner nicht ins Ziel kamen, steht in der Zeile „Gegner DNF“ (per Pfeiltaste oder Klick).
-                {maxPosition >= 10 && " 0 steht für Platz 10."} Pfeiltasten navigieren, Enter springt
-                {direction === "round" ? " zur nächsten Runde" : " zum nächsten Spieler"}. Kopierte Zeilen aus dem Sheet
-                lassen sich direkt einfügen.
+                Type the placement 1–{maxPosition}; the cursor moves on by itself. D or X stands for DNF;
+                how many opponents did not finish goes into the row “Opponent DNF” (arrow key or click).
+                {maxPosition >= 10 && " 0 stands for place 10."} Arrow keys move around, Enter jumps
+                {direction === "round" ? " to the next round" : " to the next player"}. Rows copied from the sheet
+                can be pasted straight in.
               </p>
             ) : (
               <p className="text-xs text-[#5e5858]">
-                Zeit als 45.123 oder 1:02.345 eingeben, leer lassen wenn unbekannt. Enter springt zum nächsten Feld.
-                Für die Wertung zählt die Platzierung (als # im leeren Feld), Zeiten ändern sie nicht.
+                Enter the time as 45.123 or 1:02.345, leave it empty when unknown. Enter jumps to the next cell.
+                The placement decides the score (shown as # in an empty cell); times do not change it.
               </p>
             )}
           </>
         )}
 
         {ready && hasInvalidTimes && (
-          <p className="text-xs text-[#ED1F24]">Mindestens eine Zeit ist ungültig.</p>
+          <p className="text-xs text-[#ED1F24]">At least one time is invalid.</p>
         )}
         {ready && hasProblems && (
           <p className="text-xs text-[#ED1F24]">
             {states.some((s) => s.kind === "invalid")
-              ? "Mindestens eine Runde enthält eine doppelte oder wegen DNFs nicht mögliche Platzierung."
-              : "Mindestens eine Runde ist noch nicht vollständig."}
+              ? "At least one round has a placement that is given twice or not possible because of DNFs."
+              : "At least one round is not complete yet."}
           </p>
         )}
         {error && <p className="text-sm text-[#ED1F24]">{error}</p>}
@@ -656,13 +656,13 @@ export function RoundEntryDialog({ subMatch, pool, allPlayers, isGuest, onClose,
                 <KeypadKey key={n} onPress={() => pressKey(n)} disabled={current.p === size && n > size}>{n}</KeypadKey>
               ))}
               <KeypadKey onPress={() => pressKey("dnf")} disabled={current.p === size} small>DNF</KeypadKey>
-              <KeypadKey onPress={() => pressKey("back")} small label="Löschen"><Delete size={18} /></KeypadKey>
+              <KeypadKey onPress={() => pressKey("back")} small label="Delete"><Delete size={18} /></KeypadKey>
             </div>
           )}
           <div className="flex gap-2 md:justify-end max-md:[&>*]:flex-1">
-            <Button variant="ghost" onClick={requestClose}>Abbrechen</Button>
+            <Button variant="ghost" onClick={requestClose}>Cancel</Button>
             <Button onClick={save} disabled={!canSave}>
-              {saving ? "Speichert…" : "Speichern"}
+              {saving ? "Saving…" : "Save"}
             </Button>
           </div>
         </div>

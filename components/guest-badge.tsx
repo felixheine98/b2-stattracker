@@ -9,7 +9,7 @@ export function GuestBadge({ className }: { className?: string }) {
         className
       )}
     >
-      Gast
+      Guest
     </span>
   )
 }

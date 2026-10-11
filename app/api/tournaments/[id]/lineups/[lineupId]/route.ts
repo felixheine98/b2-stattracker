@@ -93,7 +93,7 @@ export async function DELETE(_req: Request, { params }: Params) {
   const matches = await db.match.count({ where: { tournamentLineupId: lineupId } })
   if (matches > 0) {
     return NextResponse.json(
-      { error: `Dieses Lineup hat noch ${matches} Match${matches === 1 ? "" : "es"} und kann nicht gelöscht werden.` },
+      { error: `This lineup still has ${matches} match${matches === 1 ? "" : "es"} and cannot be deleted.` },
       { status: 409 }
     )
   }

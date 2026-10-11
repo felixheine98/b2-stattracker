@@ -52,7 +52,7 @@ export function MatchCsvImportDialog({ tournamentId, matchId, subMatches, ownPla
     setError("")
     try {
       const parsed = parseMatchCsv(await Promise.all(files.map((f) => f.text())))
-      if (parsed.length === 0) throw new Error("Die Datei enthält keine Runden")
+      if (parsed.length === 0) throw new Error("The file contains no rounds")
       const initialTargets = parsed.map((_, i) => subMatches[i]?.id ?? "")
       setBlocks(parsed)
       setFileNames(files.map((f) => f.name))
@@ -66,7 +66,7 @@ export function MatchCsvImportDialog({ tournamentId, matchId, subMatches, ownPla
       })))
     } catch (e) {
       setBlocks([])
-      setError(e instanceof Error ? e.message : "Die Datei konnte nicht gelesen werden")
+      setError(e instanceof Error ? e.message : "The file could not be read")
     }
   }
 
@@ -117,7 +117,7 @@ export function MatchCsvImportDialog({ tournamentId, matchId, subMatches, ownPla
     setSaving(false)
     if (!res?.ok) {
       const data = await res?.json().catch(() => null)
-      setError(data?.error ?? "Der Import ist fehlgeschlagen")
+      setError(data?.error ?? "The import failed")
       return
     }
     onImported()
@@ -126,7 +126,7 @@ export function MatchCsvImportDialog({ tournamentId, matchId, subMatches, ownPla
 
   return (
     <Dialog open onClose={onClose} className="max-w-3xl">
-      <DialogTitle>Ganzes Match importieren (CSV)</DialogTitle>
+      <DialogTitle>Import whole match (CSV)</DialogTitle>
       <div className="space-y-5">
         <label
           onDragOver={(e) => { e.preventDefault(); setDragOver(true) }}
@@ -138,8 +138,8 @@ export function MatchCsvImportDialog({ tournamentId, matchId, subMatches, ownPla
           )}
         >
           <Upload size={18} className="text-[#9a9090]" />
-          <span className="text-sm text-[#f5f0f0]">{fileNames.length > 0 ? fileNames.join(", ") : "CSV des Match Dumpers wählen oder hierher ziehen"}</span>
-          <span className="text-xs text-[#5e5858]">Eine Datei für das ganze Match oder mehrere, zum Beispiel eine pro Map. Gespeichert wird erst nach der Vorschau.</span>
+          <span className="text-sm text-[#f5f0f0]">{fileNames.length > 0 ? fileNames.join(", ") : "Pick the match dumper's CSV or drop it here"}</span>
+          <span className="text-xs text-[#5e5858]">One file for the whole match or several, for example one per map. Nothing is saved before the preview.</span>
           <input type="file" accept=".csv,text/csv" multiple className="hidden" onChange={(e) => loadFiles(e.target.files)} />
         </label>
 
@@ -147,7 +147,7 @@ export function MatchCsvImportDialog({ tournamentId, matchId, subMatches, ownPla
           <>
             {guests.length > 0 && (
               <p className="rounded-lg border border-[#002484]/50 bg-[#002484]/15 px-3 py-2 text-xs text-[#6b8fff]">
-                Wird als Gast angelegt: {guests.map((g) => g.name).join(", ")}
+                Will be added as a guest: {guests.map((g) => g.name).join(", ")}
               </p>
             )}
 
@@ -156,34 +156,34 @@ export function MatchCsvImportDialog({ tournamentId, matchId, subMatches, ownPla
               const suspicious = suspiciousRounds(block, sizeOf(i))
               const target = subMatches.find((sm) => sm.id === targets[i])
               const sides = [
-                { label: "Wir", list: blockDrivers(block).filter((d) => ourTmIds.has(d.tmId)) },
-                { label: "Gegner", list: blockDrivers(block).filter((d) => !ourTmIds.has(d.tmId)) },
+                { label: "Us", list: blockDrivers(block).filter((d) => ourTmIds.has(d.tmId)) },
+                { label: "Opponent", list: blockDrivers(block).filter((d) => !ourTmIds.has(d.tmId)) },
               ]
               return (
                 <section key={i} className="space-y-3 rounded-xl border border-[#2d2829] bg-[#0e0c0d] p-3">
                   <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-                    <h3 className="min-w-0 break-words text-sm font-semibold text-[#f5f0f0]">{block.track || "Ohne Map"}</h3>
-                    <span className="text-xs text-[#9a9090]">{plan.rounds.length} von {block.rounds.length} Runden</span>
+                    <h3 className="min-w-0 break-words text-sm font-semibold text-[#f5f0f0]">{block.track || "No map"}</h3>
+                    <span className="text-xs text-[#9a9090]">{plan.rounds.length} of {block.rounds.length} rounds</span>
                     <select
                       value={targets[i]}
                       onChange={(e) => setTargets((t) => t.map((old, j) => (j === i ? e.target.value : old)))}
-                      aria-label={`Sub-Match für ${block.track}`}
+                      aria-label={`Sub-match for ${block.track}`}
                       className={cn(selectClass, "ml-auto max-md:ml-0 max-md:w-full")}
                     >
-                      <option value="">— nicht importieren —</option>
+                      <option value="">— do not import —</option>
                       {subMatches.map((sm, n) => (
-                        <option key={sm.id} value={sm.id}>Sub-Match {n + 1} · {formatLabel(sm.format)}</option>
+                        <option key={sm.id} value={sm.id}>Sub-match {n + 1} · {formatLabel(sm.format)}</option>
                       ))}
                     </select>
                   </div>
 
                   {target && target.rounds.length > 0 && (
-                    <p className="text-xs text-[#cd7f32]">Ersetzt {target.rounds.length} vorhandene Runden dieses Sub-Matches.</p>
+                    <p className="text-xs text-[#cd7f32]">Replaces the {target.rounds.length} rounds this sub-match already has.</p>
                   )}
                   {targets[i] && plan.warnings.map((w) => (
                     <p key={w} className="flex items-start gap-1.5 text-xs text-[#cd7f32]">
                       <TriangleAlert size={13} className="mt-0.5 shrink-0" />
-                      {w}{target ? ` (${formatLabel(target.format)})` : ""}. Prüf die Seiten oder das Sub-Match.
+                      {w}{target ? ` (${formatLabel(target.format)})` : ""}. Check the sides or the sub-match.
                     </p>
                   ))}
 
@@ -191,9 +191,9 @@ export function MatchCsvImportDialog({ tournamentId, matchId, subMatches, ownPla
                   <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                     {sides.map((side) => (
                       <div key={side.label}>
-                        <p className={cn("mb-1 text-[11px] font-semibold uppercase tracking-wider", side.label === "Wir" ? "text-[#FBD00D]" : "text-[#5e5858]")}>{side.label}</p>
+                        <p className={cn("mb-1 text-[11px] font-semibold uppercase tracking-wider", side.label === "Us" ? "text-[#FBD00D]" : "text-[#5e5858]")}>{side.label}</p>
                         <div className="flex flex-wrap gap-1.5">
-                          {side.list.length === 0 && <span className="text-xs text-[#5e5858]">niemand</span>}
+                          {side.list.length === 0 && <span className="text-xs text-[#5e5858]">nobody</span>}
                           {side.list.map((d) => {
                             // Putting an unknown driver on our side adds a guest, which only managers may do
                             const blocked = !canManage && !knownTmIds.has(d.tmId) && !ourTmIds.has(d.tmId)
@@ -203,11 +203,11 @@ export function MatchCsvImportDialog({ tournamentId, matchId, subMatches, ownPla
                                 type="button"
                                 onClick={() => move(d.tmId)}
                                 disabled={blocked}
-                                title={blocked ? "Nicht im System: Ein Admin oder Manager muss den Fahrer erst als Gast anlegen" : "Auf die andere Seite setzen"}
+                                title={blocked ? "Not in the system: an admin or manager has to add the driver as a guest first" : "Move to the other side"}
                                 className="inline-flex items-center gap-1.5 rounded-full border border-[#2d2829] bg-[#251f20] px-2.5 py-1 text-xs text-[#c5bfbf] hover:border-[#5e5858] hover:text-[#f5f0f0] disabled:cursor-not-allowed disabled:opacity-60"
                               >
                                 {d.name}
-                                {!knownTmIds.has(d.tmId) && ourTmIds.has(d.tmId) && <span className="text-[#6b8fff]">neu</span>}
+                                {!knownTmIds.has(d.tmId) && ourTmIds.has(d.tmId) && <span className="text-[#6b8fff]">new</span>}
                                 <ArrowLeftRight size={11} className="text-[#5e5858]" />
                               </button>
                             )
@@ -227,8 +227,8 @@ export function MatchCsvImportDialog({ tournamentId, matchId, subMatches, ownPla
                         <li key={round.key}>
                           <label className={cn("flex cursor-pointer flex-wrap items-center gap-x-3 gap-y-0.5 px-3 py-2 text-xs", !on && "opacity-60")}>
                             <input type="checkbox" checked={on} onChange={() => toggleRound(round.key)} className="h-4 w-4 accent-[#FBD00D]" />
-                            <span className="w-16 font-medium text-[#f5f0f0]">Runde {round.number}</span>
-                            <span className="w-14 text-[#9a9090]">{round.entries.filter((e) => e.timeMs !== null).length} Fahrer</span>
+                            <span className="w-16 font-medium text-[#f5f0f0]">Round {round.number}</span>
+                            <span className="w-14 text-[#9a9090]">{round.entries.filter((e) => e.timeMs !== null).length} drivers</span>
                             {winner && <span className="font-mono text-[#c5bfbf]">{winner.name} {formatTime(winner.timeMs!)}</span>}
                             {reason && <span className="text-[#cd7f32]">{reason}</span>}
                             {planned && planned.dnfs.length > 0 && <span className="text-[#9a9090]">DNF: {planned.dnfs.join(", ")}</span>}
@@ -243,12 +243,12 @@ export function MatchCsvImportDialog({ tournamentId, matchId, subMatches, ownPla
           </>
         )}
 
-        {doubled && <p className="text-sm text-[#ED1F24]">Zwei Blöcke zeigen auf dasselbe Sub-Match. Jeder Block braucht ein eigenes.</p>}
+        {doubled && <p className="text-sm text-[#ED1F24]">Two blocks point to the same sub-match. Every block needs its own.</p>}
         {error && <p className="text-sm text-[#ED1F24]">{error}</p>}
         <div className="dialog-footer flex justify-end gap-2">
-          <Button variant="ghost" onClick={onClose}>Abbrechen</Button>
+          <Button variant="ghost" onClick={onClose}>Cancel</Button>
           <Button onClick={handleSave} disabled={saving || roundCount === 0 || doubled}>
-            {saving ? "Importiert …" : `${roundCount} Runden importieren${replaced > 0 ? ` (ersetzt ${replaced})` : ""}`}
+            {saving ? "Importing…" : `Import ${roundCount} rounds${replaced > 0 ? ` (replaces ${replaced})` : ""}`}
           </Button>
         </div>
       </div>

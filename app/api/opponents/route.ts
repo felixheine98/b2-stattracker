@@ -47,11 +47,11 @@ export async function POST(req: Request) {
     if (input.action === "lineup.create") tournamentId = input.tournamentId
     if (input.action.startsWith("lineup.") && "id" in input || input.action === "roster.add" && input.kind === "lineup") {
       const l = await db.opponentLineup.findUnique({ where: { id: (input as { id: string }).id } })
-      if (!l) throw new OpponentError("Lineup nicht gefunden.", 404)
+      if (!l) throw new OpponentError("Lineup not found.", 404)
       tournamentId = l.tournamentId
     }
     if (!(await mayMaintainOpponent(user, tournamentId))) throw new OpponentError("Forbidden", 403)
-    if (["team.delete", "team.merge", "lineup.delete"].includes(input.action) && user.role !== "ADMIN") throw new OpponentError("Nur Admins dürfen Einträge löschen oder Teams zusammenführen.", 403)
+    if (["team.delete", "team.merge", "lineup.delete"].includes(input.action) && user.role !== "ADMIN") throw new OpponentError("Only admins may delete entries or merge teams.", 403)
     if (input.action === "team.linkLineups") {
       const selected = await db.opponentLineup.findMany({ where: { id: { in: input.lineupIds } }, select: { tournamentId: true } })
       for (const competition of new Set(selected.map(l => l.tournamentId))) {
@@ -67,11 +67,11 @@ export async function POST(req: Request) {
         }
         case "team.linkLineups": return { id: input.id, linked: await linkOpponentLineups(tx, input.id, input.lineupIds) }
         case "team.delete": {
-          if (await tx.opponentLineup.count({ where: { teamId: input.id } })) throw new OpponentError("Team hat Competition-Lineups. Bitte archivieren.", 409)
+          if (await tx.opponentLineup.count({ where: { teamId: input.id } })) throw new OpponentError("The team has tournament lineups. Please archive it instead.", 409)
           return tx.opponentTeam.delete({ where: { id: input.id } })
         }
         case "team.merge": {
-          if (input.id === input.targetId) throw new OpponentError("Bitte ein anderes Zielteam wählen.")
+          if (input.id === input.targetId) throw new OpponentError("Please pick another target team.")
           const source = await tx.opponentTeam.findUniqueOrThrow({ where: { id: input.id }, include: rosterInclude })
           const target = await tx.opponentTeam.findUniqueOrThrow({ where: { id: input.targetId } })
           await tx.opponentTeam.update({ where: { id: target.id }, data: { aliases: [...new Set([...target.aliases, source.name, ...source.aliases])] } })
@@ -81,15 +81,15 @@ export async function POST(req: Request) {
           return target
         }
         case "lineup.create": {
-          if (!await tx.tournament.findUnique({ where: { id: input.tournamentId } })) throw new OpponentError("Competition nicht gefunden.", 404)
+          if (!await tx.tournament.findUnique({ where: { id: input.tournamentId } })) throw new OpponentError("Tournament not found.", 404)
           if (input.previousId) {
             const previous = await tx.opponentLineup.findUniqueOrThrow({ where: { id: input.previousId }, include: rosterInclude })
-            if (previous.tournamentId === input.tournamentId) throw new OpponentError("Bitte eine andere Competition wählen.")
+            if (previous.tournamentId === input.tournamentId) throw new OpponentError("Please pick another tournament.")
             return tx.opponentLineup.create({ data: { tournamentId: input.tournamentId, teamId: previous.teamId, previousId: previous.id, name: input.name ?? previous.name, nameKey: opponentNameKey(input.name ?? previous.name), slots: { create: input.copyRoster ? previous.slots.map(s => ({ playerId: s.playerId })) : [] } } })
           }
           if (input.teamId && !input.name) return resolveMatchOpponent(tx, input.tournamentId, { teamId: input.teamId })
           const team = input.teamId ? await tx.opponentTeam.findUniqueOrThrow({ where: { id: input.teamId }, include: rosterInclude }) : null
-          if (!input.name) throw new OpponentError("Bitte einen Namen angeben.")
+          if (!input.name) throw new OpponentError("Please enter a name.")
           return tx.opponentLineup.create({ data: { tournamentId: input.tournamentId, teamId: team?.id, name: input.name, nameKey: opponentNameKey(input.name), slots: { create: team?.slots.map(s => ({ playerId: s.playerId })) ?? [] } } })
         }
         case "lineup.edit": {
@@ -101,7 +101,7 @@ export async function POST(req: Request) {
           return updated
         }
         case "lineup.delete": {
-          if (await tx.match.count({ where: { opponentLineupId: input.id } })) throw new OpponentError("Lineup hat Begegnungen. Bitte archivieren.", 409)
+          if (await tx.match.count({ where: { opponentLineupId: input.id } })) throw new OpponentError("The lineup has matches. Please archive it instead.", 409)
           return tx.opponentLineup.delete({ where: { id: input.id } })
         }
         case "roster.add": {
@@ -115,9 +115,9 @@ export async function POST(req: Request) {
     return NextResponse.json(result)
   } catch (e) {
     if (e instanceof OpponentError) return NextResponse.json({ error: e.message }, { status: e.status })
-    if ((e as { code?: string }).code === "P2002") return NextResponse.json({ error: "Dieser Name ist in der Competition bereits vergeben." }, { status: 409 })
-    if ((e as { code?: string }).code === "P2025") return NextResponse.json({ error: "Eintrag nicht gefunden." }, { status: 404 })
+    if ((e as { code?: string }).code === "P2002") return NextResponse.json({ error: "This name is already taken in the tournament." }, { status: 409 })
+    if ((e as { code?: string }).code === "P2025") return NextResponse.json({ error: "Entry not found." }, { status: 404 })
     console.error("Opponent mutation failed", e)
-    return NextResponse.json({ error: "Gegnerdaten konnten nicht gespeichert werden." }, { status: 500 })
+    return NextResponse.json({ error: "The opponent data could not be saved." }, { status: 500 })
   }
 }

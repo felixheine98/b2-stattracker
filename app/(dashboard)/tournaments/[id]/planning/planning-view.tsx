@@ -35,9 +35,9 @@ export function PlanningView({ initial, ownPlayerId, userId, canManage }: Props)
   const { tournament, levels, rows, addable, variants, archived, adoptedVariantId } = state
   // The tab lives in the address, so a reload or shared link opens the same one
   const tabParam = useSearchParams().get("tab")
-  const tab = variants && tabParam === "varianten" ? "variants" : "availability"
+  const tab = variants && (tabParam === "variants" || tabParam === "varianten") ? "variants" : "availability"
   const selectTab = (next: "variants" | "availability") =>
-    window.history.replaceState(null, "", next === "variants" ? "?tab=varianten" : window.location.pathname)
+    window.history.replaceState(null, "", next === "variants" ? "?tab=variants" : window.location.pathname)
   const [levelName, setLevelName] = useState("")
   const [error, setError] = useState("")
   const api = `${BASE_PATH}/api/tournaments/${tournament.id}/planning`
@@ -65,7 +65,7 @@ export function PlanningView({ initial, ownPlayerId, userId, canManage }: Props)
     { answer: "MAYBE" as Answer, label: AVAILABILITY_LABEL.MAYBE },
     ...levels.map((l) => ({ answer: `level:${l.id}` as Answer, label: l.name })),
     { answer: "OUT" as Answer, label: AVAILABILITY_LABEL.OUT },
-    { answer: "OPEN" as Answer, label: "offen" },
+    { answer: "OPEN" as Answer, label: "No answer yet" },
   ].map((g) => ({ ...g, rows: rows.filter((r) => r.answer === g.answer) }))
 
   const rowName = (row: Row) => (
@@ -73,12 +73,12 @@ export function PlanningView({ initial, ownPlayerId, userId, canManage }: Props)
       <PlayerAvatar player={row.player} />
       <span className="truncate text-sm font-medium text-[#f5f0f0]">{row.player.name}</span>
       {row.guest && <GuestBadge />}
-      {row.player.id === ownPlayerId && <span className="text-xs text-[#FBD00D]">du</span>}
+      {row.player.id === ownPlayerId && <span className="text-xs text-[#FBD00D]">you</span>}
       {layout === "list" && canManage && !archived && row.guest && (
         <button
           type="button"
           onClick={() => call(`/entries/${row.player.id}`, "DELETE")}
-          title="Von der Liste nehmen"
+          title="Take off the list"
           className="ml-auto text-[#5e5858] hover:text-[#ED1F24] md:ml-0"
         >
           <X size={13} />
@@ -115,10 +115,10 @@ export function PlanningView({ initial, ownPlayerId, userId, canManage }: Props)
           {tournament.name}
         </Link>
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <h1 className="text-2xl font-bold text-[#f5f0f0]">Planung</h1>
+          <h1 className="text-2xl font-bold text-[#f5f0f0]">Planning</h1>
           {presence.length > 0 && (
             <p className="flex flex-wrap items-center gap-1.5 text-xs text-[#9a9090]">
-              gerade dabei:
+              here right now:
               {presence.map((p) => (
                 <span key={p.userId} className="rounded-full border border-[#6b8fff]/40 bg-[#6b8fff]/15 px-2 py-0.5 text-[#6b8fff]">{p.name}</span>
               ))}
@@ -126,22 +126,22 @@ export function PlanningView({ initial, ownPlayerId, userId, canManage }: Props)
           )}
         </div>
         <p className="mt-0.5 text-sm text-[#9a9090]">
-          {rows.length} auf der Liste, {open} offen
+          {rows.length} on the list, {open} without an answer
         </p>
       </div>
 
       {archived && (
         <p className="rounded-lg border border-[#2d2829] bg-[#1c1819] px-4 py-2.5 text-sm text-[#c5bfbf]">
-          Diese Planung ist abgeschlossen: Die Comp hat ihre Lineups. Hier lässt sich nichts mehr ändern.
-          {adoptedName && <> Übernommen wurde „{adoptedName}“.</>}
+          This planning is closed: the tournament has its lineups. Nothing can be changed here any more.
+          {adoptedName && <> “{adoptedName}” was taken over.</>}
         </p>
       )}
 
       {variants && (
         <div className="inline-flex rounded-lg border border-[#2d2829] p-1" role="tablist">
           {([
-            ["availability", "Verfügbarkeit"],
-            ["variants", `Varianten (${variants.length})`],
+            ["availability", "Availability"],
+            ["variants", `Variants (${variants.length})`],
           ] as const).map(([value, label]) => (
             <button
               key={value}
@@ -178,9 +178,9 @@ export function PlanningView({ initial, ownPlayerId, userId, canManage }: Props)
         <>
       {canManage && !archived && (
         <div className="space-y-2 rounded-xl border border-[#2d2829] p-4">
-          <h2 className="text-xs font-semibold uppercase tracking-wider text-[#9a9090]">Zusätzliche Stufen</h2>
+          <h2 className="text-xs font-semibold uppercase tracking-wider text-[#9a9090]">Extra levels</h2>
           <p className="text-xs text-[#5e5858]">
-            Neben „fix dabei“, „vielleicht“ und „nicht dabei“, nur für diese Planung – z. B. „nur Ersatz“.
+            Next to “Available”, “Maybe” and “Not available”, for this planning only – e.g. “stand-in only”.
           </p>
           <div className="flex flex-wrap items-center gap-2">
             {levels.map((l) => (
@@ -188,8 +188,8 @@ export function PlanningView({ initial, ownPlayerId, userId, canManage }: Props)
                 {l.name}
                 <button
                   type="button"
-                  onClick={() => { if (confirm(`Stufe „${l.name}“ entfernen? Wer sie gewählt hat, ist danach wieder offen.`)) call(`/levels/${l.id}`, "DELETE") }}
-                  aria-label={`${l.name} entfernen`}
+                  onClick={() => { if (confirm(`Remove the level “${l.name}”? Whoever chose it is without an answer again.`)) call(`/levels/${l.id}`, "DELETE") }}
+                  aria-label={`Remove ${l.name}`}
                   className="hover:text-[#ED1F24]"
                 >
                   <X size={12} />
@@ -197,10 +197,10 @@ export function PlanningView({ initial, ownPlayerId, userId, canManage }: Props)
               </span>
             ))}
             <form onSubmit={addLevel} className="flex items-center gap-2">
-              <Input value={levelName} onChange={(e) => setLevelName(e.target.value)} placeholder="Neue Stufe" maxLength={30} className="h-8 w-36 text-xs" />
+              <Input value={levelName} onChange={(e) => setLevelName(e.target.value)} placeholder="New level" maxLength={30} className="h-8 w-36 text-xs" />
               <Button type="submit" size="sm" variant="outline" disabled={!levelName.trim()}>
                 <Plus size={14} />
-                Hinzufügen
+                Add
               </Button>
             </form>
           </div>
@@ -211,9 +211,9 @@ export function PlanningView({ initial, ownPlayerId, userId, canManage }: Props)
 
       <div>
         <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-          <h2 className="text-xs font-semibold uppercase tracking-wider text-[#9a9090]">Verfügbarkeit</h2>
-          <div className="inline-flex rounded-lg border border-[#2d2829] p-0.5" role="tablist" aria-label="Darstellung der Liste">
-            {([["groups", "Gruppen"], ["list", "Liste"]] as const).map(([value, label]) => (
+          <h2 className="text-xs font-semibold uppercase tracking-wider text-[#9a9090]">Availability</h2>
+          <div className="inline-flex rounded-lg border border-[#2d2829] p-0.5" role="tablist" aria-label="Layout of the list">
+            {([["groups", "Groups"], ["list", "List"]] as const).map(([value, label]) => (
               <button
                 key={value}
                 type="button"
@@ -230,7 +230,7 @@ export function PlanningView({ initial, ownPlayerId, userId, canManage }: Props)
             ))}
           </div>
         </div>
-        {rows.length === 0 && <p className="rounded-xl border border-[#2d2829] px-4 py-6 text-center text-sm text-[#5e5858]">Noch niemand auf der Liste.</p>}
+        {rows.length === 0 && <p className="rounded-xl border border-[#2d2829] px-4 py-6 text-center text-sm text-[#5e5858]">Nobody on the list yet.</p>}
 
         {layout === "list" ? (
           rows.length > 0 && (
@@ -268,7 +268,7 @@ export function PlanningView({ initial, ownPlayerId, userId, canManage }: Props)
                     {group.label}
                     <span className="font-mono">{group.rows.length}</span>
                   </h3>
-                  {group.rows.length === 0 && <p className="px-3 py-2 text-xs text-[#5e5858]">niemand</p>}
+                  {group.rows.length === 0 && <p className="px-3 py-2 text-xs text-[#5e5858]">nobody</p>}
                   <ul>
                     {group.rows.map((row) => {
                       const own = row.player.id === ownPlayerId
@@ -280,13 +280,13 @@ export function PlanningView({ initial, ownPlayerId, userId, canManage }: Props)
                             disabled={!editable}
                             onClick={() => setEditing(editing === row.player.id ? null : row.player.id)}
                             aria-expanded={editable ? editing === row.player.id : undefined}
-                            title={editable ? "Antwort ändern" : undefined}
+                            title={editable ? "Change answer" : undefined}
                             className={cn("flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm", editable && "hover:bg-[#251f20]", own && "bg-[#FBD00D]/5")}
                           >
                             <PlayerAvatar player={row.player} className="h-5 w-5 text-[10px]" />
                             <span className="min-w-0 truncate text-[#f5f0f0]">{row.player.name}</span>
                             {row.guest && <GuestBadge />}
-                            {own && <span className="text-xs text-[#FBD00D]">du</span>}
+                            {own && <span className="text-xs text-[#FBD00D]">you</span>}
                             {row.note && <span className="ml-auto min-w-0 max-w-[55%] truncate text-xs text-[#9a9090]" title={row.note}>{row.note}</span>}
                           </button>
                           {editable && editing === row.player.id && (
@@ -295,7 +295,7 @@ export function PlanningView({ initial, ownPlayerId, userId, canManage }: Props)
                               {rowInput(row, "md:flex-col md:items-stretch")}
                               {canManage && row.guest && (
                                 <button type="button" onClick={() => call(`/entries/${row.player.id}`, "DELETE")} className="text-xs text-[#5e5858] hover:text-[#ED1F24]">
-                                  Von der Liste nehmen
+                                  Take off the list
                                 </button>
                               )}
                             </div>
@@ -313,13 +313,13 @@ export function PlanningView({ initial, ownPlayerId, userId, canManage }: Props)
 
       {canManage && !archived && addable.length > 0 && (
         <div className="space-y-1.5">
-          <h2 className="text-xs font-semibold uppercase tracking-wider text-[#9a9090]">Gast hinzufügen</h2>
+          <h2 className="text-xs font-semibold uppercase tracking-wider text-[#9a9090]">Add a guest</h2>
           <PlayerSearch
             players={addable}
             isGuest={() => true}
             onPick={(id) => call(`/entries/${id}`, "PUT", {})}
-            placeholder="Gast suchen, Enter fügt ihn zur Liste hinzu"
-            emptyText="Kein Gast gefunden."
+            placeholder="Find a guest, Enter adds them to the list"
+            emptyText="No guest found."
           />
         </div>
       )}

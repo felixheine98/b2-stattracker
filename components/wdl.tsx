@@ -7,7 +7,7 @@ interface Props {
   won: number
   drawn: number
   lost: number
-  // What is counted, e.g. "Runden"
+  // What is counted, e.g. "Rounds"
   unit: string
   className?: string
 }
@@ -33,8 +33,8 @@ export function Wdl({ won, drawn, lost, unit, className }: Props) {
           style={{ left: at.x, top: at.y }}
           className="pointer-events-none fixed z-50 -translate-x-1/2 whitespace-nowrap rounded-md border border-[#3a3435] bg-[#251f20] px-2.5 py-1.5 text-xs font-normal normal-case tracking-normal text-[#c5bfbf] shadow-lg"
         >
-          {unit}: <span className="text-[#FBD00D]">{won} gewonnen</span> · {drawn} unentschieden ·{" "}
-          <span className="text-[#ED1F24]">{lost} verloren</span>
+          {unit}: <span className="text-[#FBD00D]">{won} won</span> · {drawn} drawn ·{" "}
+          <span className="text-[#ED1F24]">{lost} lost</span>
         </span>
       )}
     </span>

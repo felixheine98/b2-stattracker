@@ -43,7 +43,7 @@ function parseFile(csv: string, fileIndex: number): CsvRound[] {
   const lines = csv.replace(/^﻿/, "").trim().split(/\r?\n/)
   const headers = (lines[0] ?? "").split(",").map((h) => h.trim().toLowerCase())
   if (REQUIRED.some((name) => !headers.includes(name))) {
-    throw new Error("Ungültige CSV: Es fehlen Spalten (Time, Track, PlayerID, PlayerName, Record, RoundNumber)")
+    throw new Error("Invalid CSV: columns are missing (Time, Track, PlayerID, PlayerName, Record, RoundNumber)")
   }
   const col = (name: string) => headers.indexOf(name)
   const roundIdCol = col("roundid")
@@ -133,8 +133,8 @@ export function suspiciousRounds(block: CsvBlock, teamSize: number | null): Map<
   block.rounds.forEach((round, i) => {
     const count = finished(round)
     if (count >= expected) return
-    if (i === 0) picked.set(round.key, `erste Runde, nur ${count} von ${expected} Fahrern`)
-    else if (count < expected / 2) picked.set(round.key, `nur ${count} von ${expected} Fahrern`)
+    if (i === 0) picked.set(round.key, `first round, only ${count} of ${expected} drivers`)
+    else if (count < expected / 2) picked.set(round.key, `only ${count} of ${expected} drivers`)
   })
   return picked
 }
@@ -175,10 +175,10 @@ export function planBlock(block: CsvBlock, selected: Set<string>, ourTmIds: Set<
 
   const warnings: string[] = []
   if (teamSize) {
-    if (ours.length !== teamSize) warnings.push(`Wir: ${ours.length} Fahrer statt ${teamSize}`)
-    if (theirs.length !== teamSize) warnings.push(`Gegner: ${theirs.length} Fahrer statt ${teamSize}`)
+    if (ours.length !== teamSize) warnings.push(`Us: ${ours.length} drivers instead of ${teamSize}`)
+    if (theirs.length !== teamSize) warnings.push(`Opponent: ${theirs.length} drivers instead of ${teamSize}`)
   } else if (ours.length !== theirs.length) {
-    warnings.push(`Ungleiche Seiten: wir ${ours.length}, Gegner ${theirs.length}`)
+    warnings.push(`Uneven sides: us ${ours.length}, opponent ${theirs.length}`)
   }
   const complete = (side: BlockDriver[]) => (teamSize ? side.length <= teamSize : true)
   const fillable = [...(complete(ours) ? ours : []), ...(complete(theirs) ? theirs : [])]

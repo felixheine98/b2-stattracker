@@ -23,7 +23,7 @@ export function EcmBookmarkletSetup() {
       setCopied(true)
       setError("")
     } catch {
-      setError("Kopieren nicht möglich – bitte den Link in die Lesezeichenleiste ziehen.")
+      setError("Copying is not possible – please drag the link into the bookmarks bar.")
     }
   }
 
@@ -38,39 +38,39 @@ export function EcmBookmarkletSetup() {
           eCM → B2 Stats
         </a>
         <button type="button" onClick={copy} className="rounded-md border border-[#3a3435] px-2.5 py-1 text-xs text-[#f5f0f0] hover:bg-[#251f20]">
-          {copied ? "Adresse kopiert ✓" : "Adresse kopieren"}
+          {copied ? "Address copied ✓" : "Copy address"}
         </button>
       </div>
       {error && <p className="text-xs text-[#ED1F24]">{error}</p>}
 
       <details className="rounded-lg border border-[#2d2829] px-3 py-2" open>
-        <summary className="cursor-pointer text-xs font-semibold uppercase tracking-wider text-[#9a9090]">Am Rechner</summary>
+        <summary className="cursor-pointer text-xs font-semibold uppercase tracking-wider text-[#9a9090]">On a computer</summary>
         <ol className="mt-2 list-decimal space-y-1.5 pl-5">
-          <li>Den gelben Link in die Lesezeichenleiste ziehen (einblenden mit ⌘⇧B bzw. Strg+Umschalt+B).</li>
-          <li>Die Match-Seite auf ecircuitmania.com öffnen und das Lesezeichen anklicken.</li>
-          <li>Du landest hier in B2 Stats und bestätigst nur noch Match und Zuordnung.</li>
+          <li>Drag the yellow link into the bookmarks bar (show it with ⌘⇧B or Ctrl+Shift+B).</li>
+          <li>Open the match page on ecircuitmania.com and click the bookmark.</li>
+          <li>You end up here in B2 Stats and only confirm match and assignment.</li>
         </ol>
       </details>
 
       <details className="rounded-lg border border-[#2d2829] px-3 py-2">
-        <summary className="cursor-pointer text-xs font-semibold uppercase tracking-wider text-[#9a9090]">Auf dem Handy</summary>
+        <summary className="cursor-pointer text-xs font-semibold uppercase tracking-wider text-[#9a9090]">On a phone</summary>
         <ol className="mt-2 list-decimal space-y-1.5 pl-5">
-          <li>Oben auf „Adresse kopieren“ tippen.</li>
+          <li>Tap “Copy address” above.</li>
           <li>
-            <strong>iPhone (Safari):</strong> Irgendeine Seite über das Seiten-Menü zu den Favoriten hinzufügen („Add to
-            Favourites“). Dann in die Adresszeile tippen, die neue Favoriten-Kachel lange gedrückt halten und „Edit“
-            wählen: als Namen „eCM“ eintragen und die Adresse durch die kopierte ersetzen.
+            <strong>iPhone (Safari):</strong> Add any page to the favourites through the page menu (“Add to
+            Favourites”). Then tap the address bar, hold the new favourite tile and pick “Edit”:
+            enter “eCM” as the name and replace the address with the copied one.
           </li>
           <li>
-            <strong>Android (Chrome):</strong> Irgendeine Seite als Lesezeichen sichern (Menü → Stern), das Lesezeichen
-            bearbeiten, „eCM“ nennen und die Adresse durch die kopierte ersetzen.
+            <strong>Android (Chrome):</strong> Save any page as a bookmark (menu → star), edit the bookmark,
+            name it “eCM” and replace the address with the copied one.
           </li>
           <li>
-            Auf der eCM-Match-Seite starten. Safari: in die Adresszeile tippen und die Kachel „eCM“ antippen. Chrome: in
-            die Adresszeile „eCM“ tippen und das Lesezeichen in den Vorschlägen antippen.
+            Start it on the eCM match page. Safari: tap the address bar and tap the tile “eCM”. Chrome: type
+            “eCM” into the address bar and tap the bookmark among the suggestions.
           </li>
           <li className="list-none text-xs text-[#5e5858]">
-            Die kopierte Adresse selbst in die Adresszeile einzufügen funktioniert nicht – das blockiert der Browser.
+            Pasting the copied address into the address bar yourself does not work – the browser blocks that.
           </li>
         </ol>
       </details>

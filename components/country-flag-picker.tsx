@@ -46,8 +46,8 @@ export function CountryFlagPicker({ player, onChange }: Props) {
         }}
         aria-haspopup="menu"
         aria-expanded={!!at}
-        aria-label={`Land von ${player.name} ändern`}
-        title={player.country ? `${countryName(player.country)} · ändern` : "Land wählen"}
+        aria-label={`Change country of ${player.name}`}
+        title={player.country ? `${countryName(player.country)} · change` : "Pick a country"}
         className="shrink-0 rounded-full ring-offset-2 ring-offset-[#1c1819] hover:ring-2 hover:ring-[#FBD00D] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FBD00D]"
       >
         <PlayerAvatar player={player} />
@@ -80,8 +80,8 @@ export function CountryFlagPicker({ player, onChange }: Props) {
               role="menuitemradio"
               aria-checked={!player.country}
               onClick={() => pick(null)}
-              title="Kein Land"
-              aria-label="Kein Land"
+              title="No country"
+              aria-label="No country"
               className={cn(
                 "flex h-8 w-8 items-center justify-center rounded-full text-[#9a9090] hover:bg-[#3a3435] hover:text-[#f5f0f0]",
                 !player.country && "ring-2 ring-[#FBD00D]"

@@ -16,8 +16,8 @@ export async function DELETE(_req: Request, { params }: Params) {
 
   const { id, levelId } = await params
   const loaded = await loadPlanning(id)
-  if (!loaded) return NextResponse.json({ error: "Für diese Comp läuft keine Planung" }, { status: 404 })
-  if (loaded.archived) return NextResponse.json({ error: "Die Planung ist abgeschlossen." }, { status: 409 })
+  if (!loaded) return NextResponse.json({ error: "There is no planning for this tournament" }, { status: 404 })
+  if (loaded.archived) return NextResponse.json({ error: "The planning is closed." }, { status: 409 })
 
   await db.planningLevel.deleteMany({ where: { id: levelId, planningId: loaded.planning.id } })
   await bumpPlanning(loaded.planning.id)

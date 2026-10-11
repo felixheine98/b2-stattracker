@@ -36,7 +36,7 @@ export async function POST(req: Request, { params }: Params) {
     where: { tournamentId: id },
     select: { revision: true, tournament: { select: { _count: { select: { tournamentLineups: true } } } } },
   })
-  if (!planning) return NextResponse.json({ error: "Für diese Comp läuft keine Planung" }, { status: 404 })
+  if (!planning) return NextResponse.json({ error: "There is no planning for this tournament" }, { status: 404 })
 
   const mayManage = canManage(user.role)
   const now = Date.now()

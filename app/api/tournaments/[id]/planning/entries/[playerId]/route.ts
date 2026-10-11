@@ -16,7 +16,7 @@ const schema = z.object({
   note: z.string().trim().max(300).nullable().optional(),
 })
 
-const ARCHIVED = "Die Planung ist abgeschlossen: die Comp hat ihre Lineups."
+const ARCHIVED = "The planning is closed: the tournament has its lineups."
 
 // Set a player's availability and note. Everyone may do so for the player linked to their own
 // account; admins and managers for anyone, which also puts a guest on the list.
@@ -31,7 +31,7 @@ export async function PUT(req: Request, { params }: Params) {
   const { answer, note } = parsed.data
 
   const loaded = await loadPlanning(id)
-  if (!loaded) return NextResponse.json({ error: "Für diese Comp läuft keine Planung" }, { status: 404 })
+  if (!loaded) return NextResponse.json({ error: "There is no planning for this tournament" }, { status: 404 })
   if (loaded.archived) return NextResponse.json({ error: ARCHIVED }, { status: 409 })
 
   const player = await db.player.findUnique({ where: { id: playerId }, include: { statusChanges: true, user: { select: { id: true } } } })
@@ -48,7 +48,7 @@ export async function PUT(req: Request, { params }: Params) {
 
   const levelId = answer?.startsWith("level:") ? answer.slice("level:".length) : null
   if (levelId && !loaded.planning.levels.some((l) => l.id === levelId)) {
-    return NextResponse.json({ error: "Diese Stufe gibt es nicht mehr" }, { status: 400 })
+    return NextResponse.json({ error: "This level no longer exists" }, { status: 400 })
   }
   const data = {
     ...(answer !== undefined && {
@@ -75,7 +75,7 @@ export async function DELETE(_req: Request, { params }: Params) {
 
   const { id, playerId } = await params
   const loaded = await loadPlanning(id)
-  if (!loaded) return NextResponse.json({ error: "Für diese Comp läuft keine Planung" }, { status: 404 })
+  if (!loaded) return NextResponse.json({ error: "There is no planning for this tournament" }, { status: 404 })
   if (loaded.archived) return NextResponse.json({ error: ARCHIVED }, { status: 409 })
 
   await db.planningEntry.deleteMany({ where: { planningId: loaded.planning.id, playerId } })

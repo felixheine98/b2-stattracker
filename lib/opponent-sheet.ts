@@ -26,7 +26,7 @@ export function parseTeamSheet(html: string): SheetBlock[] {
   const $ = load(html)
   $("br").replaceWith(" ")
   const table = $("table.waffle").first()
-  if (!table.length) throw new Error("Die Teamliste hat ein unbekanntes Layout oder ist nicht öffentlich erreichbar.")
+  if (!table.length) throw new Error("The team list has an unknown layout or is not publicly reachable.")
   const grid: Cell[][] = []
   table.find("tr").each((_, tr) => {
     const cells = $(tr).children("td")
@@ -63,7 +63,7 @@ export function parseTeamSheet(html: string): SheetBlock[] {
       }
     }
   }
-  if (!blocks.length) throw new Error("In der Teamliste wurden keine Teamblöcke erkannt.")
+  if (!blocks.length) throw new Error("No team blocks were recognised in the team list.")
   return blocks
 }
 export function findSheetBlock(blocks: SheetBlock[], name: string): SheetBlock | null {

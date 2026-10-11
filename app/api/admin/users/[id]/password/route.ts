@@ -10,7 +10,7 @@ interface Params {
 }
 
 const schema = z.object({
-  password: z.string().min(8, "Das Passwort braucht mindestens 8 Zeichen").max(200),
+  password: z.string().min(8, "The password needs at least 8 characters").max(200),
 })
 
 // Set a new password for an account. Admins can do so for anyone, managers only for PLAYER

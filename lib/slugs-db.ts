@@ -3,7 +3,7 @@ import { matchSlugBase, slugify, uniqueSlugs } from "@/lib/slugs"
 import type { SlugKind } from "@prisma/client"
 
 // Address parts taken by other pages below a tournament (the old lineup and match pages, the planning); no lineup may take them
-const RESERVED_LINEUP_SLUGS = ["lineups", "matches", "planung"]
+const RESERVED_LINEUP_SLUGS = ["lineups", "matches", "planning", "planung"]
 
 interface Change {
   kind: SlugKind

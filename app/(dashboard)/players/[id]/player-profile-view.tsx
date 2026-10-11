@@ -61,9 +61,9 @@ interface Props {
   canManage: boolean
 }
 
-const STATUS_TEXT: Record<PlayerStatus, string> = { MEMBER: "Member", TRIAL: "Trial", GUEST: "Gast", FORMER: "Ehemalig" }
+const STATUS_TEXT: Record<PlayerStatus, string> = { MEMBER: "Member", TRIAL: "Trial", GUEST: "Guest", FORMER: "Former" }
 
-const rankLabel = (rank: number | null, of: number) => (rank === null ? "—" : `${rank}. von ${of}`)
+const rankLabel = (rank: number | null, of: number) => (rank === null ? "—" : `${rank} of ${of}`)
 const avgPlace = (line: StatLine) => (line.roundsPlayed > 0 ? (line.placementSum / line.roundsPlayed).toFixed(3) : "—")
 
 function Tile({ label, value, hint }: { label: string; value: React.ReactNode; hint?: React.ReactNode }) {
@@ -77,7 +77,7 @@ function Tile({ label, value, hint }: { label: string; value: React.ReactNode; h
 }
 
 const paceHint = (pace: RankedPace) =>
-  pace.value === null ? "keine gewertete Runde" : `Team ${formatPacePct(pace.team)} · ${rankLabel(pace.rank, pace.of)}`
+  pace.value === null ? "no timed round" : `Team ${formatPacePct(pace.team)} · ${rankLabel(pace.rank, pace.of)}`
 
 const TH = "px-3 py-2 text-right font-medium whitespace-nowrap text-[#9a9090]"
 const TD = "px-3 py-1.5 text-right whitespace-nowrap text-[#c5bfbf]"
@@ -94,13 +94,13 @@ function Table({ children }: { children: React.ReactNode }) {
 
 // One row per format: the placement only means something within a format
 function FormatTable({ formats }: { formats: FormatLine[] }) {
-  if (formats.length === 0) return <p className="text-xs text-[#5e5858]">Noch keine gewerteten Runden.</p>
+  if (formats.length === 0) return <p className="text-xs text-[#5e5858]">No rounds counted yet.</p>
   return (
     <Table>
       <thead>
         <tr className="border-b border-[#2d2829] bg-[#1c1819]">
           <th className={FIRST_TH}>Format</th>
-          {["Gespielt", "Ø Platz", "Pace", "Team", "Rang", "DNF", "Round W", "Round L"].map((h) => <th key={h} className={TH}>{h}</th>)}
+          {["Played", "Avg place", "Pace", "Team", "Rank", "DNF", "Round W", "Round L"].map((h) => <th key={h} className={TH}>{h}</th>)}
         </tr>
       </thead>
       <tbody>
@@ -128,8 +128,8 @@ function MapTable({ maps }: { maps: CompView["maps"] }) {
       <thead>
         <tr className="border-b border-[#2d2829] bg-[#1c1819]">
           <th className={FIRST_TH}>Map</th>
-          {["PB", "Rang", "Rückstand", "Runden", "Ø Rückstand", "Rang"].map((h, i) => <th key={i} className={TH}>{h}</th>)}
-          <th className={cn(TH, "text-left")}>PB gefahren</th>
+          {["PB", "Rank", "Gap", "Rounds", "Avg gap", "Rank"].map((h, i) => <th key={i} className={TH}>{h}</th>)}
+          <th className={cn(TH, "text-left")}>PB driven in</th>
         </tr>
       </thead>
       <tbody>
@@ -158,10 +158,10 @@ function MatchTable({ matches }: { matches: CompView["matches"] }) {
       <thead>
         <tr className="border-b border-[#2d2829] bg-[#1c1819]">
           <th className={FIRST_TH}>Match</th>
-          <th className={cn(TH, "text-left")}>Abschnitt</th>
+          <th className={cn(TH, "text-left")}>Stage</th>
           <th className={cn(TH, "text-left")}>Lineup</th>
-          <th className={cn(TH, "text-left")}>Datum</th>
-          <th className={TH}>Runden</th>
+          <th className={cn(TH, "text-left")}>Date</th>
+          <th className={TH}>Rounds</th>
           <th className={TH}>Pace</th>
         </tr>
       </thead>
@@ -169,7 +169,7 @@ function MatchTable({ matches }: { matches: CompView["matches"] }) {
         {matches.map((m) => (
           <tr key={m.matchId} className="border-b border-[#1c1819] last:border-0">
             <td className={FIRST_TD}>
-              <Link href={m.path} className="hover:text-[#FBD00D] hover:underline">vs {m.opponent ?? "Unbekannt"}</Link>
+              <Link href={m.path} className="hover:text-[#FBD00D] hover:underline">vs {m.opponent ?? "Unknown"}</Link>
             </td>
             <td className={cn(TD, "text-left")}>{m.stage}</td>
             <td className={cn(TD, "text-left")}>{m.lineupName}</td>
@@ -201,14 +201,14 @@ function CompCard({ comp, initiallyOpen }: { comp: CompView; initiallyOpen: bool
           </span>
           <span className="mt-1 flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-[#9a9090]">
             {comp.day && <span>{formatDay(comp.day)}</span>}
-            <span>{comp.lineups.map((l) => l.name).join(", ") || "ohne Lineup"}</span>
+            <span>{comp.lineups.map((l) => l.name).join(", ") || "no lineup"}</span>
             {comp.deployed ? (
               <>
-                <span>{comp.total.roundsPlayed} Runden</span>
+                <span>{comp.total.roundsPlayed} rounds</span>
                 <span className="font-mono text-[#c5bfbf]">Pace {formatPacePct(comp.total.pace.value)}</span>
               </>
             ) : (
-              <span className="text-[#cd7f32]">nicht eingesetzt</span>
+              <span className="text-[#cd7f32]">not fielded</span>
             )}
           </span>
         </span>
@@ -218,12 +218,12 @@ function CompCard({ comp, initiallyOpen }: { comp: CompView; initiallyOpen: bool
       {open && (
         <div className="space-y-5 border-t border-[#2d2829] bg-[#0e0c0d] p-4">
           <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm">
-            <Link href={comp.path} className="text-[#FBD00D] hover:underline">Zum Turnier →</Link>
+            <Link href={comp.path} className="text-[#FBD00D] hover:underline">To the tournament →</Link>
             {comp.lineups.map((l) => (
               <Link key={l.id} href={l.path} className="text-[#c5bfbf] hover:text-[#f5f0f0] hover:underline">{l.name} →</Link>
             ))}
           </div>
-          {!comp.deployed && <p className="text-xs text-[#5e5858]">Im Kader, aber ohne erfasste Runde.</p>}
+          {!comp.deployed && <p className="text-xs text-[#5e5858]">In the roster, but without a recorded round.</p>}
           {comp.total.roundsPlayed > 0 && (
             <section className="space-y-2">
               <h3 className="text-sm font-semibold text-[#f5f0f0]">Stats</h3>
@@ -237,7 +237,7 @@ function CompCard({ comp, initiallyOpen }: { comp: CompView; initiallyOpen: bool
             <section className="space-y-2">
               <h3 className="text-sm font-semibold text-[#f5f0f0]">Maps</h3>
               <p className="text-xs text-[#5e5858]">
-                PB im Vergleich zu den Bestzeiten unserer Fahrer. Ø Rückstand auf die schnellste Zeit der jeweiligen Runde, beide Teams.
+                PB compared with the bests of our drivers. Avg gap to the fastest time of each round, both teams.
               </p>
               <MapTable maps={comp.maps} />
             </section>
@@ -286,7 +286,7 @@ export function PlayerProfileView({ player: initial, total, formats, comps, hasO
           </div>
           <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-sm text-[#9a9090]">
             {player.country && <span>{countryName(player.country)}</span>}
-            {formerNames.length > 0 && <span>früher: {formerNames.join(", ")}</span>}
+            {formerNames.length > 0 && <span>formerly: {formerNames.join(", ")}</span>}
             {tmId && (
               <a href={`https://trackmania.io/#/player/${tmId}`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-[#FBD00D] hover:underline">
                 Trackmania.io
@@ -296,7 +296,7 @@ export function PlayerProfileView({ player: initial, total, formats, comps, hasO
             {hasOpponentProfile && (
               <Link href={`/opponents/players/${player.id}`} className="inline-flex items-center gap-1 text-[#FBD00D] hover:underline">
                 <Swords size={12} />
-                Einsätze gegen uns
+                Rounds against us
               </Link>
             )}
           </div>
@@ -304,16 +304,16 @@ export function PlayerProfileView({ player: initial, total, formats, comps, hasO
         <div className="flex flex-wrap gap-2">
           <Button variant="outline" size="sm" onClick={() => setDialog("name")}>
             <Pencil size={13} />
-            {canManage ? "Name" : "Namensverlauf"}
+            {canManage ? "Name" : "Name history"}
           </Button>
           <Button variant="outline" size="sm" onClick={() => setDialog("history")}>
             <History size={13} />
-            Statusverlauf
+            Status history
           </Button>
           {canManage && (
             <Button variant="outline" size="sm" onClick={() => setDialog("move")}>
               <ArrowLeftRight size={13} />
-              {status === "TRIAL" ? "Zu Membern" : "Status ändern"}
+              {status === "TRIAL" ? "To members" : "Change status"}
             </Button>
           )}
         </div>
@@ -321,31 +321,31 @@ export function PlayerProfileView({ player: initial, total, formats, comps, hasO
 
       {comps.length === 0 ? (
         <p className="rounded-xl border border-[#2d2829] bg-[#1c1819] p-5 text-sm text-[#9a9090]">
-          Noch in keinem Turnier dabei und keine erfassten Runden.
+          Not part of a tournament yet and no recorded rounds.
         </p>
       ) : (
         <>
           <section className="space-y-3">
-            <h2 className="text-lg font-semibold text-[#f5f0f0]">Gesamt</h2>
+            <h2 className="text-lg font-semibold text-[#f5f0f0]">Overall</h2>
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
               <Tile label="Comps" value={comps.length} />
-              <Tile label="Runden" value={total.roundsPlayed} />
+              <Tile label="Rounds" value={total.roundsPlayed} />
               <Tile label="Pace" value={formatPacePct(total.pace.value)} hint={paceHint(total.pace)} />
-              <Tile label="DNF-Quote" value={dnfRate === null ? "—" : `${dnfRate.toFixed(1)} %`} hint={`${total.dnfs} DNF`} />
+              <Tile label="DNF rate" value={dnfRate === null ? "—" : `${dnfRate.toFixed(1)} %`} hint={`${total.dnfs} DNF`} />
               <Tile
                 label="Round W/L"
                 value={`${total.roundsWon}–${total.roundsLost}`}
-                hint={decided > 0 ? `${((total.roundsWon / decided) * 100).toFixed(0)} % gewonnen` : undefined}
+                hint={decided > 0 ? `${((total.roundsWon / decided) * 100).toFixed(0)} % won` : undefined}
               />
             </div>
             <p className="text-xs text-[#5e5858]">
-              Pace: Ø Rückstand auf die schnellste Zeit der Runde (beide Teams), ohne DNFs. Seeding zählt nicht mit.
+              Pace: average gap to the fastest time of the round (both teams), without DNFs. Seeding does not count.
             </p>
             <FormatTable formats={formats} />
           </section>
 
           <section className="space-y-3">
-            <h2 className="text-lg font-semibold text-[#f5f0f0]">Turniere</h2>
+            <h2 className="text-lg font-semibold text-[#f5f0f0]">Tournaments</h2>
             {comps.map((comp, i) => <CompCard key={comp.tournamentId} comp={comp} initiallyOpen={i === 0} />)}
           </section>
         </>

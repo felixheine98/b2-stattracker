@@ -58,23 +58,23 @@ export async function POST(req: Request, { params }: Params) {
     where: { id: matchId, tournamentId: id },
     select: { id: true, tournamentLineupId: true, opponentLineupId: true, subMatches: { select: { id: true } } },
   })
-  if (!match) return NextResponse.json({ error: "Match nicht gefunden" }, { status: 404 })
+  if (!match) return NextResponse.json({ error: "Match not found" }, { status: 404 })
   // Admins, managers and whoever is responsible for the lineup of this match
   const user = session.user as SessionUser
   if (!(await mayEditLineupById(user, match.tournamentLineupId))) return NextResponse.json({ error: "Forbidden" }, { status: 403 })
 
   const parsed = schema.safeParse(await req.json())
-  if (!parsed.success) return NextResponse.json({ error: "Ungültige Importdaten" }, { status: 400 })
+  if (!parsed.success) return NextResponse.json({ error: "Invalid import data" }, { status: 400 })
   const { blocks, guests } = parsed.data
 
   const subMatchIds = blocks.map((b) => b.subMatchId)
   if (new Set(subMatchIds).size !== subMatchIds.length || subMatchIds.some((s) => !match.subMatches.some((sm) => sm.id === s))) {
-    return NextResponse.json({ error: "Jeder Block braucht ein eigenes Sub-Match dieses Matches" }, { status: 400 })
+    return NextResponse.json({ error: "Every block needs a sub-match of its own in this match" }, { status: 400 })
   }
   for (const block of blocks) {
     for (const round of block.rounds) {
       const ids = round.results.map((r) => r.tmId.toLowerCase())
-      if (new Set(ids).size !== ids.length) return NextResponse.json({ error: "Ein Fahrer steht doppelt in einer Runde" }, { status: 400 })
+      if (new Set(ids).size !== ids.length) return NextResponse.json({ error: "A driver appears twice in a round" }, { status: 400 })
     }
   }
 
@@ -84,10 +84,10 @@ export async function POST(req: Request, { params }: Params) {
   const unknown = [...ourTmIds].filter((tmId) => !known.some((p) => p.tmId.toLowerCase() === tmId))
   const newGuests = unknown.map((tmId) => guests.find((g) => g.tmId.toLowerCase() === tmId))
   if (newGuests.some((g) => !g || !confirmedTmId(g.tmId))) {
-    return NextResponse.json({ error: "Ein Fahrer auf unserer Seite ist nicht im System" }, { status: 400 })
+    return NextResponse.json({ error: "A driver on our side is not in the system" }, { status: 400 })
   }
   if (newGuests.length > 0 && !canManage(user.role)) {
-    return NextResponse.json({ error: "Nur Admins und Manager können neue Gäste anlegen" }, { status: 403 })
+    return NextResponse.json({ error: "Only admins and managers can add new guests" }, { status: 403 })
   }
 
   await db.$transaction(

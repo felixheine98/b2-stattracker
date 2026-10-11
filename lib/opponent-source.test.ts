@@ -24,12 +24,12 @@ it("follows Google image redirects and still copies the image", async () => {
 it("rejects redirects outside Google's spreadsheet image hosts before fetching them", async () => {
   const fetcher = vi.fn().mockResolvedValue(new Response(null, { status: 302, headers: { location: "https://example.com/private" } }))
   vi.stubGlobal("fetch", fetcher)
-  await expect(copySheetLogo("https://docs.google.com/sheets-images-rt/logo")).rejects.toThrow("Unbekannte Logoquelle")
+  await expect(copySheetLogo("https://docs.google.com/sheets-images-rt/logo")).rejects.toThrow("Unknown logo source")
   expect(fetcher).toHaveBeenCalledTimes(1)
 })
 it("bounds redirect loops", async () => {
   const fetcher = vi.fn().mockResolvedValue(new Response(null, { status: 302, headers: { location: "https://docs.google.com/sheets-images-rt/loop" } }))
   vi.stubGlobal("fetch", fetcher)
-  await expect(copySheetLogo("https://docs.google.com/sheets-images-rt/logo")).rejects.toThrow("Weiterleitungen")
+  await expect(copySheetLogo("https://docs.google.com/sheets-images-rt/logo")).rejects.toThrow("redirects too many times")
   expect(fetcher.mock.calls.length).toBeLessThanOrEqual(4)
 })

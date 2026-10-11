@@ -149,7 +149,7 @@ btns[0].click();
 }else{
 var s=readSet();if(s){teamNames=s.teams;sets.push({label:'Set 1',map:s.map,rounds:s.rounds})}
 }
-if(!sets.length){alert('Keine Runden gefunden. Ist die Match-Seite geöffnet?');return}
+if(!sets.length){alert('No rounds found. Is the match page open?');return}
 var teams=teamNames.map(function(n){
 var players=[];
 Array.prototype.some.call(document.querySelectorAll('span,div'),function(e){
@@ -165,11 +165,11 @@ if(b64.length<60000){location.href='__ECM_TARGET__#'+b64;return}
 var total=sets.reduce(function(a,x){return a+x.rounds.length},0);
 var box=document.createElement('div');
 box.style.cssText='position:fixed;z-index:2147483647;top:20px;right:20px;width:360px;padding:16px;background:#1c1819;color:#f5f0f0;border:1px solid #FBD00D;border-radius:10px;font:14px sans-serif;box-shadow:0 10px 40px rgba(0,0,0,.6)';
-var head=document.createElement('div');head.textContent=sets.length+' Sets, '+total+' Runden gelesen – zu viel für den direkten Weg, bitte kopieren und im Import einfügen';head.style.cssText='font-weight:bold;margin-bottom:8px';
+var head=document.createElement('div');head.textContent=sets.length+' sets, '+total+' rounds read – too much for the direct way, please copy and paste into the import';head.style.cssText='font-weight:bold;margin-bottom:8px';
 var ta=document.createElement('textarea');ta.value=out;ta.readOnly=true;ta.style.cssText='width:100%;height:80px;box-sizing:border-box;background:#0e0c0d;color:#9a9090;border:1px solid #3a3435;border-radius:6px;font:11px monospace';
-var copy=document.createElement('button');copy.textContent='Kopieren';copy.style.cssText='margin-top:8px;padding:6px 14px;background:#FBD00D;color:#1a1718;border:0;border-radius:6px;font-weight:bold;cursor:pointer';
-var close=document.createElement('button');close.textContent='Schließen';close.style.cssText='margin:8px 0 0 8px;padding:6px 14px;background:transparent;color:#9a9090;border:1px solid #3a3435;border-radius:6px;cursor:pointer';
-copy.onclick=function(){var ok=function(){copy.textContent='Kopiert ✓';setTimeout(function(){box.remove()},800)};
+var copy=document.createElement('button');copy.textContent='Copy';copy.style.cssText='margin-top:8px;padding:6px 14px;background:#FBD00D;color:#1a1718;border:0;border-radius:6px;font-weight:bold;cursor:pointer';
+var close=document.createElement('button');close.textContent='Close';close.style.cssText='margin:8px 0 0 8px;padding:6px 14px;background:transparent;color:#9a9090;border:1px solid #3a3435;border-radius:6px;cursor:pointer';
+copy.onclick=function(){var ok=function(){copy.textContent='Copied ✓';setTimeout(function(){box.remove()},800)};
 if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(out).then(ok,function(){ta.select();document.execCommand('copy');ok()})}else{ta.select();document.execCommand('copy');ok()}};
 close.onclick=function(){box.remove()};
 box.appendChild(head);box.appendChild(ta);box.appendChild(copy);box.appendChild(close);document.body.appendChild(box);

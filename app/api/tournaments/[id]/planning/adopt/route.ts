@@ -26,13 +26,13 @@ export async function POST(req: Request, { params }: Params) {
   if (!parsed.success) return NextResponse.json({ error: parsed.error.issues[0].message }, { status: 400 })
 
   const state = await buildPlanningState(id, { userId: user.id, canManage: true, playerId: null })
-  if (!state) return NextResponse.json({ error: "Für diese Comp läuft keine Planung" }, { status: 404 })
-  if (state.archived) return NextResponse.json({ error: "Die Comp hat bereits Lineups." }, { status: 409 })
+  if (!state) return NextResponse.json({ error: "There is no planning for this tournament" }, { status: 404 })
+  if (state.archived) return NextResponse.json({ error: "The tournament already has lineups." }, { status: 409 })
   const variant = state.variants?.find((v) => v.id === parsed.data.variantId)
-  if (!variant) return NextResponse.json({ error: "Diese Variante gibt es nicht mehr – bitte die Seite neu laden." }, { status: 404 })
+  if (!variant) return NextResponse.json({ error: "This variant no longer exists – please reload the page." }, { status: 404 })
 
   const plan = adoptionPlan(variant, state.rows)
-  if (plan.lineups.length === 0) return NextResponse.json({ error: "In dieser Variante ist noch niemand eingeteilt." }, { status: 400 })
+  if (plan.lineups.length === 0) return NextResponse.json({ error: "Nobody is placed in this variant yet." }, { status: 400 })
 
   const planning = await db.planning.findUniqueOrThrow({ where: { tournamentId: id }, select: { id: true } })
   await db.$transaction(async (tx) => {

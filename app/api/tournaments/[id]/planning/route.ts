@@ -17,7 +17,7 @@ export async function POST(_req: Request, { params }: Params) {
   const tournament = await db.tournament.findUnique({ where: { id }, select: { _count: { select: { tournamentLineups: true } } } })
   if (!tournament) return NextResponse.json({ error: "Tournament not found" }, { status: 404 })
   if (tournament._count.tournamentLineups > 0) {
-    return NextResponse.json({ error: "Diese Comp hat schon Lineups; geplant wird davor." }, { status: 409 })
+    return NextResponse.json({ error: "This tournament already has lineups; planning comes before that." }, { status: 409 })
   }
 
   const planning = await db.planning.upsert({ where: { tournamentId: id }, create: { tournamentId: id }, update: {} })

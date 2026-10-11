@@ -17,11 +17,11 @@ export function openSearch() {
 }
 
 const GROUP_LABEL: Record<SearchKind, string> = {
-  player: "Spieler",
-  team: "Gegnerteams",
-  lineup: "Gegner-Lineups",
-  opponentPlayer: "Gegnerische Spieler",
-  tournament: "Turniere",
+  player: "Players",
+  team: "Opponent teams",
+  lineup: "Opponent lineups",
+  opponentPlayer: "Opponent players",
+  tournament: "Tournaments",
   match: "Matches",
 }
 
@@ -93,20 +93,20 @@ export function SearchDialog() {
           value={query}
           onChange={(e) => { setQuery(e.target.value); setActive(0) }}
           onKeyDown={handleKeyDown}
-          placeholder="Spieler, Gegner, Turniere, Matches …"
-          aria-label="Suchen"
+          placeholder="Players, opponents, tournaments, matches…"
+          aria-label="Search"
           autoComplete="off"
           className="h-10 pl-9"
         />
       </div>
 
       <div className="mt-4 space-y-4">
-        {failed && <p className="text-sm text-[#ED1F24]">Die Suche konnte nicht geladen werden.</p>}
+        {failed && <p className="text-sm text-[#ED1F24]">The search could not be loaded.</p>}
         {!failed && !query.trim() && (
-          <p className="text-sm text-[#5e5858]">Findet Spieler (auch unter früheren Namen), Gegnerteams und ihre Lineups, Turniere und Matches.</p>
+          <p className="text-sm text-[#5e5858]">Finds players (also by former names), opponent teams and their lineups, tournaments and matches.</p>
         )}
-        {!failed && query.trim() && entries === null && <p className="text-sm text-[#5e5858]">Lädt …</p>}
-        {query.trim() && entries !== null && hits.length === 0 && <p className="text-sm text-[#5e5858]">Nichts gefunden.</p>}
+        {!failed && query.trim() && entries === null && <p className="text-sm text-[#5e5858]">Loading…</p>}
+        {query.trim() && entries !== null && hits.length === 0 && <p className="text-sm text-[#5e5858]">Nothing found.</p>}
 
         {groups.map((group) => (
           <section key={group.kind}>
@@ -128,7 +128,7 @@ export function SearchDialog() {
                       )}
                     >
                       <span className="min-w-0 break-words font-medium">{entry.title}</span>
-                      {via && <span className="text-xs text-[#9a9090]">auch: {via}</span>}
+                      {via && <span className="text-xs text-[#9a9090]">also: {via}</span>}
                       {entry.detail && <span className="text-xs text-[#5e5858]">{entry.detail}</span>}
                       {entry.marker && <span className="text-xs text-[#cd7f32]">{entry.marker}</span>}
                     </button>
@@ -137,7 +137,7 @@ export function SearchDialog() {
               })}
             </ul>
             {group.total > group.hits.length && (
-              <p className="px-2 pt-1 text-xs text-[#5e5858]">+ {group.total - group.hits.length} weitere, Suche eingrenzen</p>
+              <p className="px-2 pt-1 text-xs text-[#5e5858]">+ {group.total - group.hits.length} more, narrow the search</p>
             )}
           </section>
         ))}

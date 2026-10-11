@@ -17,15 +17,15 @@ export interface OpponentSelection { lineupId?: string | null; teamId?: string |
 export async function resolveMatchOpponent(tx: Prisma.TransactionClient, tournamentId: string, selection: OpponentSelection) {
   if (selection.lineupId) {
     const lineup = await tx.opponentLineup.findUnique({ where: { id: selection.lineupId } })
-    if (!lineup || lineup.tournamentId !== tournamentId) throw new OpponentError("Das Gegner-Lineup gehört nicht zu dieser Competition.")
+    if (!lineup || lineup.tournamentId !== tournamentId) throw new OpponentError("The opponent lineup does not belong to this tournament.")
     return lineup
   }
   if (selection.teamId) {
     const team = await tx.opponentTeam.findUnique({ where: { id: selection.teamId }, include: rosterInclude })
-    if (!team) throw new OpponentError("Team nicht gefunden.", 404)
+    if (!team) throw new OpponentError("Team not found.", 404)
     const existing = await tx.opponentLineup.findMany({ where: { tournamentId, teamId: team.id, archived: false } })
     if (existing.length === 1) return existing[0]
-    if (existing.length > 1) throw new OpponentError("Dieses Team hat mehrere Lineups. Bitte ein konkretes Lineup wählen.")
+    if (existing.length > 1) throw new OpponentError("This team has several lineups. Please pick a specific one.")
     return tx.opponentLineup.create({ data: { tournamentId, teamId: team.id, name: team.name, nameKey: opponentNameKey(team.name), slots: { create: team.slots.map(s => ({ playerId: s.playerId })) } } })
   }
   const name = selection.name?.trim()
@@ -33,7 +33,7 @@ export async function resolveMatchOpponent(tx: Prisma.TransactionClient, tournam
   const entries = await tx.opponentLineup.findMany({ where: { tournamentId } })
   const id = resolveOpponentName(name, entries)
   if (id) return entries.find(e => e.id === id)!
-  if (entries.some(e => [e.name, ...e.aliases].some(n => opponentNameKey(n) === opponentNameKey(name)))) throw new OpponentError("Der Gegnername ist mehrdeutig. Bitte ein konkretes Lineup wählen.")
+  if (entries.some(e => [e.name, ...e.aliases].some(n => opponentNameKey(n) === opponentNameKey(name)))) throw new OpponentError("The opponent name is ambiguous. Please pick a specific lineup.")
   return tx.opponentLineup.create({ data: { tournamentId, name, nameKey: opponentNameKey(name) } })
 }
 
@@ -68,9 +68,9 @@ export async function reopenMatch(tx: Prisma.TransactionClient, matchId: string)
 export async function assignOpponentIdentities(input: { tmId: string; resultIds: string[]; rosterPlayerIds: string[] }, client: typeof db = db) {
   return client.$transaction(async tx => {
     const selected = await tx.roundResult.findMany({ where: { id: { in: input.resultIds }, isOurTeam: false }, include: { round: { include: { subMatch: { include: { match: true } } } } } })
-    if (selected.length !== new Set(input.resultIds).size) throw new OpponentError("Ein ausgewählter Auftritt ist nicht mehr verfügbar.", 409)
+    if (selected.length !== new Set(input.resultIds).size) throw new OpponentError("A selected appearance is no longer available.", 409)
     const occupied = await tx.roundResult.findMany({ where: { roundId: { in: selected.map(r => r.roundId) }, tmId: input.tmId } })
-    if (assignmentConflicts(selected, occupied)) throw new OpponentError("In einer Runde ist dieser Account bereits belegt. Bitte die Auswahl korrigieren.", 409)
+    if (assignmentConflicts(selected, occupied)) throw new OpponentError("This account is already taken in one round. Please correct the selection.", 409)
     const target = await tx.player.findUniqueOrThrow({ where: { tmId: input.tmId } })
     for (const r of selected) {
       await tx.roundResult.update({ where: { id: r.id }, data: { tmId: target.tmId, playerId: target.id } })
@@ -84,7 +84,7 @@ export async function assignOpponentIdentities(input: { tmId: string; resultIds:
       }
     }
     const rosterPlayers = await tx.player.findMany({ where: { id: { in: input.rosterPlayerIds }, isOpponentOnly: true } })
-    if (rosterPlayers.length !== new Set(input.rosterPlayerIds).size) throw new OpponentError("Ungültige Kaderauswahl.")
+    if (rosterPlayers.length !== new Set(input.rosterPlayerIds).size) throw new OpponentError("Invalid roster selection.")
     await tx.player.update({ where: { id: target.id }, data: { opponentNames: [...new Set([...target.opponentNames, ...selected.map(r => opponentNameKey(r.playerName)), ...rosterPlayers.flatMap(p => [opponentNameKey(p.name), ...p.opponentNames])])] } })
     for (const source of rosterPlayers) {
       if (source.id === target.id) continue
@@ -111,11 +111,11 @@ export async function createRosterPlayer(tx: Prisma.TransactionClient, name: str
 export async function linkOpponentLineups(tx: Prisma.TransactionClient, teamId: string, lineupIds: string[]) {
   const ids = [...new Set(lineupIds)]
   if (!ids.length) return 0
-  if (!await tx.opponentTeam.findUnique({ where: { id: teamId } })) throw new OpponentError("Team nicht gefunden.", 404)
+  if (!await tx.opponentTeam.findUnique({ where: { id: teamId } })) throw new OpponentError("Team not found.", 404)
   const lineups = await tx.opponentLineup.findMany({ where: { id: { in: ids } }, select: { id: true, teamId: true } })
-  if (lineups.length !== ids.length) throw new OpponentError("Ein ausgewähltes Lineup ist nicht mehr verfügbar.", 409)
-  if (lineups.some(l => l.teamId && l.teamId !== teamId)) throw new OpponentError("Ein ausgewähltes Lineup gehört bereits zu einem anderen Team.", 409)
+  if (lineups.length !== ids.length) throw new OpponentError("A selected lineup is no longer available.", 409)
+  if (lineups.some(l => l.teamId && l.teamId !== teamId)) throw new OpponentError("A selected lineup already belongs to another team.", 409)
   const updated = await tx.opponentLineup.updateMany({ where: { id: { in: ids }, OR: [{ teamId: null }, { teamId }] }, data: { teamId } })
-  if (updated.count !== ids.length) throw new OpponentError("Die Lineup-Zuordnung wurde inzwischen geändert. Bitte neu laden.", 409)
+  if (updated.count !== ids.length) throw new OpponentError("The lineup assignment has changed in the meantime. Please reload.", 409)
   return updated.count
 }

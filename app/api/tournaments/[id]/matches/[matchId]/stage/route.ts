@@ -30,7 +30,7 @@ export async function PUT(req: Request, { params }: Params) {
   if (!(await mayEditLineupById(session.user as SessionUser, match.tournamentLineupId))) return NextResponse.json({ error: "Forbidden" }, { status: 403 })
   if (!target || target.tournamentId !== id) return NextResponse.json({ error: "Stage not found" }, { status: 400 })
   if (match.stage.type === "SEEDING" || target.type === "SEEDING") {
-    return NextResponse.json({ error: "Seeding-Matches lassen sich nicht verschieben" }, { status: 400 })
+    return NextResponse.json({ error: "Seeding matches cannot be moved" }, { status: 400 })
   }
 
   await db.match.update({ where: { id: matchId }, data: { stageId: target.id } })

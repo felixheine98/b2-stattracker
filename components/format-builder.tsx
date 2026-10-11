@@ -52,7 +52,7 @@ export function FormatBuilder({ value, onChange }: Props) {
               type="button"
               onClick={() => move(i, i - 1)}
               disabled={i === 0}
-              aria-label={`${formatLabel(f)} nach vorne`}
+              aria-label={`Move ${formatLabel(f)} forward`}
               className="text-[#5e5858] hover:text-[#FBD00D] disabled:opacity-30 disabled:hover:text-[#5e5858]"
             >
               <ChevronLeft size={12} />
@@ -63,7 +63,7 @@ export function FormatBuilder({ value, onChange }: Props) {
               type="button"
               onClick={() => move(i, i + 1)}
               disabled={i === value.length - 1}
-              aria-label={`${formatLabel(f)} nach hinten`}
+              aria-label={`Move ${formatLabel(f)} back`}
               className="text-[#5e5858] hover:text-[#FBD00D] disabled:opacity-30 disabled:hover:text-[#5e5858]"
             >
               <ChevronRight size={12} />
@@ -71,7 +71,7 @@ export function FormatBuilder({ value, onChange }: Props) {
             <button
               type="button"
               onClick={() => onChange(value.filter((_, idx) => idx !== i))}
-              aria-label={`${formatLabel(f)} entfernen`}
+              aria-label={`Remove ${formatLabel(f)}`}
               className="text-[#5e5858] hover:text-[#ED1F24] ml-0.5"
             >
               <X size={10} />

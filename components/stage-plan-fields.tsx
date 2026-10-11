@@ -11,7 +11,7 @@ interface Props {
 export function StagePlanFields({ value, onChange }: Props) {
   return (
     <div className="space-y-1.5">
-      <Label>Aufbau</Label>
+      <Label>Structure</Label>
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
         <label className="flex h-9 items-center gap-2 rounded-md border border-[#3a3435] bg-[#251f20] px-3 text-sm text-[#f5f0f0]">
           <input
@@ -29,7 +29,7 @@ export function StagePlanFields({ value, onChange }: Props) {
             max={20}
             value={value.matchDays}
             onChange={(e) => onChange({ ...value, matchDays: Math.max(1, Number(e.target.value) || 1) })}
-            aria-label="Anzahl Match Days"
+            aria-label="Number of match days"
             className="w-16"
           />
           <span className="text-xs text-[#9a9090]">Match Days</span>
@@ -41,14 +41,14 @@ export function StagePlanFields({ value, onChange }: Props) {
             max={10}
             value={value.playoffDays}
             onChange={(e) => onChange({ ...value, playoffDays: Math.max(0, Number(e.target.value) || 0) })}
-            aria-label="Anzahl Playoff-Tage"
+            aria-label="Number of playoff days"
             className="w-16"
           />
-          <span className="text-xs text-[#9a9090]">Playoff-Tage</span>
+          <span className="text-xs text-[#9a9090]">Playoff days</span>
         </div>
       </div>
       <p className="text-xs text-[#5e5858]">
-        Das Startdatum ist der Tag {value.seeding ? "des Seedings" : "von Match Day 1"}, jeder weitere Abschnitt folgt eine Woche später.
+        The start date is the day of {value.seeding ? "the seeding" : "match day 1"}; every further stage follows a week later.
       </p>
     </div>
   )

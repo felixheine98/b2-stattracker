@@ -52,12 +52,12 @@ export async function POST(req: Request) {
       const exact = current.find(b => b.key === ref.key && b.name === ref.name)
       const named = current.filter(b => b.name === ref.name)
       const block = exact ?? (named.length === 1 ? named[0] : null)
-      if (!block) throw new OpponentError("Ein Teamblock wurde verschoben oder ist mehrdeutig. Bitte die Vorschau neu laden.", 409)
+      if (!block) throw new OpponentError("A team block was moved or is ambiguous. Please reload the preview.", 409)
       return { block, originalKey: ref.key }
     })
     const selected = input.members.map(m => {
       const member = blocks.find(b => b.originalKey === m.blockKey)?.block.members.find(p => p.name === m.name)
-      if (!member) throw new OpponentError("Der Kader hat sich geändert. Bitte die Vorschau neu laden.", 409)
+      if (!member) throw new OpponentError("The roster has changed. Please reload the preview.", 409)
       return member
     }).filter((m, i, arr) => arr.findIndex(p => opponentNameKey(p.name) === opponentNameKey(m.name)) === i)
     const linking = await db.opponentLineup.findMany({ where: { id: { in: input.lineupIds } }, select: { tournamentId: true } })
@@ -68,7 +68,7 @@ export async function POST(req: Request) {
     const team = await db.$transaction(async tx => {
       const existing = input.teamId ? await tx.opponentTeam.findUniqueOrThrow({ where: { id: input.teamId }, include: rosterInclude }) : null
       const playerIds: string[] = []
-      if (input.keepPlayerIds.some(id => !existing?.slots.some(s => s.playerId === id))) throw new OpponentError("Ungültiger bisheriger Kadereintrag.")
+      if (input.keepPlayerIds.some(id => !existing?.slots.some(s => s.playerId === id))) throw new OpponentError("Invalid previous roster entry.")
       if (input.copyRoster) playerIds.push(...input.keepPlayerIds)
       if (input.copyRoster) for (const member of selected) {
         const known = findRosterIdentity(existing?.slots.map(s => s.player) ?? [], member.name)

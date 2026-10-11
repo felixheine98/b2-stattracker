@@ -30,7 +30,7 @@ export async function PATCH(req: Request, { params }: Params) {
   if (userId) {
     // Only members get a login; one that exists is kept, but no new one is linked
     if (!mayGetLogin(currentStatus(target)) && target.user?.id !== userId)
-      return NextResponse.json({ error: "Nur Member können mit einem Account verknüpft werden" }, { status: 400 })
+      return NextResponse.json({ error: "Only members can be linked to an account" }, { status: 400 })
 
     // Verify user exists and isn't already linked to a different player
     const user = await db.user.findUnique({ where: { id: userId } })

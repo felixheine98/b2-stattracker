@@ -32,18 +32,18 @@ export async function POST(req: Request, { params }: Params) {
   // Whoever leaves the team loses the login. An admin or manager has to hand over the role first.
   const login = status === "FORMER" ? player.user : null
   if (login && login.role !== "PLAYER") {
-    return NextResponse.json({ error: "Der Account ist Admin oder Manager. Ändere zuerst die Rolle auf der Accounts-Seite." }, { status: 409 })
+    return NextResponse.json({ error: "The account is an admin or manager. Change the role on the Accounts page first." }, { status: 409 })
   }
 
   if (currentStatus(player) === status) {
-    return NextResponse.json({ error: "Der Spieler hat diesen Status schon" }, { status: 409 })
+    return NextResponse.json({ error: "The player already has this status" }, { status: 409 })
   }
   if (effectiveFrom > latestAllowedDay()) {
-    return NextResponse.json({ error: "Das Datum darf nicht in der Zukunft liegen" }, { status: 400 })
+    return NextResponse.json({ error: "The date must not be in the future" }, { status: 400 })
   }
   const last = sortedChanges(player).at(-1)
   if (last && effectiveFrom <= dayKey(last.effectiveFrom)) {
-    return NextResponse.json({ error: "Das Datum muss nach dem letzten Wechsel liegen" }, { status: 400 })
+    return NextResponse.json({ error: "The date must be after the previous switch" }, { status: 400 })
   }
 
   try {
@@ -54,7 +54,7 @@ export async function POST(req: Request, { params }: Params) {
   } catch (e: unknown) {
     // Someone else switched this player on the same day in the meantime
     if ((e as { code?: string }).code === "P2002") {
-      return NextResponse.json({ error: "An diesem Tag gibt es schon einen Wechsel" }, { status: 409 })
+      return NextResponse.json({ error: "There is already a switch on this day" }, { status: 409 })
     }
     throw e
   }

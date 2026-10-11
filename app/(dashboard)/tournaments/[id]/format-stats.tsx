@@ -76,11 +76,11 @@ export function FormatStatsTable({ agg, isGuest, isTrial, lineupName, profilePat
         <table className="w-full text-xs">
           <thead>
             <tr className="border-b border-[#2d2829] bg-[#1c1819]">
-              {th("name", "Spieler", "sticky left-0 z-[1] bg-[#1c1819] text-left pl-3 pr-4")}
+              {th("name", "Player", "sticky left-0 z-[1] bg-[#1c1819] text-left pl-3 pr-4")}
               {lineupName && th("lineup", "Lineup", "text-left px-3")}
-              {th("played", "Gespielt", "text-right px-3")}
-              {th("placementSum", "Platzsumme", "text-right px-3")}
-              {th("avg", "Ø Platz", "text-right px-3")}
+              {th("played", "Played", "text-right px-3")}
+              {th("placementSum", "Place sum", "text-right px-3")}
+              {th("avg", "Avg place", "text-right px-3")}
               {th("pace", "Pace", "text-right px-3")}
               {th("dnfs", "DNF", "text-right px-3")}
               {th("roundsWon", "Round W", "text-right px-3")}
@@ -107,7 +107,7 @@ export function FormatStatsTable({ agg, isGuest, isTrial, lineupName, profilePat
                 <td className="py-1.5 px-3 text-right text-[#c5bfbf] font-mono">
                   {p.roundsPlayed > 0 ? (p.placementSum / p.roundsPlayed).toFixed(3) : "—"}
                 </td>
-                <td className="py-1.5 px-3 text-right text-[#c5bfbf] font-mono" title="Ø Rückstand auf die schnellste Zeit der Runde, ohne DNFs">
+                <td className="py-1.5 px-3 text-right text-[#c5bfbf] font-mono" title="Average gap to the fastest time of the round, without DNFs">
                   {formatPacePct(pacePct(p.pace))}
                 </td>
                 <td className="py-1.5 px-3 text-right text-[#c5bfbf]">{p.dnfs}</td>

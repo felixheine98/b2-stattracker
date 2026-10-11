@@ -22,10 +22,10 @@ export async function POST(req: Request, { params }: Params) {
   if (!parsed.success) return NextResponse.json({ error: parsed.error.issues[0].message }, { status: 400 })
 
   const loaded = await loadPlanning(id)
-  if (!loaded) return NextResponse.json({ error: "Für diese Comp läuft keine Planung" }, { status: 404 })
-  if (loaded.archived) return NextResponse.json({ error: "Die Planung ist abgeschlossen." }, { status: 409 })
+  if (!loaded) return NextResponse.json({ error: "There is no planning for this tournament" }, { status: 404 })
+  if (loaded.archived) return NextResponse.json({ error: "The planning is closed." }, { status: 409 })
   if (loaded.planning.levels.some((l) => l.name.toLowerCase() === parsed.data.name.toLowerCase())) {
-    return NextResponse.json({ error: "Diese Stufe gibt es schon" }, { status: 409 })
+    return NextResponse.json({ error: "This level already exists" }, { status: 409 })
   }
 
   const level = await db.planningLevel.create({ data: { planningId: loaded.planning.id, name: parsed.data.name } })

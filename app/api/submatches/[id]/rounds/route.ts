@@ -91,7 +91,7 @@ export async function PUT(req: Request, { params }: Params) {
   const players = await db.player.findMany({ where: { isOpponentOnly: false, id: { in: playerIds } } })
   if (players.length !== size) return NextResponse.json({ error: "Unknown player" }, { status: 400 })
   const playerById = new Map(players.map((p) => [p.id, p]))
-  const opponentName = subMatch.match.opponent || "Gegner"
+  const opponentName = subMatch.match.opponent || "Opponent"
 
   const existing = await db.round.findMany({
     where: { subMatchId: id },
@@ -183,7 +183,7 @@ export async function DELETE(req: Request, { params }: Params) {
   if (!(await mayEditLineupById(session.user as SessionUser, subMatch.match.tournamentLineupId))) return NextResponse.json({ error: "Forbidden" }, { status: 403 })
 
   const parsed = z.object({ roundIds: z.array(z.string()).min(1) }).safeParse(await req.json())
-  if (!parsed.success) return NextResponse.json({ error: "Keine Runden ausgewählt" }, { status: 400 })
+  if (!parsed.success) return NextResponse.json({ error: "No rounds selected" }, { status: 400 })
 
   await db.$transaction(async (tx) => {
     await reopenMatch(tx, subMatch.matchId)

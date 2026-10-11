@@ -12,8 +12,8 @@ interface Props {
   className?: string
 }
 
-// "Alle" plus one button per option. A click shows only that option; with "Mehrfach" switched on,
-// clicks add or remove options instead, and with none left it is "Alle" again.
+// "All" plus one button per option. A click shows only that option; with "Multiple" switched on,
+// clicks add or remove options instead, and with none left it is "All" again.
 export function PillSelect({ options, selected, onChange, className }: Props) {
   // A selection of several options (e.g. from a shared link) only makes sense in multi mode
   const [multiChosen, setMultiChosen] = useState(false)
@@ -38,7 +38,7 @@ export function PillSelect({ options, selected, onChange, className }: Props) {
     <div className={cn("flex max-w-full flex-wrap items-center gap-x-3 gap-y-1.5", className)}>
       <div className="inline-flex max-w-full flex-wrap gap-1 rounded-lg border border-[#2d2829] bg-[#1c1819] p-1">
         <button type="button" aria-pressed={selected.length === 0} onClick={() => onChange([])} className={pill(selected.length === 0)}>
-          Alle
+          All
         </button>
         {options.map((o) => (
           <button key={o.id} type="button" aria-pressed={selected.includes(o.id)} onClick={() => toggle(o.id)} className={pill(selected.includes(o.id))}>
@@ -61,7 +61,7 @@ export function PillSelect({ options, selected, onChange, className }: Props) {
         >
           {multi && <Check size={10} strokeWidth={3.5} />}
         </span>
-        Mehrfach
+        Multiple
       </button>
     </div>
   )

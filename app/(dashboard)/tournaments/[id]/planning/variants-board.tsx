@@ -110,18 +110,18 @@ export function VariantsBoard({ tournamentId, tournamentHref, rows, levels, vari
   async function adopt(variant: VariantData) {
     const plan = adoptionPlan(variant, rows)
     if (plan.lineups.length === 0) {
-      setError(`In „${variant.name}“ ist noch niemand eingeteilt.`)
+      setError(`Nobody is placed in “${variant.name}” yet.`)
       return
     }
     const question = [
-      `„${variant.name}“ in die Comp übernehmen?`,
+      `Take “${variant.name}” over into the tournament?`,
       "",
-      ...plan.lineups.map((l) => `${l.name}: ${l.playerIds.length} Spieler`),
+      ...plan.lineups.map((l) => `${l.name}: ${l.playerIds.length} players`),
       "",
-      plan.empty.length > 0 && `Leer und nicht angelegt: ${plan.empty.join(", ")}`,
-      plan.unplaced > 0 && `${plan.unplaced} Spieler bleiben ohne Lineup.`,
-      plan.outCount > 0 && `Achtung: ${plan.outCount} eingeteilte Spieler haben abgesagt.`,
-      "Die Planung ist danach abgeschlossen.",
+      plan.empty.length > 0 && `Empty and not created: ${plan.empty.join(", ")}`,
+      plan.unplaced > 0 && `${plan.unplaced} players stay without a lineup.`,
+      plan.outCount > 0 && `Careful: ${plan.outCount} placed players are not available.`,
+      "The planning is closed after that.",
     ].filter((line) => line !== false).join("\n")
     if (!confirm(question)) return
     setError("")
@@ -155,18 +155,18 @@ export function VariantsBoard({ tournamentId, tournamentHref, rows, levels, vari
     <div className="flex flex-wrap items-center gap-2">
       {asking ? (
         <>
-          <span className="text-sm text-[#c5bfbf]">Wie viele Lineups?</span>
+          <span className="text-sm text-[#c5bfbf]">How many lineups?</span>
           {[1, 2, 3, 4, 5, 6].map((n) => (
             <Button key={n} size="sm" variant="outline" onClick={() => { setAsking(false); run({ type: "createVariant", lineupCount: n }) }} className="w-9 px-0">
               {n}
             </Button>
           ))}
-          <button type="button" onClick={() => setAsking(false)} className="text-xs text-[#5e5858] hover:text-[#f5f0f0]">Abbrechen</button>
+          <button type="button" onClick={() => setAsking(false)} className="text-xs text-[#5e5858] hover:text-[#f5f0f0]">Cancel</button>
         </>
       ) : (
         <Button size="sm" variant={variants.length === 0 ? "default" : "outline"} onClick={() => setAsking(true)}>
           <Plus size={14} />
-          {variants.length === 0 ? "Erste Variante anlegen" : "Neue Variante"}
+          {variants.length === 0 ? "Add the first variant" : "New variant"}
         </Button>
       )}
     </div>
@@ -174,7 +174,7 @@ export function VariantsBoard({ tournamentId, tournamentHref, rows, levels, vari
 
   return (
     <div className="space-y-4">
-      {variants.length === 0 && <p className="text-sm text-[#9a9090]">Noch keine Variante.</p>}
+      {variants.length === 0 && <p className="text-sm text-[#9a9090]">No variant yet.</p>}
       {error && <p className="text-sm text-[#ED1F24]">{error}</p>}
 
       {ordered.map((variant) => {
@@ -229,7 +229,7 @@ export function VariantsBoard({ tournamentId, tournamentHref, rows, levels, vari
                 e.stopPropagation()
                 if (!archived) setSelected(isSelected ? null : { variantId: variant.id, playerId: row.player.id })
               }}
-              title={[answerLabel(row.answer, levels), row.guest ? "Gast" : "", out ? "nicht mehr dabei" : "", row.note ?? ""].filter(Boolean).join(" · ")}
+              title={[answerLabel(row.answer, levels), row.guest ? "Guest" : "", out ? "no longer available" : "", row.note ?? ""].filter(Boolean).join(" · ")}
               className={cn(
                 "inline-flex max-w-full items-center gap-1.5 rounded-md border bg-[#251f20] px-2.5 py-1.5 text-sm transition-colors",
                 out ? "border-[#ED1F24]/60 text-[#ED1F24]" : "border-[#2d2829] text-[#f5f0f0]",
@@ -258,7 +258,7 @@ export function VariantsBoard({ tournamentId, tournamentHref, rows, levels, vari
                 <SavingInput
                   value={variant.name}
                   onSave={(name) => { if (name) run({ type: "updateVariant", variantId: variant.id, name }) }}
-                  aria-label="Name der Variante"
+                  aria-label="Name of the variant"
                   maxLength={60}
                   className="h-8 w-48 max-w-full px-1.5 text-base font-semibold text-[#f5f0f0] hover:border-[#2d2829]"
                 />
@@ -266,7 +266,7 @@ export function VariantsBoard({ tournamentId, tournamentHref, rows, levels, vari
               {adopted && (
                 <span className="inline-flex items-center gap-1 rounded-full bg-[#FBD00D] px-2.5 py-0.5 text-xs font-bold text-[#1a1718]">
                   <Check size={12} />
-                  Übernommen
+                  Taken over
                 </span>
               )}
               <button
@@ -274,18 +274,18 @@ export function VariantsBoard({ tournamentId, tournamentHref, rows, levels, vari
                 disabled={archived}
                 aria-pressed={voted}
                 onClick={() => run({ type: "vote", variantId: variant.id, on: !voted })}
-                title={voted ? "Daumen zurücknehmen" : "Dafür stimmen"}
+                title={voted ? "Take the thumbs-up back" : "Vote for it"}
                 className={cn(
                   "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs transition-colors",
                   voted ? "border-[#FBD00D]/50 bg-[#FBD00D]/15 text-[#FBD00D]" : "border-[#3a3435] text-[#9a9090] hover:text-[#f5f0f0]"
                 )}
               >
                 <ThumbsUp size={11} />
-                {variant.votes.length > 0 ? variant.votes.map((v) => v.name).join(", ") : "Dafür"}
+                {variant.votes.length > 0 ? variant.votes.map((v) => v.name).join(", ") : "In favour"}
               </button>
               {others.map((p) => (
                 <span key={p.userId} className="rounded-full border border-[#6b8fff]/40 bg-[#6b8fff]/15 px-2 py-0.5 text-[11px] text-[#6b8fff]">
-                  {p.name}{typingHere.includes(p) ? " schreibt gerade…" : ""}
+                  {p.name}{typingHere.includes(p) ? " is typing…" : ""}
                 </span>
               ))}
               {board.outCount > 0 && (
@@ -296,17 +296,17 @@ export function VariantsBoard({ tournamentId, tournamentHref, rows, levels, vari
               )}
               {!archived && (
                 <span className="ml-auto flex items-center gap-1">
-                  <Button size="sm" variant="outline" disabled={adopting} onClick={() => adopt(variant)} title="Die Lineups dieser Variante in der Comp anlegen" className="mr-1">
+                  <Button size="sm" variant="outline" disabled={adopting} onClick={() => adopt(variant)} title="Create the lineups of this variant in the tournament" className="mr-1">
                     <Check size={14} />
-                    Übernehmen
+                    Take over
                   </Button>
-                  <button type="button" onClick={() => run({ type: "createVariant", copyFrom: variant.id })} title="Variante kopieren" className="p-1.5 text-[#5e5858] hover:text-[#f5f0f0]">
+                  <button type="button" onClick={() => run({ type: "createVariant", copyFrom: variant.id })} title="Copy variant" className="p-1.5 text-[#5e5858] hover:text-[#f5f0f0]">
                     <Copy size={14} />
                   </button>
                   <button
                     type="button"
-                    onClick={() => { if (confirm(`Variante „${variant.name}“ löschen?`)) run({ type: "deleteVariant", variantId: variant.id }) }}
-                    title="Variante löschen"
+                    onClick={() => { if (confirm(`Delete the variant “${variant.name}”?`)) run({ type: "deleteVariant", variantId: variant.id }) }}
+                    title="Delete variant"
                     className="p-1.5 text-[#5e5858] hover:text-[#ED1F24]"
                   >
                     <Trash2 size={14} />
@@ -318,14 +318,14 @@ export function VariantsBoard({ tournamentId, tournamentHref, rows, levels, vari
             {/* The tapped player: where to put them, and the note on them in this variant */}
             {picked && !archived && (
               <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 rounded-lg bg-[#FBD00D]/10 px-2.5 py-1.5 text-xs text-[#FBD00D]">
-                <span><strong>{picked.player.name}</strong> ausgewählt – Ziel antippen</span>
+                <span><strong>{picked.player.name}</strong> selected – tap where to put them</span>
                 <SavingInput
                   key={picked.player.id}
                   value={variant.playerNotes[picked.player.id] ?? ""}
                   onSave={(note) => run({ type: "notePlayer", variantId: variant.id, playerId: picked.player.id, note: note || null })}
                   onFocus={() => setTyping(`player:${variant.id}:${picked.player.id}`)}
                   onLeave={() => setTyping(null)}
-                  placeholder="Notiz zu diesem Spieler"
+                  placeholder="Note on this player"
                   maxLength={300}
                   className="h-7 min-w-40 flex-1 border-dashed border-[#FBD00D]/40 px-2 text-xs text-[#f5f0f0] placeholder:text-[#9a9090]"
                 />
@@ -333,7 +333,7 @@ export function VariantsBoard({ tournamentId, tournamentHref, rows, levels, vari
             )}
 
             <div className={cn(area(POOL), "flex min-h-14 flex-wrap items-center gap-2")} {...dropProps(POOL)}>
-              <span className="mr-1 text-[11px] font-semibold uppercase tracking-wider text-[#5e5858]">Nicht eingeteilt {board.pool.length}</span>
+              <span className="mr-1 text-[11px] font-semibold uppercase tracking-wider text-[#5e5858]">Not placed {board.pool.length}</span>
               {board.pool.map((row) => chip(row))}
             </div>
 
@@ -347,7 +347,7 @@ export function VariantsBoard({ tournamentId, tournamentHref, rows, levels, vari
                       <SavingInput
                         value={lineup.name}
                         onSave={(name) => { if (name) run({ type: "updateLineup", lineupId: lineup.id, name }) }}
-                        aria-label="Name des Lineups"
+                        aria-label="Name of the lineup"
                         maxLength={60}
                         className="h-6 flex-1 px-1 text-sm font-semibold text-[#f5f0f0] hover:border-[#2d2829]"
                       />
@@ -356,8 +356,8 @@ export function VariantsBoard({ tournamentId, tournamentHref, rows, levels, vari
                     {!archived && (
                       <button
                         type="button"
-                        onClick={() => { if (lineup.players.length === 0 || confirm(`Lineup „${lineup.name}“ entfernen? Die Spieler gehen zurück in „Nicht eingeteilt“.`)) run({ type: "deleteLineup", lineupId: lineup.id }) }}
-                        aria-label={`${lineup.name} entfernen`}
+                        onClick={() => { if (lineup.players.length === 0 || confirm(`Remove the lineup “${lineup.name}”? Its players go back to “Not placed”.`)) run({ type: "deleteLineup", lineupId: lineup.id }) }}
+                        aria-label={`Remove ${lineup.name}`}
                         className="p-0.5 text-[#5e5858] hover:text-[#ED1F24]"
                       >
                         <X size={12} />
@@ -380,7 +380,7 @@ export function VariantsBoard({ tournamentId, tournamentHref, rows, levels, vari
                 onSave={(note) => run({ type: "updateVariant", variantId: variant.id, note: note || null })}
                 onFocus={() => setTyping(`variant:${variant.id}`)}
                 onLeave={() => setTyping(null)}
-                placeholder="Notizen zur Variante"
+                placeholder="Notes on the variant"
                 maxLength={1000}
                 className="h-8 w-full border-dashed border-[#2d2829] px-2 text-xs text-[#c5bfbf] placeholder:text-[#5e5858]"
               />
@@ -409,7 +409,7 @@ function AddLineup({ onAdd }: { onAdd: (name: string) => void }) {
         onChange={(e) => setName(e.target.value)}
         placeholder="+ Lineup"
         maxLength={60}
-        aria-label="Neues Lineup"
+        aria-label="New lineup"
         className="h-6 min-w-0 flex-1 bg-transparent px-1 text-sm text-[#f5f0f0] placeholder:text-[#5e5858] focus:outline-none"
       />
       {name.trim() && (

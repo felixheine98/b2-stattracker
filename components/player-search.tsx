@@ -17,7 +17,7 @@ interface Props {
 }
 
 // Type a name, move through the suggestions with the arrow keys and pick one with Enter
-export function PlayerSearch({ players, isGuest, onPick, placeholder = "Spieler suchen, Enter wählt aus", emptyText = "Kein freier Spieler gefunden." }: Props) {
+export function PlayerSearch({ players, isGuest, onPick, placeholder = "Find a player, Enter picks", emptyText = "No free player found." }: Props) {
   const [query, setQuery] = useState("")
   const [active, setActive] = useState(0)
   const matches = searchPlayers(players, query).slice(0, 8)

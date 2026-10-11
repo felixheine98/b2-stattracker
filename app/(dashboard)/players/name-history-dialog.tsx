@@ -48,7 +48,7 @@ export function NameHistoryDialog({ player, suggestion, canManage, onClose, onCh
     setLoading(false)
     const data = await res?.json().catch(() => null)
     if (!res?.ok) {
-      setError(data?.error ?? "Speichern fehlgeschlagen")
+      setError(data?.error ?? "Failed to save")
       return false
     }
     onChanged(data)
@@ -68,21 +68,21 @@ export function NameHistoryDialog({ player, suggestion, canManage, onClose, onCh
 
   return (
     <Dialog open onClose={onClose} className="max-w-lg">
-      <DialogTitle>Namen von {player.name}</DialogTitle>
+      <DialogTitle>Names of {player.name}</DialogTitle>
       <div className="space-y-4">
         <p className="text-xs text-[#5e5858]">
-          In einer Comp wird der Name angezeigt, der an ihrem Startdatum galt. Überall sonst steht der aktuelle Name.
+          Inside a tournament the name of its start day is shown. Everywhere else it is the current name.
         </p>
         <ol className="space-y-2">
           <li className="flex items-center gap-3 rounded-lg border border-[#2d2829] px-3 py-2 text-sm">
-            <span className="w-36 shrink-0 text-xs text-[#5e5858]">von Anfang an</span>
+            <span className="w-36 shrink-0 text-xs text-[#5e5858]">from the start</span>
             {canManage ? (
-              <Input value={initialName} onChange={(e) => setInitialName(e.target.value)} aria-label="Name von Anfang an" className="h-8 flex-1 text-sm" />
+              <Input value={initialName} onChange={(e) => setInitialName(e.target.value)} aria-label="Name from the start" className="h-8 flex-1 text-sm" />
             ) : (
               <span className="flex-1 font-medium text-[#f5f0f0]">{player.initialName}</span>
             )}
             {canManage && initialName.trim() && initialName.trim() !== player.initialName && (
-              <Button size="sm" onClick={() => send("", "PUT", { initialName: initialName.trim() })} disabled={loading}>Speichern</Button>
+              <Button size="sm" onClick={() => send("", "PUT", { initialName: initialName.trim() })} disabled={loading}>Save</Button>
             )}
           </li>
           {changes.map((change) => {
@@ -98,7 +98,7 @@ export function NameHistoryDialog({ player, suggestion, canManage, onClose, onCh
                       value={edit.day ?? day}
                       max={localTodayKey()}
                       onChange={(e) => setEdits((all) => ({ ...all, [change.id]: { ...edit, day: e.target.value } }))}
-                      aria-label="Gilt ab"
+                      aria-label="Applies from"
                       className="h-8 w-36 shrink-0 text-xs"
                     />
                     <Input
@@ -107,13 +107,13 @@ export function NameHistoryDialog({ player, suggestion, canManage, onClose, onCh
                       aria-label="Name"
                       className="h-8 flex-1 text-sm"
                     />
-                    {changed && <Button size="sm" onClick={() => saveChange(change)} disabled={loading}>Speichern</Button>}
+                    {changed && <Button size="sm" onClick={() => saveChange(change)} disabled={loading}>Save</Button>}
                     <button
                       type="button"
                       onClick={() => send(`/${change.id}`, "DELETE")}
                       disabled={loading}
                       className="text-[#5e5858] hover:text-[#ED1F24] disabled:opacity-40"
-                      title="Diese Umbenennung entfernen"
+                      title="Remove this rename"
                     >
                       <Trash2 size={14} />
                     </button>
@@ -131,28 +131,28 @@ export function NameHistoryDialog({ player, suggestion, canManage, onClose, onCh
 
         {canManage && (
           <div className="space-y-1.5 border-t border-[#2d2829] pt-3">
-            <Label htmlFor="rename-name">Umbenennen</Label>
+            <Label htmlFor="rename-name">Rename</Label>
             <div className="flex items-center gap-2">
               <Input
                 type="date"
                 value={newDay}
                 max={localTodayKey()}
                 onChange={(e) => setNewDay(e.target.value)}
-                aria-label="Gilt ab"
+                aria-label="Applies from"
                 className="w-40 shrink-0"
               />
-              <Input id="rename-name" value={newName} onChange={(e) => setNewName(e.target.value)} placeholder="Neuer Name" className="flex-1" />
-              <Button onClick={addRename} disabled={loading || !newName.trim() || !newDay}>Eintragen</Button>
+              <Input id="rename-name" value={newName} onChange={(e) => setNewName(e.target.value)} placeholder="New name" className="flex-1" />
+              <Button onClick={addRename} disabled={loading || !newName.trim() || !newDay}>Add</Button>
             </div>
             <p className="text-xs text-[#5e5858]">
-              Das Datum ist der Tag, ab dem der Name gilt. Für einen früheren Namen einfach ein Datum in der Vergangenheit wählen.
+              The date is the day the name applies from. For an earlier name, simply pick a date in the past.
             </p>
           </div>
         )}
 
         {error && <p className="text-sm text-[#ED1F24]">{error}</p>}
         <div className="dialog-footer flex justify-end">
-          <Button variant="ghost" onClick={onClose}>Schließen</Button>
+          <Button variant="ghost" onClick={onClose}>Close</Button>
         </div>
       </div>
     </Dialog>

@@ -255,8 +255,8 @@ const NAME_BY_CODE = new Map(COUNTRIES)
 
 // Countries offered when setting a flag by hand; all others arrive via trackmania.io
 const SELECTABLE: Array<{ code: string; name: string }> = [
-  { code: "de", name: "Deutschland" },
-  { code: "at", name: "Österreich" },
+  { code: "de", name: "Germany" },
+  { code: "at", name: "Austria" },
 ]
 
 // Compare names without case, accents and punctuation ("Réunion" = "reunion")

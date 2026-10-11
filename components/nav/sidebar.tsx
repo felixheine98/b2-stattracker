@@ -51,8 +51,8 @@ export function Sidebar({ userName, role, profileHref }: SidebarProps) {
       <button
         onClick={toggleCollapsed}
         aria-expanded={!collapsed}
-        aria-label={collapsed ? "Seitenleiste ausklappen" : "Seitenleiste einklappen"}
-        title={collapsed ? "Seitenleiste ausklappen" : "Seitenleiste einklappen"}
+        aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+        title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
         className="absolute left-full top-[18px] z-10 ml-3 flex h-8 w-8 items-center justify-center rounded-md text-[#5e5858] hover:bg-[#251f20] hover:text-[#f5f0f0] transition-colors"
       >
         {collapsed ? <PanelLeftOpen size={16} /> : <PanelLeftClose size={16} />}
@@ -67,8 +67,8 @@ export function Sidebar({ userName, role, profileHref }: SidebarProps) {
         <button
           type="button"
           onClick={openSearch}
-          title={collapsed ? "Suchen (Strg+K)" : undefined}
-          aria-label="Suchen"
+          title={collapsed ? "Search (Ctrl+K)" : undefined}
+          aria-label="Search"
           className={cn(
             "mb-3 flex w-full items-center gap-3 rounded-md border border-[#2d2829] bg-[#251f20]/60 py-2 text-sm text-[#5e5858] transition-colors hover:border-[#3a3435] hover:text-[#f5f0f0]",
             collapsed ? "justify-center px-0" : "px-3"
@@ -77,8 +77,8 @@ export function Sidebar({ userName, role, profileHref }: SidebarProps) {
           <Search size={16} className="shrink-0" />
           {!collapsed && (
             <>
-              <span className="flex-1 text-left">Suchen</span>
-              <kbd className="text-[10px] text-[#5e5858]">Strg K</kbd>
+              <span className="flex-1 text-left">Search</span>
+              <kbd className="text-[10px] text-[#5e5858]">Ctrl K</kbd>
             </>
           )}
         </button>
@@ -130,14 +130,14 @@ export function Sidebar({ userName, role, profileHref }: SidebarProps) {
         )}
         <button
           onClick={() => setShowPassword(true)}
-          title={collapsed ? "Passwort ändern" : undefined}
+          title={collapsed ? "Change password" : undefined}
           className={cn(
             "flex w-full items-center gap-3 rounded-md py-2 text-sm font-medium text-[#9a9090] hover:bg-[#251f20] hover:text-[#f5f0f0] transition-colors",
             collapsed ? "justify-center px-0" : "px-3"
           )}
         >
           <KeyRound size={16} className="shrink-0" />
-          {!collapsed && "Passwort ändern"}
+          {!collapsed && "Change password"}
         </button>
         <button
           onClick={() => signOut({ callbackUrl: `${BASE_PATH}/login` })}

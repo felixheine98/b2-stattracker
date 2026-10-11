@@ -12,9 +12,9 @@ export async function GET(_req: Request, { params }: Params) {
   if (!await auth()) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   const { id, matchId } = await params
   const match = await db.match.findUnique({ where: { id: matchId, tournamentId: id }, include: { ...opponentMatchInclude, opponentLineup: { include: { team: true } }, confirmations: { orderBy: { createdAt: "desc" } } } })
-  if (!match) return NextResponse.json({ error: "Match nicht gefunden." }, { status: 404 })
+  if (!match) return NextResponse.json({ error: "Match not found." }, { status: 404 })
   const actors = await db.user.findMany({ where: { id: { in: match.confirmations.map(c => c.userId) } }, select: { id: true, name: true } })
-  return NextResponse.json({ opponent: match.opponent, opponentLineupId: match.opponentLineupId, opponentLineup: match.opponentLineup, date: match.date, notes: match.notes, number: match.number, label: match.label, closedAt: match.closedAt, confirmedOutcome: match.confirmedOutcome, resultRevision: match.resultRevision, suggestedOutcome: suggestMatchOutcome(match.subMatches), confirmations: match.confirmations.map(c => ({ ...c, actor: actors.find(u => u.id === c.userId)?.name ?? (c.userId.startsWith("system:") ? "System · Sammelabschluss" : "Gelöschter Account") })) })
+  return NextResponse.json({ opponent: match.opponent, opponentLineupId: match.opponentLineupId, opponentLineup: match.opponentLineup, date: match.date, notes: match.notes, number: match.number, label: match.label, closedAt: match.closedAt, confirmedOutcome: match.confirmedOutcome, resultRevision: match.resultRevision, suggestedOutcome: suggestMatchOutcome(match.subMatches), confirmations: match.confirmations.map(c => ({ ...c, actor: actors.find(u => u.id === c.userId)?.name ?? (c.userId.startsWith("system:") ? "System · bulk closing" : "Deleted account") })) })
 }
 const schema = z.discriminatedUnion("action", [
   z.object({ action: z.literal("edit"), opponent: z.string().trim().max(100).nullish(), opponentLineupId: z.string().nullish(), opponentTeamId: z.string().nullish(), date: z.string().date().nullish(), notes: z.string().max(10000).nullish(), number: z.number().int().min(1).max(999).nullish(), label: z.string().trim().max(60).nullish(), alias: z.string().trim().min(1).max(100).optional() }),
@@ -26,7 +26,7 @@ export async function PATCH(req: Request, { params }: Params) {
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   const { id, matchId } = await params
   const match = await db.match.findUnique({ where: { id: matchId, tournamentId: id }, include: { stage: true } })
-  if (!match) return NextResponse.json({ error: "Match nicht gefunden." }, { status: 404 })
+  if (!match) return NextResponse.json({ error: "Match not found." }, { status: 404 })
   if (!await mayEditLineupById(session.user as SessionUser, match.tournamentLineupId)) return NextResponse.json({ error: "Forbidden" }, { status: 403 })
   const parsed = schema.safeParse(await req.json().catch(() => null))
   if (!parsed.success) return NextResponse.json({ error: parsed.error.issues[0].message }, { status: 400 })
@@ -34,7 +34,7 @@ export async function PATCH(req: Request, { params }: Params) {
     const input = parsed.data
     await db.$transaction(async tx => {
       if (input.action === "confirm") {
-        if (match.stage.type === "SEEDING") throw new OpponentError("Seeding zählt nicht zur Gegnerbilanz.")
+        if (match.stage.type === "SEEDING") throw new OpponentError("Seeding does not count towards the record against opponents.")
         await confirmMatch(tx, { matchId, revision: input.revision, outcome: input.outcome, userId: (session.user as { id: string }).id })
       } else if (input.action === "reopen") {
         await tx.match.update({ where: { id: matchId }, data: { closedAt: null, confirmedOutcome: null } })
@@ -49,6 +49,6 @@ export async function PATCH(req: Request, { params }: Params) {
     return NextResponse.json({ ok: true })
   } catch (e) {
     if (e instanceof OpponentError) return NextResponse.json({ error: e.message }, { status: e.status })
-    return NextResponse.json({ error: "Match konnte nicht gespeichert werden." }, { status: 500 })
+    return NextResponse.json({ error: "The match could not be saved." }, { status: 500 })
   }
 }

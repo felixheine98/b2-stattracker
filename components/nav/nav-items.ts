@@ -5,11 +5,11 @@ export const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/players", label: "Players", icon: Users },
   { href: "/tournaments", label: "Tournaments", icon: Trophy },
-  { href: "/opponents", label: "Gegner", icon: Swords },
+  { href: "/opponents", label: "Opponents", icon: Swords },
 ]
 
 // The signed-in player's own profile: its own entry, although the page lies below "Players"
-export const profileItem = { label: "Mein Profil", icon: CircleUser }
+export const profileItem = { label: "My profile", icon: CircleUser }
 
 // Whether a page of the navigation is the one being shown. The own profile counts for
 // "Mein Profil" only, every other profile for "Players".

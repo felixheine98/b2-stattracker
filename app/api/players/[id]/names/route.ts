@@ -36,7 +36,7 @@ export async function POST(req: Request, { params }: Params) {
   const player = await db.player.findUnique({ where: { id }, include: { nameChanges: true } })
   if (!player) return NextResponse.json({ error: "Player not found" }, { status: 404 })
   if (effectiveFrom > latestAllowedDay() || (keepCurrentFrom && keepCurrentFrom > latestAllowedDay())) {
-    return NextResponse.json({ error: "Das Datum darf nicht in der Zukunft liegen" }, { status: 400 })
+    return NextResponse.json({ error: "The date must not be in the future" }, { status: 400 })
   }
 
   const entries = keepCurrentFrom ? planNameFrom(player, name, effectiveFrom, keepCurrentFrom) : [{ name, effectiveFrom }]

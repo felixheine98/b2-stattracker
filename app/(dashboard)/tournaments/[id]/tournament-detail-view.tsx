@@ -132,10 +132,10 @@ export function TournamentDetailView({ tournament: initial, players, statsMatche
     setPlanningStarting(false)
     if (!res?.ok) {
       const data = await res?.json().catch(() => null)
-      alert(data?.error ?? "Planung konnte nicht gestartet werden")
+      alert(data?.error ?? "Failed to start the planning")
       return
     }
-    router.push(`${tournamentPath(initial)}/planung`)
+    router.push(`${tournamentPath(initial)}/planning`)
   }
 
   const router = useRouter()
@@ -195,7 +195,7 @@ export function TournamentDetailView({ tournament: initial, players, statsMatche
   // Selection lists show team members first, then guests
   const playerGroups = [
     { label: null, players: pickable.filter((p) => !isGuest(p.tmId)) },
-    { label: "Gäste", players: pickable.filter((p) => isGuest(p.tmId)) },
+    { label: "Guests", players: pickable.filter((p) => isGuest(p.tmId)) },
   ].filter((g) => g.players.length > 0)
   const [lineupManagerIds, setLineupManagerIds] = useState<string[]>([])
   const [lineupError, setLineupError] = useState("")
@@ -311,7 +311,7 @@ export function TournamentDetailView({ tournament: initial, players, statsMatche
     setDeletingLineup(null)
     if (!res.ok) {
       const data = await res.json().catch(() => null)
-      alert(data?.error ?? "Lineup konnte nicht gelöscht werden")
+      alert(data?.error ?? "Failed to delete the lineup")
       return
     }
     setLineups((ls) => ls.filter((l) => l.id !== lineupId))
@@ -385,9 +385,9 @@ export function TournamentDetailView({ tournament: initial, players, statsMatche
       {/* Planning: the player's own answer while it is open, and the way to the planning page */}
       {planningCard && <AvailabilityCard {...planningCard} />}
       {hasPlanning && !planningCard && (
-        <Link href={`${tournamentPath(tournament)}/planung`} className="inline-flex items-center gap-1.5 text-sm text-[#FBD00D] hover:underline">
+        <Link href={`${tournamentPath(tournament)}/planning`} className="inline-flex items-center gap-1.5 text-sm text-[#FBD00D] hover:underline">
           <ClipboardList size={14} />
-          {lineups.length > 0 ? "Planung ansehen (abgeschlossen)" : "Zur Planung"}
+          {lineups.length > 0 ? "View planning (closed)" : "To the planning"}
         </Link>
       )}
 
@@ -408,7 +408,7 @@ export function TournamentDetailView({ tournament: initial, players, statsMatche
               {!hasPlanning && lineups.length === 0 && (
                 <Button size="sm" variant="outline" onClick={startPlanning} disabled={planningStarting}>
                   <ClipboardList size={14} />
-                  Planung starten
+                  Start planning
                 </Button>
               )}
               <Button size="sm" onClick={openNewLineupForm}>
@@ -504,7 +504,7 @@ export function TournamentDetailView({ tournament: initial, players, statsMatche
         )}
       </div>
 
-      {/* Gesamtstatistik */}
+      {/* Overall stats */}
       {(() => {
         // Only matches that still exist locally, so deleting a match updates the stats at once
         const existing = statsMatches.filter((sm) => matches.some((m) => m.id === sm.id))
@@ -519,7 +519,7 @@ export function TournamentDetailView({ tournament: initial, players, statsMatche
             <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
               <h2 className="text-sm font-semibold text-[#9a9090] uppercase tracking-wider flex items-center gap-2">
                 <BarChart2 size={14} />
-                Gesamtstatistik
+                Overall stats
               </h2>
               <StatsViewToggle byMap={statsByMap} onChange={(byMap) => selectStatsView(byMap ? ["map"] : [])} />
             </div>
@@ -530,7 +530,7 @@ export function TournamentDetailView({ tournament: initial, players, statsMatche
                   ? [{ label: "Lineup", options: lineups.map((l) => ({ id: l.id, label: l.name })), selected: statsLineupIds, onChange: selectStatsLineups }]
                   : []),
                 ...(statsStages.length > 1
-                  ? [{ label: "Abschnitt", options: statsStages.map((st) => ({ id: st.id, label: stageName(st, stages) })), selected: statsStageIds, onChange: selectStatsStages }]
+                  ? [{ label: "Stage", options: statsStages.map((st) => ({ id: st.id, label: stageName(st, stages) })), selected: statsStageIds, onChange: selectStatsStages }]
                   : []),
                 ...(statsFormats.length > 1
                   ? [{ label: "Format", options: statsFormats.map((f) => ({ id: f, label: formatLabel(f) })), selected: statsFormatIds, onChange: selectStatsFormats }]
@@ -538,7 +538,7 @@ export function TournamentDetailView({ tournament: initial, players, statsMatche
               ]}
             />
             {aggregates.length === 0 ? (
-              <p className="text-sm text-[#5e5858]">Keine Daten für diese Auswahl.</p>
+              <p className="text-sm text-[#5e5858]">No data for this selection.</p>
             ) : statsByMap ? (
               <div className="space-y-4">
                 {mapAggregates.map((agg) => (
@@ -584,7 +584,7 @@ export function TournamentDetailView({ tournament: initial, players, statsMatche
                 <div key={stage.id}>
                   <StageHeading stage={stage} stages={stages} startDate={tournament.startDate ?? tournament.createdAt} />
                   {stageMatches.length === 0 ? (
-                    <p className="text-xs text-[#5e5858]">Noch keine Matches.</p>
+                    <p className="text-xs text-[#5e5858]">No matches yet.</p>
                   ) : (
                     <div className="space-y-2">
                       {stageMatches.map((match) => (
@@ -742,7 +742,7 @@ export function TournamentDetailView({ tournament: initial, players, statsMatche
                       <button
                         type="button"
                         onClick={() => setLineupPlayerIds((ids) => ids.filter((x) => x !== id))}
-                        aria-label={`${player.name} entfernen`}
+                        aria-label={`Remove ${player.name}`}
                         className="text-[#9a9090] hover:text-[#ED1F24]"
                       >
                         <X size={12} />
@@ -823,9 +823,9 @@ export function TournamentDetailView({ tournament: initial, players, statsMatche
             )}
           </div>
           <div className="space-y-1.5">
-            <Label>Zuständig <span className="text-[#5e5858]">(optional)</span></Label>
+            <Label>Responsible <span className="text-[#5e5858]">(optional)</span></Label>
             <p className="text-xs text-[#5e5858]">
-              Wer hier steht, darf Matches dieses Lineups anlegen und Ergebnisse pflegen, bis eine Woche nach Ende der Comp.
+              Whoever is listed here may add matches of this lineup and maintain results, until a week after the tournament ends.
             </p>
             {lineupManagerIds.length > 0 && (
               <div className="flex flex-wrap gap-1.5">
@@ -838,7 +838,7 @@ export function TournamentDetailView({ tournament: initial, players, statsMatche
                       <button
                         type="button"
                         onClick={() => setLineupManagerIds((ids) => ids.filter((x) => x !== id))}
-                        aria-label={`${user.name} entfernen`}
+                        aria-label={`Remove ${user.name}`}
                         className="text-[#9a9090] hover:text-[#ED1F24]"
                       >
                         <X size={12} />
@@ -852,13 +852,13 @@ export function TournamentDetailView({ tournament: initial, players, statsMatche
               players={users.filter((u) => !lineupManagerIds.includes(u.id)).map((u) => ({ id: u.id, name: u.name, tmId: "", allNames: [u.name, u.username] }))}
               isGuest={() => false}
               onPick={(id) => setLineupManagerIds((ids) => (ids.includes(id) ? ids : [...ids, id]))}
-              placeholder="Account suchen, Enter wählt aus"
-              emptyText="Kein Account gefunden."
+              placeholder="Find an account, Enter picks"
+              emptyText="No account found."
             />
             {/* The accounts of the lineup's players are the most likely choice */}
             {users.some((u) => u.playerId && lineupPlayerIds.includes(u.playerId) && !lineupManagerIds.includes(u.id)) && (
               <div className="flex flex-wrap items-center gap-1.5 text-xs text-[#5e5858]">
-                Aus dem Lineup:
+                From the lineup:
                 {users
                   .filter((u) => u.playerId && lineupPlayerIds.includes(u.playerId) && !lineupManagerIds.includes(u.id))
                   .map((u) => (

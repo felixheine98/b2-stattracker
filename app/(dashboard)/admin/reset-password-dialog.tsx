@@ -39,7 +39,7 @@ export function ResetPasswordDialog({ user, onClose }: Props) {
     setLoading(false)
     if (!res?.ok) {
       const data = await res?.json().catch(() => null)
-      setError(data?.error ?? "Passwort konnte nicht gesetzt werden")
+      setError(data?.error ?? "Failed to set the password")
       return
     }
     setSaved(true)
@@ -47,13 +47,13 @@ export function ResetPasswordDialog({ user, onClose }: Props) {
 
   return (
     <Dialog open onClose={onClose}>
-      <DialogTitle>Passwort zurücksetzen</DialogTitle>
+      <DialogTitle>Reset password</DialogTitle>
       <div className="space-y-4">
         <p className="text-sm text-[#9a9090]">
-          Neues Passwort für <span className="text-[#f5f0f0]">{user.name}</span> ({user.username}). Das bisherige gilt danach nicht mehr.
+          New password for <span className="text-[#f5f0f0]">{user.name}</span> ({user.username}). The previous one no longer applies afterwards.
         </p>
         <div className="space-y-1.5">
-          <Label htmlFor="reset-password">Neues Passwort</Label>
+          <Label htmlFor="reset-password">New password</Label>
           <div className="flex gap-2">
             <Input
               id="reset-password"
@@ -64,19 +64,19 @@ export function ResetPasswordDialog({ user, onClose }: Props) {
               className="font-mono"
             />
             {!saved && (
-              <Button type="button" variant="outline" onClick={() => setPassword(randomPassword())}>Neu würfeln</Button>
+              <Button type="button" variant="outline" onClick={() => setPassword(randomPassword())}>Roll again</Button>
             )}
           </div>
         </div>
         {saved && (
           <p className="text-sm text-[#FBD00D]">
-            Gespeichert. Gib das Passwort jetzt weiter – es wird nach dem Schließen nicht mehr angezeigt.
+            Saved. Pass the password on now – it is not shown again after closing.
           </p>
         )}
         {error && <p className="text-sm text-[#ED1F24]">{error}</p>}
         <div className="dialog-footer flex gap-2 justify-end">
-          <Button variant="ghost" onClick={onClose}>{saved ? "Schließen" : "Abbrechen"}</Button>
-          {!saved && <Button onClick={save} disabled={loading || password.length < 8}>{loading ? "Speichert…" : "Passwort setzen"}</Button>}
+          <Button variant="ghost" onClick={onClose}>{saved ? "Close" : "Cancel"}</Button>
+          {!saved && <Button onClick={save} disabled={loading || password.length < 8}>{loading ? "Saving…" : "Set password"}</Button>}
         </div>
       </div>
     </Dialog>

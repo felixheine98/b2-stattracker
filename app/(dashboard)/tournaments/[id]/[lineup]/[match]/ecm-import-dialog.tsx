@@ -39,18 +39,18 @@ interface SetAnalysis {
 
 function analyzeSet(set: EcmSet, isOurs: (name: string) => boolean): SetAnalysis {
   const count = set.rounds[0]?.length ?? 0
-  if (count === 0) return { size: 0, ourNames: [], error: "keine Runden" }
+  if (count === 0) return { size: 0, ourNames: [], error: "no rounds" }
   if (count % 2 !== 0 || set.rounds.some((r) => r.length !== count)) {
-    return { size: 0, ourNames: [], error: "uneinheitliche Spielerzahl pro Runde" }
+    return { size: 0, ourNames: [], error: "number of players differs between rounds" }
   }
   const size = count / 2
   const ourNames: string[] = []
   for (const round of set.rounds) {
     const ours = round.filter((e) => isOurs(e.p))
-    if (ours.length !== size) return { size, ourNames, error: "Teamzuordnung passt nicht" }
+    if (ours.length !== size) return { size, ourNames, error: "teams do not add up" }
     for (const e of ours) if (!ourNames.includes(e.p)) ourNames.push(e.p)
   }
-  if (ourNames.length !== size) return { size, ourNames, error: "wechselnde Spieler innerhalb des Sets" }
+  if (ourNames.length !== size) return { size, ourNames, error: "players change within the set" }
   return { size, ourNames }
 }
 
@@ -125,10 +125,10 @@ export function EcmImportDialog({ subMatches, allPlayers, startDay, canManage, i
   analyses.forEach((a, i) => {
     if (!selected[i]) return
     const ids = a.ourNames.map(playerIdFor)
-    if (ids.some((id) => !id)) problems.push(`${payload!.sets[i].label}: nicht alle Spieler zugeordnet`)
-    else if (new Set(ids).size !== ids.length) problems.push(`${payload!.sets[i].label}: ein Spieler ist doppelt zugeordnet`)
+    if (ids.some((id) => !id)) problems.push(`${payload!.sets[i].label}: not all players are assigned`)
+    else if (new Set(ids).size !== ids.length) problems.push(`${payload!.sets[i].label}: a player is assigned twice`)
     if (targets.filter((t, j) => selected[j] && t === targets[i]).length > 1) {
-      problems.push(`${payload!.sets[i].label}: Sub-Match mehrfach gewählt`)
+      problems.push(`${payload!.sets[i].label}: sub-match picked more than once`)
     }
   })
   // eCM names that differ from the name the mapped player has in this tournament
@@ -151,7 +151,7 @@ export function EcmImportDialog({ subMatches, allPlayers, startDay, canManage, i
     setRenaming(null)
     if (!res?.ok) {
       const data = await res?.json().catch(() => null)
-      setError(data?.error ?? "Name konnte nicht eingetragen werden")
+      setError(data?.error ?? "Failed to save the name")
       return
     }
     setRenamed((names) => [...names, ecmName])
@@ -195,7 +195,7 @@ export function EcmImportDialog({ subMatches, allPlayers, startDay, canManage, i
       })
       if (!res.ok) {
         const data = await res.json().catch(() => null)
-        setError(`${set.label}: ${data?.error ?? "Import fehlgeschlagen"}`)
+        setError(`${set.label}: ${data?.error ?? "Import failed"}`)
         setSaving(false)
         return
       }
@@ -211,28 +211,28 @@ export function EcmImportDialog({ subMatches, allPlayers, startDay, canManage, i
 
   return (
     <Dialog open onClose={onClose} className="max-w-2xl">
-      <DialogTitle>Von eCircuitMania importieren</DialogTitle>
+      <DialogTitle>Import from eCircuitMania</DialogTitle>
 
       {!payload ? (
         <div className="space-y-4">
           <p className="text-sm text-[#c5bfbf]">
-            Am schnellsten geht es mit dem Lesezeichen: Es liest die Match-Seite auf ecircuitmania.com aus und bringt
-            dich mit den Daten direkt hierher.
+            The bookmark is the quickest way: it reads the match page on ecircuitmania.com and brings
+            you straight here with the data.
           </p>
           <EcmBookmarkletSetup />
           <p className="text-xs text-[#5e5858]">
-            Nur falls das Lesezeichen ein Fenster zum Kopieren zeigt (sehr großes Match): die kopierten Daten hier einfügen.
+            Only if the bookmark shows a window to copy from (very large match): paste the copied data here.
           </p>
           <Textarea
             value={text}
             onChange={(e) => setText(e.target.value)}
             rows={3}
             className="font-mono text-xs"
-            placeholder="Kopierte Daten hier einfügen (Strg+V)"
+            placeholder="Paste the copied data here (Ctrl+V)"
           />
-          {text.trim() && <p className="text-sm text-[#ED1F24]">Das sind keine Daten aus dem eCM-Lesezeichen.</p>}
+          {text.trim() && <p className="text-sm text-[#ED1F24]">This is not data from the eCM bookmark.</p>}
           <div className="dialog-footer flex justify-end">
-            <Button variant="ghost" onClick={onClose}>Abbrechen</Button>
+            <Button variant="ghost" onClick={onClose}>Cancel</Button>
           </div>
         </div>
       ) : (
@@ -265,37 +265,37 @@ export function EcmImportDialog({ subMatches, allPlayers, startDay, canManage, i
                 <div key={i} className="flex flex-wrap items-center gap-x-3 rounded-lg border border-[#2d2829] px-3 py-2 text-sm">
                   {repairs[i].dropped.length > 0 && (
                     <p className="order-last w-full pt-1 text-xs text-[#cd7f32]">
-                      Ignoriert, weil überzählig und nie im Ziel:{" "}
-                      {repairs[i].dropped.map((d) => `${d.player} (Runde ${d.round})`).join(", ")}
+                      Ignored, as surplus and never finished:{" "}
+                      {repairs[i].dropped.map((d) => `${d.player} (round ${d.round})`).join(", ")}
                     </p>
                   )}
                   {repairs[i].added.length > 0 && (
                     <p className="order-last w-full pt-1 text-xs text-[#cd7f32]">
-                      Fehlt bei eCM, als DNF ergänzt:{" "}
-                      {repairs[i].added.map((d) => `${d.player} (Runde ${d.round})`).join(", ")}
+                      Missing on eCM, added as DNF:{" "}
+                      {repairs[i].added.map((d) => `${d.player} (round ${d.round})`).join(", ")}
                     </p>
                   )}
                   <span className="font-medium text-[#f5f0f0]">{set.label}</span>
                   <span className="text-[#9a9090]">{set.map}</span>
                   {a.error ? (
-                    <span className="ml-auto text-xs text-[#ED1F24]">nicht importierbar: {a.error}</span>
+                    <span className="ml-auto text-xs text-[#ED1F24]">cannot be imported: {a.error}</span>
                   ) : (
                     <>
                       <span className="text-xs text-[#5e5858]">
-                        {a.size}v{a.size} · {set.rounds.length} Runden · {a.ourNames.join(", ")}
+                        {a.size}v{a.size} · {set.rounds.length} rounds · {a.ourNames.join(", ")}
                       </span>
                       <select
                         value={targets[i]}
                         onChange={(e) => setTargetEdits((t) => ({ ...t, [i]: e.target.value }))}
                         className={`${selectClass} ml-auto`}
-                        aria-label={`Ziel für ${set.label}`}
+                        aria-label={`Target for ${set.label}`}
                       >
-                        <option value="">— überspringen —</option>
+                        <option value="">— skip —</option>
                         {subMatches.map((sm, idx) =>
                           teamSize(sm.format) === a.size ? (
                             <option key={sm.id} value={sm.id}>
                               {idx + 1}. {formatLabel(sm.format)}
-                              {sm.rounds.length > 0 ? " (überschreibt)" : ""}
+                              {sm.rounds.length > 0 ? " (overwrites)" : ""}
                             </option>
                           ) : null
                         )}
@@ -309,7 +309,7 @@ export function EcmImportDialog({ subMatches, allPlayers, startDay, canManage, i
 
           {neededNames.length > 0 && (
             <div className="space-y-1.5">
-              <p className="text-xs font-semibold uppercase tracking-wider text-[#9a9090]">Spieler zuordnen</p>
+              <p className="text-xs font-semibold uppercase tracking-wider text-[#9a9090]">Assign players</p>
               <div className="grid grid-cols-1 gap-x-4 sm:grid-cols-2 gap-y-1.5">
                 {neededNames.map((name) => (
                   <label key={name} className="flex items-center justify-between gap-2 text-sm text-[#c5bfbf]">
@@ -319,14 +319,14 @@ export function EcmImportDialog({ subMatches, allPlayers, startDay, canManage, i
                       onChange={(e) => setMappingEdits((m) => ({ ...m, [name]: e.target.value }))}
                       className={`${selectClass} w-40 ${playerIdFor(name) ? "" : "border-[#ED1F24]"}`}
                     >
-                      <option value="">— wählen —</option>
+                      <option value="">— pick —</option>
                       <optgroup label="Members">
                         {allPlayers.filter((p) => !p.former && !isGuest(p.tmId)).map((p) => (
                           <option key={p.id} value={p.id}>{p.name}</option>
                         ))}
                       </optgroup>
                       {allPlayers.some((p) => !p.former && isGuest(p.tmId)) && (
-                        <optgroup label="Gäste">
+                        <optgroup label="Guests">
                           {allPlayers.filter((p) => !p.former && isGuest(p.tmId)).map((p) => (
                             <option key={p.id} value={p.id}>{p.name}</option>
                           ))}
@@ -341,25 +341,25 @@ export function EcmImportDialog({ subMatches, allPlayers, startDay, canManage, i
 
           {canManage && nameDiffs.length > 0 && startDay <= localTodayKey() && (
             <div className="space-y-1">
-              <p className="text-xs font-semibold uppercase tracking-wider text-[#9a9090]">Abweichende Namen</p>
+              <p className="text-xs font-semibold uppercase tracking-wider text-[#9a9090]">Differing names</p>
               {nameDiffs.map(({ ecmName, player }) => (
                 <p key={ecmName} className="flex flex-wrap items-center gap-x-2 text-xs text-[#cd7f32]">
-                  eCM: {ecmName} · bei euch in dieser Comp: {player.name}
+                  eCM: {ecmName} · with you in this tournament: {player.name}
                   <button
                     type="button"
                     onClick={() => adoptEcmName(ecmName, player.id)}
                     disabled={renaming === ecmName}
                     className="text-[#FBD00D] hover:underline disabled:opacity-50"
                   >
-                    als Namen ab Comp-Start eintragen
+                    save as the name from the start of the tournament
                   </button>
                 </p>
               ))}
             </div>
           )}
 
-          {!canManage && problems.some((p) => p.includes("nicht alle Spieler zugeordnet")) && (
-            <p className="text-xs text-[#9a9090]">Fehlt ein Spieler in der Auswahl, muss ihn ein Manager erst anlegen.</p>
+          {!canManage && problems.some((p) => p.includes("not all players are assigned")) && (
+            <p className="text-xs text-[#9a9090]">If a player is missing from the list, a manager has to add them first.</p>
           )}
           {problems.map((problem) => (
             <p key={problem} className="text-xs text-[#ED1F24]">{problem}</p>
@@ -367,9 +367,9 @@ export function EcmImportDialog({ subMatches, allPlayers, startDay, canManage, i
           {error && <p className="text-sm text-[#ED1F24]">{error}</p>}
 
           <div className="dialog-footer flex gap-2 justify-end">
-            <Button variant="ghost" onClick={() => setText("")}>Zurück</Button>
+            <Button variant="ghost" onClick={() => setText("")}>Back</Button>
             <Button onClick={handleImport} disabled={!canImport}>
-              {saving ? "Importiert…" : `${selected.filter(Boolean).length} Set(s) importieren`}
+              {saving ? "Importing…" : `Import ${selected.filter(Boolean).length} set(s)`}
             </Button>
           </div>
         </div>

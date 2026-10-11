@@ -27,15 +27,15 @@ export function AvailabilityCard({ tournament, playerId, answer, note, levels }:
   const [currentNote, setCurrentNote] = useState(note)
   // Whoever answers right now keeps the card, to add a note; it is collapsed from the next visit on
   const [open, setOpen] = useState(answer === "OPEN")
-  const planning = `${tournamentPath(tournament)}/planung`
+  const planning = `${tournamentPath(tournament)}/planning`
 
   if (!open && current !== "OPEN") {
     // A slim bar in the colour of the answer: a stripe on the left, the answer spelled out
     const tone =
-      current === "FIX" ? { stripe: "bg-green-500", icon: "text-green-400", Icon: CircleCheck, text: "Du bist fix dabei" }
-      : current === "MAYBE" ? { stripe: "bg-[#FBD00D]", icon: "text-[#FBD00D]", Icon: CircleHelp, text: "Du bist vielleicht dabei" }
-      : current === "OUT" ? { stripe: "bg-[#ED1F24]", icon: "text-[#ED1F24]", Icon: CircleX, text: "Du bist nicht dabei" }
-      : { stripe: "bg-[#6b8fff]", icon: "text-[#6b8fff]", Icon: CircleDot, text: `Deine Antwort: ${answerLabel(current, levels)}` }
+      current === "FIX" ? { stripe: "bg-green-500", icon: "text-green-400", Icon: CircleCheck, text: "You're available" }
+      : current === "MAYBE" ? { stripe: "bg-[#FBD00D]", icon: "text-[#FBD00D]", Icon: CircleHelp, text: "You're a maybe" }
+      : current === "OUT" ? { stripe: "bg-[#ED1F24]", icon: "text-[#ED1F24]", Icon: CircleX, text: "You're not available" }
+      : { stripe: "bg-[#6b8fff]", icon: "text-[#6b8fff]", Icon: CircleDot, text: `Your answer: ${answerLabel(current, levels)}` }
     return (
       <div className="relative flex flex-wrap items-center gap-x-3 gap-y-2 overflow-hidden rounded-xl border border-[#2d2829] bg-[#1c1819] py-2.5 pl-5 pr-3">
         <span className={cn("absolute inset-y-0 left-0 w-1.5", tone.stripe)} />
@@ -43,15 +43,15 @@ export function AvailabilityCard({ tournament, playerId, answer, note, levels }:
         <p className="min-w-0 flex-1 basis-48 text-sm">
           <span className="text-base font-semibold text-[#f5f0f0]">{tournament.name}</span>
           <span className="text-[#9a9090]"> · {tone.text}</span>
-          {currentNote && <span className="block truncate text-xs text-[#9a9090]">„{currentNote}“</span>}
+          {currentNote && <span className="block truncate text-xs text-[#9a9090]">“{currentNote}”</span>}
         </p>
         <span className="flex items-center gap-1.5">
           <Button variant="ghost" size="sm" onClick={() => setOpen(true)}>
             <Pencil size={13} />
-            Ändern
+            Change
           </Button>
           <Link href={planning} className="inline-flex h-8 items-center gap-1 rounded-md px-3 text-sm font-medium text-[#FBD00D] hover:bg-[#251f20]">
-            Planung
+            Planning
             <ChevronRight size={14} />
           </Link>
         </span>
@@ -64,15 +64,15 @@ export function AvailabilityCard({ tournament, playerId, answer, note, levels }:
       <CardContent className="space-y-3 py-4">
         <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
           <p className="text-base font-semibold text-[#f5f0f0]">
-            {current === "OPEN" ? `Bist du bei ${tournament.name} dabei?` : `Deine Antwort für ${tournament.name}`}
+            {current === "OPEN" ? `Are you in for ${tournament.name}?` : `Your answer for ${tournament.name}`}
           </p>
           <span className="flex items-baseline gap-3 text-xs">
             <Link href={planning} className="text-[#FBD00D] hover:underline">
-              Alle ansehen
+              See everyone
             </Link>
             {current !== "OPEN" && (
               <button type="button" onClick={() => setOpen(false)} className="text-[#9a9090] hover:text-[#f5f0f0]">
-                Fertig
+                Done
               </button>
             )}
           </span>

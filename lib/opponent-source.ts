@@ -1,7 +1,7 @@
 import { parseTeamSheet, TEAM_SHEET_URL } from "./opponent-sheet"
 
 async function readLimited(res: Response, limit: number): Promise<Uint8Array> {
-  if (!res.ok || !res.body) throw new Error("Die externe Quelle ist momentan nicht erreichbar.")
+  if (!res.ok || !res.body) throw new Error("The external source cannot be reached at the moment.")
   const reader = res.body.getReader(), chunks: Uint8Array[] = []
   let size = 0
   try {
@@ -9,7 +9,7 @@ async function readLimited(res: Response, limit: number): Promise<Uint8Array> {
       const { done, value } = await reader.read()
       if (done) break
       size += value.length
-      if (size > limit) throw new Error("Die Datei ist zu groß.")
+      if (size > limit) throw new Error("The file is too large.")
       chunks.push(value)
     }
   } finally { await reader.cancel() }
@@ -24,10 +24,10 @@ export async function readTeamSheet() {
 }
 function checkedLogoUrl(value: string): URL {
   let source: URL
-  try { source = new URL(value) } catch { throw new Error("Unbekannte Logoquelle.") }
+  try { source = new URL(value) } catch { throw new Error("Unknown logo source.") }
   const googleSheet = source.hostname === "docs.google.com" && source.pathname.startsWith("/sheets-images-rt/")
   const googleImage = /^lh\d+(?:-rt)?\.googleusercontent\.com$/.test(source.hostname) && source.pathname.startsWith("/rd-sheets-images-rt/")
-  if (source.protocol !== "https:" || source.username || source.password || source.port || !(googleSheet || googleImage)) throw new Error("Unbekannte Logoquelle.")
+  if (source.protocol !== "https:" || source.username || source.password || source.port || !(googleSheet || googleImage)) throw new Error("Unknown logo source.")
   return source
 }
 export async function readSheetLogo(url: string) {
@@ -38,16 +38,16 @@ export async function readSheetLogo(url: string) {
     if ([301, 302, 303, 307, 308].includes(response.status)) {
       await response.body?.cancel()
       const location = response.headers.get("location")
-      if (!location) throw new Error("Die Logoquelle liefert keine gültige Weiterleitung.")
+      if (!location) throw new Error("The logo source does not return a valid redirect.")
       source = checkedLogoUrl(new URL(location, source).toString())
       continue
     }
-    if (!response.ok) throw new Error(`Das Logo konnte nicht geladen werden (HTTP ${response.status}).`)
+    if (!response.ok) throw new Error(`The logo could not be loaded (HTTP ${response.status}).`)
     const type = response.headers.get("content-type")?.split(";")[0].trim()
-    if (!type || !["image/png", "image/jpeg", "image/webp"].includes(type)) throw new Error("Die Logoquelle liefert kein unterstütztes Bild.")
+    if (!type || !["image/png", "image/jpeg", "image/webp"].includes(type)) throw new Error("The logo source does not return a supported image.")
     return { type, bytes: await readLimited(response, 1024 * 1024) }
   }
-  throw new Error("Die Logoquelle liefert zu viele Weiterleitungen.")
+  throw new Error("The logo source redirects too many times.")
 }
 export async function copySheetLogo(url: string | null): Promise<string | null> {
   if (!url) return null

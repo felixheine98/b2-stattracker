@@ -7,7 +7,7 @@ const rows = [row("anna", "FIX"), row("ben", "MAYBE"), row("cleo", "OPEN"), row(
 
 const variant: VariantData = {
   id: "v1",
-  name: "Variante 1",
+  name: "Variant 1",
   note: null,
   votes: [],
   // Notes belong to the player in this variant, wherever they currently are
@@ -44,13 +44,13 @@ describe("variantBoard", () => {
 
 describe("nextVariantName", () => {
   it("numbers new variants", () => {
-    expect(nextVariantName([])).toBe("Variante 1")
-    expect(nextVariantName(["Variante 1", "Bodiis-Idee"])).toBe("Variante 3")
+    expect(nextVariantName([])).toBe("Variant 1")
+    expect(nextVariantName(["Variant 1", "Bodiis-Idee"])).toBe("Variant 3")
   })
 
   it("marks a copy and keeps the name unique", () => {
-    expect(nextVariantName(["Variante 1"], "Variante 1")).toBe("Variante 1 (Kopie)")
-    expect(nextVariantName(["Variante 1", "Variante 1 (Kopie)"], "Variante 1")).toBe("Variante 1 (Kopie 2)")
+    expect(nextVariantName(["Variant 1"], "Variant 1")).toBe("Variant 1 (copy)")
+    expect(nextVariantName(["Variant 1", "Variant 1 (copy)"], "Variant 1")).toBe("Variant 1 (copy 2)")
   })
 })
 

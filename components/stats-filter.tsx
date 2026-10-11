@@ -50,7 +50,7 @@ export function StatsFilter({ groups, className }: { groups: Group[]; className?
             key={`${group.label}-${option.id}`}
             type="button"
             onClick={() => group.onChange(group.selected.filter((id) => id !== option.id))}
-            aria-label={`${option.label} entfernen`}
+            aria-label={`Remove ${option.label}`}
             className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full bg-[#FBD00D]/15 py-1.5 pl-3 pr-2 text-xs text-[#FBD00D]"
           >
             {option.label}
@@ -68,7 +68,7 @@ export function StatsFilter({ groups, className }: { groups: Group[]; className?
                 <h3 className="text-xs font-semibold uppercase tracking-wider text-[#9a9090]">{g.label}</h3>
                 <div className="flex flex-wrap gap-2">
                   <button type="button" aria-pressed={g.selected.length === 0} onClick={() => g.onChange([])} className={chip(g.selected.length === 0)}>
-                    Alle
+                    All
                   </button>
                   {/* In the sheet every tap adds or removes an option */}
                   {g.options.map((o) => {
@@ -89,7 +89,7 @@ export function StatsFilter({ groups, className }: { groups: Group[]; className?
               </div>
             ))}
             <button type="button" onClick={() => setOpen(false)} className="w-full rounded-lg bg-[#FBD00D] py-3 text-sm font-bold text-[#1a1718]">
-              Fertig
+              Done
             </button>
           </div>
         </div>

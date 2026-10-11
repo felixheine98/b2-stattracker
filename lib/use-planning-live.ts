@@ -78,7 +78,7 @@ export function usePlanningLive(initial: PlanningState, activity: Activity) {
     // Whatever happened, the next round fetches the full state
     revision.current = -1
     wake.current()
-    return res?.ok ? null : ((data?.error as string | undefined) ?? "Speichern fehlgeschlagen")
+    return res?.ok ? null : ((data?.error as string | undefined) ?? "Failed to save")
   }, [])
 
   return { state, presence, mutate }

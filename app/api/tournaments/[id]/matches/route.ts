@@ -105,7 +105,7 @@ export async function POST(req: Request, { params }: Params) {
   })
   } catch (e) {
     if (e instanceof OpponentError) return NextResponse.json({ error: e.message }, { status: e.status })
-    if ((e as { code?: string }).code === "P2002") return NextResponse.json({ error: "Gegner wurde gleichzeitig angelegt. Bitte erneut auswählen." }, { status: 409 })
+    if ((e as { code?: string }).code === "P2002") return NextResponse.json({ error: "The opponent was created at the same time. Please pick it again." }, { status: 409 })
     throw e
   }
 

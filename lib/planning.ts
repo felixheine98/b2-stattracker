@@ -14,9 +14,9 @@ export interface PlanningEntryData {
 }
 
 export const AVAILABILITY_LABEL: Record<Availability, string> = {
-  FIX: "fix dabei",
-  MAYBE: "vielleicht",
-  OUT: "nicht dabei",
+  FIX: "Available",
+  MAYBE: "Maybe",
+  OUT: "Not available",
 }
 
 export function answerOf(entry: Pick<PlanningEntryData, "status" | "levelId"> | undefined | null): Answer {

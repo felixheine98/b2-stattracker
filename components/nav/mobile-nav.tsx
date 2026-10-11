@@ -32,7 +32,7 @@ export function MobileTopBar({ userName, role, profileHref }: Props) {
       <button
         type="button"
         onClick={openSearch}
-        aria-label="Suchen"
+        aria-label="Search"
         className="rounded-md p-2 text-[#c5bfbf] hover:bg-[#251f20]"
       >
         <Search size={18} />
@@ -74,7 +74,7 @@ export function MobileTopBar({ userName, role, profileHref }: Props) {
               className="flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-sm text-[#c5bfbf] hover:bg-[#251f20]"
             >
               <KeyRound size={16} />
-              Passwort ändern
+              Change password
             </button>
             <button
               type="button"

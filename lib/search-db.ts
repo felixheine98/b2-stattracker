@@ -27,7 +27,7 @@ export async function searchIndex(): Promise<SearchEntry[]> {
     }),
   ])
   const tournamentById = new Map(tournaments.map((t) => [t.id, t]))
-  const marker = (archived: boolean) => (archived ? ({ marker: "archiviert" } as const) : {})
+  const marker = (archived: boolean) => (archived ? ({ marker: "archived" } as const) : {})
 
   return [
     ...players.map((p): SearchEntry =>
@@ -39,15 +39,15 @@ export async function searchIndex(): Promise<SearchEntry[]> {
             href: `/opponents/players/${p.id}`,
             // Names the person appeared under in results, as far as they differ
             aliases: [...new Set([p.initialName, ...p.opponentNames])].filter((n) => opponentNameKey(n) !== opponentNameKey(p.name)),
-            ...(!confirmedTmId(p.tmId) && { marker: "unbestätigt" as const }),
+            ...(!confirmedTmId(p.tmId) && { marker: "unconfirmed" as const }),
           }
         : {
             kind: "player",
             id: p.id,
             title: p.name,
             ...(currentStatus(p) === "TRIAL" && { detail: "Trial" }),
-            ...(currentStatus(p) === "GUEST" && { detail: "Gast" }),
-            ...(currentStatus(p) === "FORMER" && { marker: "ehemalig" as const }),
+            ...(currentStatus(p) === "GUEST" && { detail: "Guest" }),
+            ...(currentStatus(p) === "FORMER" && { marker: "former" as const }),
             href: playerPath(p),
             aliases: allNames(p).filter((n) => n !== p.name),
           }
@@ -79,7 +79,7 @@ export async function searchIndex(): Promise<SearchEntry[]> {
       return [{
         kind: "match",
         id: m.id,
-        title: seeding ? `${lineup.name} · Seeding` : `${lineup.name} vs ${m.opponent ?? "Unbekannt"}`,
+        title: seeding ? `${lineup.name} · Seeding` : `${lineup.name} vs ${m.opponent ?? "Unknown"}`,
         detail: [seeding ? null : stageName(m.stage, tournament.stages), matchTag(m) || null, m.date ? formatDay(m.date) : null, tournament.name].filter(Boolean).join(" · "),
         href: matchPath(tournament, lineup, m),
         terms: [

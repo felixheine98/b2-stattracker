@@ -79,7 +79,7 @@ describe.skipIf(process.env.OPPONENT_DB_TESTS !== "1")("opponents with PostgreSQ
     const f = await fixture()
     await client.$transaction(tx => confirmMatch(tx, { matchId: f.match.id, revision: 0, outcome: "W", userId: "test" }))
     await client.$transaction(tx => reopenMatch(tx, f.match.id))
-    await expect(client.$transaction(tx => confirmMatch(tx, { matchId: f.match.id, revision: 0, outcome: "L", userId: "test" }))).rejects.toThrow("geändert")
+    await expect(client.$transaction(tx => confirmMatch(tx, { matchId: f.match.id, revision: 0, outcome: "L", userId: "test" }))).rejects.toThrow("changed")
     expect(await client.match.findUnique({ where: { id: f.match.id } })).toMatchObject({ closedAt: null, confirmedOutcome: null, resultRevision: 1 })
     expect(await client.matchConfirmation.count({ where: { matchId: f.match.id } })).toBe(1)
   })

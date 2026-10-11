@@ -206,7 +206,7 @@ function SubMatchStatsTable({ sm, number, isGuest, isTrial }: { sm: SubMatch; nu
           {formatLabel(sm.format)}
         </Badge>
         <span className="text-sm text-[#f5f0f0]">{track || `#${number}`}</span>
-        <Wdl won={teamStats.ourRoundsWon} drawn={teamStats.ourRoundsDrawn} lost={teamStats.ourRoundsLost} unit="Runden" className={`text-sm font-bold ${resultColor}`} />
+        <Wdl won={teamStats.ourRoundsWon} drawn={teamStats.ourRoundsDrawn} lost={teamStats.ourRoundsLost} unit="Rounds" className={`text-sm font-bold ${resultColor}`} />
       </div>
       <div className="overflow-x-auto rounded-lg border border-[#2d2829]">
       {/* Fixed column widths, so the columns line up across the tables of a match */}
@@ -217,20 +217,20 @@ function SubMatchStatsTable({ sm, number, isGuest, isTrial }: { sm: SubMatch; nu
         </colgroup>
         <thead>
           <tr className="border-b border-[#2d2829]">
-            {th("name", "Spieler", true)}
-            {th("played", "Gespielt")}
-            {th("placementSum", "Platzsumme")}
-            {th("avg", "Ø Platz")}
+            {th("name", "Player", true)}
+            {th("played", "Played")}
+            {th("placementSum", "Place sum")}
+            {th("avg", "Avg place")}
             {th("dnfs", "DNF")}
-            {th("bestTime", "Beste Zeit")}
-            {th("medianTime", "Median Zeit")}
-            {th("avgTime", "Ø Zeit")}
+            {th("bestTime", "Best time")}
+            {th("medianTime", "Median time")}
+            {th("avgTime", "Avg time")}
           </tr>
         </thead>
         <tbody>
           {sorted.length === 0 && (
             <tr>
-              <td colSpan={8} className="py-3 text-center text-[#5e5858]">Noch keine Daten</td>
+              <td colSpan={8} className="py-3 text-center text-[#5e5858]">No data yet</td>
             </tr>
           )}
           {sorted.map((row) => (
@@ -297,7 +297,7 @@ export function MatchDetailView({ match: initialMatch, allPlayers, guestTmIds, t
     }).catch(() => null)
     if (!res?.ok) {
       const data = await res?.json().catch(() => null)
-      setStageError(data?.error ?? "Verschieben fehlgeschlagen")
+      setStageError(data?.error ?? "Failed to move the match")
       return
     }
     setStageId(id)
@@ -332,7 +332,7 @@ export function MatchDetailView({ match: initialMatch, allPlayers, guestTmIds, t
   async function removePicked(subMatchId: string) {
     const roundIds = picking[subMatchId] ?? []
     if (roundIds.length === 0) return
-    if (!confirm(roundIds.length === 1 ? "Diese Runde löschen?" : `Diese ${roundIds.length} Runden löschen?`)) return
+    if (!confirm(roundIds.length === 1 ? "Delete this round?" : `Delete these ${roundIds.length} rounds?`)) return
     setRemoving(true)
     const res = await fetch(`${BASE_PATH}/api/submatches/${subMatchId}/rounds`, {
       method: "DELETE",
@@ -342,7 +342,7 @@ export function MatchDetailView({ match: initialMatch, allPlayers, guestTmIds, t
     setRemoving(false)
     if (!res?.ok) {
       const data = await res?.json().catch(() => null)
-      alert(data?.error ?? "Die Runden konnten nicht gelöscht werden")
+      alert(data?.error ?? "Failed to delete the rounds")
       return
     }
     const data = await res.json()
@@ -424,7 +424,7 @@ export function MatchDetailView({ match: initialMatch, allPlayers, guestTmIds, t
                   <select
                     value={stageId}
                     onChange={(e) => moveToStage(e.target.value)}
-                    aria-label="Abschnitt"
+                    aria-label="Stage"
                     className="absolute inset-0 w-full cursor-pointer appearance-none rounded-full opacity-0"
                   >
                     {stages.filter((st) => st.type !== "SEEDING").map((st) => (
@@ -491,11 +491,11 @@ export function MatchDetailView({ match: initialMatch, allPlayers, guestTmIds, t
               <div className="mt-3 flex flex-wrap gap-2">
                 <Button size="sm" onClick={() => setShowEcmImport(true)}>
                   <Download size={14} />
-                  Von eCM importieren
+                  Import from eCM
                 </Button>
                 <Button size="sm" variant="outline" onClick={() => setShowCsvImport(true)}>
                   <Upload size={14} />
-                  Ganzes Match importieren (CSV)
+                  Import whole match (CSV)
                 </Button>
               </div>
             )}
@@ -560,7 +560,7 @@ export function MatchDetailView({ match: initialMatch, allPlayers, guestTmIds, t
                   )}
                   {(stats.ourRoundsWon + stats.ourRoundsLost + stats.ourRoundsDrawn) > 0 && (
                     <Badge variant={stats.ourRoundsWon > stats.ourRoundsLost ? "primary" : stats.ourRoundsWon < stats.ourRoundsLost ? "red" : "default"}>
-                      <Wdl won={stats.ourRoundsWon} drawn={stats.ourRoundsDrawn} lost={stats.ourRoundsLost} unit="Runden" />
+                      <Wdl won={stats.ourRoundsWon} drawn={stats.ourRoundsDrawn} lost={stats.ourRoundsLost} unit="Rounds" />
                     </Badge>
                   )}
                 </div>
@@ -602,13 +602,13 @@ export function MatchDetailView({ match: initialMatch, allPlayers, guestTmIds, t
                       {teamSize(sm.format) != null && (
                         <Button variant="outline" size="sm" onClick={() => setRoundEntryId(sm.id)}>
                           <Grid3x3 size={14} />
-                          Runden eintippen
+                          Enter rounds
                         </Button>
                       )}
                       {totalRounds > 0 && !(sm.id in picking) && (
                         <Button variant="outline" size="sm" onClick={() => { setPicking((p) => ({ ...p, [sm.id]: [] })); setRoundsOpen((s) => new Set(s).add(sm.id)) }}>
                           <ListChecks size={14} />
-                          Runden auswählen
+                          Select rounds
                         </Button>
                       )}
                     </div>
@@ -634,12 +634,12 @@ export function MatchDetailView({ match: initialMatch, allPlayers, guestTmIds, t
                       {/* Removing rounds: mark any number of them, e.g. a warm-up round an import brought along */}
                       {sm.id in picking && (
                         <div className="sticky top-0 z-[2] flex flex-wrap items-center justify-between gap-2 rounded-lg border border-[#ED1F24]/40 bg-[#1c1819] px-3 py-2 text-sm">
-                          <span className="text-[#c5bfbf]">{picking[sm.id].length} von {totalRounds} Runden markiert</span>
+                          <span className="text-[#c5bfbf]">{picking[sm.id].length} of {totalRounds} rounds marked</span>
                           <span className="flex flex-wrap gap-2">
-                            <Button variant="ghost" size="sm" onClick={() => stopPicking(sm.id)}>Abbrechen</Button>
+                            <Button variant="ghost" size="sm" onClick={() => stopPicking(sm.id)}>Cancel</Button>
                             <Button variant="destructive" size="sm" onClick={() => removePicked(sm.id)} disabled={removing || picking[sm.id].length === 0}>
                               <Trash2 size={14} />
-                              {removing ? "Löscht …" : "Markierte löschen"}
+                              {removing ? "Deleting…" : "Delete marked"}
                             </Button>
                           </span>
                         </div>
@@ -660,7 +660,7 @@ export function MatchDetailView({ match: initialMatch, allPlayers, guestTmIds, t
                                     type="checkbox"
                                     checked={picking[sm.id].includes(round.id)}
                                     onChange={() => togglePicked(sm.id, round.id)}
-                                    aria-label={`Runde ${round.number + 1} zum Löschen markieren`}
+                                    aria-label={`Mark round ${round.number + 1} for deletion`}
                                     className="h-4 w-4 accent-[#ED1F24]"
                                   />
                                 )}
@@ -669,7 +669,7 @@ export function MatchDetailView({ match: initialMatch, allPlayers, guestTmIds, t
                                 {score?.outcome === "W" && <Badge variant="primary">WIN</Badge>}
                                 {score?.outcome === "L" && <Badge variant="red">LOSS</Badge>}
                                 {score?.outcome === "D" && <Badge variant="default">DRAW</Badge>}
-                                {score && <span className="text-xs font-mono text-[#9a9090]" title="Punkte: wir – Gegner">{score.ours}–{score.theirs}</span>}
+                                {score && <span className="text-xs font-mono text-[#9a9090]" title="Points: us – opponent">{score.ours}–{score.theirs}</span>}
                               </div>
                               {/* Phones: one list in finishing order, our players highlighted */}
                               <ol className="space-y-1 md:hidden">
