@@ -2,7 +2,8 @@
 
 import { VariantsBoard } from "./variants-board"
 import { GuestBadge } from "@/components/guest-badge"
-import { AvailabilityInput } from "@/components/planning/availability-input"
+import { AvailabilityInput, answerColor } from "@/components/planning/availability-input"
+import { AVAILABILITY_LABEL, type Answer } from "@/lib/planning"
 import { PlayerAvatar } from "@/components/player-avatar"
 import { PlayerSearch } from "@/components/player-search"
 import { Button } from "@/components/ui/button"
@@ -52,6 +53,54 @@ export function PlanningView({ initial, ownPlayerId, userId, canManage }: Props)
     if (failed) setError(failed)
     return !failed
   }
+
+  // The availability either as groups by answer (short, to see who is in) or as one row per player
+  const [layout, setLayout] = useState<"groups" | "list">("groups")
+  // Player whose answer is being changed inside a group
+  const [editing, setEditing] = useState<string | null>(null)
+  type Row = (typeof rows)[number]
+  const ownRow = rows.find((r) => r.player.id === ownPlayerId)
+  const groups = [
+    { answer: "FIX" as Answer, label: AVAILABILITY_LABEL.FIX },
+    { answer: "MAYBE" as Answer, label: AVAILABILITY_LABEL.MAYBE },
+    ...levels.map((l) => ({ answer: `level:${l.id}` as Answer, label: l.name })),
+    { answer: "OUT" as Answer, label: AVAILABILITY_LABEL.OUT },
+    { answer: "OPEN" as Answer, label: "offen" },
+  ].map((g) => ({ ...g, rows: rows.filter((r) => r.answer === g.answer) }))
+
+  const rowName = (row: Row) => (
+    <div className="flex min-w-0 items-center gap-2 md:w-52 md:shrink-0">
+      <PlayerAvatar player={row.player} />
+      <span className="truncate text-sm font-medium text-[#f5f0f0]">{row.player.name}</span>
+      {row.guest && <GuestBadge />}
+      {row.player.id === ownPlayerId && <span className="text-xs text-[#FBD00D]">du</span>}
+      {layout === "list" && canManage && !archived && row.guest && (
+        <button
+          type="button"
+          onClick={() => call(`/entries/${row.player.id}`, "DELETE")}
+          title="Von der Liste nehmen"
+          className="ml-auto text-[#5e5858] hover:text-[#ED1F24] md:ml-0"
+        >
+          <X size={13} />
+        </button>
+      )}
+    </div>
+  )
+
+  const rowInput = (row: Row, className = "flex-1") => (
+    <AvailabilityInput
+      // A fresh input whenever the levels change, as a removed level resets answers
+      key={levels.map((l) => l.id).join()}
+      tournamentId={tournament.id}
+      playerId={row.player.id}
+      answer={row.answer}
+      note={row.note}
+      levels={levels}
+      editable={!archived && (canManage || row.player.id === ownPlayerId)}
+      mutate={mutate}
+      className={className}
+    />
+  )
 
   async function addLevel(e: React.FormEvent) {
     e.preventDefault()
@@ -161,53 +210,105 @@ export function PlanningView({ initial, ownPlayerId, userId, canManage }: Props)
       {error && <p className="text-sm text-[#ED1F24]">{error}</p>}
 
       <div>
-        <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-[#9a9090]">Verfügbarkeit</h2>
-        <div className="overflow-hidden rounded-xl border border-[#2d2829]">
-          {/* The viewer's own row first, the others by name as before */}
-          {[...rows].sort((a, b) => Number(b.player.id === ownPlayerId) - Number(a.player.id === ownPlayerId)).map((row, i) => {
-            const own = row.player.id === ownPlayerId
-            return (
-              <div
-                key={row.player.id}
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+          <h2 className="text-xs font-semibold uppercase tracking-wider text-[#9a9090]">Verfügbarkeit</h2>
+          <div className="inline-flex rounded-lg border border-[#2d2829] p-0.5" role="tablist" aria-label="Darstellung der Liste">
+            {([["groups", "Gruppen"], ["list", "Liste"]] as const).map(([value, label]) => (
+              <button
+                key={value}
+                type="button"
+                role="tab"
+                aria-selected={layout === value}
+                onClick={() => setLayout(value)}
                 className={cn(
-                  "flex flex-col gap-2 px-3.5 py-3 md:flex-row md:items-center md:gap-4",
-                  i > 0 && "border-t border-[#2d2829]",
-                  own ? "bg-[#FBD00D]/5" : i % 2 === 0 ? "bg-[#1c1819]" : "bg-[#1c1819]/60"
+                  "rounded-md px-3 py-1 text-xs font-medium transition-colors",
+                  layout === value ? "bg-[#FBD00D]/15 text-[#FBD00D]" : "text-[#9a9090] hover:text-[#f5f0f0]"
                 )}
               >
-                <div className="flex min-w-0 items-center gap-2 md:w-52 md:shrink-0">
-                  <PlayerAvatar player={row.player} />
-                  <span className="truncate text-sm font-medium text-[#f5f0f0]">{row.player.name}</span>
-                  {row.guest && <GuestBadge />}
-                  {own && <span className="text-xs text-[#FBD00D]">du</span>}
-                  {canManage && !archived && row.guest && (
-                    <button
-                      type="button"
-                      onClick={() => call(`/entries/${row.player.id}`, "DELETE")}
-                      title="Von der Liste nehmen"
-                      className="ml-auto text-[#5e5858] hover:text-[#ED1F24] md:ml-0"
-                    >
-                      <X size={13} />
-                    </button>
-                  )}
-                </div>
-                <AvailabilityInput
-                  // A fresh input whenever the levels change, as a removed level resets answers
-                  key={levels.map((l) => l.id).join()}
-                  tournamentId={tournament.id}
-                  playerId={row.player.id}
-                  answer={row.answer}
-                  note={row.note}
-                  levels={levels}
-                  editable={!archived && (canManage || own)}
-                  mutate={mutate}
-                  className="flex-1"
-                />
-              </div>
-            )
-          })}
-          {rows.length === 0 && <p className="px-4 py-6 text-center text-sm text-[#5e5858]">Noch niemand auf der Liste.</p>}
+                {label}
+              </button>
+            ))}
+          </div>
         </div>
+        {rows.length === 0 && <p className="rounded-xl border border-[#2d2829] px-4 py-6 text-center text-sm text-[#5e5858]">Noch niemand auf der Liste.</p>}
+
+        {layout === "list" ? (
+          rows.length > 0 && (
+            <div className="overflow-hidden rounded-xl border border-[#2d2829]">
+              {/* The viewer's own row first, the others by name */}
+              {[...rows].sort((a, b) => Number(b.player.id === ownPlayerId) - Number(a.player.id === ownPlayerId)).map((row, i) => (
+                <div
+                  key={row.player.id}
+                  className={cn(
+                    "flex flex-col gap-2 px-3.5 py-3 md:flex-row md:items-center md:gap-4",
+                    i > 0 && "border-t border-[#2d2829]",
+                    row.player.id === ownPlayerId ? "bg-[#FBD00D]/5" : i % 2 === 0 ? "bg-[#1c1819]" : "bg-[#1c1819]/60"
+                  )}
+                >
+                  {rowName(row)}
+                  {rowInput(row)}
+                </div>
+              ))}
+            </div>
+          )
+        ) : (
+          <div className="space-y-4">
+            {/* The viewer's own answer stands apart at the top, ready to change */}
+            {ownRow && (
+              <div className="flex flex-col gap-2 rounded-xl border border-[#FBD00D]/30 bg-[#FBD00D]/5 px-3.5 py-3 md:flex-row md:items-center md:gap-4">
+                {rowName(ownRow)}
+                {rowInput(ownRow)}
+              </div>
+            )}
+            {/* Everyone sorted into their answer: who is in, who is not, who has yet to say */}
+            <div className="grid grid-cols-1 items-start gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              {groups.map((group) => (
+                <section key={group.answer} className="overflow-hidden rounded-xl border border-[#2d2829] bg-[#1c1819]">
+                  <h3 className={cn("flex items-center justify-between border-b px-3 py-2 text-xs font-semibold uppercase tracking-wider", answerColor(group.answer))}>
+                    {group.label}
+                    <span className="font-mono">{group.rows.length}</span>
+                  </h3>
+                  {group.rows.length === 0 && <p className="px-3 py-2 text-xs text-[#5e5858]">niemand</p>}
+                  <ul>
+                    {group.rows.map((row) => {
+                      const own = row.player.id === ownPlayerId
+                      const editable = !archived && (canManage || own)
+                      return (
+                        <li key={row.player.id} className="border-t border-[#2d2829]/60 first:border-0">
+                          <button
+                            type="button"
+                            disabled={!editable}
+                            onClick={() => setEditing(editing === row.player.id ? null : row.player.id)}
+                            aria-expanded={editable ? editing === row.player.id : undefined}
+                            title={editable ? "Antwort ändern" : undefined}
+                            className={cn("flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm", editable && "hover:bg-[#251f20]", own && "bg-[#FBD00D]/5")}
+                          >
+                            <PlayerAvatar player={row.player} className="h-5 w-5 text-[10px]" />
+                            <span className="min-w-0 truncate text-[#f5f0f0]">{row.player.name}</span>
+                            {row.guest && <GuestBadge />}
+                            {own && <span className="text-xs text-[#FBD00D]">du</span>}
+                            {row.note && <span className="ml-auto min-w-0 max-w-[55%] truncate text-xs text-[#9a9090]" title={row.note}>{row.note}</span>}
+                          </button>
+                          {editable && editing === row.player.id && (
+                            <div className="space-y-2 border-t border-[#2d2829]/60 bg-[#0e0c0d] px-3 py-2.5">
+                              {/* Stacked: a group is too narrow for buttons and note side by side */}
+                              {rowInput(row, "md:flex-col md:items-stretch")}
+                              {canManage && row.guest && (
+                                <button type="button" onClick={() => call(`/entries/${row.player.id}`, "DELETE")} className="text-xs text-[#5e5858] hover:text-[#ED1F24]">
+                                  Von der Liste nehmen
+                                </button>
+                              )}
+                            </div>
+                          )}
+                        </li>
+                      )
+                    })}
+                  </ul>
+                </section>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
       {canManage && !archived && addable.length > 0 && (
