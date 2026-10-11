@@ -37,6 +37,14 @@ h1, h2, h3, h4, h5, h6 {
   box-sizing: border-box;
 }
 
+/* The list a dropdown opens follows the theme instead of the browser's white, and its entries
+   use the normal text colour whatever colour the closed field has (e.g. the yellow stage badge) */
+option,
+optgroup {
+  background: var(--surface);
+  color: var(--fg);
+}
+
 ::selection {
   background: var(--primary);
   color: var(--primary-fg);
