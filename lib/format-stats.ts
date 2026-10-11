@@ -22,7 +22,7 @@ export interface StatsMatch {
   subMatches: Array<{
     format: Format
     // Results of a round must be in finishing order
-    rounds: Array<{ results: StatsRoundResult[] }>
+    rounds: Array<{ track?: string | null; results: StatsRoundResult[] }>
   }>
 }
 
@@ -63,6 +63,12 @@ export function matchesOfLineups<T extends { tournamentLineupId?: string | null 
 export function matchesOfStages<T extends { stage: { id: string } }>(matches: T[], stageIds: string[]): T[] {
   if (stageIds.length === 0) return matches
   return matches.filter((m) => stageIds.includes(m.stage.id))
+}
+
+// Likewise for the formats: only the sub-matches of the given formats are kept
+export function matchesOfFormats<T extends { subMatches: Array<{ format: Format }> }>(matches: T[], formats: Format[]): T[] {
+  if (formats.length === 0) return matches
+  return matches.map((m) => ({ ...m, subMatches: m.subMatches.filter((sm) => formats.includes(sm.format)) }))
 }
 
 // Stats summed up per format. Seeding matches are left out; their numbers are shown on the match page only.

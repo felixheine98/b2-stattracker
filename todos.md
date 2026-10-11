@@ -22,7 +22,7 @@
   - [ ] seeding-bereich im profil (erst entscheiden, wie seeding-daten ins system kommen)
 - [ ] per map statistiken
   - [x] pro spieler im profil (pb, Ø rückstand in s, rang im team)
-  - [ ] pro comp für 1 lineup, pro week für alle lineups
+  - [x] pro comp für 1 lineup, pro week für alle lineups (umschalter "nach map" im stats-bereich von lineup- und turnierseite, filter lineup/abschnitt/format)
   - [ ] team-sicht pro map in der lineup-übersicht: eine zeile pro map mit maps w/l, rounds w/l, beste und Ø zeit (ohne einzelne spieler)
 - [ ] Lineup Builder
   - [x] gemeinsames erstellen für lineups, welches direkt in eine comp reingespeichert wird (Planung pro Comp: Verfügbarkeit, Varianten, Live-Session, Übernehmen)

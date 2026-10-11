@@ -26,13 +26,15 @@ import {
 } from "lucide-react"
 import { cn, formatLabel } from "@/lib/utils"
 import type { Format } from "@prisma/client"
-import { buildAggregates, matchesOfLineups, matchesOfStages, type StatsMatch } from "@/lib/format-stats"
+import { buildAggregates, matchesOfFormats, matchesOfLineups, matchesOfStages, type StatsMatch } from "@/lib/format-stats"
+import { buildMapAggregates } from "@/lib/map-stats"
 import { sortStages, stageName, stagePlanOf, type StageRef } from "@/lib/stages"
 import { useIdListParam } from "@/lib/use-id-list-param"
 import { StatsFilter } from "@/components/stats-filter"
 import { StageHeading } from "@/components/stage-heading"
 import { StagePlanFields } from "@/components/stage-plan-fields"
 import { FormatStatsTable } from "./format-stats"
+import { MapStatsTable, StatsViewToggle } from "./map-stats"
 
 interface Player {
   id: string
@@ -143,6 +145,11 @@ export function TournamentDetailView({ tournament: initial, players, statsMatche
   // What the stats are limited to; nothing selected means all
   const [statsLineupIds, selectStatsLineups] = useIdListParam("lineups", lineups.map((l) => l.id), ownLineupId ? [ownLineupId] : [])
   const [statsStageIds, selectStatsStages] = useIdListParam("stages", statsStages.map((st) => st.id))
+  const statsFormats = [...new Set(tournament.formats.filter((f) => f !== "TIME_ATTACK_10"))]
+  const [statsFormatIds, selectStatsFormats] = useIdListParam("formats", statsFormats)
+  // Tables per format, or per map
+  const [statsView, selectStatsView] = useIdListParam("view", ["map"])
+  const statsByMap = statsView.includes("map")
 
   // Within a tournament everyone is member or guest as of its start day
   const guestTmIds = new Set(guestTmIdsAt(players, tournamentReferenceDate(tournament)))
@@ -498,15 +505,20 @@ export function TournamentDetailView({ tournament: initial, players, statsMatche
         // Only matches that still exist locally, so deleting a match updates the stats at once
         const existing = statsMatches.filter((sm) => matches.some((m) => m.id === sm.id))
         if (buildAggregates(existing).length === 0) return null
-        const aggregates = buildAggregates(matchesOfStages(matchesOfLineups(existing, statsLineupIds), statsStageIds))
+        const selected = matchesOfFormats(matchesOfStages(matchesOfLineups(existing, statsLineupIds), statsStageIds), statsFormatIds as Format[])
+        const aggregates = buildAggregates(selected)
+        const mapAggregates = statsByMap ? buildMapAggregates(selected, stages.map((st) => st.id)) : []
         const lineupName = (tmId: string) =>
           lineups.find((l) => l.slots.some((s) => s.player.tmId.toLowerCase() === tmId.toLowerCase()))?.name
         return (
           <div>
-            <h2 className="text-sm font-semibold text-[#9a9090] uppercase tracking-wider mb-3 flex items-center gap-2">
-              <BarChart2 size={14} />
-              Gesamtstatistik
-            </h2>
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+              <h2 className="text-sm font-semibold text-[#9a9090] uppercase tracking-wider flex items-center gap-2">
+                <BarChart2 size={14} />
+                Gesamtstatistik
+              </h2>
+              <StatsViewToggle byMap={statsByMap} onChange={(byMap) => selectStatsView(byMap ? ["map"] : [])} />
+            </div>
             <StatsFilter
               className="mb-4"
               groups={[
@@ -516,10 +528,19 @@ export function TournamentDetailView({ tournament: initial, players, statsMatche
                 ...(statsStages.length > 1
                   ? [{ label: "Abschnitt", options: statsStages.map((st) => ({ id: st.id, label: stageName(st, stages) })), selected: statsStageIds, onChange: selectStatsStages }]
                   : []),
+                ...(statsFormats.length > 1
+                  ? [{ label: "Format", options: statsFormats.map((f) => ({ id: f, label: formatLabel(f) })), selected: statsFormatIds, onChange: selectStatsFormats }]
+                  : []),
               ]}
             />
             {aggregates.length === 0 ? (
               <p className="text-sm text-[#5e5858]">Keine Daten für diese Auswahl.</p>
+            ) : statsByMap ? (
+              <div className="space-y-4">
+                {mapAggregates.map((agg) => (
+                  <MapStatsTable key={agg.track ?? ""} agg={agg} isGuest={isGuest} isTrial={isTrial} profilePath={profilePath} lineupName={statsLineupIds.length === 1 ? undefined : lineupName} showPlacement={aggregates.length === 1} />
+                ))}
+              </div>
             ) : (
               <div className="space-y-4">
                 {aggregates.map((agg) => (
