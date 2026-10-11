@@ -1,6 +1,7 @@
 import { db } from "@/lib/db"
 import { applyCompNames, currentName } from "@/lib/player-names"
 import { tournamentReferenceDate } from "@/lib/player-status"
+import { syncPlayerSlugs } from "@/lib/slugs-db"
 
 // After the name history changed: bring Player.name in step with it and return the history
 export async function syncPlayerName(playerId: string) {
@@ -9,7 +10,11 @@ export async function syncPlayerName(playerId: string) {
     include: { nameChanges: { orderBy: { effectiveFrom: "asc" } } },
   })
   const name = currentName(player)
-  if (name !== player.name) await db.player.update({ where: { id: playerId }, data: { name } })
+  if (name !== player.name) {
+    await db.player.update({ where: { id: playerId }, data: { name } })
+    // The profile address follows the name; the old one stays valid as an alias
+    await syncPlayerSlugs()
+  }
   return { name, initialName: player.initialName, nameChanges: player.nameChanges }
 }
 

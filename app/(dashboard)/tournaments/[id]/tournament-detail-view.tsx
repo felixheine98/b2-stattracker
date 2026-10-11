@@ -2,7 +2,7 @@
 
 import { AvailabilityCard } from "@/components/planning/availability-card"
 import { BASE_PATH } from "@/lib/base-path"
-import { lineupPath, matchPath, tournamentPath } from "@/lib/paths"
+import { lineupPath, matchPath, playerPath, tournamentPath } from "@/lib/paths"
 import { PlayerName } from "@/components/player-name"
 import { PlayerSearch } from "@/components/player-search"
 import { FormatBuilder } from "@/components/format-builder"
@@ -45,6 +45,7 @@ interface Player {
 
 // The full player list carries the status history, used to tell members from guests
 interface PlayerWithStatus extends Player {
+  slug?: string | null
   initialStatus: PlayerStatus
   statusChanges: StatusChange[]
 }
@@ -145,6 +146,8 @@ export function TournamentDetailView({ tournament: initial, players, statsMatche
   // Within a tournament everyone is member or guest as of its start day
   const guestTmIds = new Set(guestTmIdsAt(players, tournamentReferenceDate(tournament)))
   const isGuest = (tmId: string) => guestTmIds.has(tmId.toLowerCase())
+  const profilePaths = new Map(players.map((p) => [p.tmId.toLowerCase(), playerPath(p)]))
+  const profilePath = (tmId: string) => profilePaths.get(tmId.toLowerCase())
   // Selection lists show team members first, then guests
   const playerGroups = [
     { label: null, players: players.filter((p) => !isGuest(p.tmId)) },
@@ -515,7 +518,7 @@ export function TournamentDetailView({ tournament: initial, players, statsMatche
               <div className="space-y-4">
                 {aggregates.map((agg) => (
                   // With a single lineup selected the column would repeat the same name
-                  <FormatStatsTable key={agg.format} agg={agg} isGuest={isGuest} lineupName={statsLineupIds.length === 1 ? undefined : lineupName} />
+                  <FormatStatsTable key={agg.format} agg={agg} isGuest={isGuest} profilePath={profilePath} lineupName={statsLineupIds.length === 1 ? undefined : lineupName} />
                 ))}
               </div>
             )}

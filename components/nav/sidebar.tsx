@@ -5,7 +5,7 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
 import { KeyRound, LogOut, ShieldCheck, PanelLeftClose, PanelLeftOpen } from "lucide-react"
-import { navItems } from "./nav-items"
+import { isActiveItem, navItems, profileItem } from "./nav-items"
 import { useState, useSyncExternalStore } from "react"
 import { ChangePasswordDialog } from "./change-password-dialog"
 import { signOut } from "next-auth/react"
@@ -26,9 +26,11 @@ function subscribeCollapsed(onChange: () => void) {
 interface SidebarProps {
   userName: string
   role: string
+  // Address of the signed-in player's own profile; null for an account without a player
+  profileHref: string | null
 }
 
-export function Sidebar({ userName, role }: SidebarProps) {
+export function Sidebar({ userName, role, profileHref }: SidebarProps) {
   const pathname = usePathname()
   const canSeeAccounts = role === "ADMIN" || role === "MANAGER"
   const collapsed = useSyncExternalStore(subscribeCollapsed, () => localStorage.getItem(COLLAPSED_KEY) === "1", () => false)
@@ -61,7 +63,7 @@ export function Sidebar({ userName, role }: SidebarProps) {
       </div>
 
       <nav className="flex-1 space-y-0.5 px-2 py-4">
-        {navItems.map(({ href, label, icon: Icon }) => (
+        {[...navItems, ...(profileHref ? [{ href: profileHref, ...profileItem }] : [])].map(({ href, label, icon: Icon }) => (
           <Link
             key={href}
             href={href}
@@ -69,7 +71,7 @@ export function Sidebar({ userName, role }: SidebarProps) {
             className={cn(
               "flex items-center gap-3 rounded-md py-2 text-sm font-medium transition-colors",
               collapsed ? "justify-center px-0" : "px-3",
-              pathname === href || pathname.startsWith(href + "/")
+              isActiveItem(pathname, href, profileHref)
                 ? "bg-[#FBD00D]/10 text-[#FBD00D]"
                 : "text-[#9a9090] hover:bg-[#251f20] hover:text-[#f5f0f0]"
             )}

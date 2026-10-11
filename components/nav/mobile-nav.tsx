@@ -8,15 +8,18 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { useState } from "react"
 import { ChangePasswordDialog } from "./change-password-dialog"
-import { accountsItem, canSeeAccounts, navItems } from "./nav-items"
+import { accountsItem, canSeeAccounts, isActiveItem, navItems, profileItem } from "./nav-items"
 
 interface Props {
   userName: string
   role: string
+  // Address of the signed-in player's own profile; null for an account without a player
+  profileHref: string | null
 }
 
 // Phones only: the app name and the user menu at the top of the screen
-export function MobileTopBar({ userName, role }: Props) {
+export function MobileTopBar({ userName, role, profileHref }: Props) {
+  const pathname = usePathname()
   const [open, setOpen] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
 
@@ -42,6 +45,20 @@ export function MobileTopBar({ userName, role }: Props) {
               <div className="truncate text-sm font-medium text-[#f5f0f0]">{userName}</div>
               <div className="text-xs capitalize text-[#5e5858]">{role.toLowerCase()}</div>
             </div>
+            {profileHref && (
+              <Link
+                href={profileHref}
+                onClick={() => setOpen(false)}
+                aria-current={pathname === profileHref ? "page" : undefined}
+                className={cn(
+                  "flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-sm hover:bg-[#251f20]",
+                  pathname === profileHref ? "text-[#FBD00D]" : "text-[#c5bfbf]"
+                )}
+              >
+                <profileItem.icon size={16} />
+                {profileItem.label}
+              </Link>
+            )}
             <button
               type="button"
               onClick={() => { setOpen(false); setShowPassword(true) }}
@@ -67,14 +84,14 @@ export function MobileTopBar({ userName, role }: Props) {
 }
 
 // Phones only: the pages of the app as a bar at the bottom of the screen
-export function MobileTabBar({ role }: { role: string }) {
+export function MobileTabBar({ role, profileHref }: Pick<Props, "role" | "profileHref">) {
   const pathname = usePathname()
   const items = canSeeAccounts(role) ? [...navItems, accountsItem] : navItems
 
   return (
     <nav className="flex border-t border-[#2d2829] bg-[#1c1819] pb-[env(safe-area-inset-bottom)] md:hidden">
       {items.map(({ href, label, icon: Icon }) => {
-        const active = pathname === href || pathname.startsWith(href + "/")
+        const active = isActiveItem(pathname, href, profileHref)
         return (
           <Link
             key={href}

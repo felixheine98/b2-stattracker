@@ -53,11 +53,31 @@ export async function syncTournamentSlugs(tournamentId: string): Promise<void> {
     )
     for (const match of lineup.matches) note("MATCH", lineup.id, match.id, match.slug, matchSlugs.get(match.id)!)
   }
+  await applyChanges(changes)
+}
+
+// The address of a player's profile follows from their current name: /players/felix. Earlier
+// players keep their slug, later ones with the same name are numbered. People we only know as
+// opponents have no profile here and no slug.
+export async function syncPlayerSlugs(): Promise<void> {
+  const players = await db.player.findMany({
+    where: { isOpponentOnly: false },
+    select: { id: true, name: true, slug: true },
+    orderBy: [{ createdAt: "asc" }, { id: "asc" }],
+  })
+  const slugs = uniqueSlugs(players.map((p) => ({ id: p.id, base: slugify(p.name) })), [], "player")
+  await applyChanges(
+    players.filter((p) => p.slug !== slugs.get(p.id)).map((p) => ({ kind: "PLAYER" as const, scopeId: "", id: p.id, from: p.slug, to: slugs.get(p.id)! }))
+  )
+}
+
+async function applyChanges(changes: Change[]): Promise<void> {
   if (changes.length === 0) return
 
   const update = (c: Change, slug: string) =>
     c.kind === "TOURNAMENT" ? db.tournament.update({ where: { id: c.id }, data: { slug } })
     : c.kind === "LINEUP" ? db.tournamentLineup.update({ where: { id: c.id }, data: { slug } })
+    : c.kind === "PLAYER" ? db.player.update({ where: { id: c.id }, data: { slug } })
     : db.match.update({ where: { id: c.id }, data: { slug } })
 
   await db.$transaction([
@@ -116,6 +136,17 @@ export async function resolveTournament(param: string) {
     param,
     () => db.tournament.findUnique({ where: { slug: param }, select: { id: true, slug: true } }),
     (id) => db.tournament.findUnique({ where: { id }, select: { id: true, slug: true } })
+  )
+}
+
+export async function resolvePlayer(param: string) {
+  if ((await db.player.count({ where: { isOpponentOnly: false, slug: null } })) > 0) await syncPlayerSlugs()
+  return resolve(
+    "PLAYER",
+    "",
+    param,
+    () => db.player.findFirst({ where: { slug: param, isOpponentOnly: false }, select: { id: true, slug: true } }),
+    (id) => db.player.findFirst({ where: { id, isOpponentOnly: false }, select: { id: true, slug: true } })
   )
 }
 

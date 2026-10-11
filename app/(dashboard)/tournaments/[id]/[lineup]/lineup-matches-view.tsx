@@ -84,6 +84,8 @@ interface Props {
   }
   // Lower-cased TM IDs of players who are guests in this tournament
   guestTmIds: string[]
+  // Profile addresses of our players, by lower-cased TM ID
+  profilePaths: Record<string, string>
   // Admin or manager: everything, including deleting matches
   canManage: boolean
   // May add matches and maintain results of this lineup (managers, and whoever is responsible for it)
@@ -91,7 +93,8 @@ interface Props {
   editExpired?: boolean
 }
 
-export function LineupMatchesView({ lineup, guestTmIds, canManage, canEdit, editExpired }: Props) {
+export function LineupMatchesView({ lineup, guestTmIds, profilePaths, canManage, canEdit, editExpired }: Props) {
+  const profilePath = (tmId: string) => profilePaths[tmId.toLowerCase()]
   const responsiblePlayerIds = new Set(lineup.managers.map((m) => m.user.playerId))
   const guests = new Set(guestTmIds)
   const isGuest = (tmId: string) => guests.has(tmId.toLowerCase())
@@ -214,7 +217,9 @@ export function LineupMatchesView({ lineup, guestTmIds, canManage, canEdit, edit
               )}
             >
               <PlayerAvatar player={slot.player} className="h-5 w-5 text-[10px]" />
-              <PlayerName name={slot.player.name} currentName={slot.player.currentName} />
+              <Link href={profilePath(slot.player.tmId) ?? "/players"} className="hover:text-[#FBD00D]">
+                <PlayerName name={slot.player.name} currentName={slot.player.currentName} />
+              </Link>
               {isGuest(slot.player.tmId) && <GuestBadge />}
               {responsiblePlayerIds.has(slot.player.id) && <ShieldCheck size={13} className="text-[#FBD00D]" aria-label="zuständig" />}
             </span>
@@ -261,7 +266,7 @@ export function LineupMatchesView({ lineup, guestTmIds, canManage, canEdit, edit
           ) : (
             <div className="space-y-4">
               {aggregates.map((agg) => (
-                <FormatStatsTable key={agg.format} agg={agg} isGuest={isGuest} />
+                <FormatStatsTable key={agg.format} agg={agg} isGuest={isGuest} profilePath={profilePath} />
               ))}
             </div>
           )}

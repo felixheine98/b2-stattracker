@@ -53,6 +53,8 @@ model Player {
   opponentNames String[] @default([])
   // The current name; kept in step with the name history (initialName plus nameChanges)
   name      String
+  // Readable address of the profile page, derived from the name (see lib/slugs-db.ts); none for opponent-only people
+  slug      String?  @unique
   // Name the player has "from the beginning"; later renames are PlayerNameChange rows
   initialName String
   country   String?
@@ -402,10 +404,11 @@ enum SlugKind {
   TOURNAMENT
   LINEUP
   MATCH
+  PLAYER
 }
 
 // A former address of a tournament, lineup or match, so old links keep working after a rename.
-// scopeId is what the slug was unique in: "" for tournaments, the tournament for lineups, the lineup for matches.
+// scopeId is what the slug was unique in: "" for tournaments and players, the tournament for lineups, the lineup for matches.
 model SlugAlias {
   id        String   @id @default(cuid())
   kind      SlugKind

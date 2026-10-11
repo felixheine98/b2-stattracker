@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest"
+import { pacePct } from "./pace"
 import { buildAggregates, matchesOfLineups, matchesOfStages, type StatsMatch } from "./format-stats"
 
 let nextId = 0
@@ -118,5 +119,27 @@ describe("matchesOfStages", () => {
 
   it("keeps only the matches of the selected stages", () => {
     expect(matchesOfStages(all, ["md1", "po"])).toEqual([first, playoffs])
+  })
+})
+
+describe("buildAggregates: pace", () => {
+  // A round given as the finishing order with times in seconds
+  function timed(...order: Array<[string, number | null]>) {
+    return {
+      results: order.map(([name, seconds]) => ({
+        id: `r${nextId++}`, tmId: name, playerName: name, isOurTeam: !name.startsWith("opp"), dnf: seconds === null, timeMs: seconds === null ? null : seconds * 1000,
+      })),
+    }
+  }
+
+  it("averages a player's gap to the fastest time of each round in percent", () => {
+    const [agg] = buildAggregates([match([timed(["opp1", 50], ["anna", 51]), timed(["anna", 60], ["opp1", 61])])])
+    expect(pacePct(agg.players.get("anna")!.pace)).toBeCloseTo(1)
+  })
+
+  it("leaves rounds the player did not finish out of the pace", () => {
+    const [agg] = buildAggregates([match([timed(["opp1", 50], ["anna", 51]), timed(["opp1", 60], ["anna", null])])])
+    expect(agg.players.get("anna")!.pace.rounds).toBe(1)
+    expect(pacePct(agg.players.get("anna")!.pace)).toBeCloseTo(2)
   })
 })

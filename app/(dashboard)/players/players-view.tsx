@@ -3,29 +3,22 @@
 import { BASE_PATH } from "@/lib/base-path"
 import { allNames, type NameChange } from "@/lib/player-names"
 import { NameHistoryDialog } from "./name-history-dialog"
+import { STATUS_LABEL, StatusHistoryDialog, StatusMoveDialog, statusSummary } from "./status-dialogs"
 import { useEffect, useRef, useState, useTransition } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
+import Link from "next/link"
+import { playerPath } from "@/lib/paths"
 import { useSyncedState } from "@/lib/use-synced-state"
 import { PlayerAvatar } from "@/components/player-avatar"
 import { countryName, countryOptions } from "@/lib/countries"
-import {
-  currentStatus,
-  dayKey,
-  formatDay,
-  sortedChanges,
-  localTodayKey,
-  statusAt,
-  tournamentReferenceDate,
-  type PlayerStatus,
-  type StatusChange,
-} from "@/lib/player-status"
+import { currentStatus, type PlayerStatus, type StatusChange } from "@/lib/player-status"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent } from "@/components/ui/card"
 import { Dialog, DialogTitle } from "@/components/ui/dialog"
 import { cn } from "@/lib/utils"
-import { ArrowLeftRight, Check, History, KeyRound, Link2, Link2Off, Pencil, Plus, RefreshCw, Search, Trash2, Trophy, User, Wand2, X } from "lucide-react"
+import { ArrowLeftRight, Check, History, KeyRound, Link2, Link2Off, Pencil, Plus, RefreshCw, Search, Trash2, User, Wand2, X } from "lucide-react"
 
 interface UserOption {
   id: string
@@ -36,6 +29,7 @@ interface UserOption {
 
 interface Player {
   id: string
+  slug?: string | null
   tmId: string
   name: string
   country?: string | null
@@ -103,22 +97,6 @@ interface Props {
   canManage: boolean
 }
 
-const STATUS_LABEL: Record<PlayerStatus, string> = { MEMBER: "Member", GUEST: "Guest" }
-
-function nextDay(day: string): string {
-  const date = new Date(`${day}T00:00:00Z`)
-  date.setUTCDate(date.getUTCDate() + 1)
-  return dayKey(date)
-}
-
-// "Guest since 01.10.2026" or "Member from the start"
-function statusSummary(player: Player): string {
-  const last = sortedChanges(player).at(-1)
-  return last
-    ? `${STATUS_LABEL[last.status]} since ${formatDay(last.effectiveFrom)}`
-    : `${STATUS_LABEL[player.initialStatus]} from the start`
-}
-
 // A trackmania.io value that differs from ours, with the two ways to settle it
 function HintLine({ label, canManage, onAdopt, onDismiss }: { label: string; canManage: boolean; onAdopt: () => void; onDismiss: () => void }) {
   return (
@@ -176,17 +154,9 @@ export function PlayersView({ players: initial, users, canManage }: Props) {
     }
   }, [])
 
-  // --- Move between members and guests ---
+  // --- Move between members and guests, status history ---
   const [moveId, setMoveId] = useState<string | null>(null)
-  const [moveDate, setMoveDate] = useState("")
-  const [moveError, setMoveError] = useState("")
-  const [moveLoading, setMoveLoading] = useState(false)
-
-  // --- Status history ---
   const [historyId, setHistoryId] = useState<string | null>(null)
-  const [historyDates, setHistoryDates] = useState<Record<string, string>>({})
-  const [historyError, setHistoryError] = useState("")
-  const [historyLoading, setHistoryLoading] = useState(false)
 
   // Which accounts are taken follows the local player list, so links made here apply at once
   const linkedUserIds = new Set(players.flatMap((p) => (p.user ? [p.user.id] : [])))
@@ -515,90 +485,6 @@ export function PlayersView({ players: initial, users, canManage }: Props) {
 
   const autoLinkCount = members.filter((p) => autoLinkMatch(p)).length
 
-  function openMove(player: Player) {
-    setMoveId(player.id)
-    setMoveDate(localTodayKey())
-    setMoveError("")
-  }
-
-  async function handleMove() {
-    if (!movePlayer) return
-    setMoveError("")
-    setMoveLoading(true)
-    const res = await fetch(`${BASE_PATH}/api/players/${movePlayer.id}/status`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        status: currentStatus(movePlayer) === "MEMBER" ? "GUEST" : "MEMBER",
-        effectiveFrom: moveDate,
-      }),
-    })
-    setMoveLoading(false)
-    const data = await res.json().catch(() => null)
-    if (!res.ok) {
-      setMoveError(data?.error ?? "Failed to move player")
-      return
-    }
-    replaceStatusChanges(movePlayer.id, data.statusChanges)
-    setMoveId(null)
-  }
-
-  function openHistory(player: Player) {
-    setHistoryId(player.id)
-    setHistoryDates({})
-    setHistoryError("")
-  }
-
-  async function saveHistoryDate(change: StatusChange) {
-    if (!historyPlayer) return
-    setHistoryError("")
-    setHistoryLoading(true)
-    const res = await fetch(`${BASE_PATH}/api/players/${historyPlayer.id}/status/${change.id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ effectiveFrom: historyDates[change.id] }),
-    })
-    setHistoryLoading(false)
-    const data = await res.json().catch(() => null)
-    if (!res.ok) {
-      setHistoryError(data?.error ?? "Failed to save")
-      return
-    }
-    replaceStatusChanges(historyPlayer.id, data.statusChanges)
-    setHistoryDates({})
-  }
-
-  async function deleteHistoryChange(change: StatusChange) {
-    if (!historyPlayer) return
-    if (!confirm("Remove this switch?")) return
-    setHistoryError("")
-    setHistoryLoading(true)
-    const res = await fetch(`${BASE_PATH}/api/players/${historyPlayer.id}/status/${change.id}`, { method: "DELETE" })
-    setHistoryLoading(false)
-    const data = await res.json().catch(() => null)
-    if (!res.ok) {
-      setHistoryError(data?.error ?? "Failed to remove")
-      return
-    }
-    replaceStatusChanges(historyPlayer.id, data.statusChanges)
-  }
-
-  const moveTarget: PlayerStatus | null = movePlayer ? (currentStatus(movePlayer) === "MEMBER" ? "GUEST" : "MEMBER") : null
-  const moveLastChange = movePlayer ? sortedChanges(movePlayer).at(-1) : undefined
-  const moveMinDate = moveLastChange ? nextDay(dayKey(moveLastChange.effectiveFrom)) : undefined
-
-  // Switches and tournaments in one timeline; on the same day the switch comes first
-  const timeline = historyPlayer
-    ? [
-        ...sortedChanges(historyPlayer).map((change) => ({ kind: "change" as const, day: dayKey(change.effectiveFrom), change })),
-        ...(historyPlayer.tournamentLineupSlots ?? []).map((slot) => {
-          const day = dayKey(tournamentReferenceDate(slot.lineup.tournament))
-          return { kind: "tournament" as const, day, slot, status: statusAt(historyPlayer, day) }
-        }),
-      ].sort((a, b) => a.day.localeCompare(b.day) || (a.kind === b.kind ? 0 : a.kind === "change" ? -1 : 1))
-    : []
-  const historyChanges = historyPlayer ? sortedChanges(historyPlayer) : []
-
   return (
     <div className="space-y-6 max-w-5xl">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -704,7 +590,7 @@ export function PlayersView({ players: initial, users, canManage }: Props) {
                   <td className="px-3 py-3 @7xl:px-4 font-medium text-[#f5f0f0] max-md:order-1 max-md:col-span-2 max-md:block max-md:p-0 max-md:text-base">
                     <span className="flex items-center gap-2 whitespace-nowrap">
                       <PlayerAvatar player={player} />
-                      {player.name}
+                      <Link href={playerPath(player)} className="hover:text-[#FBD00D] hover:underline">{player.name}</Link>
                       <button
                         type="button"
                         onClick={() => setNameDialog({ playerId: player.id })}
@@ -822,7 +708,7 @@ export function PlayersView({ players: initial, users, canManage }: Props) {
                   <td className="px-3 py-3 @7xl:px-4 max-md:order-2 max-md:block max-md:min-w-0 max-md:p-0">
                     <button
                       type="button"
-                      onClick={() => openHistory(player)}
+                      onClick={() => setHistoryId(player.id)}
                       className="inline-flex items-center gap-1.5 text-left text-xs text-[#9a9090] hover:text-[#f5f0f0]"
                       title="Show history"
                     >
@@ -851,7 +737,7 @@ export function PlayersView({ players: initial, users, canManage }: Props) {
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => openMove(player)}
+                          onClick={() => setMoveId(player.id)}
                           className="whitespace-nowrap"
                           title={tab === "members" ? "To guests" : "To members"}
                         >
@@ -951,47 +837,13 @@ export function PlayersView({ players: initial, users, canManage }: Props) {
       </Dialog>
 
       {/* Move between members and guests */}
-      <Dialog open={canManage && !!movePlayer} onClose={() => setMoveId(null)}>
-        <DialogTitle>
-          Move {movePlayer?.name} to {moveTarget === "GUEST" ? "guests" : "members"}?
-        </DialogTitle>
-        <div className="space-y-4">
-          <p className="text-sm text-[#9a9090]">
-            Lineups, results and the flag stay as they are. Tournaments that started before the chosen day keep showing{" "}
-            {movePlayer?.name} as {moveTarget === "GUEST" ? "member" : "guest"}.
-          </p>
-          <div className="space-y-1.5">
-            <Label htmlFor="move-date">Effective from</Label>
-            <Input
-              id="move-date"
-              type="date"
-              value={moveDate}
-              min={moveMinDate}
-              max={localTodayKey()}
-              onChange={(e) => setMoveDate(e.target.value)}
-              required
-            />
-            {moveLastChange && (
-              <p className="text-xs text-[#5e5858]">
-                Must be after the previous switch on {formatDay(moveLastChange.effectiveFrom)}.
-              </p>
-            )}
-          </div>
-          {movePlayer?.user && moveTarget === "GUEST" && (
-            <p className="flex items-start gap-2 rounded-lg border border-[#cd7f32]/40 bg-[#cd7f32]/10 px-3 py-2 text-xs text-[#cd7f32]">
-              <KeyRound size={14} className="mt-0.5 shrink-0" />
-              The login “{movePlayer.user.username}” stays active. Delete it on the Accounts page if this person should no longer have access.
-            </p>
-          )}
-          {moveError && <p className="text-sm text-[#ED1F24]">{moveError}</p>}
-          <div className="dialog-footer flex gap-2 justify-end">
-            <Button variant="ghost" onClick={() => setMoveId(null)}>Cancel</Button>
-            <Button onClick={handleMove} disabled={moveLoading || !moveDate}>
-              {moveLoading ? "Moving…" : moveTarget === "GUEST" ? "Move to guests" : "Move to members"}
-            </Button>
-          </div>
-        </div>
-      </Dialog>
+      {canManage && movePlayer && (
+        <StatusMoveDialog
+          player={movePlayer}
+          onClose={() => setMoveId(null)}
+          onChanged={(statusChanges) => replaceStatusChanges(movePlayer.id, statusChanges)}
+        />
+      )}
 
       {/* Name history and renaming */}
       {namePlayer && (
@@ -1011,71 +863,14 @@ export function PlayersView({ players: initial, users, canManage }: Props) {
       )}
 
       {/* Status history */}
-      <Dialog open={!!historyPlayer} onClose={() => setHistoryId(null)} className="max-w-lg">
-        <DialogTitle>History of {historyPlayer?.name}</DialogTitle>
-        {historyPlayer && (
-          <div className="space-y-4">
-            <ol className="space-y-2">
-              <li className="flex items-center gap-3 rounded-lg border border-[#2d2829] px-3 py-2 text-sm">
-                <span className="w-24 shrink-0 text-xs text-[#5e5858]">from the start</span>
-                <span className="font-medium text-[#f5f0f0]">{STATUS_LABEL[historyPlayer.initialStatus]}</span>
-              </li>
-              {timeline.map((entry) =>
-                entry.kind === "change" ? (
-                  <li key={entry.change.id} className="flex items-center gap-3 rounded-lg border border-[#FBD00D]/30 bg-[#FBD00D]/5 px-3 py-2 text-sm">
-                    {canManage ? (
-                      <Input
-                        type="date"
-                        value={historyDates[entry.change.id] ?? entry.day}
-                        max={localTodayKey()}
-                        onChange={(e) => setHistoryDates((d) => ({ ...d, [entry.change.id]: e.target.value }))}
-                        aria-label="Effective from"
-                        className="h-8 w-36 shrink-0 text-xs"
-                      />
-                    ) : (
-                      <span className="w-24 shrink-0 text-xs text-[#9a9090]">{formatDay(entry.day)}</span>
-                    )}
-                    <span className="flex-1 font-medium text-[#f5f0f0]">Switch to {STATUS_LABEL[entry.change.status].toLowerCase()}</span>
-                    {canManage && historyDates[entry.change.id] && historyDates[entry.change.id] !== entry.day && (
-                      <Button size="sm" onClick={() => saveHistoryDate(entry.change)} disabled={historyLoading}>Save</Button>
-                    )}
-                    {canManage && entry.change.id === historyChanges.at(-1)?.id && (
-                      <button
-                        type="button"
-                        onClick={() => deleteHistoryChange(entry.change)}
-                        disabled={historyLoading}
-                        className="text-[#5e5858] hover:text-[#ED1F24] disabled:opacity-40"
-                        title="Remove this switch"
-                      >
-                        <Trash2 size={14} />
-                      </button>
-                    )}
-                  </li>
-                ) : (
-                  <li key={`${entry.slot.lineup.tournament.id}-${entry.slot.lineup.name}`} className="flex items-center gap-3 px-3 py-1 text-sm">
-                    <span className="w-24 shrink-0 text-xs text-[#5e5858]">{formatDay(entry.day)}</span>
-                    <Trophy size={13} className="shrink-0 text-[#5e5858]" />
-                    <span className="flex-1 text-[#c5bfbf]">
-                      {entry.slot.lineup.tournament.name}
-                      <span className="text-[#5e5858]"> · {entry.slot.lineup.name}</span>
-                    </span>
-                    <span className={cn("text-xs", entry.status === "GUEST" ? "text-[#cd7f32]" : "text-[#9a9090]")}>
-                      as {STATUS_LABEL[entry.status].toLowerCase()}
-                    </span>
-                  </li>
-                )
-              )}
-            </ol>
-            {timeline.length === 0 && (
-              <p className="text-xs text-[#5e5858]">No switches and no tournaments yet.</p>
-            )}
-            {historyError && <p className="text-sm text-[#ED1F24]">{historyError}</p>}
-            <div className="dialog-footer flex justify-end">
-              <Button variant="ghost" onClick={() => setHistoryId(null)}>Close</Button>
-            </div>
-          </div>
-        )}
-      </Dialog>
+      {historyPlayer && (
+        <StatusHistoryDialog
+          player={historyPlayer}
+          canManage={canManage}
+          onClose={() => setHistoryId(null)}
+          onChanged={(statusChanges) => replaceStatusChanges(historyPlayer.id, statusChanges)}
+        />
+      )}
     </div>
   )
 }

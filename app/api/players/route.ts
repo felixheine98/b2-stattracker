@@ -4,6 +4,7 @@ import { NextResponse } from "next/server"
 import { z } from "zod"
 import { canManage } from "@/lib/roles"
 import { isCountryCode } from "@/lib/countries"
+import { syncPlayerSlugs } from "@/lib/slugs-db"
 
 export async function GET() {
   const session = await auth()
@@ -70,6 +71,7 @@ export async function POST(req: Request) {
     const player = opponent?.isOpponentOnly
       ? await db.player.update({ where: { id: opponent.id }, data, include })
       : await db.player.create({ data, include })
+    await syncPlayerSlugs()
     return NextResponse.json(player, { status: 201 })
   } catch (e: unknown) {
     if ((e as { code?: string }).code === "P2002") {

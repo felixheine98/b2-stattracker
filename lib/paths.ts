@@ -17,3 +17,8 @@ export function lineupPath(tournament: Addressable, lineup: Addressable): string
 export function matchPath(tournament: Addressable, lineup: Addressable, match: Addressable): string {
   return `${lineupPath(tournament, lineup)}/${part(match)}`
 }
+
+// A player's profile page
+export function playerPath(player: Addressable): string {
+  return `/players/${part(player)}`
+}

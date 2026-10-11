@@ -1,5 +1,6 @@
 // Stats of our team summed up over matches, shown on the lineup and tournament pages
 import type { Format } from "@prisma/client"
+import { addGap, emptyPace, finishTime, roundBest, type PaceSum } from "./pace"
 import { roundPlacements, roundScore } from "./round-score"
 import type { StageType } from "./stages"
 
@@ -9,6 +10,7 @@ interface StatsRoundResult {
   playerName: string
   isOurTeam: boolean
   dnf?: boolean | null
+  timeMs?: number | null
   // Today's name, when the data carries tournament names
   currentName?: string
 }
@@ -34,6 +36,8 @@ interface PlayerAggregate {
   roundsWon: number
   roundsLost: number
   dnfs: number
+  // Gap to the fastest time of each round (see lib/pace.ts)
+  pace: PaceSum
 }
 
 export interface FormatAggregate {
@@ -46,6 +50,8 @@ export interface FormatAggregate {
   // keyed by tmId
   players: Map<string, PlayerAggregate>
 }
+
+export const FORMAT_ORDER: Format[] = ["TIME_ATTACK_10", "ROUND_1V1", "ROUND_2V2", "ROUND_3V3", "ROUND_4V4", "ROUND_5V5"]
 
 // The matches the stats are limited to: those of the given lineups, or all matches if none is given
 export function matchesOfLineups<T extends { tournamentLineupId?: string | null }>(matches: T[], lineupIds: string[]): T[] {
@@ -80,18 +86,21 @@ export function buildAggregates(matches: StatsMatch[]): FormatAggregate[] {
       for (const round of sm.rounds) {
         const o = roundScore(round.results)?.outcome
         const placements = roundPlacements(round.results)
+        const best = roundBest(round.results)
         if (o === "W") { agg.teamRoundsWon++; smWon++ }
         else if (o === "L") { agg.teamRoundsLost++; smLost++ }
 
         round.results.forEach((r, idx) => {
           if (!r.isOurTeam) return
           if (!agg.players.has(r.tmId)) {
-            agg.players.set(r.tmId, { tmId: r.tmId, name: r.playerName, currentName: r.currentName, roundsPlayed: 0, placementSum: 0, roundsWon: 0, roundsLost: 0, dnfs: 0 })
+            agg.players.set(r.tmId, { tmId: r.tmId, name: r.playerName, currentName: r.currentName, roundsPlayed: 0, placementSum: 0, roundsWon: 0, roundsLost: 0, dnfs: 0, pace: emptyPace() })
           }
           const p = agg.players.get(r.tmId)!
           p.roundsPlayed++
           p.placementSum += placements[idx]
           if (r.dnf) p.dnfs++
+          const time = finishTime(r)
+          if (time !== null && best !== null) addGap(p.pace, time, best)
           if (o === "W") p.roundsWon++
           else if (o === "L") p.roundsLost++
         })
@@ -106,8 +115,7 @@ export function buildAggregates(matches: StatsMatch[]): FormatAggregate[] {
   }
 
   // Only return formats with actual data, ordered sensibly
-  const order: Format[] = ["TIME_ATTACK_10", "ROUND_1V1", "ROUND_2V2", "ROUND_3V3", "ROUND_4V4", "ROUND_5V5"]
-  return order
+  return FORMAT_ORDER
     .filter((f) => byFormat.has(f) && byFormat.get(f)!.players.size > 0)
     .map((f) => byFormat.get(f)!)
 }

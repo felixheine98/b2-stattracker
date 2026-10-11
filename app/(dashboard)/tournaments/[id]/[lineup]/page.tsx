@@ -4,7 +4,7 @@ import { auth } from "@/lib/auth"
 import { canManage } from "@/lib/roles"
 import { guestTmIdsAt, tournamentReferenceDate } from "@/lib/player-status"
 import { notFound, redirect } from "next/navigation"
-import { lineupPath } from "@/lib/paths"
+import { lineupPath, playerPath } from "@/lib/paths"
 import { resolveLineup, resolveTournament } from "@/lib/slugs-db"
 import { withCompNames } from "@/lib/player-names-db"
 import { LineupMatchesView } from "./lineup-matches-view"
@@ -51,7 +51,7 @@ export default async function LineupMatchesPage({ params }: Props) {
         },
       },
     }),
-    db.player.findMany({ where: { isOpponentOnly: false }, select: { tmId: true, initialStatus: true, statusChanges: true } }),
+    db.player.findMany({ where: { isOpponentOnly: false }, select: { id: true, slug: true, tmId: true, initialStatus: true, statusChanges: true } }),
   ])
 
   if (!lineup) notFound()
@@ -71,6 +71,7 @@ export default async function LineupMatchesPage({ params }: Props) {
     <LineupMatchesView
       lineup={named}
       guestTmIds={guestTmIds}
+      profilePaths={Object.fromEntries(players.map((p) => [p.tmId.toLowerCase(), playerPath(p)]))}
       canManage={canManage(user?.role)}
       canEdit={canEdit}
       // Responsible for the lineup, but the week after the tournament's end is over
