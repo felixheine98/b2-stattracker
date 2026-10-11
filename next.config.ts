@@ -9,6 +9,9 @@ const nextConfig: NextConfig = {
   output: "standalone",
   basePath,
   env: { NEXT_PUBLIC_BASE_PATH: basePath },
+  // The site is served to everyone from the dev server; its indicator (a logo that flashes in a
+  // corner on every data refresh) has no place there. Errors are still shown.
+  devIndicators: false,
   allowedDevOrigins: ["reh-netsolutions.cc", "b2-esports.com", "www.b2-esports.com"],
   // The site sits behind Cloudflare, which turns the dev server's "no-cache" into a
   // 4 hour browser cache for scripts. no-store keeps browsers from running stale dev code.

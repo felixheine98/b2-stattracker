@@ -28,3 +28,7 @@ Every change to the interface has to work on phones as well as on desktop. Below
 - Button rows of dialogs use the `dialog-footer` class, so they stay visible at the bottom.
 - Fields that open a keyboard keep at least 16px font size on phones (handled in `globals.css`), otherwise iPhones zoom in.
 - Tables: stats keep all columns and scroll with a sticky first column; lists that are edited per row become cards (`max-md:` classes on the same table).
+
+# Todos
+
+`todos.md` is kept in three sections, in this order: `Offen` (open) at the top, `Teilweise erledigt` (partly done) below it, `Erledigt` (done) at the bottom. Whenever you add an item or change its status, move it to the matching section instead of leaving it in place. A partly done item lists its finished and open parts as sub-checkboxes.

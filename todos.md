@@ -1,12 +1,8 @@
 # TODOS
 
-- Lineup Builder -> gemeinsames erstellen für lineups, welches direkt in eine comp reingespeichert wird 
-- danach werden in dieser comp nur noch diese 4 lineups gezeigt bzw nur die spieler
-
-- [x] Match nachträglich bearbeiten (Datum, Gegner, Notizen)
+## Offen
 
 - [ ] csv import für gesamtes match -> danach UI wo man einzelne runden (multi select) rauslöschen kann, falls match dumper nicht 100% korrekt ist
-- [x] Gegner-DB umgesetzt: [vereinbartes Konzept](docs/gegner-db-konzept.md) – feste Teams, Competition-Lineups/Mixes, Logos, Spielerzuordnung und Stats; gezielte manuelle Übernahme aus dem Team-Spreadsheet
 - [ ] spieler-profile: eigene seite pro spieler (idee boris; gibt dem spielertab mehr zweck als nur spieler/gäste anlegen)
   - gespielte turniere (mit lineup, als member/gast)
   - kumulierte stats über alle comps (lifetime): pace, durchschnittsplatz in comps, pbs auf comp-maps; dazu letzte comp
@@ -20,7 +16,17 @@
 - [ ] best performer pro match/week/tourney? -> den auf übersicht auch anzeigen?
 - [ ] validierung von importierten daten zu eingegebenen daten (match) -> passt das gegner team etc
 - [ ] per map statistiken (pro comp für 1 lineup, pro week für alle lineups)
-- bei turnier gesamtstatistik -> filter default auf eigenes team (wenn in einem LU dabei)
 - [ ] suchfunktion bei den spielern (spielertab)
 - [ ] tournaments seite bei mehreren comps: bleibt eine einfache liste der turniere, anordnung prüfen wenn es mehr werden
 - [ ] feedback einholen: tra (vom fach), 1-2 weitere, dazu von manager seite
+
+## Teilweise erledigt
+
+- [ ] Lineup Builder
+  - [x] gemeinsames erstellen für lineups, welches direkt in eine comp reingespeichert wird (Planung pro Comp: Verfügbarkeit, Varianten, Live-Session, Übernehmen)
+  - [ ] danach werden in dieser comp nur noch diese 4 lineups gezeigt bzw nur die spieler
+
+## Erledigt
+
+- [x] Match nachträglich bearbeiten (Datum, Gegner, Notizen)
+- [x] Gegner-DB umgesetzt: [vereinbartes Konzept](docs/gegner-db-konzept.md) – feste Teams, Competition-Lineups/Mixes, Logos, Spielerzuordnung und Stats; gezielte manuelle Übernahme aus dem Team-Spreadsheet
