@@ -151,13 +151,6 @@ export function TournamentDetailView({ tournament: initial, players, statsMatche
   const isTrial = (tmId: string) => trialTmIds.has(tmId.toLowerCase())
   const profilePaths = new Map(players.map((p) => [p.tmId.toLowerCase(), playerPath(p)]))
   const profilePath = (tmId: string) => profilePaths.get(tmId.toLowerCase())
-  // Former players are not offered any more; whoever is in a lineup already stays in it
-  const pickable = players.filter(selectable)
-  // Selection lists show team members first, then guests
-  const playerGroups = [
-    { label: null, players: pickable.filter((p) => !isGuest(p.tmId)) },
-    { label: "Gäste", players: pickable.filter((p) => isGuest(p.tmId)) },
-  ].filter((g) => g.players.length > 0)
 
   // --- Edit tournament dialog state ---
   const [showEdit, setShowEdit] = useState(false)
@@ -186,6 +179,13 @@ export function TournamentDetailView({ tournament: initial, players, statsMatche
   const [editingLineup, setEditingLineup] = useState<TournamentLineup | null>(null)
   const [lineupName, setLineupName] = useState("")
   const [lineupPlayerIds, setLineupPlayerIds] = useState<string[]>([])
+  // Former players are not offered any more; whoever is in a lineup already stays in it
+  const pickable = players.filter((p) => selectable(p) || lineupPlayerIds.includes(p.id))
+  // Selection lists show team members first, then guests
+  const playerGroups = [
+    { label: null, players: pickable.filter((p) => !isGuest(p.tmId)) },
+    { label: "Gäste", players: pickable.filter((p) => isGuest(p.tmId)) },
+  ].filter((g) => g.players.length > 0)
   const [lineupManagerIds, setLineupManagerIds] = useState<string[]>([])
   const [lineupError, setLineupError] = useState("")
   const [lineupLoading, setLineupLoading] = useState(false)
