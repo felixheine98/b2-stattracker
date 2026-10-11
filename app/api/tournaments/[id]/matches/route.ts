@@ -4,6 +4,7 @@ import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
 import { NextResponse } from "next/server"
 import { z } from "zod"
+import { nextMatchNumber } from "@/lib/match-order"
 import { mayEditLineupById, type SessionUser } from "@/lib/lineup-access-db"
 
 interface Params {
@@ -33,6 +34,7 @@ const createSchema = z.object({
   opponentTeamId: z.string().nullable().optional(),
   date: z.string().nullable().optional(),
   notes: z.string().nullable().optional(),
+  // Left out: the next number of the lineup is taken; null: the match stays without a number
   number: z.number().int().min(1).max(999).nullable().optional(),
   label: z.string().trim().max(60).nullable().optional(),
   // Every match belongs to a lineup of the tournament
@@ -87,7 +89,10 @@ export async function POST(req: Request, { params }: Params) {
       opponentLineupId: opponent?.id ?? null,
       date: parsed.data.date ? new Date(parsed.data.date) : null,
       notes: parsed.data.notes ?? null,
-      number: parsed.data.number ?? null,
+      number:
+        parsed.data.number !== undefined
+          ? parsed.data.number
+          : nextMatchNumber(await tx.match.findMany({ where: { tournamentLineupId: tl.id }, select: { number: true } })),
       label: parsed.data.label || null,
       tournamentLineupId: tl.id,
       subMatches: {

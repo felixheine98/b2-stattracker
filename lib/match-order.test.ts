@@ -42,12 +42,16 @@ describe("sortMatches", () => {
 
 describe("nextMatchNumber", () => {
   it("is the number after the highest one", () => {
-    expect(nextMatchNumber([m("a", 1), m("b", 4), m("c", null)])).toBe(5)
+    expect(nextMatchNumber([m("a", 1), m("b", 4)])).toBe(5)
   })
 
   it("starts at 1", () => {
     expect(nextMatchNumber([])).toBe(1)
-    expect(nextMatchNumber([m("a", null)])).toBe(1)
+  })
+
+  it("counts matches without a number, so older ones need not be numbered first", () => {
+    expect(nextMatchNumber([m("a", null), m("b", null), m("c", null)])).toBe(4)
+    expect(nextMatchNumber([m("a", null), m("b", 1)])).toBe(3)
   })
 })
 

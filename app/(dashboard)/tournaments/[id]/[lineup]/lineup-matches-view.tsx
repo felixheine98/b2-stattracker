@@ -143,8 +143,6 @@ export function LineupMatchesView({ lineup, guestTmIds, trialTmIds, profilePaths
   function selectStage(id: string) {
     const stage = stages.find((st) => st.id === id)
     setStageId(id)
-    // Numbered on from the matches the stage already has
-    setMatchNumber(String(nextMatchNumber(matches.filter((m) => m.stage.id === id))))
     setMatchDate(stage ? stageDate(stage, stages, new Date(startDate)).toISOString().slice(0, 10) : "")
   }
 
@@ -152,6 +150,8 @@ export function LineupMatchesView({ lineup, guestTmIds, trialTmIds, profilePaths
     selectStage(suggestStage(stages, matches.map((m) => m.stage.id))?.id ?? "")
     setMatchError("")
     setOpponentValue({ name: "" })
+    // Numbered on through the tournament, whatever the stage
+    setMatchNumber(String(nextMatchNumber(matches)))
     setShowAddMatch(true)
   }
 
@@ -439,7 +439,7 @@ export function LineupMatchesView({ lineup, guestTmIds, trialTmIds, profilePaths
               <Input id="label" name="label" maxLength={60} placeholder="z. B. Upper Final" />
             </div>
           </div>
-          <p className="-mt-2 text-xs text-[#5e5858]">Die Matches eines Abschnitts stehen in der Reihenfolge ihrer Nummern.</p>
+          <p className="-mt-2 text-xs text-[#5e5858]">Die Nummer zählt über das ganze Turnier weiter. Innerhalb eines Abschnitts stehen die Matches in dieser Reihenfolge.</p>
           <div className="space-y-1.5">
             <Label htmlFor="date">Date</Label>
             <Input id="date" name="date" type="date" value={matchDate} onChange={(e) => setMatchDate(e.target.value)} />

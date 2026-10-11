@@ -1,6 +1,5 @@
-// Matches within a stage: a lineup can play several on one match day or in the playoffs. They
-// are numbered (#1, #2, ...) and listed in that order; a match can also carry a name such as
-// "Upper Final". Both are optional.
+// The matches of a lineup are numbered through the tournament (#1, #2, ...) and listed in that
+// order within their stage; a match can also carry a name such as "Upper Final". Both are optional.
 
 interface Ordered {
   number?: number | null
@@ -20,9 +19,11 @@ export function sortMatches<T extends Ordered>(matches: T[]): T[] {
   )
 }
 
-// The number to offer for a new match next to the given ones
+// The number of a new match next to the given ones, the matches a lineup already has in the
+// tournament: it counts on from the highest number. Matches without a number count as well,
+// so the numbering continues behind older matches that were never numbered.
 export function nextMatchNumber(matches: Array<{ number?: number | null }>): number {
-  return Math.max(0, ...matches.map((m) => m.number ?? 0)) + 1
+  return Math.max(matches.length, ...matches.map((m) => m.number ?? 0)) + 1
 }
 
 // "#2 · Upper Final", "#2", "Upper Final" or nothing
