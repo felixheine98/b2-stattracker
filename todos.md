@@ -10,6 +10,7 @@
 - [ ] best performer pro match/week/tourney? -> den auf übersicht auch anzeigen?
 - [ ] validierung von importierten daten zu eingegebenen daten (match) -> passt das gegner team etc
 - [ ] tournaments seite bei mehreren comps: bleibt eine einfache liste der turniere, anordnung prüfen wenn es mehr werden
+- [ ] lineup einteilung für einzelne matches bzw match days
 
 ## Teilweise erledigt
 

@@ -179,7 +179,8 @@ export function PlayersView({ players: initial, users, canManage }: Props) {
   // The team's managers stand apart at the top of the members
   // Managers are the members whose account is admin or manager
   const isManager = (p: Player) => canManageRole(p.user?.role)
-  const managers = members.filter(isManager)
+  // Admins first, then the managers; each by name
+  const managers = members.filter(isManager).sort((a, b) => Number(b.user?.role === "ADMIN") - Number(a.user?.role === "ADMIN"))
   const visible = { members: [...managers, ...members.filter((p) => !isManager(p))], trial: trials, guests, former: formers }[tab]
   const newStatus = TAB_STATUS[tab]
   const addLabel = `${STATUS_LABEL[newStatus]} hinzufügen`
