@@ -71,7 +71,8 @@ model Player {
   dismissedTmioCountry String?
   // Status the player has "from the beginning"; later switches are PlayerStatusChange rows
   initialStatus PlayerStatus @default(MEMBER)
-  // Manages the team; listed apart from the other members. Independent of the account's role in the app.
+  // Manages the team; listed apart from the other members. Set in the database for now: it is
+  // meant to follow the account's role once the roles match the team's managers.
   teamManager   Boolean      @default(false)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

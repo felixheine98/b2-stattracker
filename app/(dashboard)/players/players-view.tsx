@@ -19,7 +19,7 @@ import { Label } from "@/components/ui/label"
 import { Card, CardContent } from "@/components/ui/card"
 import { Dialog, DialogTitle } from "@/components/ui/dialog"
 import { cn } from "@/lib/utils"
-import { ArrowLeftRight, Check, History, KeyRound, Link2, Link2Off, Pencil, Plus, RefreshCw, Search, ShieldCheck, Trash2, User, Wand2, X } from "lucide-react"
+import { ArrowLeftRight, Check, History, KeyRound, Link2, Link2Off, Pencil, Plus, RefreshCw, Search, Trash2, User, Wand2, X } from "lucide-react"
 import { searchPlayers } from "@/lib/player-search"
 
 interface UserOption {
@@ -458,16 +458,6 @@ export function PlayersView({ players: initial, users, canManage }: Props) {
     setPlayers((p) => p.map((pl) => (pl.id === playerId ? { ...pl, country } : pl)))
   }
 
-  async function handleTeamManager(playerId: string, teamManager: boolean) {
-    const res = await fetch(`${BASE_PATH}/api/players/${playerId}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ teamManager }),
-    })
-    if (!res.ok) return
-    setPlayers((p) => p.map((pl) => (pl.id === playerId ? { ...pl, teamManager } : pl)))
-  }
-
   async function handleLink(playerId: string, userId: string | null) {
     setLinking(playerId)
     const res = await fetch(`${BASE_PATH}/api/players/${playerId}`, {
@@ -780,19 +770,6 @@ export function PlayersView({ players: initial, users, canManage }: Props) {
                           <RefreshCw size={14} className={syncingId === player.id ? "animate-spin" : ""} />
                           <span className="md:hidden">Abgleich</span>
                         </Button>
-                        {tab === "members" && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleTeamManager(player.id, !player.teamManager)}
-                            aria-pressed={!!player.teamManager}
-                            className={player.teamManager ? "text-[#FBD00D] hover:text-[#FBD00D]" : "text-[#5e5858] hover:text-[#f5f0f0]"}
-                            title={player.teamManager ? "Nicht mehr als Manager führen" : "Als Manager führen"}
-                          >
-                            <ShieldCheck size={14} />
-                            <span className="md:hidden">Manager</span>
-                          </Button>
-                        )}
                         <Button
                           variant="outline"
                           size="sm"
