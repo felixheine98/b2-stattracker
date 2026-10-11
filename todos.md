@@ -11,7 +11,6 @@
 - [ ] best performer pro match/week/tourney? -> den auf übersicht auch anzeigen?
 - [ ] validierung von importierten daten zu eingegebenen daten (match) -> passt das gegner team etc
 - [ ] tournaments seite bei mehreren comps: bleibt eine einfache liste der turniere, anordnung prüfen wenn es mehr werden
-- [ ] feedback einholen: tra (vom fach), 1-2 weitere, dazu von manager seite
 
 ## Teilweise erledigt
 

@@ -4,7 +4,7 @@ import { NextResponse } from "next/server"
 import { z } from "zod"
 import { canManage } from "@/lib/roles"
 import { bumpPlanning, loadPlanning } from "@/lib/planning-db"
-import { statusAt, tournamentReferenceDate } from "@/lib/player-status"
+import { inTeam, statusAt, tournamentReferenceDate } from "@/lib/player-status"
 
 interface Params {
   params: Promise<{ id: string; playerId: string }>
@@ -41,7 +41,7 @@ export async function PUT(req: Request, { params }: Params) {
     if (!user.id || player.user?.id !== user.id) return NextResponse.json({ error: "Forbidden" }, { status: 403 })
     // Players answer only if they are on the list: members, and guests a manager added
     const onList =
-      statusAt(player, tournamentReferenceDate(loaded.tournament)) === "MEMBER" ||
+      inTeam(statusAt(player, tournamentReferenceDate(loaded.tournament))) ||
       loaded.planning.entries.some((e) => e.playerId === playerId)
     if (!onList) return NextResponse.json({ error: "Forbidden" }, { status: 403 })
   }

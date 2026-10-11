@@ -12,7 +12,7 @@ import { useSyncedState } from "@/lib/use-synced-state"
 import { PlayerAvatar } from "@/components/player-avatar"
 import { CountryFlagPicker } from "@/components/country-flag-picker"
 import { countryName } from "@/lib/countries"
-import { currentStatus, type PlayerStatus, type StatusChange } from "@/lib/player-status"
+import { currentStatus, localTodayKey, type PlayerStatus, type StatusChange } from "@/lib/player-status"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -66,7 +66,9 @@ interface TmioResult {
   existing: { name: string; status: PlayerStatus } | null
 }
 
-type Tab = "members" | "guests"
+type Tab = "members" | "trial" | "guests"
+
+const TAB_STATUS: Record<Tab, PlayerStatus> = { members: "MEMBER", trial: "TRIAL", guests: "GUEST" }
 
 // Search text for a player whose name differs on trackmania.io: the longest part of the name,
 // without separators, digits and a "TM" prefix or suffix (NismoTM -> Nismo)
@@ -117,7 +119,8 @@ export function PlayersView({ players: initial, users, canManage }: Props) {
   const router = useRouter()
   const [players, setPlayers] = useSyncedState(initial)
   // The tab lives in the address, so a reload or shared link opens the same tab
-  const tab: Tab = useSearchParams().get("tab") === "guests" ? "guests" : "members"
+  const tabParam = useSearchParams().get("tab")
+  const tab: Tab = tabParam === "guests" || tabParam === "trial" ? tabParam : "members"
   const [showForm, setShowForm] = useState(false)
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
@@ -128,6 +131,8 @@ export function PlayersView({ players: initial, users, canManage }: Props) {
   // --- Add dialog: trackmania.io search ---
   const [formName, setFormName] = useState("")
   const [formTmId, setFormTmId] = useState("")
+  // Day the new member or trial player joined
+  const [formSince, setFormSince] = useState("")
   const [searchQuery, setSearchQuery] = useState("")
   const [searchResults, setSearchResults] = useState<TmioResult[] | null>(null)
   const [searchLoading, setSearchLoading] = useState(false)
@@ -162,9 +167,11 @@ export function PlayersView({ players: initial, users, canManage }: Props) {
   // Which accounts are taken follows the local player list, so links made here apply at once
   const linkedUserIds = new Set(players.flatMap((p) => (p.user ? [p.user.id] : [])))
   const members = players.filter((p) => currentStatus(p) === "MEMBER")
+  const trials = players.filter((p) => currentStatus(p) === "TRIAL")
   const guests = players.filter((p) => currentStatus(p) === "GUEST")
-  const visible = tab === "members" ? members : guests
-  const newStatus: PlayerStatus = tab === "members" ? "MEMBER" : "GUEST"
+  const visible = tab === "members" ? members : tab === "trial" ? trials : guests
+  const newStatus = TAB_STATUS[tab]
+  const addLabel = `Add ${STATUS_LABEL[newStatus]}`
   const movePlayer = players.find((p) => p.id === moveId)
   const historyPlayer = players.find((p) => p.id === historyId)
   // --- Name history / rename ---
@@ -173,7 +180,7 @@ export function PlayersView({ players: initial, users, canManage }: Props) {
   const relinkPlayer = players.find((p) => p.id === relinkId)
 
   function selectTab(next: Tab) {
-    window.history.replaceState(null, "", next === "guests" ? "?tab=guests" : window.location.pathname)
+    window.history.replaceState(null, "", next === "members" ? window.location.pathname : `?tab=${next}`)
   }
 
   function replaceStatusChanges(playerId: string, statusChanges: StatusChange[]) {
@@ -198,6 +205,7 @@ export function PlayersView({ players: initial, users, canManage }: Props) {
     setError("")
     setFormName("")
     setFormTmId("")
+    setFormSince(localTodayKey())
     setSearchQuery("")
     setSearchResults(null)
     setSearchError("")
@@ -292,6 +300,7 @@ export function PlayersView({ players: initial, users, canManage }: Props) {
         name: formName.trim(),
         tmId: formTmId.trim().toLowerCase(),
         status: newStatus,
+        ...(newStatus !== "GUEST" && formSince && { since: formSince }),
         ...(picked && { country: picked.country, tmio: { name: picked.name, country: picked.country } }),
       }),
     })
@@ -492,7 +501,7 @@ export function PlayersView({ players: initial, users, canManage }: Props) {
         <div>
           <h1 className="text-2xl font-bold text-[#f5f0f0]">Players</h1>
           <p className="text-[#9a9090] text-sm mt-0.5">
-            {members.length} team member{members.length !== 1 ? "s" : ""}, {guests.length} guest{guests.length !== 1 ? "s" : ""}
+            {members.length} team member{members.length !== 1 ? "s" : ""}, {trials.length} on trial, {guests.length} guest{guests.length !== 1 ? "s" : ""}
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
@@ -518,7 +527,7 @@ export function PlayersView({ players: initial, users, canManage }: Props) {
           {canManage && (
             <Button onClick={openForm}>
               <Plus size={16} />
-              {tab === "members" ? "Add Member" : "Add Guest"}
+              {addLabel}
             </Button>
           )}
         </div>
@@ -527,6 +536,7 @@ export function PlayersView({ players: initial, users, canManage }: Props) {
       <div className="inline-flex rounded-lg border border-[#2d2829] p-1" role="tablist">
         {([
           ["members", "Members", members.length],
+          ["trial", "Trial", trials.length],
           ["guests", "Guests", guests.length],
         ] as const).map(([value, label, count]) => (
           <button
@@ -562,6 +572,8 @@ export function PlayersView({ players: initial, users, canManage }: Props) {
             <p className="text-[#9a9090] text-sm">
               {tab === "members"
                 ? "No team members yet. Add your first teammate."
+                : tab === "trial"
+                ? "Nobody on trial. Players on trial are planned like members until they join for good."
                 : "No guests yet. Guests are stand-in players who drive in your lineups without being part of the team."}
             </p>
           </CardContent>
@@ -575,7 +587,7 @@ export function PlayersView({ players: initial, users, canManage }: Props) {
               <tr className="border-b border-[#2d2829] bg-[#251f20]">
                 <th className="text-left px-3 py-3 @7xl:px-4 text-[#9a9090] font-medium">Name</th>
                 <th className="text-left px-3 py-3 @7xl:px-4 text-[#9a9090] font-medium">TM ID</th>
-                <th className="text-left px-3 py-3 @7xl:px-4 text-[#9a9090] font-medium">{tab === "members" ? "Linked account" : "Login"}</th>
+                <th className="text-left px-3 py-3 @7xl:px-4 text-[#9a9090] font-medium">{tab === "guests" ? "Login" : "Linked account"}</th>
                 <th className="text-left px-3 py-3 @7xl:px-4 text-[#9a9090] font-medium">Status</th>
                 <th className="text-right px-3 py-3 @7xl:px-4 text-[#9a9090] font-medium">Results</th>
                 <th className="px-3 py-3 @7xl:px-4" />
@@ -630,7 +642,7 @@ export function PlayersView({ players: initial, users, canManage }: Props) {
                     <span className="block w-[9ch] truncate @7xl:w-auto max-md:ml-auto max-md:w-[14ch]" title={player.tmId}>{player.tmId}</span>
                   </td>
                   <td className="px-3 py-3 @7xl:px-4 max-md:order-5 max-md:col-span-2 max-md:block max-md:min-w-0 max-md:p-0">
-                    <span className="mb-1 block text-[10px] uppercase tracking-wider text-[#5e5858] md:hidden">{tab === "members" ? "Account" : "Login"}</span>
+                    <span className="mb-1 block text-[10px] uppercase tracking-wider text-[#5e5858] md:hidden">{tab === "guests" ? "Login" : "Account"}</span>
                     {tab === "guests" ? (
                       // Guests keep a login they had as a member; a new one cannot be linked
                       player.user ? (
@@ -722,10 +734,10 @@ export function PlayersView({ players: initial, users, canManage }: Props) {
                           size="sm"
                           onClick={() => setMoveId(player.id)}
                           className="whitespace-nowrap"
-                          title={tab === "members" ? "To guests" : "To members"}
+                          title="Change status"
                         >
                           <ArrowLeftRight size={13} />
-                          <span className="hidden @7xl:inline max-md:inline">{tab === "members" ? "To guests" : "To members"}</span>
+                          <span className="hidden @7xl:inline max-md:inline">{tab === "trial" ? "To members" : "Status"}</span>
                         </Button>
                         <Button
                           variant="ghost"
@@ -749,7 +761,7 @@ export function PlayersView({ players: initial, users, canManage }: Props) {
 
       {/* Add member / guest */}
       <Dialog open={canManage && showForm} onClose={closeForm} className="max-w-lg">
-        <DialogTitle>{tab === "members" ? "Add Member" : "Add Guest"}</DialogTitle>
+        <DialogTitle>{addLabel}</DialogTitle>
         <form onSubmit={handleCreate} className="space-y-4">
           <div className="space-y-1.5">
             <Label htmlFor="tmio-search">Find on trackmania.io</Label>
@@ -784,11 +796,18 @@ export function PlayersView({ players: initial, users, canManage }: Props) {
                 : "Filled in when you pick a search result, or paste the UUID by hand."}
             </p>
           </div>
+          {newStatus !== "GUEST" && (
+            <div className="space-y-1.5">
+              <Label htmlFor="since">{newStatus === "TRIAL" ? "On trial since" : "Member since"}</Label>
+              <Input id="since" type="date" value={formSince} max={localTodayKey()} onChange={(e) => setFormSince(e.target.value)} />
+              <p className="text-xs text-[#5e5858]">Leave empty for someone who has been with the team from the start.</p>
+            </div>
+          )}
           {error && <p className="text-sm text-[#ED1F24]">{error}</p>}
           <div className="dialog-footer flex gap-2 justify-end">
             <Button variant="ghost" type="button" onClick={closeForm}>Cancel</Button>
             <Button type="submit" disabled={loading}>
-              {loading ? "Saving…" : tab === "members" ? "Add Member" : "Add Guest"}
+              {loading ? "Saving…" : addLabel}
             </Button>
           </div>
         </form>

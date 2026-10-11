@@ -6,12 +6,14 @@ import { Dialog, DialogTitle } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import {
+  STATUSES,
   currentStatus,
   dayKey,
   formatDay,
   localTodayKey,
   sortedChanges,
   statusAt,
+  suggestedStatus,
   tournamentReferenceDate,
   type PlayerStatus,
   type StatusChange,
@@ -20,7 +22,7 @@ import { cn } from "@/lib/utils"
 import { KeyRound, Trash2, Trophy } from "lucide-react"
 import { useState } from "react"
 
-export const STATUS_LABEL: Record<PlayerStatus, string> = { MEMBER: "Member", GUEST: "Guest" }
+export const STATUS_LABEL: Record<PlayerStatus, string> = { MEMBER: "Member", TRIAL: "Trial", GUEST: "Guest" }
 
 export interface StatusPlayer {
   id: string
@@ -56,13 +58,15 @@ export function statusSummary(player: StatusPlayer): string {
     : `${STATUS_LABEL[player.initialStatus]} from the start`
 }
 
-// Move a player between members and guests from a given day on
+// Give a player another status from a given day on: a trial that becomes a membership, a
+// member who goes on as a guest and so on
 export function StatusMoveDialog({ player, onClose, onChanged }: Props) {
+  const current = currentStatus(player)
+  const [target, setTarget] = useState<PlayerStatus>(suggestedStatus(current))
   const [date, setDate] = useState(localTodayKey())
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
 
-  const target: PlayerStatus = currentStatus(player) === "MEMBER" ? "GUEST" : "MEMBER"
   const lastChange = sortedChanges(player).at(-1)
   const minDate = lastChange ? nextDay(dayKey(lastChange.effectiveFrom)) : undefined
 
@@ -77,7 +81,7 @@ export function StatusMoveDialog({ player, onClose, onChanged }: Props) {
     setLoading(false)
     const data = await res.json().catch(() => null)
     if (!res.ok) {
-      setError(data?.error ?? "Failed to move player")
+      setError(data?.error ?? "Failed to change the status")
       return
     }
     onChanged(data.statusChanges)
@@ -86,13 +90,30 @@ export function StatusMoveDialog({ player, onClose, onChanged }: Props) {
 
   return (
     <Dialog open onClose={onClose}>
-      <DialogTitle>
-        Move {player.name} to {target === "GUEST" ? "guests" : "members"}?
-      </DialogTitle>
+      <DialogTitle>Change status of {player.name}</DialogTitle>
       <div className="space-y-4">
+        <div className="space-y-1.5">
+          <Label>New status</Label>
+          <div className="flex flex-wrap gap-2">
+            {STATUSES.filter((s) => s !== current).map((s) => (
+              <button
+                key={s}
+                type="button"
+                onClick={() => setTarget(s)}
+                aria-pressed={target === s}
+                className={cn(
+                  "rounded-md border px-3 py-1.5 text-sm font-medium transition-colors",
+                  target === s ? "border-[#FBD00D]/50 bg-[#FBD00D]/15 text-[#FBD00D]" : "border-[#3a3435] text-[#9a9090] hover:text-[#f5f0f0]"
+                )}
+              >
+                {STATUS_LABEL[s]}
+              </button>
+            ))}
+          </div>
+        </div>
         <p className="text-sm text-[#9a9090]">
           Lineups, results and the flag stay as they are. Tournaments that started before the chosen day keep showing{" "}
-          {player.name} as {target === "GUEST" ? "member" : "guest"}.
+          {player.name} as {STATUS_LABEL[current].toLowerCase()}.
         </p>
         <div className="space-y-1.5">
           <Label htmlFor="move-date">Effective from</Label>
@@ -121,7 +142,7 @@ export function StatusMoveDialog({ player, onClose, onChanged }: Props) {
         <div className="dialog-footer flex gap-2 justify-end">
           <Button variant="ghost" onClick={onClose}>Cancel</Button>
           <Button onClick={handleMove} disabled={loading || !date}>
-            {loading ? "Moving…" : target === "GUEST" ? "Move to guests" : "Move to members"}
+            {loading ? "Saving…" : `Set to ${STATUS_LABEL[target].toLowerCase()}`}
           </Button>
         </div>
       </div>

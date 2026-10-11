@@ -11,11 +11,11 @@ interface Params {
 }
 
 const schema = z.object({
-  status: z.enum(["MEMBER", "GUEST"]),
+  status: z.enum(["MEMBER", "TRIAL", "GUEST"]),
   effectiveFrom: z.string().refine(isValidDay, "Invalid date"),
 })
 
-// Move a player between team members and guests from the given day on
+// Give a player another status (member, trial, guest) from the given day on
 export async function POST(req: Request, { params }: Params) {
   const session = await auth()
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })

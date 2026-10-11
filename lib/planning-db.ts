@@ -2,7 +2,7 @@ import { db } from "@/lib/db"
 import { answerOf, planningRows } from "@/lib/planning"
 import { withCompNames } from "@/lib/player-names-db"
 import type { VariantData } from "@/lib/planning-variants"
-import { statusAt, tournamentReferenceDate } from "@/lib/player-status"
+import { inTeam, statusAt, tournamentReferenceDate } from "@/lib/player-status"
 
 // The planning of a tournament, and whether it can still be changed: once the tournament
 // has lineups it is a read-only archive.
@@ -36,7 +36,7 @@ export async function openPlanningsFor(playerId: string, tournamentId?: string) 
     },
   })
   return plannings
-    .filter((p) => p.entries.length > 0 || statusAt(player, tournamentReferenceDate(p.tournament)) === "MEMBER")
+    .filter((p) => p.entries.length > 0 || inTeam(statusAt(player, tournamentReferenceDate(p.tournament))))
     .map((p) => ({
       tournament: p.tournament,
       playerId,

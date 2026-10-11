@@ -16,6 +16,8 @@ enum Role {
 enum PlayerStatus {
   MEMBER
   GUEST
+  // On trial: treated like a member, but not one yet
+  TRIAL
 }
 
 enum Format {

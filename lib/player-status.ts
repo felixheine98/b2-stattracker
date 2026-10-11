@@ -1,8 +1,22 @@
-// Team members and guests. A player has an initial status "from the beginning" plus dated
-// switches. Inside a tournament the status on the tournament's start day counts, so a
-// player is either member or guest for the whole tournament.
+// Team members, players on trial and guests. A player has an initial status "from the
+// beginning" plus dated switches. Inside a tournament the status on the tournament's start day
+// counts, so a player has one status for the whole tournament.
+// A player on trial is treated like a member (planning, accounts) but is not one yet; whoever
+// joined later than "from the beginning" starts as a guest and switches on the day they joined.
 
-export type PlayerStatus = "MEMBER" | "GUEST"
+export type PlayerStatus = "MEMBER" | "TRIAL" | "GUEST"
+
+export const STATUSES: PlayerStatus[] = ["MEMBER", "TRIAL", "GUEST"]
+
+// Part of the team: members and players on trial, but not guests
+export function inTeam(status: PlayerStatus): boolean {
+  return status !== "GUEST"
+}
+
+// The status a player most likely switches to next
+export function suggestedStatus(current: PlayerStatus): PlayerStatus {
+  return current === "MEMBER" ? "GUEST" : "MEMBER"
+}
 
 export interface StatusChange {
   id: string

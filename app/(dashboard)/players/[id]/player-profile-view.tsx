@@ -60,6 +60,8 @@ interface Props {
   canManage: boolean
 }
 
+const STATUS_TEXT: Record<PlayerStatus, string> = { MEMBER: "Member", TRIAL: "Trial", GUEST: "Gast" }
+
 const rankLabel = (rank: number | null, of: number) => (rank === null ? "—" : `${rank}. von ${of}`)
 const avgPlace = (line: StatLine) => (line.roundsPlayed > 0 ? (line.placementSum / line.roundsPlayed).toFixed(3) : "—")
 
@@ -194,7 +196,7 @@ function CompCard({ comp, initiallyOpen }: { comp: CompView; initiallyOpen: bool
         <span className="min-w-0 flex-1">
           <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
             <span className="break-words font-semibold text-[#f5f0f0]">{comp.name}</span>
-            {comp.status === "GUEST" ? <GuestBadge /> : <span className="text-xs text-[#9a9090]">Member</span>}
+            {comp.status === "GUEST" ? <GuestBadge /> : <span className="text-xs text-[#9a9090]">{STATUS_TEXT[comp.status]}</span>}
           </span>
           <span className="mt-1 flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-[#9a9090]">
             {comp.day && <span>{formatDay(comp.day)}</span>}
@@ -279,7 +281,7 @@ export function PlayerProfileView({ player: initial, total, formats, comps, hasO
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
             <PlayerAvatar player={player} className="h-8 w-8 text-base" />
             <h1 className="break-words text-2xl font-bold text-[#f5f0f0]">{player.name}</h1>
-            <Badge variant={status === "MEMBER" ? "primary" : "default"}>{status === "MEMBER" ? "Member" : "Gast"}</Badge>
+            <Badge variant={status === "MEMBER" ? "primary" : status === "TRIAL" ? "secondary" : "default"}>{STATUS_TEXT[status]}</Badge>
           </div>
           <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-sm text-[#9a9090]">
             {player.country && <span>{countryName(player.country)}</span>}
@@ -310,7 +312,7 @@ export function PlayerProfileView({ player: initial, total, formats, comps, hasO
           {canManage && (
             <Button variant="outline" size="sm" onClick={() => setDialog("move")}>
               <ArrowLeftRight size={13} />
-              {status === "MEMBER" ? "Zu Gästen" : "Zu Membern"}
+              {status === "TRIAL" ? "Zu Membern" : "Status ändern"}
             </Button>
           )}
         </div>
