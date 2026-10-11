@@ -2,7 +2,6 @@
 
 ## Offen
 
-- [ ] csv import für gesamtes match -> danach UI wo man einzelne runden (multi select) rauslöschen kann, falls match dumper nicht 100% korrekt ist
 - [ ] als member -> in tourney übersicht der eigenen stats, danach kann man sich durch die stats durchklicken
 - [ ] kategorisierung der comps nach style? (tech mixed rpg ice fs etc)
 - [ ] Design/UI/UX Verbesserungen
@@ -33,3 +32,4 @@
 - [x] Match nachträglich bearbeiten (Datum, Gegner, Notizen)
 - [x] Gegner-DB umgesetzt: [vereinbartes Konzept](docs/gegner-db-konzept.md) – feste Teams, Competition-Lineups/Mixes, Logos, Spielerzuordnung und Stats; gezielte manuelle Übernahme aus dem Team-Spreadsheet
 - [x] suchfunktion: globale suche (Strg+K) über spieler, gegnerteams, gegner-lineups, gegnerische spieler, turniere und matches
+- [x] csv import für gesamtes match (eine oder mehrere dateien, vorschau mit seiten, abgewählten fehlrunden und ergänzten dnfs) und runden nachträglich per mehrfachauswahl löschen

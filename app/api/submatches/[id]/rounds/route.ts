@@ -166,3 +166,44 @@ export async function PUT(req: Request, { params }: Params) {
 
   return NextResponse.json({ rounds: await withCompNames(saved, subMatch.match.tournament) })
 }
+
+// Remove single rounds, e.g. a warm-up round an import brought along. The rounds that are
+// left are numbered anew without gaps.
+export async function DELETE(req: Request, { params }: Params) {
+  const session = await auth()
+  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+
+  const { id } = await params
+  const subMatch = await db.subMatch.findUnique({
+    where: { id },
+    include: { match: { select: { tournamentLineupId: true, tournament: { select: { startDate: true, createdAt: true } } } } },
+  })
+  if (!subMatch) return NextResponse.json({ error: "Sub-match not found" }, { status: 404 })
+  // Admins, managers and whoever is responsible for the lineup of this match
+  if (!(await mayEditLineupById(session.user as SessionUser, subMatch.match.tournamentLineupId))) return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+
+  const parsed = z.object({ roundIds: z.array(z.string()).min(1) }).safeParse(await req.json())
+  if (!parsed.success) return NextResponse.json({ error: "Keine Runden ausgewählt" }, { status: 400 })
+
+  await db.$transaction(async (tx) => {
+    await reopenMatch(tx, subMatch.matchId)
+    await tx.round.deleteMany({ where: { subMatchId: id, id: { in: parsed.data.roundIds } } })
+    // In ascending order a round only ever moves to a number that is free
+    const left = await tx.round.findMany({ where: { subMatchId: id }, orderBy: { number: "asc" }, select: { id: true, number: true } })
+    for (const [number, round] of left.entries()) {
+      if (round.number !== number) await tx.round.update({ where: { id: round.id }, data: { number } })
+    }
+  })
+
+  const saved = await db.round.findMany({
+    where: { subMatchId: id },
+    orderBy: { number: "asc" },
+    include: {
+      results: {
+        orderBy: [{ position: "asc" }, { timeMs: "asc" }],
+        include: { player: { select: { id: true, name: true } } },
+      },
+    },
+  })
+  return NextResponse.json({ rounds: await withCompNames(saved, subMatch.match.tournament) })
+}

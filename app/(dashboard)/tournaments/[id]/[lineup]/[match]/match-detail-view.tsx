@@ -7,11 +7,9 @@ import { PlayerName } from "@/components/player-name"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
-import { Dialog, DialogTitle } from "@/components/ui/dialog"
-import { Textarea } from "@/components/ui/textarea"
 import { cn, formatLabel, formatLabelLong, formatTime, teamSize } from "@/lib/utils"
 import type { Format } from "@prisma/client"
-import { ArrowLeft, BarChart2, ChevronDown, ChevronUp, Clock, Download, ExternalLink, Grid3x3, Trophy, Upload, Users } from "lucide-react"
+import { ArrowLeft, BarChart2, ChevronDown, ChevronUp, Clock, Download, ExternalLink, Grid3x3, ListChecks, Trash2, Trophy, Upload, Users } from "lucide-react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useSyncedState } from "@/lib/use-synced-state"
@@ -24,6 +22,7 @@ import { dayKey, formatDay } from "@/lib/player-status"
 import { sortStages, stageDate, stageName, type StageRef } from "@/lib/stages"
 import { useMemo, useState } from "react"
 import { EcmImportDialog } from "./ecm-import-dialog"
+import { MatchCsvImportDialog } from "./match-csv-import-dialog"
 import { RoundEntryDialog } from "./round-entry-dialog"
 
 export interface Player {
@@ -309,13 +308,44 @@ export function MatchDetailView({ match: initialMatch, allPlayers, guestTmIds, t
     new Set(initialMatch.subMatches.map((s) => s.id))
   )
 
-  // CSV import
-  const [importDialog, setImportDialog] = useState<{ subMatchId: string } | null>(null)
-  const [csvText, setCsvText] = useState("")
-  const [importError, setImportError] = useState("")
-  const [importLoading, setImportLoading] = useState(false)
-  const [importFileName, setImportFileName] = useState("")
-  const [importDragOver, setImportDragOver] = useState(false)
+  // Import of the whole match from a dumper's CSV
+  const [showCsvImport, setShowCsvImport] = useState(false)
+
+  // Rounds marked for removal, per sub-match; a sub-match is in here while its rounds are being selected
+  const [picking, setPicking] = useState<Record<string, string[]>>({})
+  const [removing, setRemoving] = useState(false)
+
+  function togglePicked(subMatchId: string, roundId: string) {
+    setPicking((p) => {
+      const ids = p[subMatchId] ?? []
+      return { ...p, [subMatchId]: ids.includes(roundId) ? ids.filter((id) => id !== roundId) : [...ids, roundId] }
+    })
+  }
+
+  function stopPicking(subMatchId: string) {
+    setPicking((p) => Object.fromEntries(Object.entries(p).filter(([id]) => id !== subMatchId)))
+  }
+
+  async function removePicked(subMatchId: string) {
+    const roundIds = picking[subMatchId] ?? []
+    if (roundIds.length === 0) return
+    if (!confirm(roundIds.length === 1 ? "Diese Runde löschen?" : `Diese ${roundIds.length} Runden löschen?`)) return
+    setRemoving(true)
+    const res = await fetch(`${BASE_PATH}/api/submatches/${subMatchId}/rounds`, {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ roundIds }),
+    }).catch(() => null)
+    setRemoving(false)
+    if (!res?.ok) {
+      const data = await res?.json().catch(() => null)
+      alert(data?.error ?? "Die Runden konnten nicht gelöscht werden")
+      return
+    }
+    const data = await res.json()
+    setSubMatches((sms) => sms.map((sm) => (sm.id === subMatchId ? { ...sm, rounds: data.rounds } : sm)))
+    stopPicking(subMatchId)
+  }
 
   // Coming from the import page (?ecm=1) the dialog is open right away
   const [showEcmImport, setShowEcmImport] = useState(autoEcmImport && canEdit)
@@ -348,50 +378,6 @@ export function MatchDetailView({ match: initialMatch, allPlayers, guestTmIds, t
       else next.add(id)
       return next
     })
-  }
-
-  function openImport(subMatchId: string) {
-    setCsvText("")
-    setImportError("")
-    setImportFileName("")
-    setImportDragOver(false)
-    setImportDialog({ subMatchId })
-  }
-
-  async function loadImportFile(file: File | undefined) {
-    if (!file) return
-    setImportError("")
-    try {
-      setCsvText(await file.text())
-      setImportFileName(file.name)
-    } catch {
-      setImportError("Datei konnte nicht gelesen werden")
-    }
-  }
-
-  async function handleImport() {
-    if (!importDialog) return
-    setImportError("")
-    setImportLoading(true)
-    const res = await fetch(`${BASE_PATH}/api/submatches/${importDialog.subMatchId}/import`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ csv: csvText }),
-    })
-    setImportLoading(false)
-    if (!res.ok) {
-      const data = await res.json()
-      setImportError(data.error ?? "Import failed")
-      return
-    }
-    const data = await res.json()
-    setSubMatches((sms) =>
-      sms.map((sm) =>
-        sm.id === importDialog.subMatchId ? { ...sm, rounds: data.rounds } : sm
-      )
-    )
-    setCsvText("")
-    setImportDialog(null)
   }
 
   const matchStats = computeMatchStats(subMatches)
@@ -498,10 +484,16 @@ export function MatchDetailView({ match: initialMatch, allPlayers, guestTmIds, t
               </div>
             )}
             {canEdit && !isSeeding && (
-              <Button size="sm" className="mt-3" onClick={() => setShowEcmImport(true)}>
-                <Download size={14} />
-                Von eCM importieren
-              </Button>
+              <div className="mt-3 flex flex-wrap gap-2">
+                <Button size="sm" onClick={() => setShowEcmImport(true)}>
+                  <Download size={14} />
+                  Von eCM importieren
+                </Button>
+                <Button size="sm" variant="outline" onClick={() => setShowCsvImport(true)}>
+                  <Upload size={14} />
+                  Ganzes Match importieren (CSV)
+                </Button>
+              </div>
             )}
           </div>
           <div className="flex w-full flex-wrap items-center justify-end gap-3 sm:ml-auto sm:w-auto">
@@ -609,10 +601,12 @@ export function MatchDetailView({ match: initialMatch, allPlayers, guestTmIds, t
                           Runden eintippen
                         </Button>
                       )}
-                      <Button variant="outline" size="sm" onClick={() => openImport(sm.id)}>
-                        <Upload size={14} />
-                        Import CSV
-                      </Button>
+                      {totalRounds > 0 && !(sm.id in picking) && (
+                        <Button variant="outline" size="sm" onClick={() => { setPicking((p) => ({ ...p, [sm.id]: [] })); setRoundsOpen((s) => new Set(s).add(sm.id)) }}>
+                          <ListChecks size={14} />
+                          Runden auswählen
+                        </Button>
+                      )}
                     </div>
                   )}
 
@@ -633,6 +627,19 @@ export function MatchDetailView({ match: initialMatch, allPlayers, guestTmIds, t
                         </span>
                         {roundsOpen.has(sm.id) ? <ChevronUp size={16} className="text-[#5e5858]" /> : <ChevronDown size={16} className="text-[#5e5858]" />}
                       </button>
+                      {/* Removing rounds: mark any number of them, e.g. a warm-up round an import brought along */}
+                      {sm.id in picking && (
+                        <div className="sticky top-0 z-[2] flex flex-wrap items-center justify-between gap-2 rounded-lg border border-[#ED1F24]/40 bg-[#1c1819] px-3 py-2 text-sm">
+                          <span className="text-[#c5bfbf]">{picking[sm.id].length} von {totalRounds} Runden markiert</span>
+                          <span className="flex flex-wrap gap-2">
+                            <Button variant="ghost" size="sm" onClick={() => stopPicking(sm.id)}>Abbrechen</Button>
+                            <Button variant="destructive" size="sm" onClick={() => removePicked(sm.id)} disabled={removing || picking[sm.id].length === 0}>
+                              <Trash2 size={14} />
+                              {removing ? "Löscht …" : "Markierte löschen"}
+                            </Button>
+                          </span>
+                        </div>
+                      )}
                       {roundsOpen.has(sm.id) && sm.rounds.map((round) => {
                         const ourResults = round.results.filter((r) => r.isOurTeam)
                         const oppResults = round.results.filter((r) => !r.isOurTeam)
@@ -641,9 +648,18 @@ export function MatchDetailView({ match: initialMatch, allPlayers, guestTmIds, t
                         const score = roundScore(round.results)
 
                         return (
-                          <Card key={round.id} className={score?.outcome === "W" ? "border-[#FBD00D]/30" : ""}>
+                          <Card key={round.id} className={cn(score?.outcome === "W" && "border-[#FBD00D]/30", picking[sm.id]?.includes(round.id) && "border-[#ED1F24]/60 bg-[#ED1F24]/5")}>
                             <CardContent className="pt-4">
                               <div className="flex items-center gap-3 mb-3">
+                                {sm.id in picking && (
+                                  <input
+                                    type="checkbox"
+                                    checked={picking[sm.id].includes(round.id)}
+                                    onChange={() => togglePicked(sm.id, round.id)}
+                                    aria-label={`Runde ${round.number + 1} zum Löschen markieren`}
+                                    className="h-4 w-4 accent-[#ED1F24]"
+                                  />
+                                )}
                                 <Badge variant="default">Round {round.number + 1}</Badge>
                                 {round.track && <span className="text-xs text-[#5e5858]">{round.track}</span>}
                                 {score?.outcome === "W" && <Badge variant="primary">WIN</Badge>}
@@ -775,67 +791,19 @@ export function MatchDetailView({ match: initialMatch, allPlayers, guestTmIds, t
         />
       )}
 
-      {/* CSV import dialog */}
-      <Dialog open={!!importDialog} onClose={() => setImportDialog(null)} className="max-w-2xl">
-        <DialogTitle>
-          Import CSV Results
-          {importDialog && (
-            <span className="ml-2 text-sm font-normal text-[#9a9090]">
-              — {formatLabelLong(subMatches.find((sm) => sm.id === importDialog.subMatchId)?.format ?? "ROUND_1V1")}
-            </span>
-          )}
-        </DialogTitle>
-        <div className="space-y-3">
-          <p className="text-xs text-[#9a9090]">
-            Paste CSV with columns: Time, Track, PlayerID, PlayerName, Record, RoundNumber
-          </p>
-          <label
-            onDragOver={(e) => { e.preventDefault(); setImportDragOver(true) }}
-            onDragLeave={() => setImportDragOver(false)}
-            onDrop={(e) => {
-              e.preventDefault()
-              setImportDragOver(false)
-              loadImportFile(e.dataTransfer.files[0])
-            }}
-            className={`flex cursor-pointer flex-col items-center gap-1 rounded-lg border border-dashed px-4 py-5 text-center transition-colors ${
-              importDragOver
-                ? "border-[#FBD00D] bg-[#FBD00D]/10"
-                : "border-[#3a3435] hover:border-[#5e5858] hover:bg-[#251f20]"
-            }`}
-          >
-            <Upload size={18} className={importDragOver ? "text-[#FBD00D]" : "text-[#9a9090]"} />
-            <span className="text-sm text-[#f5f0f0]">
-              {importFileName || "CSV-Datei hierher ziehen oder klicken zum Auswählen"}
-            </span>
-            <span className="text-xs text-[#5e5858]">
-              {importFileName ? "Andere Datei wählen" : "oder den Inhalt unten einfügen"}
-            </span>
-            <input
-              type="file"
-              accept=".csv,text/csv,text/plain"
-              className="sr-only"
-              onChange={(e) => {
-                loadImportFile(e.target.files?.[0])
-                e.target.value = ""
-              }}
-            />
-          </label>
-          <Textarea
-            value={csvText}
-            onChange={(e) => { setCsvText(e.target.value); setImportFileName("") }}
-            rows={10}
-            className="font-mono text-xs"
-            placeholder={"Time,Track,PlayerID,PlayerName,Record,RoundNumber\n1739732697,SMS - Origin,15b02a29-...,Tommy.TM,61167,0\n..."}
-          />
-          {importError && <p className="text-sm text-[#ED1F24]">{importError}</p>}
-          <div className="dialog-footer flex gap-2 justify-end">
-            <Button variant="ghost" onClick={() => { setImportDialog(null); setCsvText("") }}>Cancel</Button>
-            <Button onClick={handleImport} disabled={!csvText.trim() || importLoading}>
-              {importLoading ? "Importing…" : "Import"}
-            </Button>
-          </div>
-        </div>
-      </Dialog>
+      {/* Import of the whole match from a CSV */}
+      {showCsvImport && (
+        <MatchCsvImportDialog
+          tournamentId={initialMatch.tournament.id}
+          matchId={initialMatch.id}
+          subMatches={[...subMatches].sort((a, b) => a.order - b.order)}
+          ownPlayers={allPlayers}
+          canManage={canManage}
+          onClose={() => setShowCsvImport(false)}
+          // The page loads the match anew, with the lineups the import wrote
+          onImported={() => router.refresh()}
+        />
+      )}
     </div>
   )
 }

@@ -41,48 +41,6 @@ export function formatLabelLong(format: Format): string {
   return map[format]
 }
 
-export interface CsvRow {
-  time: number
-  track: string
-  playerId: string
-  playerName: string
-  record: number
-  roundNumber: number
-}
-
-export function parseCSV(csv: string): CsvRow[] {
-  const lines = csv.trim().split(/\r?\n/)
-  if (lines.length < 2) return []
-
-  const headers = lines[0].split(",").map((h) => h.trim().toLowerCase())
-  const idx = (name: string) => headers.indexOf(name)
-  const timeIdx = idx("time")
-  const trackIdx = idx("track")
-  const playerIdIdx = idx("playerid")
-  const playerNameIdx = idx("playername")
-  const recordIdx = idx("record")
-  const roundIdx = idx("roundnumber")
-
-  if ([timeIdx, trackIdx, playerIdIdx, playerNameIdx, recordIdx, roundIdx].some((i) => i === -1)) {
-    throw new Error("Invalid CSV: missing required columns (Time, Track, PlayerID, PlayerName, Record, RoundNumber)")
-  }
-
-  return lines
-    .slice(1)
-    .filter((line) => line.trim())
-    .map((line) => {
-      const cols = line.split(",").map((c) => c.trim())
-      return {
-        time: parseInt(cols[timeIdx]),
-        track: cols[trackIdx],
-        playerId: cols[playerIdIdx],
-        playerName: cols[playerNameIdx],
-        record: parseInt(cols[recordIdx]),
-        roundNumber: parseInt(cols[roundIdx]),
-      }
-    })
-}
-
 // Players per team for round formats; null for formats without team rounds (seeding)
 export function teamSize(format: Format): number | null {
   const m = /^ROUND_(\d)V\d$/.exec(format)
