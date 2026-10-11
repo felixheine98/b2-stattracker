@@ -1,16 +1,17 @@
 "use client"
 
+import { parseIdList, serializeIdList } from "@/lib/id-list-param"
 import { useSearchParams } from "next/navigation"
 
 // A selection of IDs kept in the address (?key=a,b), so a reload or shared link shows the same.
-// IDs that no longer exist are dropped; an empty selection removes the parameter.
-export function useIdListParam(key: string, validIds: string[]): [string[], (ids: string[]) => void] {
-  const raw = useSearchParams().get(key)
-  const ids = (raw ? raw.split(",") : []).filter((id) => validIds.includes(id))
+// IDs that no longer exist are dropped. defaultIds is what is selected until the user chooses.
+export function useIdListParam(key: string, validIds: string[], defaultIds: string[] = []): [string[], (ids: string[]) => void] {
+  const ids = parseIdList(useSearchParams().get(key), validIds, defaultIds)
 
   function select(next: string[]) {
     const params = new URLSearchParams(window.location.search)
-    if (next.length > 0) params.set(key, next.join(","))
+    const value = serializeIdList(next, defaultIds.filter((id) => validIds.includes(id)))
+    if (value !== null) params.set(key, value)
     else params.delete(key)
     const query = params.toString()
     window.history.replaceState(null, "", query ? `?${query}` : window.location.pathname)

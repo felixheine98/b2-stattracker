@@ -1,3 +1,4 @@
+import { openPlanningsFor } from "@/lib/planning-db"
 import { LINEUP_MANAGERS_INCLUDE } from "@/lib/lineup-access-db"
 import { db } from "@/lib/db"
 import { auth } from "@/lib/auth"
@@ -65,8 +66,18 @@ export default async function TournamentDetailPage({ params }: Props) {
     ? await db.user.findMany({ orderBy: { name: "asc" }, select: { id: true, name: true, username: true, role: true, playerId: true } })
     : []
 
+  // The lineup the signed-in user plays in, if any: the stats start out filtered to it
+  const userId = (session?.user as { id?: string })?.id
+  const self = userId ? await db.user.findUnique({ where: { id: userId }, select: { playerId: true } }) : null
+  // A running planning asks the signed-in player whether they take part
+  const planningCard = self?.playerId ? (await openPlanningsFor(self.playerId, id))[0] ?? null : null
+  const hasPlanning = (await db.planning.count({ where: { tournamentId: id } })) > 0
+  const ownLineupId = self?.playerId
+    ? tournament.tournamentLineups.find((l) => l.slots.some((s) => s.playerId === self.playerId))?.id ?? null
+    : null
+
   // Everyone is shown under the name they had when the tournament started
   const named = await withCompNames({ tournament, players, statsMatches }, tournament)
 
-  return <TournamentDetailView tournament={named.tournament} players={named.players} statsMatches={named.statsMatches} users={users} canManage={mayManage} />
+  return <TournamentDetailView tournament={named.tournament} players={named.players} statsMatches={named.statsMatches} users={users} ownLineupId={ownLineupId} hasPlanning={hasPlanning} planningCard={planningCard} canManage={mayManage} />
 }

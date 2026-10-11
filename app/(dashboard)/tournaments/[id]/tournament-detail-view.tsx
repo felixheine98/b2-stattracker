@@ -1,5 +1,6 @@
 "use client"
 
+import { AvailabilityCard } from "@/components/planning/availability-card"
 import { BASE_PATH } from "@/lib/base-path"
 import { lineupPath, matchPath, tournamentPath } from "@/lib/paths"
 import { PlayerName } from "@/components/player-name"
@@ -20,7 +21,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Dialog, DialogTitle } from "@/components/ui/dialog"
 import { Badge } from "@/components/ui/badge"
 import {
-  Plus, ArrowLeft, Calendar, ChevronRight, Swords, Trash2, Pencil, X, User, Users, BarChart2,
+  Plus, ArrowLeft, Calendar, ChevronRight, ClipboardList, Swords, Trash2, Pencil, X, User, Users, BarChart2,
 } from "lucide-react"
 import { cn, formatLabel } from "@/lib/utils"
 import type { Format } from "@prisma/client"
@@ -102,6 +103,11 @@ interface Props {
   statsMatches: StatsMatch[]
   // All accounts, to pick the people responsible for a lineup (empty unless canManage)
   users: AccountRef[]
+  // Lineup the signed-in user plays in; the stats are filtered to it until another choice is made
+  ownLineupId?: string | null
+  // Whether a planning was started, and the signed-in player's own answer while it is open
+  hasPlanning: boolean
+  planningCard: React.ComponentProps<typeof AvailabilityCard> | null
   canManage: boolean
 }
 
@@ -109,7 +115,21 @@ function formatBadgeVariant(format: Format): "primary" | "secondary" {
   return format === "TIME_ATTACK_10" ? "primary" : "secondary"
 }
 
-export function TournamentDetailView({ tournament: initial, players, statsMatches, users, canManage }: Props) {
+export function TournamentDetailView({ tournament: initial, players, statsMatches, users, ownLineupId, hasPlanning, planningCard, canManage }: Props) {
+  const [planningStarting, setPlanningStarting] = useState(false)
+
+  async function startPlanning() {
+    setPlanningStarting(true)
+    const res = await fetch(`${BASE_PATH}/api/tournaments/${initial.id}/planning`, { method: "POST" }).catch(() => null)
+    setPlanningStarting(false)
+    if (!res?.ok) {
+      const data = await res?.json().catch(() => null)
+      alert(data?.error ?? "Planung konnte nicht gestartet werden")
+      return
+    }
+    router.push(`${tournamentPath(initial)}/planung`)
+  }
+
   const router = useRouter()
   const [tournament, setTournament] = useSyncedState(initial)
   const [matches, setMatches] = useSyncedState(initial.matches)
@@ -119,7 +139,7 @@ export function TournamentDetailView({ tournament: initial, players, statsMatche
   const stages = sortStages(tournament.stages)
   const statsStages = stages.filter((st) => st.type !== "SEEDING")
   // What the stats are limited to; nothing selected means all
-  const [statsLineupIds, selectStatsLineups] = useIdListParam("lineups", lineups.map((l) => l.id))
+  const [statsLineupIds, selectStatsLineups] = useIdListParam("lineups", lineups.map((l) => l.id), ownLineupId ? [ownLineupId] : [])
   const [statsStageIds, selectStatsStages] = useIdListParam("stages", statsStages.map((st) => st.id))
 
   // Within a tournament everyone is member or guest as of its start day
@@ -343,9 +363,18 @@ export function TournamentDetailView({ tournament: initial, players, statsMatche
         </div>
       </div>
 
+      {/* Planning: the player's own answer while it is open, and the way to the planning page */}
+      {planningCard && <AvailabilityCard {...planningCard} />}
+      {hasPlanning && !planningCard && (
+        <Link href={`${tournamentPath(tournament)}/planung`} className="inline-flex items-center gap-1.5 text-sm text-[#FBD00D] hover:underline">
+          <ClipboardList size={14} />
+          {lineups.length > 0 ? "Planung ansehen (abgeschlossen)" : "Zur Planung"}
+        </Link>
+      )}
+
       {/* Lineups section */}
       <div>
-        <div className="flex items-center justify-between mb-3">
+        <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
           <div>
             <h2 className="text-lg font-semibold text-[#f5f0f0] flex items-center gap-2">
               <Users size={18} className="text-[#FBD00D]" />
@@ -355,10 +384,19 @@ export function TournamentDetailView({ tournament: initial, players, statsMatche
             <p className="text-xs text-[#9a9090] mt-0.5">Open a lineup to see its matches and add new ones.</p>
           </div>
           {canManage && (
-            <Button size="sm" onClick={openNewLineupForm}>
-              <Plus size={14} />
-              New Lineup
-            </Button>
+            <div className="flex flex-wrap items-center gap-2">
+              {/* Planning comes before the lineups: who is in, then which lineups to build */}
+              {!hasPlanning && lineups.length === 0 && (
+                <Button size="sm" variant="outline" onClick={startPlanning} disabled={planningStarting}>
+                  <ClipboardList size={14} />
+                  Planung starten
+                </Button>
+              )}
+              <Button size="sm" onClick={openNewLineupForm}>
+                <Plus size={14} />
+                New Lineup
+              </Button>
+            </div>
           )}
         </div>
 

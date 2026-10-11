@@ -1,3 +1,5 @@
+import { AvailabilityCard } from "@/components/planning/availability-card"
+import { openPlanningsFor } from "@/lib/planning-db"
 import { tournamentPath } from "@/lib/paths"
 import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
@@ -22,6 +24,11 @@ export default async function DashboardPage() {
     }),
   ])
 
+  // Tournaments being planned that still want an answer from the signed-in player
+  const userId = (session?.user as { id?: string })?.id
+  const self = userId ? await db.user.findUnique({ where: { id: userId }, select: { playerId: true } }) : null
+  const planningCards = self?.playerId ? await openPlanningsFor(self.playerId) : []
+
   // Guests are stand-ins and do not count as team members
   const playerCount = players.filter((p) => currentStatus(p) === "MEMBER").length
 
@@ -33,6 +40,10 @@ export default async function DashboardPage() {
         </h1>
         <p className="text-[#9a9090] text-sm mt-0.5">Here's an overview of your team's activity.</p>
       </div>
+
+      {planningCards.map((card) => (
+        <AvailabilityCard key={card.tournament.id} {...card} />
+      ))}
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <Card>

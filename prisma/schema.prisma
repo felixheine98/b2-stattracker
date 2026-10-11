@@ -41,6 +41,7 @@ model User {
   playerId String? @unique
 
   managedLineups TournamentLineupManager[]
+  planningVotes  PlanningVote[]
 }
 
 model Player {
@@ -69,6 +70,8 @@ model Player {
 
   statusChanges         PlayerStatusChange[]
   nameChanges           PlayerNameChange[]
+  planningEntries       PlanningEntry[]
+  planningSlots         PlanningVariantSlot[]
   user                  User?
   lineupSlots           LineupSlot[]
   roundResults          RoundResult[]
@@ -117,7 +120,115 @@ model Tournament {
   matches         Match[]
   tournamentLineups TournamentLineup[]
   stages          Stage[]
+  planning        Planning?
   opponentLineups OpponentLineup[]
+}
+
+// Planning a tournament before it has lineups: who is available and which lineups to build
+// (see lib/planning.ts). Once the tournament has lineups the planning is a read-only archive.
+model Planning {
+  id           String     @id @default(cuid())
+  tournamentId String     @unique
+  tournament   Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  // Counts every change to the planning; open pages ask for news with the number they last saw
+  revision     Int        @default(0)
+  // The variant whose lineups were taken over into the tournament
+  adoptedVariantId String?          @unique
+  adoptedVariant   PlanningVariant? @relation("AdoptedVariant", fields: [adoptedVariantId], references: [id], onDelete: SetNull)
+  createdAt    DateTime   @default(now())
+
+  levels   PlanningLevel[]
+  entries  PlanningEntry[]
+  variants PlanningVariant[]
+}
+
+enum Availability {
+  FIX
+  MAYBE
+  OUT
+}
+
+// An extra availability level of one planning, next to the fixed ones (e.g. "nur Ersatz")
+model PlanningLevel {
+  id         String   @id @default(cuid())
+  planningId String
+  planning   Planning @relation(fields: [planningId], references: [id], onDelete: Cascade)
+  name       String
+  createdAt  DateTime @default(now())
+
+  entries PlanningEntry[]
+
+  @@unique([planningId, name])
+}
+
+// What a player answered. Members are on the list without a row; a guest is on it through one.
+// status and levelId are both empty until answered, otherwise exactly one is set.
+model PlanningEntry {
+  id         String         @id @default(cuid())
+  planningId String
+  planning   Planning       @relation(fields: [planningId], references: [id], onDelete: Cascade)
+  playerId   String
+  player     Player         @relation(fields: [playerId], references: [id], onDelete: Cascade)
+  status     Availability?
+  levelId    String?
+  level      PlanningLevel? @relation(fields: [levelId], references: [id], onDelete: SetNull)
+  note       String?
+  updatedAt  DateTime       @updatedAt
+
+  @@unique([planningId, playerId])
+}
+
+// A complete proposal for the lineups of a tournament; admins and managers build several and agree on one
+model PlanningVariant {
+  id         String   @id @default(cuid())
+  planningId String
+  planning   Planning @relation(fields: [planningId], references: [id], onDelete: Cascade)
+  name       String
+  note       String?
+  createdAt  DateTime @default(now())
+
+  adoptedBy Planning? @relation("AdoptedVariant")
+  lineups PlanningVariantLineup[]
+  slots   PlanningVariantSlot[]
+  votes   PlanningVote[]
+}
+
+model PlanningVariantLineup {
+  id        String          @id @default(cuid())
+  variantId String
+  variant   PlanningVariant @relation(fields: [variantId], references: [id], onDelete: Cascade)
+  name      String
+  note      String?
+  createdAt DateTime        @default(now())
+
+  slots PlanningVariantSlot[]
+}
+
+// A player in a variant: the lineup they are placed in (none: "not assigned") and a note on them.
+// The note stays when the player is moved or their lineup is removed.
+model PlanningVariantSlot {
+  id        String                @id @default(cuid())
+  variantId String
+  variant   PlanningVariant       @relation(fields: [variantId], references: [id], onDelete: Cascade)
+  lineupId  String?
+  lineup    PlanningVariantLineup? @relation(fields: [lineupId], references: [id], onDelete: SetNull)
+  playerId  String
+  player    Player                @relation(fields: [playerId], references: [id], onDelete: Cascade)
+  note      String?
+  createdAt DateTime              @default(now())
+
+  @@unique([variantId, playerId])
+}
+
+// A manager's thumbs-up for a variant
+model PlanningVote {
+  id        String          @id @default(cuid())
+  variantId String
+  variant   PlanningVariant @relation(fields: [variantId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([variantId, userId])
 }
 
 enum StageType {
