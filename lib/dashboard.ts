@@ -2,9 +2,8 @@
 // and who drove best. Seeding matches are left out, as in all stats.
 import type { StatsMatch } from "./format-stats"
 import { suggestMatchOutcome } from "./opponents"
-import { addGap, emptyPace, finishTime, pacePct, roundBest, type PaceSum } from "./pace"
 import { dayKey } from "./player-status"
-import { roundScore } from "./round-score"
+import { roundPlacements, roundScore } from "./round-score"
 
 export interface DashMatch extends Omit<StatsMatch, "tournamentLineupId"> {
   tournamentLineupId: string | null
@@ -129,39 +128,43 @@ export interface Performer {
   currentName?: string
   // Lineup the player drove most of the rounds for
   lineupId: string | null
-  // Average gap to the fastest time of each round, in percent
-  pace: number
-  // Timed rounds
+  // Average placement over the rounds driven; a round not finished is the last place
+  avgPlace: number
   rounds: number
 }
 
-// Whoever of ours has the best pace over the given matches; nobody while no round has a time
+// Whoever of ours placed best on average over the given matches; nobody without a round.
+// Formats differ in the size of the field (second place is last in a 1v1 and nearly the best
+// in a 4v4), so players are compared by where in the field they finished: 0 for first, 1 for last.
 export function bestPerformer(matches: DashMatch[]): Performer | null {
-  const players = new Map<string, { name: string; currentName?: string; pace: PaceSum; lineups: Map<string, number> }>()
+  const players = new Map<string, { name: string; currentName?: string; placeSum: number; shareSum: number; rounds: number; lineups: Map<string, number> }>()
   for (const match of matches) {
     if (!counted(match)) continue
     for (const sm of match.subMatches) {
       for (const round of sm.rounds) {
-        const best = roundBest(round.results)
-        for (const r of round.results) {
-          const time = finishTime(r)
-          if (!r.isOurTeam || time === null || best === null) continue
-          const player = players.get(r.tmId) ?? { name: r.playerName, currentName: r.currentName, pace: emptyPace(), lineups: new Map() }
-          addGap(player.pace, time, best)
+        const placements = roundPlacements(round.results)
+        const field = round.results.length
+        round.results.forEach((r, i) => {
+          if (!r.isOurTeam) return
+          const player = players.get(r.tmId) ?? { name: r.playerName, currentName: r.currentName, placeSum: 0, shareSum: 0, rounds: 0, lineups: new Map() }
+          player.placeSum += placements[i]
+          player.shareSum += field > 1 ? (placements[i] - 1) / (field - 1) : 0
+          player.rounds++
           if (match.tournamentLineupId) player.lineups.set(match.tournamentLineupId, (player.lineups.get(match.tournamentLineupId) ?? 0) + 1)
           players.set(r.tmId, player)
-        }
+        })
       }
     }
   }
-  let top: Performer | null = null
+  let top: (Performer & { share: number }) | null = null
   for (const [tmId, player] of players) {
-    const pace = pacePct(player.pace)
-    if (pace === null || (top && pace >= top.pace)) continue
+    const share = player.shareSum / player.rounds
+    if (top && share >= top.share) continue
     const lineupId = [...player.lineups.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] ?? null
-    top = { tmId, name: player.name, currentName: player.currentName, lineupId, pace, rounds: player.pace.rounds }
+    top = { tmId, name: player.name, currentName: player.currentName, lineupId, avgPlace: player.placeSum / player.rounds, rounds: player.rounds, share }
   }
-  return top
+  if (!top) return null
+  return { tmId: top.tmId, name: top.name, currentName: top.currentName, lineupId: top.lineupId, avgPlace: top.avgPlace, rounds: top.rounds }
 }
 
 // The stage played last: the last one in playing order (stageOrder) with a round that counts

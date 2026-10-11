@@ -10,7 +10,7 @@ import { openPlanningsFor } from "@/lib/planning-db"
 import { buildProfile } from "@/lib/player-profile"
 import { currentStatus, formatDay } from "@/lib/player-status"
 import { sortStages, stageName } from "@/lib/stages"
-import { cn } from "@/lib/utils"
+import { cn, formatLabel } from "@/lib/utils"
 import { ChevronRight, Star, Swords, Trophy, Users } from "lucide-react"
 import Link from "next/link"
 
@@ -246,8 +246,8 @@ export default async function DashboardPage() {
                             </p>
                           </div>
                           <div className="shrink-0 text-right">
-                            <p className="font-mono text-sm font-semibold text-[#f5f0f0]">{formatPacePct(performer.pace)}</p>
-                            <p className="text-xs text-[#5e5858]">{performer.rounds} rounds</p>
+                            <p className="font-mono text-sm font-semibold text-[#f5f0f0]">{performer.avgPlace.toFixed(2)}</p>
+                            <p className="text-xs text-[#5e5858]">avg place · {performer.rounds} rounds</p>
                           </div>
                         </div>
                       )
@@ -269,12 +269,16 @@ export default async function DashboardPage() {
                     <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
                       <Tile label="Rounds" value={mine.total.roundsPlayed} />
                       <Tile
+                        label="Avg place"
+                        value={(mine.total.placementSum / mine.total.roundsPlayed).toFixed(2)}
+                        hint={mine.formats.map((f) => `${formatLabel(f.format)} ${(f.placementSum / f.roundsPlayed).toFixed(2)}`).join(" · ")}
+                      />
+                      <Tile
                         label="Pace"
                         value={formatPacePct(mine.total.pace.value)}
                         hint={mine.total.pace.value === null ? "no timed round" : `Team ${formatPacePct(mine.total.pace.team)} · ${mine.total.pace.rank} of ${mine.total.pace.of}`}
                       />
                       <Tile label="Round W/L" value={`${mine.total.roundsWon}–${mine.total.roundsLost}`} hint={`${winRate(mine.total.roundsWon, mine.total.roundsLost)} won`} />
-                      <Tile label="DNFs" value={mine.total.dnfs} />
                     </div>
                     {bestMap && (
                       <p className="text-xs text-[#9a9090]">

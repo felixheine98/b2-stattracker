@@ -107,23 +107,34 @@ describe("overallRecord", () => {
 })
 
 describe("bestPerformer", () => {
-  it("is the player with the smallest average gap to the fastest time of each round", () => {
-    const best = bestPerformer([match([[round("opp1:50", "anna:51", "ben:52", "opp2:60"), round("ben:50", "opp1:51", "anna:53", "opp2:60")]])])
-    // anna +2 % and +6 %, ben +4 % and +0 %
-    expect(best).toMatchObject({ tmId: "ben", name: "ben", rounds: 2, lineupId: "alpha" })
-    expect(best!.pace).toBeCloseTo(2)
+  it("is the player with the best average placement", () => {
+    const best = bestPerformer([match([[round("anna:50", "opp1:51", "ben:52", "opp2:60"), round("opp1:50", "ben:51", "anna:53", "opp2:60")]])])
+    // anna 1st and 3rd, ben 3rd and 2nd
+    expect(best).toMatchObject({ tmId: "anna", name: "anna", rounds: 2, lineupId: "alpha" })
+    expect(best!.avgPlace).toBe(2)
   })
 
-  it("ignores rounds a player did not finish and seeding matches", () => {
+  it("compares placements by the size of the field, so formats can be mixed", () => {
     const best = bestPerformer([
-      match([[round("opp1:50", "anna:51", "ben:!")]]),
-      match([[round("ben:40")]], { stage: { id: "seed", type: "SEEDING" } }),
+      // ben: 2nd of 2, twice
+      match([[round("opp1:50", "ben:51"), round("opp1:50", "ben:51")]]),
+      // anna: 2nd and 3rd of 8, a better result although the plain average is worse
+      match([[round("opp1:50", "anna:51", "opp3:52", "opp4:53", "opp5:54", "opp6:55", "opp7:56", "opp8:57"), round("opp1:50", "opp2:51", "anna:52", "opp4:53", "opp5:54", "opp6:55", "opp7:56", "opp8:57")]]),
     ])
     expect(best?.tmId).toBe("anna")
+    expect(best!.avgPlace).toBe(2.5)
   })
 
-  it("is nobody without a timed round", () => {
-    expect(bestPerformer([match([[round("opp1:50", "anna:!")]])])).toBeNull()
+  it("counts a round that was not finished as the last place, and leaves seeding out", () => {
+    const best = bestPerformer([
+      match([[round("opp1:50", "anna:51", "opp2:52", "ben:!")]]),
+      match([[round("ben:40")]], { stage: { id: "seed", type: "SEEDING" } }),
+    ])
+    expect(best).toMatchObject({ tmId: "anna", avgPlace: 2, rounds: 1 })
+  })
+
+  it("is nobody without a round", () => {
+    expect(bestPerformer([match([[]])])).toBeNull()
   })
 })
 
