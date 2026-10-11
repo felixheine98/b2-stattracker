@@ -10,7 +10,8 @@ import Link from "next/link"
 import { playerPath } from "@/lib/paths"
 import { useSyncedState } from "@/lib/use-synced-state"
 import { PlayerAvatar } from "@/components/player-avatar"
-import { countryName, countryOptions } from "@/lib/countries"
+import { CountryFlagPicker } from "@/components/country-flag-picker"
+import { countryName } from "@/lib/countries"
 import { currentStatus, type PlayerStatus, type StatusChange } from "@/lib/player-status"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -573,7 +574,6 @@ export function PlayersView({ players: initial, users, canManage }: Props) {
             <thead className="max-md:hidden">
               <tr className="border-b border-[#2d2829] bg-[#251f20]">
                 <th className="text-left px-3 py-3 @7xl:px-4 text-[#9a9090] font-medium">Name</th>
-                <th className="text-left px-3 py-3 @7xl:px-4 text-[#9a9090] font-medium">Land</th>
                 <th className="text-left px-3 py-3 @7xl:px-4 text-[#9a9090] font-medium">TM ID</th>
                 <th className="text-left px-3 py-3 @7xl:px-4 text-[#9a9090] font-medium">{tab === "members" ? "Linked account" : "Login"}</th>
                 <th className="text-left px-3 py-3 @7xl:px-4 text-[#9a9090] font-medium">Status</th>
@@ -589,7 +589,8 @@ export function PlayersView({ players: initial, users, canManage }: Props) {
                 >
                   <td className="px-3 py-3 @7xl:px-4 font-medium text-[#f5f0f0] max-md:order-1 max-md:col-span-2 max-md:block max-md:p-0 max-md:text-base">
                     <span className="flex items-center gap-2 whitespace-nowrap">
-                      <PlayerAvatar player={player} />
+                      {/* The flag says the country; managers change it right there */}
+                      {canManage ? <CountryFlagPicker player={player} onChange={(country) => handleCountry(player.id, country)} /> : <PlayerAvatar player={player} />}
                       <Link href={playerPath(player)} className="hover:text-[#FBD00D] hover:underline">{player.name}</Link>
                       <button
                         type="button"
@@ -611,6 +612,11 @@ export function PlayersView({ players: initial, users, canManage }: Props) {
                         onAdopt={() => setNameDialog({ playerId: player.id, suggestion: nameHint(player) ?? undefined })}
                         onDismiss={() => resolveHint(player, "name", "dismiss")} />
                     )}
+                    {countryHint(player) && (
+                      <HintLine label={`trackmania.io: ${countryName(countryHint(player)!)}`} canManage={canManage}
+                        onAdopt={() => resolveHint(player, "country", "adopt")}
+                        onDismiss={() => resolveHint(player, "country", "dismiss")} />
+                    )}
                     {player.tmioCheckedAt && !player.tmioName && (
                       <p className="mt-1 flex flex-wrap items-center gap-x-2 text-[11px] font-normal text-[#cd7f32]">
                         not found on trackmania.io
@@ -620,33 +626,10 @@ export function PlayersView({ players: initial, users, canManage }: Props) {
                       </p>
                     )}
                   </td>
-                  <td className="px-3 py-3 @7xl:px-4 max-md:order-4 max-md:block max-md:min-w-0 max-md:p-0">
-                    <span className="mb-1 block text-[10px] uppercase tracking-wider text-[#5e5858] md:hidden">Land</span>
-                    {canManage ? (
-                      <select
-                        value={player.country ?? ""}
-                        onChange={(e) => handleCountry(player.id, e.target.value || null)}
-                        aria-label={`Land von ${player.name}`}
-                        className="h-8 w-28 @5xl:w-32 max-md:h-9 max-md:w-full text-ellipsis rounded-md border border-[#3a3435] bg-[#251f20] px-2 text-xs text-[#f5f0f0] focus:outline-none focus:ring-2 focus:ring-[#FBD00D]"
-                      >
-                        <option value="">— kein Land —</option>
-                        {countryOptions(player.country).map((c) => (
-                          <option key={c.code} value={c.code}>{c.name}</option>
-                        ))}
-                      </select>
-                    ) : (
-                      <span className="text-xs text-[#9a9090]">{player.country ? countryName(player.country) : "—"}</span>
-                    )}
-                    {countryHint(player) && (
-                      <HintLine label={`trackmania.io: ${countryName(countryHint(player)!)}`} canManage={canManage}
-                        onAdopt={() => resolveHint(player, "country", "adopt")}
-                        onDismiss={() => resolveHint(player, "country", "dismiss")} />
-                    )}
-                  </td>
                   <td className="px-3 py-3 @7xl:px-4 font-mono text-xs text-[#5e5858] max-md:order-3 max-md:block max-md:min-w-0 max-md:p-0 max-md:text-right">
                     <span className="block w-[9ch] truncate @7xl:w-auto max-md:ml-auto max-md:w-[14ch]" title={player.tmId}>{player.tmId}</span>
                   </td>
-                  <td className="px-3 py-3 @7xl:px-4 max-md:order-5 max-md:block max-md:min-w-0 max-md:p-0">
+                  <td className="px-3 py-3 @7xl:px-4 max-md:order-5 max-md:col-span-2 max-md:block max-md:min-w-0 max-md:p-0">
                     <span className="mb-1 block text-[10px] uppercase tracking-wider text-[#5e5858] md:hidden">{tab === "members" ? "Account" : "Login"}</span>
                     {tab === "guests" ? (
                       // Guests keep a login they had as a member; a new one cannot be linked

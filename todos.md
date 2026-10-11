@@ -23,10 +23,10 @@
   - [ ] seeding-bereich im profil (erst entscheiden, wie seeding-daten ins system kommen)
 - [ ] per map statistiken
   - [x] pro spieler im profil (pb, Ø rückstand in s, rang im team)
-  - [ ] pro comp für 1 lineup, pro week für alle lineups
+  - [x] pro comp für 1 lineup, pro week für alle lineups
 - [ ] Lineup Builder
   - [x] gemeinsames erstellen für lineups, welches direkt in eine comp reingespeichert wird (Planung pro Comp: Verfügbarkeit, Varianten, Live-Session, Übernehmen)
-  - [ ] danach werden in dieser comp nur noch diese 4 lineups gezeigt bzw nur die spieler
+  - [x] danach werden in dieser comp nur noch diese 4 lineups gezeigt bzw nur die spieler
 
 ## Erledigt
 
