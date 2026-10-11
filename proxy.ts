@@ -1,5 +1,6 @@
 import { BASE_PATH } from "@/lib/base-path"
 import { auth } from "@/lib/auth"
+import { loginPath, nextPathAfterLogin } from "@/lib/login-target"
 import { NextResponse } from "next/server"
 
 const BASE = BASE_PATH
@@ -17,11 +18,12 @@ export default auth((req) => {
   if (isPublicApi) return NextResponse.next()
 
   if (!isLoggedIn && !isAuthPage) {
-    return NextResponse.redirect(new URL(`${BASE}/login`, req.nextUrl.origin))
+    // The login remembers the page, so a shared link still leads there after signing in
+    return NextResponse.redirect(new URL(`${BASE}${loginPath(stripped, req.nextUrl.search)}`, req.nextUrl.origin))
   }
 
   if (isLoggedIn && isAuthPage) {
-    return NextResponse.redirect(new URL(`${BASE}/dashboard`, req.nextUrl.origin))
+    return NextResponse.redirect(new URL(`${BASE}${nextPathAfterLogin(req.nextUrl.searchParams.get("next"))}`, req.nextUrl.origin))
   }
 
   return NextResponse.next()

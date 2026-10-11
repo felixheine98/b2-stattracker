@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { signIn } from "next-auth/react"
 import { useRouter } from "next/navigation"
+import { nextPathAfterLogin } from "@/lib/login-target"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
@@ -29,7 +30,8 @@ export default function LoginPage() {
     if (result?.error) {
       setError("Invalid username or password")
     } else {
-      router.push("/dashboard")
+      // Back to the page the link pointed to, if someone was sent here from one
+      router.push(nextPathAfterLogin(new URLSearchParams(window.location.search).get("next")))
       router.refresh()
     }
   }
