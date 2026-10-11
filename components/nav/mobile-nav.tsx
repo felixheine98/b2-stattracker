@@ -2,7 +2,8 @@
 
 import { BASE_PATH } from "@/lib/base-path"
 import { cn } from "@/lib/utils"
-import { ChevronDown, KeyRound, LogOut } from "lucide-react"
+import { ChevronDown, KeyRound, LogOut, Search } from "lucide-react"
+import { openSearch } from "@/components/search/search-dialog"
 import { signOut } from "next-auth/react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
@@ -30,9 +31,17 @@ export function MobileTopBar({ userName, role, profileHref }: Props) {
       <span className="flex-1 text-base font-bold tracking-tight text-[#f5f0f0]">B2 Stats</span>
       <button
         type="button"
+        onClick={openSearch}
+        aria-label="Suchen"
+        className="rounded-md p-2 text-[#c5bfbf] hover:bg-[#251f20]"
+      >
+        <Search size={18} />
+      </button>
+      <button
+        type="button"
         onClick={() => setOpen((o) => !o)}
         aria-expanded={open}
-        className="flex max-w-[50%] items-center gap-1 rounded-md px-2 py-1.5 text-sm text-[#c5bfbf] hover:bg-[#251f20]"
+        className="flex max-w-[40%] items-center gap-1 rounded-md px-2 py-1.5 text-sm text-[#c5bfbf] hover:bg-[#251f20]"
       >
         <span className="truncate">{userName}</span>
         <ChevronDown size={14} className="shrink-0" />

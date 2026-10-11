@@ -4,7 +4,8 @@ import { BASE_PATH } from "@/lib/base-path"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
-import { KeyRound, LogOut, ShieldCheck, PanelLeftClose, PanelLeftOpen } from "lucide-react"
+import { KeyRound, LogOut, Search, ShieldCheck, PanelLeftClose, PanelLeftOpen } from "lucide-react"
+import { openSearch } from "@/components/search/search-dialog"
 import { isActiveItem, navItems, profileItem } from "./nav-items"
 import { useState, useSyncExternalStore } from "react"
 import { ChangePasswordDialog } from "./change-password-dialog"
@@ -63,6 +64,24 @@ export function Sidebar({ userName, role, profileHref }: SidebarProps) {
       </div>
 
       <nav className="flex-1 space-y-0.5 px-2 py-4">
+        <button
+          type="button"
+          onClick={openSearch}
+          title={collapsed ? "Suchen (Strg+K)" : undefined}
+          aria-label="Suchen"
+          className={cn(
+            "mb-3 flex w-full items-center gap-3 rounded-md border border-[#2d2829] bg-[#251f20]/60 py-2 text-sm text-[#5e5858] transition-colors hover:border-[#3a3435] hover:text-[#f5f0f0]",
+            collapsed ? "justify-center px-0" : "px-3"
+          )}
+        >
+          <Search size={16} className="shrink-0" />
+          {!collapsed && (
+            <>
+              <span className="flex-1 text-left">Suchen</span>
+              <kbd className="text-[10px] text-[#5e5858]">Strg K</kbd>
+            </>
+          )}
+        </button>
         {[...navItems, ...(profileHref ? [{ href: profileHref, ...profileItem }] : [])].map(({ href, label, icon: Icon }) => (
           <Link
             key={href}

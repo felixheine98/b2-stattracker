@@ -5,6 +5,7 @@ import { resolvePlayer } from "@/lib/slugs-db"
 import { redirect } from "next/navigation"
 import { MobileTabBar, MobileTopBar } from "@/components/nav/mobile-nav"
 import { Sidebar } from "@/components/nav/sidebar"
+import { SearchDialog } from "@/components/search/search-dialog"
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const session = await auth()
@@ -29,6 +30,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
         <main className="flex-1 overflow-y-auto overflow-x-hidden bg-[#0e0b0b] p-4 md:p-6 md:pl-14">{children}</main>
         <MobileTabBar role={role} profileHref={profileHref} />
       </div>
+      <SearchDialog />
     </div>
   )
 }
