@@ -4,7 +4,7 @@ import { PlayerName } from "@/components/player-name"
 import { GuestBadge } from "@/components/guest-badge"
 import { TrialBadge } from "@/components/trial-badge"
 import { Badge } from "@/components/ui/badge"
-import { mapGapMs, type MapAggregate } from "@/lib/map-stats"
+import { mapGapMs, teamAvgMs, type MapAggregate } from "@/lib/map-stats"
 import { formatGapSeconds } from "@/lib/pace"
 import { cn, formatLabel, formatTime } from "@/lib/utils"
 import Link from "next/link"
@@ -122,6 +122,46 @@ export function MapStatsTable({ agg, isGuest, isTrial, lineupName, profilePath, 
           </tbody>
         </table>
       </div>
+    </div>
+  )
+}
+
+// How the team does on each map: one row per map, without single players
+export function MapOverviewTable({ maps }: { maps: MapAggregate[] }) {
+  const th = "px-3 py-2 text-right font-medium whitespace-nowrap text-[#9a9090]"
+  const td = "px-3 py-1.5 text-right whitespace-nowrap text-[#c5bfbf]"
+  return (
+    <div className="overflow-x-auto rounded-lg border border-[#2d2829]">
+      <table className="w-full text-xs">
+        <thead>
+          <tr className="border-b border-[#2d2829] bg-[#1c1819]">
+            <th className="sticky left-0 z-[1] bg-[#1c1819] py-2 pl-3 pr-4 text-left font-medium text-[#9a9090]">Map</th>
+            <th className={cn(th, "text-left")}>Formate</th>
+            <th className={th} title="Gewonnene, unentschiedene und verlorene Sub-Matches auf dieser Map">Maps W–D–L</th>
+            <th className={th}>Rounds W–L</th>
+            <th className={th} title="Anteil gewonnener an den entschiedenen Runden">Runden-Quote</th>
+            <th className={th} title="Schnellste Zeit eines unserer Fahrer">Bestzeit</th>
+            <th className={th} title="Durchschnitt aller Zeiten unserer Fahrer, ohne DNFs">Ø Zeit</th>
+          </tr>
+        </thead>
+        <tbody>
+          {maps.map((agg) => {
+            const decided = agg.teamRoundsWon + agg.teamRoundsLost
+            const avg = teamAvgMs(agg)
+            return (
+              <tr key={agg.track ?? ""} className="border-b border-[#1c1819] last:border-0">
+                <td className="sticky left-0 z-[1] bg-[#0e0b0b] py-1.5 pl-3 pr-4 font-medium whitespace-nowrap text-[#f5f0f0] max-md:shadow-[1px_0_0_#2d2829]">{agg.track ?? "Ohne Map"}</td>
+                <td className={cn(td, "text-left")}>{agg.formats.map((f) => formatLabel(f)).join(", ")}</td>
+                <td className={cn(td, "font-mono text-[#f5f0f0]")}>{agg.mapWon}–{agg.mapDrawn}–{agg.mapLost}</td>
+                <td className={cn(td, "font-mono")}>{agg.teamRoundsWon}–{agg.teamRoundsLost}</td>
+                <td className={cn(td, "font-mono")}>{decided > 0 ? `${Math.round((agg.teamRoundsWon / decided) * 100)} %` : "—"}</td>
+                <td className={cn(td, "font-mono text-[#FBD00D]")}>{agg.teamBestMs === null ? "—" : formatTime(agg.teamBestMs)}</td>
+                <td className={cn(td, "font-mono")}>{avg === null ? "—" : formatTime(Math.round(avg))}</td>
+              </tr>
+            )
+          })}
+        </tbody>
+      </table>
     </div>
   )
 }

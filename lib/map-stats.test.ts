@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
 import { matchesOfFormats, type StatsMatch } from "./format-stats"
-import { buildMapAggregates, mapGapMs } from "./map-stats"
+import { buildMapAggregates, mapGapMs, teamAvgMs } from "./map-stats"
 
 let nextId = 0
 
@@ -53,6 +53,20 @@ describe("buildMapAggregates", () => {
     ], ["md1"])
     expect(a).toMatchObject({ mapWon: 1, mapLost: 0, teamRoundsWon: 2, teamRoundsLost: 1 })
     expect(b).toMatchObject({ mapWon: 0, mapLost: 1, teamRoundsWon: 0, teamRoundsLost: 1 })
+  })
+
+  it("gives the best and the average time of our drivers on a map, without the opponents and DNFs", () => {
+    const [a] = buildMapAggregates([
+      match([sub("ROUND_2V2", round("A", "opp1:58", "anna:60", "ben:62", "opp2:70"), round("A", "anna:61", "opp1:62", "opp2:63", "ben:!"))]),
+    ], ["md1"])
+    expect(a.teamBestMs).toBe(60000)
+    expect(teamAvgMs(a)).toBe(61000)
+  })
+
+  it("has no team times while none of ours finished", () => {
+    const [a] = buildMapAggregates([match([sub("ROUND_1V1", round("A", "opp1:58", "anna:!"))])], ["md1"])
+    expect(a.teamBestMs).toBeNull()
+    expect(teamAvgMs(a)).toBeNull()
   })
 
   it("lists the maps in the order they were first played, then by name", () => {

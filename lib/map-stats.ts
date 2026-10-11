@@ -32,8 +32,17 @@ export interface MapAggregate {
   mapWon: number
   mapLost: number
   mapDrawn: number
+  // Fastest time of one of ours on the map, and the sum and number of all our finished rounds
+  teamBestMs: number | null
+  teamTimeSum: number
+  teamTimeCount: number
   // keyed by tmId
   players: Map<string, MapPlayerAggregate>
+}
+
+// Average time of our drivers on a map in milliseconds; null while none of them finished
+export function teamAvgMs(agg: MapAggregate): number | null {
+  return agg.teamTimeCount > 0 ? agg.teamTimeSum / agg.teamTimeCount : null
 }
 
 // Average gap of a player on a map in milliseconds; null without a timed round
@@ -64,6 +73,7 @@ export function buildMapAggregates(matches: StatsMatch[], stageOrder: string[]):
             formats: [],
             teamRoundsWon: 0, teamRoundsLost: 0,
             mapWon: 0, mapLost: 0, mapDrawn: 0,
+            teamBestMs: null, teamTimeSum: 0, teamTimeCount: 0,
             players: new Map(),
             firstStage,
           })
@@ -92,6 +102,9 @@ export function buildMapAggregates(matches: StatsMatch[], stageOrder: string[]):
           else if (o === "L") p.roundsLost++
           const time = finishTime(r)
           if (time !== null) {
+            if (agg.teamBestMs === null || time < agg.teamBestMs) agg.teamBestMs = time
+            agg.teamTimeSum += time
+            agg.teamTimeCount++
             if (p.bestMs === null || time < p.bestMs) p.bestMs = time
             if (best !== null) addGap(p.pace, time, best)
           }
@@ -121,6 +134,7 @@ export function buildMapAggregates(matches: StatsMatch[], stageOrder: string[]):
       formats: FORMAT_ORDER.filter((f) => agg.formats.includes(f)),
       teamRoundsWon: agg.teamRoundsWon, teamRoundsLost: agg.teamRoundsLost,
       mapWon: agg.mapWon, mapLost: agg.mapLost, mapDrawn: agg.mapDrawn,
+      teamBestMs: agg.teamBestMs, teamTimeSum: agg.teamTimeSum, teamTimeCount: agg.teamTimeCount,
       players: agg.players,
     }))
 }

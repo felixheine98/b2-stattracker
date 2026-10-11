@@ -20,10 +20,6 @@
   - [x] erreichbar für alle über klick auf den namen (player page, stats-tabellen, lineup-kader)
   - [x] eigener menüpunkt für eingeloggte user, der direkt zum eigenen profil führt
   - [ ] seeding-bereich im profil (erst entscheiden, wie seeding-daten ins system kommen)
-- [ ] per map statistiken
-  - [x] pro spieler im profil (pb, Ø rückstand in s, rang im team)
-  - [x] pro comp für 1 lineup, pro week für alle lineups (umschalter "nach map" im stats-bereich von lineup- und turnierseite, filter lineup/abschnitt/format)
-  - [ ] team-sicht pro map in der lineup-übersicht: eine zeile pro map mit maps w/l, rounds w/l, beste und Ø zeit (ohne einzelne spieler)
 - [ ] Lineup Builder
   - [x] gemeinsames erstellen für lineups, welches direkt in eine comp reingespeichert wird (Planung pro Comp: Verfügbarkeit, Varianten, Live-Session, Übernehmen)
   - [x] danach werden in dieser comp nur noch diese 4 lineups gezeigt bzw nur die spieler
@@ -34,3 +30,7 @@
 - [x] Gegner-DB umgesetzt: [vereinbartes Konzept](docs/gegner-db-konzept.md) – feste Teams, Competition-Lineups/Mixes, Logos, Spielerzuordnung und Stats; gezielte manuelle Übernahme aus dem Team-Spreadsheet
 - [x] suchfunktion: globale suche (Strg+K) über spieler, gegnerteams, gegner-lineups, gegnerische spieler, turniere und matches
 - [x] csv import für gesamtes match (eine oder mehrere dateien, vorschau mit seiten, abgewählten fehlrunden und ergänzten dnfs) und runden nachträglich per mehrfachauswahl löschen
+- [x] per map statistiken
+  - [x] pro spieler im profil (pb, Ø rückstand in s, rang im team)
+  - [x] pro comp für 1 lineup, pro week für alle lineups (umschalter "nach map" im stats-bereich von lineup- und turnierseite, filter lineup/abschnitt/format)
+  - [x] team-sicht pro map in der lineup-übersicht: eine zeile pro map mit maps w/l, rounds w/l, beste und Ø zeit (ohne einzelne spieler)

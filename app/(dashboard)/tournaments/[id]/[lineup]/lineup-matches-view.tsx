@@ -28,7 +28,7 @@ import { StatsFilter } from "@/components/stats-filter"
 import { StageHeading } from "@/components/stage-heading"
 import { Select } from "@/components/ui/select"
 import { FormatStatsTable } from "../format-stats"
-import { MapStatsTable, StatsViewToggle } from "../map-stats"
+import { MapOverviewTable, MapStatsTable, StatsViewToggle } from "../map-stats"
 import { ArrowLeft, Swords, Users, ChevronRight, Calendar, BarChart2, Plus, Trash2, ShieldCheck } from "lucide-react"
 import { cn, formatLabel } from "@/lib/utils"
 import type { Format } from "@prisma/client"
@@ -126,7 +126,8 @@ export function LineupMatchesView({ lineup, guestTmIds, trialTmIds, profilePaths
   const statsByMap = statsView.includes("map")
   const statsSelection = matchesOfFormats(matchesOfStages(matches, statsStageIds), statsFormatIds as Format[])
   const aggregates = buildAggregates(statsSelection)
-  const mapAggregates = statsByMap ? buildMapAggregates(statsSelection, stages.map((st) => st.id)) : []
+  // Needed in both views: the overview of the maps stands above either kind of table
+  const mapAggregates = buildMapAggregates(statsSelection, stages.map((st) => st.id))
 
   // --- Add match dialog state ---
   const [opponentValue, setOpponentValue] = useState<OpponentValue>({ name: "" })
@@ -294,7 +295,13 @@ export function LineupMatchesView({ lineup, guestTmIds, trialTmIds, profilePaths
           )}
           {aggregates.length === 0 ? (
             <p className="text-sm text-[#5e5858]">Keine Daten für diese Auswahl.</p>
-          ) : statsByMap ? (
+          ) : (
+            <div className="mb-4 space-y-2">
+              <h3 className="text-xs font-semibold uppercase tracking-wider text-[#5e5858]">Maps im Überblick</h3>
+              <MapOverviewTable maps={mapAggregates} />
+            </div>
+          )}
+          {aggregates.length === 0 ? null : statsByMap ? (
             <div className="space-y-4">
               {mapAggregates.map((agg) => (
                 <MapStatsTable key={agg.track ?? ""} agg={agg} isGuest={isGuest} isTrial={isTrial} profilePath={profilePath} showPlacement={aggregates.length === 1} />
