@@ -2,6 +2,7 @@
 
 import { PlayerName } from "@/components/player-name"
 import { GuestBadge } from "@/components/guest-badge"
+import { TrialBadge } from "@/components/trial-badge"
 import { Badge } from "@/components/ui/badge"
 import { cn, formatLabel } from "@/lib/utils"
 import { formatPacePct, pacePct } from "@/lib/pace"
@@ -12,6 +13,7 @@ import type { FormatAggregate } from "@/lib/format-stats"
 interface Props {
   agg: FormatAggregate
   isGuest: (tmId: string) => boolean
+  isTrial: (tmId: string) => boolean
   // Name of the player's lineup; adds the "Lineup" column when given
   lineupName?: (tmId: string) => string | undefined
   // Address of the player's profile; names without one are plain text
@@ -20,7 +22,7 @@ interface Props {
 
 type SortCol = "name" | "lineup" | "played" | "placementSum" | "avg" | "pace" | "dnfs" | "roundsWon" | "roundsLost"
 
-export function FormatStatsTable({ agg, isGuest, lineupName, profilePath }: Props) {
+export function FormatStatsTable({ agg, isGuest, isTrial, lineupName, profilePath }: Props) {
   const [sortCol, setSortCol] = useState<SortCol>("name")
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc")
 
@@ -97,6 +99,7 @@ export function FormatStatsTable({ agg, isGuest, lineupName, profilePath }: Prop
                     <PlayerName name={p.name} currentName={p.currentName} />
                   )}
                   {isGuest(p.tmId) && <GuestBadge className="ml-1.5" />}
+{isTrial(p.tmId) && <TrialBadge className="ml-1.5" />}
                 </td>
                 {lineupName && <td className="py-1.5 px-3 text-[#c5bfbf] whitespace-nowrap">{lineupName(p.tmId) ?? "—"}</td>}
                 <td className="py-1.5 px-3 text-right text-[#c5bfbf]">{p.roundsPlayed}</td>

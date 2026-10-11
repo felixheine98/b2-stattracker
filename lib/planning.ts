@@ -1,5 +1,5 @@
 // Planning a tournament before it has lineups: who is available, and which lineups to build from them.
-import { statusAt, type PlayerStatusInfo } from "./player-status"
+import { inTeam, statusAt, type PlayerStatusInfo } from "./player-status"
 
 export type Availability = "FIX" | "MAYBE" | "OUT"
 
@@ -41,7 +41,7 @@ export function planningRows<P extends { id: string; name: string } & PlayerStat
 ): Array<PlanningRow<P>> {
   const byPlayer = new Map(entries.map((e) => [e.playerId, e]))
   return players
-    .map((player) => ({ player, entry: byPlayer.get(player.id), guest: statusAt(player, day) === "GUEST" }))
+    .map((player) => ({ player, entry: byPlayer.get(player.id), guest: !inTeam(statusAt(player, day)) }))
     .filter((row) => !row.guest || row.entry)
     .map((row) => ({ ...row, answer: answerOf(row.entry) }))
     .sort((a, b) => a.player.name.localeCompare(b.player.name))

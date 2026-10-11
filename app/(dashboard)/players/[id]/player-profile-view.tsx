@@ -1,6 +1,7 @@
 "use client"
 
 import { GuestBadge } from "@/components/guest-badge"
+import { TrialBadge } from "@/components/trial-badge"
 import { PlayerAvatar } from "@/components/player-avatar"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -60,7 +61,7 @@ interface Props {
   canManage: boolean
 }
 
-const STATUS_TEXT: Record<PlayerStatus, string> = { MEMBER: "Member", TRIAL: "Trial", GUEST: "Gast" }
+const STATUS_TEXT: Record<PlayerStatus, string> = { MEMBER: "Member", TRIAL: "Trial", GUEST: "Gast", FORMER: "Ehemalig" }
 
 const rankLabel = (rank: number | null, of: number) => (rank === null ? "—" : `${rank}. von ${of}`)
 const avgPlace = (line: StatLine) => (line.roundsPlayed > 0 ? (line.placementSum / line.roundsPlayed).toFixed(3) : "—")
@@ -196,7 +197,7 @@ function CompCard({ comp, initiallyOpen }: { comp: CompView; initiallyOpen: bool
         <span className="min-w-0 flex-1">
           <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
             <span className="break-words font-semibold text-[#f5f0f0]">{comp.name}</span>
-            {comp.status === "GUEST" ? <GuestBadge /> : <span className="text-xs text-[#9a9090]">{STATUS_TEXT[comp.status]}</span>}
+            {comp.status === "TRIAL" ? <TrialBadge /> : comp.status === "MEMBER" ? <span className="text-xs text-[#9a9090]">Member</span> : <GuestBadge />}
           </span>
           <span className="mt-1 flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-[#9a9090]">
             {comp.day && <span>{formatDay(comp.day)}</span>}
@@ -264,8 +265,8 @@ export function PlayerProfileView({ player: initial, total, formats, comps, hasO
   const dnfRate = total.roundsPlayed > 0 ? (total.dnfs / total.roundsPlayed) * 100 : null
   const decided = total.roundsWon + total.roundsLost
 
-  function setStatusChanges(statusChanges: StatusChange[]) {
-    setPlayer((p) => ({ ...p, statusChanges }))
+  function setStatusChanges(statusChanges: StatusChange[], loginDeleted?: boolean) {
+    setPlayer((p) => ({ ...p, statusChanges, ...(loginDeleted && { user: null }) }))
     router.refresh()
   }
 

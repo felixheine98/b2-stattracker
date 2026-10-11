@@ -2,7 +2,7 @@ import { mayEditLineup, type SessionUser } from "@/lib/lineup-access-db"
 import { db } from "@/lib/db"
 import { auth } from "@/lib/auth"
 import { canManage } from "@/lib/roles"
-import { guestTmIdsAt, tournamentReferenceDate } from "@/lib/player-status"
+import { guestTmIdsAt, selectable, tournamentReferenceDate, trialTmIdsAt } from "@/lib/player-status"
 import { notFound, redirect } from "next/navigation"
 import { matchPath } from "@/lib/paths"
 import { resolveLineup, resolveMatch, resolveTournament } from "@/lib/slugs-db"
@@ -76,7 +76,9 @@ export default async function MatchDetailPage({ params, searchParams }: Props) {
     : canManage(user?.role)
 
   // Everyone is shown under the name they had when the tournament started
-  const named = await withCompNames({ match, allPlayers }, match.tournament)
+  const trialTmIds = trialTmIdsAt(allPlayers, tournamentReferenceDate(match.tournament))
+  // Former players are still needed to recognise imported results, but are not offered for picking
+  const named = await withCompNames({ match, allPlayers: allPlayers.map((p) => ({ ...p, former: !selectable(p) })) }, match.tournament)
 
-  return <MatchDetailView match={named.match} allPlayers={named.allPlayers} guestTmIds={guestTmIds} autoEcmImport={autoEcmImport} canEdit={canEdit} canManage={canManage(user?.role)} />
+  return <MatchDetailView match={named.match} allPlayers={named.allPlayers} guestTmIds={guestTmIds} trialTmIds={trialTmIds} autoEcmImport={autoEcmImport} canEdit={canEdit} canManage={canManage(user?.role)} />
 }

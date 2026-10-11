@@ -16,7 +16,7 @@ export interface SearchEntry {
   // Set for matches, which have no name: what they are found by instead (opponent, lineup, tournament)
   terms?: string[]
   // Entries that are out of use come last in their group
-  marker?: "archiviert" | "unbestätigt"
+  marker?: "archiviert" | "unbestätigt" | "ehemalig"
   // Day as YYYY-MM-DD; matches are listed newest first
   date?: string | null
 }

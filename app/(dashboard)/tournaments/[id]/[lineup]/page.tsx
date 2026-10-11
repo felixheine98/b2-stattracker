@@ -2,7 +2,7 @@ import { LINEUP_MANAGERS_INCLUDE, mayEditLineup, type SessionUser } from "@/lib/
 import { db } from "@/lib/db"
 import { auth } from "@/lib/auth"
 import { canManage } from "@/lib/roles"
-import { guestTmIdsAt, tournamentReferenceDate } from "@/lib/player-status"
+import { guestTmIdsAt, tournamentReferenceDate, trialTmIdsAt } from "@/lib/player-status"
 import { notFound, redirect } from "next/navigation"
 import { lineupPath, playerPath } from "@/lib/paths"
 import { resolveLineup, resolveTournament } from "@/lib/slugs-db"
@@ -71,6 +71,7 @@ export default async function LineupMatchesPage({ params }: Props) {
     <LineupMatchesView
       lineup={named}
       guestTmIds={guestTmIds}
+      trialTmIds={trialTmIdsAt(players, tournamentReferenceDate(lineup.tournament))}
       profilePaths={Object.fromEntries(players.map((p) => [p.tmId.toLowerCase(), playerPath(p)]))}
       canManage={canManage(user?.role)}
       canEdit={canEdit}

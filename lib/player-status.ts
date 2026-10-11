@@ -1,16 +1,22 @@
-// Team members, players on trial and guests. A player has an initial status "from the
+// Team members, players on trial, guests and former players. A player has an initial status "from the
 // beginning" plus dated switches. Inside a tournament the status on the tournament's start day
 // counts, so a player has one status for the whole tournament.
-// A player on trial is treated like a member (planning, accounts) but is not one yet; whoever
-// joined later than "from the beginning" starts as a guest and switches on the day they joined.
+// A player on trial is planned like a member but is not one yet; whoever joined later than
+// "from the beginning" starts as a guest and switches on the day they joined. A former player
+// (a trial that ended, a member who left) keeps profile and results but is not picked any more.
 
-export type PlayerStatus = "MEMBER" | "TRIAL" | "GUEST"
+export type PlayerStatus = "MEMBER" | "TRIAL" | "GUEST" | "FORMER"
 
-export const STATUSES: PlayerStatus[] = ["MEMBER", "TRIAL", "GUEST"]
+export const STATUSES: PlayerStatus[] = ["MEMBER", "TRIAL", "GUEST", "FORMER"]
 
-// Part of the team: members and players on trial, but not guests
+// Part of the team: members and players on trial
 export function inTeam(status: PlayerStatus): boolean {
-  return status !== "GUEST"
+  return status === "MEMBER" || status === "TRIAL"
+}
+
+// Only members get a login; one that exists is kept through a trial or as a guest
+export function mayGetLogin(status: PlayerStatus): boolean {
+  return status === "MEMBER"
 }
 
 // The status a player most likely switches to next
@@ -74,9 +80,20 @@ export function tournamentReferenceDate(tournament: { startDate?: Date | string 
   return tournament.startDate ?? tournament.createdAt
 }
 
-// Lower-cased TM IDs of everyone who is a guest on the given day
+// Whether the player is offered when picking players (lineups, planning, results): everyone but former players
+export function selectable(player: PlayerStatusInfo): boolean {
+  return currentStatus(player) !== "FORMER"
+}
+
+// Lower-cased TM IDs of everyone who drives as a guest on the given day: guests, and former
+// players should they turn up in results again
 export function guestTmIdsAt(players: Array<PlayerStatusInfo & { tmId: string }>, date: Date | string): string[] {
-  return players.filter((p) => statusAt(p, date) === "GUEST").map((p) => p.tmId.toLowerCase())
+  return players.filter((p) => !inTeam(statusAt(p, date))).map((p) => p.tmId.toLowerCase())
+}
+
+// Likewise for everyone on trial on the given day
+export function trialTmIdsAt(players: Array<PlayerStatusInfo & { tmId: string }>, date: Date | string): string[] {
+  return players.filter((p) => statusAt(p, date) === "TRIAL").map((p) => p.tmId.toLowerCase())
 }
 
 export function formatDay(date: Date | string): string {

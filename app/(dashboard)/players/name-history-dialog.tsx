@@ -82,7 +82,7 @@ export function NameHistoryDialog({ player, suggestion, canManage, onClose, onCh
               <span className="flex-1 font-medium text-[#f5f0f0]">{player.initialName}</span>
             )}
             {canManage && initialName.trim() && initialName.trim() !== player.initialName && (
-              <Button size="sm" onClick={() => send("", "PUT", { initialName: initialName.trim() })} disabled={loading}>Save</Button>
+              <Button size="sm" onClick={() => send("", "PUT", { initialName: initialName.trim() })} disabled={loading}>Speichern</Button>
             )}
           </li>
           {changes.map((change) => {
@@ -107,7 +107,7 @@ export function NameHistoryDialog({ player, suggestion, canManage, onClose, onCh
                       aria-label="Name"
                       className="h-8 flex-1 text-sm"
                     />
-                    {changed && <Button size="sm" onClick={() => saveChange(change)} disabled={loading}>Save</Button>}
+                    {changed && <Button size="sm" onClick={() => saveChange(change)} disabled={loading}>Speichern</Button>}
                     <button
                       type="button"
                       onClick={() => send(`/${change.id}`, "DELETE")}
@@ -152,7 +152,7 @@ export function NameHistoryDialog({ player, suggestion, canManage, onClose, onCh
 
         {error && <p className="text-sm text-[#ED1F24]">{error}</p>}
         <div className="dialog-footer flex justify-end">
-          <Button variant="ghost" onClick={onClose}>Close</Button>
+          <Button variant="ghost" onClick={onClose}>Schließen</Button>
         </div>
       </div>
     </Dialog>

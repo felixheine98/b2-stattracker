@@ -29,6 +29,7 @@ const createSchema = z.object({
   // Stored in lower case so the same account cannot be added twice in different spelling
   tmId: z.string().uuid().transform((v) => v.toLowerCase()),
   // Category the player is created in; it applies "from the beginning"
+  // Former players are never created as such
   status: z.enum(["MEMBER", "TRIAL", "GUEST"]).default("MEMBER"),
   // Day the player joined (as member or on trial). With it the status no longer applies "from
   // the beginning": before that day the player counts as a guest.
@@ -57,7 +58,7 @@ export async function POST(req: Request) {
   try {
     const { name, tmId, status, country, tmio } = parsed.data
     const since = status === "GUEST" ? undefined : parsed.data.since
-    if (since && since > latestAllowedDay()) return NextResponse.json({ error: "The date must not be in the future" }, { status: 400 })
+    if (since && since > latestAllowedDay()) return NextResponse.json({ error: "Das Datum darf nicht in der Zukunft liegen" }, { status: 400 })
     const opponent = await db.player.findUnique({ where: { tmId } })
     const data = {
         name,
@@ -85,8 +86,8 @@ export async function POST(req: Request) {
     return NextResponse.json(player, { status: 201 })
   } catch (e: unknown) {
     if ((e as { code?: string }).code === "P2002") {
-      return NextResponse.json({ error: "A player with this TM ID already exists" }, { status: 409 })
+      return NextResponse.json({ error: "Einen Spieler mit dieser TM-ID gibt es schon" }, { status: 409 })
     }
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+    return NextResponse.json({ error: "Interner Fehler" }, { status: 500 })
   }
 }

@@ -2,7 +2,7 @@ import { db } from "@/lib/db"
 import { answerOf, planningRows } from "@/lib/planning"
 import { withCompNames } from "@/lib/player-names-db"
 import type { VariantData } from "@/lib/planning-variants"
-import { inTeam, statusAt, tournamentReferenceDate } from "@/lib/player-status"
+import { inTeam, selectable, statusAt, tournamentReferenceDate } from "@/lib/player-status"
 
 // The planning of a tournament, and whether it can still be changed: once the tournament
 // has lineups it is a read-only archive.
@@ -120,7 +120,7 @@ export async function buildPlanningState(tournamentId: string, viewer: PlanningV
     levels: tournament.planning.levels.map((l) => ({ id: l.id, name: l.name })),
     rows,
     // Guests a manager can still add to the list
-    addable: viewer.canManage ? named.filter((p) => !onList.has(p.id)).map((p) => ({ id: p.id, tmId: p.tmId, name: p.name })) : [],
+    addable: viewer.canManage ? named.filter((p) => !onList.has(p.id) && selectable(p)).map((p) => ({ id: p.id, tmId: p.tmId, name: p.name })) : [],
     variants: viewer.canManage ? await loadVariants(tournament.planning.id) : null,
   }
 }

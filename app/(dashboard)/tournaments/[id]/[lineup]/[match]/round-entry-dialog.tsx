@@ -131,7 +131,7 @@ export function RoundEntryDialog({ subMatch, pool, allPlayers, isGuest, onClose,
 
   const playerById = useMemo(() => new Map(allPlayers.map((p) => [p.id, p])), [allPlayers])
   const selectablePlayers = showAllPlayers
-    ? allPlayers
+    ? allPlayers.filter((p) => !p.former || playerIds.includes(p.id))
     : [...pool, ...allPlayers.filter((p) => playerIds.includes(p.id) && !pool.some((q) => q.id === p.id))]
 
   const ready = playerIds.length === size

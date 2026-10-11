@@ -22,7 +22,7 @@ import { cn } from "@/lib/utils"
 import { KeyRound, Trash2, Trophy } from "lucide-react"
 import { useState } from "react"
 
-export const STATUS_LABEL: Record<PlayerStatus, string> = { MEMBER: "Member", TRIAL: "Trial", GUEST: "Guest" }
+export const STATUS_LABEL: Record<PlayerStatus, string> = { MEMBER: "Member", TRIAL: "Trial", GUEST: "Gast", FORMER: "Ehemalig" }
 
 export interface StatusPlayer {
   id: string
@@ -41,7 +41,8 @@ export interface StatusPlayer {
 interface Props {
   player: StatusPlayer
   onClose: () => void
-  onChanged: (statusChanges: StatusChange[]) => void
+  // loginDeleted: the player's login went with the switch (see the status route)
+  onChanged: (statusChanges: StatusChange[], loginDeleted?: boolean) => void
 }
 
 function nextDay(day: string): string {
@@ -50,13 +51,16 @@ function nextDay(day: string): string {
   return dayKey(date)
 }
 
-// "Guest since 01.10.2026" or "Member from the start"
+// "Gast seit 01.10.2026" or "Member von Anfang an"
 export function statusSummary(player: StatusPlayer): string {
   const last = sortedChanges(player).at(-1)
   return last
-    ? `${STATUS_LABEL[last.status]} since ${formatDay(last.effectiveFrom)}`
-    : `${STATUS_LABEL[player.initialStatus]} from the start`
+    ? `${STATUS_LABEL[last.status]} seit ${formatDay(last.effectiveFrom)}`
+    : `${STATUS_LABEL[player.initialStatus]} von Anfang an`
 }
+
+// As what a player took part: "als Member", "als Gast", "im Trial"
+const AS_STATUS: Record<PlayerStatus, string> = { MEMBER: "als Member", TRIAL: "im Trial", GUEST: "als Gast", FORMER: "als Ehemaliger" }
 
 // Give a player another status from a given day on: a trial that becomes a membership, a
 // member who goes on as a guest and so on
@@ -81,19 +85,19 @@ export function StatusMoveDialog({ player, onClose, onChanged }: Props) {
     setLoading(false)
     const data = await res.json().catch(() => null)
     if (!res.ok) {
-      setError(data?.error ?? "Failed to change the status")
+      setError(data?.error ?? "Der Status konnte nicht geändert werden")
       return
     }
-    onChanged(data.statusChanges)
+    onChanged(data.statusChanges, data.loginDeleted)
     onClose()
   }
 
   return (
     <Dialog open onClose={onClose}>
-      <DialogTitle>Change status of {player.name}</DialogTitle>
+      <DialogTitle>Status von {player.name} ändern</DialogTitle>
       <div className="space-y-4">
         <div className="space-y-1.5">
-          <Label>New status</Label>
+          <Label>Neuer Status</Label>
           <div className="flex flex-wrap gap-2">
             {STATUSES.filter((s) => s !== current).map((s) => (
               <button
@@ -112,11 +116,12 @@ export function StatusMoveDialog({ player, onClose, onChanged }: Props) {
           </div>
         </div>
         <p className="text-sm text-[#9a9090]">
-          Lineups, results and the flag stay as they are. Tournaments that started before the chosen day keep showing{" "}
-          {player.name} as {STATUS_LABEL[current].toLowerCase()}.
+          Lineups, Ergebnisse und Flagge bleiben unverändert. Turniere, die vor dem gewählten Tag begonnen haben, zeigen{" "}
+          {player.name} weiterhin {AS_STATUS[current]}.
+          {target === "FORMER" && " Ehemalige werden nirgends mehr zur Auswahl angeboten; Profil und Ergebnisse bleiben."}
         </p>
         <div className="space-y-1.5">
-          <Label htmlFor="move-date">Effective from</Label>
+          <Label htmlFor="move-date">{target === "MEMBER" ? "Member seit" : target === "TRIAL" ? "Im Trial seit" : "Gültig ab"}</Label>
           <Input
             id="move-date"
             type="date"
@@ -128,21 +133,27 @@ export function StatusMoveDialog({ player, onClose, onChanged }: Props) {
           />
           {lastChange && (
             <p className="text-xs text-[#5e5858]">
-              Must be after the previous switch on {formatDay(lastChange.effectiveFrom)}.
+              Muss nach dem letzten Wechsel am {formatDay(lastChange.effectiveFrom)} liegen.
             </p>
           )}
         </div>
-        {player.user && target === "GUEST" && (
+        {player.user && (target === "GUEST" || target === "TRIAL") && (
           <p className="flex items-start gap-2 rounded-lg border border-[#cd7f32]/40 bg-[#cd7f32]/10 px-3 py-2 text-xs text-[#cd7f32]">
             <KeyRound size={14} className="mt-0.5 shrink-0" />
-            The login “{player.user.username}” stays active. Delete it on the Accounts page if this person should no longer have access.
+            Der Login „{player.user.username}“ bleibt aktiv. Lösch ihn auf der Accounts-Seite, wenn die Person keinen Zugang mehr haben soll.
+          </p>
+        )}
+        {player.user && target === "FORMER" && (
+          <p className="flex items-start gap-2 rounded-lg border border-[#ED1F24]/40 bg-[#ED1F24]/10 px-3 py-2 text-xs text-[#ED1F24]">
+            <KeyRound size={14} className="mt-0.5 shrink-0" />
+            Der Login „{player.user.username}“ wird dabei gelöscht. Die Person kann sich danach nicht mehr anmelden.
           </p>
         )}
         {error && <p className="text-sm text-[#ED1F24]">{error}</p>}
         <div className="dialog-footer flex gap-2 justify-end">
-          <Button variant="ghost" onClick={onClose}>Cancel</Button>
+          <Button variant="ghost" onClick={onClose}>Abbrechen</Button>
           <Button onClick={handleMove} disabled={loading || !date}>
-            {loading ? "Saving…" : `Set to ${STATUS_LABEL[target].toLowerCase()}`}
+            {loading ? "Speichert …" : `Auf ${STATUS_LABEL[target]} setzen`}
           </Button>
         </div>
       </div>
@@ -186,12 +197,19 @@ export function StatusHistoryDialog({ player, canManage, onClose, onChanged }: P
 
   return (
     <Dialog open onClose={onClose} className="max-w-lg">
-      <DialogTitle>History of {player.name}</DialogTitle>
+      <DialogTitle>Statusverlauf von {player.name}</DialogTitle>
       <div className="space-y-4">
         <ol className="space-y-2">
           <li className="flex items-center gap-3 rounded-lg border border-[#2d2829] px-3 py-2 text-sm">
-            <span className="w-24 shrink-0 text-xs text-[#5e5858]">from the start</span>
-            <span className="font-medium text-[#f5f0f0]">{STATUS_LABEL[player.initialStatus]}</span>
+            {/* Whoever joined later starts as a guest: that stretch is the time before they joined */}
+            {player.initialStatus === "GUEST" && changes.length > 0 ? (
+              <span className="text-xs text-[#5e5858]">vor dem Beitritt</span>
+            ) : (
+              <>
+                <span className="w-24 shrink-0 text-xs text-[#5e5858]">von Anfang an</span>
+                <span className="font-medium text-[#f5f0f0]">{STATUS_LABEL[player.initialStatus]}</span>
+              </>
+            )}
           </li>
           {timeline.map((entry) =>
             entry.kind === "change" ? (
@@ -202,23 +220,23 @@ export function StatusHistoryDialog({ player, canManage, onClose, onChanged }: P
                     value={dates[entry.change.id] ?? entry.day}
                     max={localTodayKey()}
                     onChange={(e) => setDates((d) => ({ ...d, [entry.change.id]: e.target.value }))}
-                    aria-label="Effective from"
+                    aria-label="Gültig ab"
                     className="h-8 w-36 shrink-0 text-xs"
                   />
                 ) : (
                   <span className="w-24 shrink-0 text-xs text-[#9a9090]">{formatDay(entry.day)}</span>
                 )}
-                <span className="flex-1 font-medium text-[#f5f0f0]">Switch to {STATUS_LABEL[entry.change.status].toLowerCase()}</span>
+                <span className="flex-1 font-medium text-[#f5f0f0]">{STATUS_LABEL[entry.change.status]}</span>
                 {canManage && dates[entry.change.id] && dates[entry.change.id] !== entry.day && (
-                  <Button size="sm" onClick={() => send(entry.change, "PATCH", "Failed to save")} disabled={loading}>Save</Button>
+                  <Button size="sm" onClick={() => send(entry.change, "PATCH", "Speichern fehlgeschlagen")} disabled={loading}>Speichern</Button>
                 )}
                 {canManage && entry.change.id === changes.at(-1)?.id && (
                   <button
                     type="button"
-                    onClick={() => confirm("Remove this switch?") && send(entry.change, "DELETE", "Failed to remove")}
+                    onClick={() => confirm("Diesen Wechsel entfernen?") && send(entry.change, "DELETE", "Entfernen fehlgeschlagen")}
                     disabled={loading}
                     className="text-[#5e5858] hover:text-[#ED1F24] disabled:opacity-40"
-                    title="Remove this switch"
+                    title="Diesen Wechsel entfernen"
                   >
                     <Trash2 size={14} />
                   </button>
@@ -233,18 +251,18 @@ export function StatusHistoryDialog({ player, canManage, onClose, onChanged }: P
                   <span className="text-[#5e5858]"> · {entry.slot.lineup.name}</span>
                 </span>
                 <span className={cn("text-xs", entry.status === "GUEST" ? "text-[#cd7f32]" : "text-[#9a9090]")}>
-                  as {STATUS_LABEL[entry.status].toLowerCase()}
+                  {AS_STATUS[entry.status]}
                 </span>
               </li>
             )
           )}
         </ol>
         {timeline.length === 0 && (
-          <p className="text-xs text-[#5e5858]">No switches and no tournaments yet.</p>
+          <p className="text-xs text-[#5e5858]">Noch keine Wechsel und keine Turniere.</p>
         )}
         {error && <p className="text-sm text-[#ED1F24]">{error}</p>}
         <div className="dialog-footer flex justify-end">
-          <Button variant="ghost" onClick={onClose}>Close</Button>
+          <Button variant="ghost" onClick={onClose}>Schließen</Button>
         </div>
       </div>
     </Dialog>

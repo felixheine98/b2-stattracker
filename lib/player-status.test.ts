@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { currentStatus, guestTmIdsAt, inTeam, statusAt, suggestedStatus, type PlayerStatusInfo } from "./player-status"
+import { currentStatus, guestTmIdsAt, inTeam, mayGetLogin, selectable, statusAt, suggestedStatus, trialTmIdsAt, type PlayerStatusInfo } from "./player-status"
 
 // Not with us before the trial, then on trial, then a member
 const player: PlayerStatusInfo = {
@@ -36,5 +36,43 @@ describe("suggestedStatus", () => {
     expect(suggestedStatus("TRIAL")).toBe("MEMBER")
     expect(suggestedStatus("MEMBER")).toBe("GUEST")
     expect(suggestedStatus("GUEST")).toBe("MEMBER")
+    expect(suggestedStatus("FORMER")).toBe("MEMBER")
+  })
+})
+
+describe("former players", () => {
+  const former: PlayerStatusInfo & { tmId: string } = {
+    tmId: "XYZ",
+    initialStatus: "GUEST",
+    statusChanges: [
+      { id: "a", status: "TRIAL", effectiveFrom: "2026-03-02" },
+      { id: "b", status: "FORMER", effectiveFrom: "2026-06-30" },
+    ],
+  }
+
+  it("are not part of the team and cannot be picked any more", () => {
+    expect(inTeam("FORMER")).toBe(false)
+    expect(selectable(former)).toBe(false)
+    expect(selectable(player)).toBe(true)
+    expect(selectable({ initialStatus: "GUEST", statusChanges: [] })).toBe(true)
+  })
+
+  it("show as a guest in a tournament that starts after they left", () => {
+    expect(guestTmIdsAt([former], "2026-07-01")).toEqual(["xyz"])
+  })
+
+  it("show with the status of the time in earlier tournaments", () => {
+    expect(trialTmIdsAt([former], "2026-06-07")).toEqual(["xyz"])
+    expect(guestTmIdsAt([former], "2026-06-07")).toEqual([])
+    expect(trialTmIdsAt([former], "2026-07-01")).toEqual([])
+  })
+})
+
+describe("mayGetLogin", () => {
+  it("allows a new login for members only", () => {
+    expect(mayGetLogin("MEMBER")).toBe(true)
+    expect(mayGetLogin("TRIAL")).toBe(false)
+    expect(mayGetLogin("GUEST")).toBe(false)
+    expect(mayGetLogin("FORMER")).toBe(false)
   })
 })

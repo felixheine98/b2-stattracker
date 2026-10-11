@@ -3,7 +3,7 @@ import { db } from "@/lib/db"
 import { NextResponse } from "next/server"
 import { canManage } from "@/lib/roles"
 import { isCountryCode } from "@/lib/countries"
-import { currentStatus } from "@/lib/player-status"
+import { currentStatus, mayGetLogin } from "@/lib/player-status"
 
 interface Params {
   params: Promise<{ id: string }>
@@ -28,9 +28,9 @@ export async function PATCH(req: Request, { params }: Params) {
     return NextResponse.json({ error: "Unknown country" }, { status: 400 })
 
   if (userId) {
-    // Guests keep a login they already have, but never get a new one linked
-    if (currentStatus(target) === "GUEST" && target.user?.id !== userId)
-      return NextResponse.json({ error: "Guests cannot be linked to an account" }, { status: 400 })
+    // Only members get a login; one that exists is kept, but no new one is linked
+    if (!mayGetLogin(currentStatus(target)) && target.user?.id !== userId)
+      return NextResponse.json({ error: "Nur Member können mit einem Account verknüpft werden" }, { status: 400 })
 
     // Verify user exists and isn't already linked to a different player
     const user = await db.user.findUnique({ where: { id: userId } })

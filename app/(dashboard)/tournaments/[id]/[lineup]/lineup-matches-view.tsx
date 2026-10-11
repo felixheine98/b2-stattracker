@@ -6,6 +6,7 @@ import { BASE_PATH } from "@/lib/base-path"
 import { matchPath, tournamentPath } from "@/lib/paths"
 import { PlayerName } from "@/components/player-name"
 import { GuestBadge } from "@/components/guest-badge"
+import { TrialBadge } from "@/components/trial-badge"
 import { PlayerAvatar } from "@/components/player-avatar"
 import { useSyncedState } from "@/lib/use-synced-state"
 import { formatDay } from "@/lib/player-status"
@@ -84,6 +85,8 @@ interface Props {
   }
   // Lower-cased TM IDs of players who are guests in this tournament
   guestTmIds: string[]
+  // Likewise for players on trial
+  trialTmIds: string[]
   // Profile addresses of our players, by lower-cased TM ID
   profilePaths: Record<string, string>
   // Admin or manager: everything, including deleting matches
@@ -93,11 +96,12 @@ interface Props {
   editExpired?: boolean
 }
 
-export function LineupMatchesView({ lineup, guestTmIds, profilePaths, canManage, canEdit, editExpired }: Props) {
+export function LineupMatchesView({ lineup, guestTmIds, trialTmIds, profilePaths, canManage, canEdit, editExpired }: Props) {
   const profilePath = (tmId: string) => profilePaths[tmId.toLowerCase()]
   const responsiblePlayerIds = new Set(lineup.managers.map((m) => m.user.playerId))
   const guests = new Set(guestTmIds)
   const isGuest = (tmId: string) => guests.has(tmId.toLowerCase())
+  const isTrial = (tmId: string) => trialTmIds.includes(tmId.toLowerCase())
   const router = useRouter()
   const { tournament } = lineup
   const [matches, setMatches] = useSyncedState(lineup.matches)
@@ -221,6 +225,7 @@ export function LineupMatchesView({ lineup, guestTmIds, profilePaths, canManage,
                 <PlayerName name={slot.player.name} currentName={slot.player.currentName} />
               </Link>
               {isGuest(slot.player.tmId) && <GuestBadge />}
+{isTrial(slot.player.tmId) && <TrialBadge />}
               {responsiblePlayerIds.has(slot.player.id) && <ShieldCheck size={13} className="text-[#FBD00D]" aria-label="zuständig" />}
             </span>
           ))}
@@ -266,7 +271,7 @@ export function LineupMatchesView({ lineup, guestTmIds, profilePaths, canManage,
           ) : (
             <div className="space-y-4">
               {aggregates.map((agg) => (
-                <FormatStatsTable key={agg.format} agg={agg} isGuest={isGuest} profilePath={profilePath} />
+                <FormatStatsTable key={agg.format} agg={agg} isGuest={isGuest} isTrial={isTrial} profilePath={profilePath} />
               ))}
             </div>
           )}
@@ -363,6 +368,7 @@ export function LineupMatchesView({ lineup, guestTmIds, profilePaths, canManage,
                   <span key={s.id} className="inline-flex items-center gap-1">
                     {s.player.name}
                     {isGuest(s.player.tmId) && <GuestBadge />}
+{isTrial(s.player.tmId) && <TrialBadge />}
                   </span>
                 ))}
               </span>

@@ -321,13 +321,13 @@ export function EcmImportDialog({ subMatches, allPlayers, startDay, canManage, i
                     >
                       <option value="">— wählen —</option>
                       <optgroup label="Members">
-                        {allPlayers.filter((p) => !isGuest(p.tmId)).map((p) => (
+                        {allPlayers.filter((p) => !p.former && !isGuest(p.tmId)).map((p) => (
                           <option key={p.id} value={p.id}>{p.name}</option>
                         ))}
                       </optgroup>
-                      {allPlayers.some((p) => isGuest(p.tmId)) && (
+                      {allPlayers.some((p) => !p.former && isGuest(p.tmId)) && (
                         <optgroup label="Gäste">
-                          {allPlayers.filter((p) => isGuest(p.tmId)).map((p) => (
+                          {allPlayers.filter((p) => !p.former && isGuest(p.tmId)).map((p) => (
                             <option key={p.id} value={p.id}>{p.name}</option>
                           ))}
                         </optgroup>

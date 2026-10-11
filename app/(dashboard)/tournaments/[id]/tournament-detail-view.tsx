@@ -11,7 +11,8 @@ import { useRouter } from "next/navigation"
 import { useSyncedState } from "@/lib/use-synced-state"
 import { PlayerAvatar } from "@/components/player-avatar"
 import { GuestBadge } from "@/components/guest-badge"
-import { formatDay, guestTmIdsAt, tournamentReferenceDate, type PlayerStatus, type StatusChange } from "@/lib/player-status"
+import { TrialBadge } from "@/components/trial-badge"
+import { formatDay, guestTmIdsAt, selectable, tournamentReferenceDate, trialTmIdsAt, type PlayerStatus, type StatusChange } from "@/lib/player-status"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -146,12 +147,16 @@ export function TournamentDetailView({ tournament: initial, players, statsMatche
   // Within a tournament everyone is member or guest as of its start day
   const guestTmIds = new Set(guestTmIdsAt(players, tournamentReferenceDate(tournament)))
   const isGuest = (tmId: string) => guestTmIds.has(tmId.toLowerCase())
+  const trialTmIds = new Set(trialTmIdsAt(players, tournamentReferenceDate(tournament)))
+  const isTrial = (tmId: string) => trialTmIds.has(tmId.toLowerCase())
   const profilePaths = new Map(players.map((p) => [p.tmId.toLowerCase(), playerPath(p)]))
   const profilePath = (tmId: string) => profilePaths.get(tmId.toLowerCase())
+  // Former players are not offered any more; whoever is in a lineup already stays in it
+  const pickable = players.filter(selectable)
   // Selection lists show team members first, then guests
   const playerGroups = [
-    { label: null, players: players.filter((p) => !isGuest(p.tmId)) },
-    { label: "Gäste", players: players.filter((p) => isGuest(p.tmId)) },
+    { label: null, players: pickable.filter((p) => !isGuest(p.tmId)) },
+    { label: "Gäste", players: pickable.filter((p) => isGuest(p.tmId)) },
   ].filter((g) => g.players.length > 0)
 
   // --- Edit tournament dialog state ---
@@ -464,6 +469,7 @@ export function TournamentDetailView({ tournament: initial, players, statsMatche
                             <PlayerAvatar player={slot.player} className="h-3.5 w-3.5 text-[9px]" />
                             <PlayerName name={slot.player.name} currentName={slot.player.currentName} />
                             {isGuest(slot.player.tmId) && <GuestBadge />}
+{isTrial(slot.player.tmId) && <TrialBadge />}
                           </span>
                         ))}
                       </div>
@@ -518,7 +524,7 @@ export function TournamentDetailView({ tournament: initial, players, statsMatche
               <div className="space-y-4">
                 {aggregates.map((agg) => (
                   // With a single lineup selected the column would repeat the same name
-                  <FormatStatsTable key={agg.format} agg={agg} isGuest={isGuest} profilePath={profilePath} lineupName={statsLineupIds.length === 1 ? undefined : lineupName} />
+                  <FormatStatsTable key={agg.format} agg={agg} isGuest={isGuest} isTrial={isTrial} profilePath={profilePath} lineupName={statsLineupIds.length === 1 ? undefined : lineupName} />
                 ))}
               </div>
             )}
@@ -701,6 +707,7 @@ export function TournamentDetailView({ tournament: initial, players, statsMatche
                     >
                       {player.name}
                       {isGuest(player.tmId) && <GuestBadge />}
+{isTrial(player.tmId) && <TrialBadge />}
                       <button
                         type="button"
                         onClick={() => setLineupPlayerIds((ids) => ids.filter((x) => x !== id))}
@@ -726,7 +733,7 @@ export function TournamentDetailView({ tournament: initial, players, statsMatche
               <>
               <PlayerSearch
                 // Only players who are neither picked yet nor in another lineup of this tournament
-                players={players.filter(
+                players={pickable.filter(
                   (p) =>
                     !lineupPlayerIds.includes(p.id) &&
                     !lineups.some((l) => l.id !== editingLineup?.id && l.slots.some((s) => s.player.id === p.id))
@@ -754,6 +761,7 @@ export function TournamentDetailView({ tournament: initial, players, statsMatche
                         <input type="checkbox" disabled className="h-4 w-4" />
                         <span className="text-sm text-[#9a9090]">{p.name}</span>
                         {isGuest(p.tmId) && <GuestBadge />}
+{isTrial(p.tmId) && <TrialBadge />}
                         <span className="text-xs text-[#9a9090] ml-auto">in {otherLineup.name}</span>
                       </div>
                     )
@@ -772,6 +780,7 @@ export function TournamentDetailView({ tournament: initial, players, statsMatche
                       />
                       <span className="text-sm text-[#f5f0f0] group-hover:text-white">{p.name}</span>
                       {isGuest(p.tmId) && <GuestBadge />}
+{isTrial(p.tmId) && <TrialBadge />}
                       <span className="text-xs text-[#5e5858] font-mono ml-auto">{p.tmId.slice(0, 8)}…</span>
                     </label>
                   )

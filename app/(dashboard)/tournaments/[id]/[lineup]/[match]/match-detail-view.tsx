@@ -17,6 +17,7 @@ import { useRouter } from "next/navigation"
 import { useSyncedState } from "@/lib/use-synced-state"
 import { PlayerAvatar } from "@/components/player-avatar"
 import { GuestBadge } from "@/components/guest-badge"
+import { TrialBadge } from "@/components/trial-badge"
 import { Wdl } from "@/components/wdl"
 import { roundPlacements, roundScore } from "@/lib/round-score"
 import { dayKey, formatDay } from "@/lib/player-status"
@@ -33,6 +34,8 @@ export interface Player {
   currentName?: string
   allNames?: string[]
   country?: string | null
+  // No longer with the team: not offered for picking
+  former?: boolean
 }
 
 interface RoundResult {
@@ -99,7 +102,7 @@ interface Match {
 type SortCol = "name" | "played" | "placementSum" | "avg" | "dnfs" | "bestTime" | "medianTime" | "avgTime"
 
 // Player stats of one sub-match; the result is part of the heading instead of repeating in every row
-function SubMatchStatsTable({ sm, number, isGuest }: { sm: SubMatch; number: number; isGuest: (tmId: string) => boolean }) {
+function SubMatchStatsTable({ sm, number, isGuest, isTrial }: { sm: SubMatch; number: number; isGuest: (tmId: string) => boolean; isTrial: (tmId: string) => boolean }) {
   const [sortCol, setSortCol] = useState<SortCol>("avg")
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc")
 
@@ -233,6 +236,7 @@ function SubMatchStatsTable({ sm, number, isGuest }: { sm: SubMatch; number: num
               <td className="sticky left-0 z-[1] bg-[#0e0b0b] py-1.5 pl-3 pr-4 text-[#f5f0f0] font-medium whitespace-nowrap max-md:shadow-[1px_0_0_#2d2829]">
                 <PlayerName name={row.name} currentName={row.currentName} />
                 {isGuest(row.tmId) && <GuestBadge className="ml-1.5" />}
+{isTrial(row.tmId) && <TrialBadge className="ml-1.5" />}
               </td>
               <td className="py-1.5 px-2 text-right text-[#c5bfbf]">{row.roundsPlayed}</td>
               <td className="py-1.5 px-2 text-right text-[#c5bfbf]">{row.placementSum}</td>
@@ -257,6 +261,8 @@ interface Props {
   allPlayers: Player[]
   // Lower-cased TM IDs of players who are guests in this tournament
   guestTmIds: string[]
+  // Likewise for players on trial
+  trialTmIds: string[]
   // May maintain the results of this match (managers, and whoever is responsible for its lineup)
   canEdit: boolean
   // Admin or manager: may also change players, e.g. take over a name from eCM
@@ -265,10 +271,11 @@ interface Props {
   autoEcmImport?: boolean
 }
 
-export function MatchDetailView({ match: initialMatch, allPlayers, guestTmIds, canEdit, canManage, autoEcmImport = false }: Props) {
+export function MatchDetailView({ match: initialMatch, allPlayers, guestTmIds, trialTmIds, canEdit, canManage, autoEcmImport = false }: Props) {
   const router = useRouter()
   const guests = new Set(guestTmIds)
   const isGuest = (tmId: string) => guests.has(tmId.toLowerCase())
+  const isTrial = (tmId: string) => trialTmIds.includes(tmId.toLowerCase())
   const [subMatches, setSubMatches] = useSyncedState(initialMatch.subMatches)
   const matchLineup = initialMatch.tournamentLineup ?? null
   const [ecmUrl, setEcmUrl] = useState(initialMatch.ecmUrl ?? null)
@@ -484,6 +491,7 @@ export function MatchDetailView({ match: initialMatch, allPlayers, guestTmIds, c
                       <PlayerAvatar player={slot.player} className="h-4 w-4 text-[9px]" />
                       <PlayerName name={slot.player.name} currentName={slot.player.currentName} />
                       {isGuest(slot.player.tmId) && <GuestBadge />}
+{isTrial(slot.player.tmId) && <TrialBadge />}
                     </span>
                   ))}
                 </div>
@@ -523,7 +531,7 @@ export function MatchDetailView({ match: initialMatch, allPlayers, guestTmIds, c
           </h2>
           <div className="space-y-4">
             {subMatches.map((sm, idx) =>
-              sm.rounds.length > 0 ? <SubMatchStatsTable key={sm.id} sm={sm} number={idx + 1} isGuest={isGuest} /> : null
+              sm.rounds.length > 0 ? <SubMatchStatsTable key={sm.id} sm={sm} number={idx + 1} isGuest={isGuest} isTrial={isTrial} /> : null
             )}
           </div>
         </div>
@@ -659,6 +667,7 @@ export function MatchDetailView({ match: initialMatch, allPlayers, guestTmIds, c
                                       <span className="min-w-0 flex-1 truncate">
                                         {r.isOurTeam ? <PlayerName name={r.playerName} currentName={r.currentName} /> : r.playerName}
                                         {r.isOurTeam && isGuest(r.tmId) && <GuestBadge className="ml-1.5" />}
+{r.isOurTeam && isTrial(r.tmId) && <TrialBadge className="ml-1.5" />}
                                       </span>
                                       <span className={`shrink-0 font-mono text-xs ${rankColor(rank)}`}>
                                         {r.dnf ? "DNF" : r.timeMs != null ? formatTime(r.timeMs) : "—"}
@@ -684,6 +693,7 @@ export function MatchDetailView({ match: initialMatch, allPlayers, guestTmIds, c
                                           <span className="text-[#f5f0f0] flex-1 truncate">
                                             <PlayerName name={r.playerName} currentName={r.currentName} />
                                             {isGuest(r.tmId) && <GuestBadge className="ml-1.5" />}
+{isTrial(r.tmId) && <TrialBadge className="ml-1.5" />}
                                           </span>
                                           <span className={`font-mono shrink-0 ${rankColor(rank)}`}>
                                             {r.dnf ? "DNF" : r.timeMs != null ? formatTime(r.timeMs) : "—"}

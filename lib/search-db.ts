@@ -44,7 +44,9 @@ export async function searchIndex(): Promise<SearchEntry[]> {
             kind: "player",
             id: p.id,
             title: p.name,
-            ...(currentStatus(p) !== "MEMBER" && { detail: currentStatus(p) === "TRIAL" ? "Trial" : "Gast" }),
+            ...(currentStatus(p) === "TRIAL" && { detail: "Trial" }),
+            ...(currentStatus(p) === "GUEST" && { detail: "Gast" }),
+            ...(currentStatus(p) === "FORMER" && { marker: "ehemalig" as const }),
             href: playerPath(p),
             aliases: allNames(p).filter((n) => n !== p.name),
           }

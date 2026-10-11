@@ -16,8 +16,10 @@ enum Role {
 enum PlayerStatus {
   MEMBER
   GUEST
-  // On trial: treated like a member, but not one yet
+  // On trial: planned like a member, but not one yet
   TRIAL
+  // No longer with the team; keeps profile and results but is not picked any more
+  FORMER
 }
 
 enum Format {

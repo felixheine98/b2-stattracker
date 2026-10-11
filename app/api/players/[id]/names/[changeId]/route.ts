@@ -30,7 +30,7 @@ export async function PATCH(req: Request, { params }: Params) {
   const change = await db.playerNameChange.findUnique({ where: { id: changeId } })
   if (!change || change.playerId !== id) return NextResponse.json({ error: "Not found" }, { status: 404 })
   if (effectiveFrom && effectiveFrom > latestAllowedDay()) {
-    return NextResponse.json({ error: "The date must not be in the future" }, { status: 400 })
+    return NextResponse.json({ error: "Das Datum darf nicht in der Zukunft liegen" }, { status: 400 })
   }
 
   try {
@@ -40,7 +40,7 @@ export async function PATCH(req: Request, { params }: Params) {
     })
   } catch (e: unknown) {
     if ((e as { code?: string }).code === "P2002") {
-      return NextResponse.json({ error: "There is already a rename on this day" }, { status: 409 })
+      return NextResponse.json({ error: "An diesem Tag gibt es schon eine Umbenennung" }, { status: 409 })
     }
     throw e
   }
