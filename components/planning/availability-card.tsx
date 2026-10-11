@@ -41,8 +41,8 @@ export function AvailabilityCard({ tournament, playerId, answer, note, levels }:
         <span className={cn("absolute inset-y-0 left-0 w-1.5", tone.stripe)} />
         <tone.Icon size={18} className={cn("shrink-0", tone.icon)} />
         <p className="min-w-0 flex-1 basis-48 text-sm">
-          <span className="font-semibold text-[#f5f0f0]">{tone.text}</span>
-          <span className="text-[#9a9090]"> · {tournament.name}</span>
+          <span className="text-base font-semibold text-[#f5f0f0]">{tournament.name}</span>
+          <span className="text-[#9a9090]"> · {tone.text}</span>
           {currentNote && <span className="block truncate text-xs text-[#9a9090]">„{currentNote}“</span>}
         </p>
         <span className="flex items-center gap-1.5">

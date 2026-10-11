@@ -41,9 +41,18 @@ export default async function DashboardPage() {
         <p className="text-[#9a9090] text-sm mt-0.5">Here's an overview of your team's activity.</p>
       </div>
 
-      {planningCards.map((card) => (
-        <AvailabilityCard key={card.tournament.id} {...card} />
-      ))}
+      {planningCards.length > 0 && (
+        <div>
+          <h2 className="text-sm font-semibold text-[#9a9090] uppercase tracking-wider mb-3">
+            Next Tournament{planningCards.length > 1 ? "s" : ""}
+          </h2>
+          <div className="space-y-3">
+            {planningCards.map((card) => (
+              <AvailabilityCard key={card.tournament.id} {...card} />
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <Card>
