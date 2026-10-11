@@ -163,7 +163,8 @@ export function PlanningView({ initial, ownPlayerId, userId, canManage }: Props)
       <div>
         <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-[#9a9090]">Verfügbarkeit</h2>
         <div className="overflow-hidden rounded-xl border border-[#2d2829]">
-          {rows.map((row, i) => {
+          {/* The viewer's own row first, the others by name as before */}
+          {[...rows].sort((a, b) => Number(b.player.id === ownPlayerId) - Number(a.player.id === ownPlayerId)).map((row, i) => {
             const own = row.player.id === ownPlayerId
             return (
               <div

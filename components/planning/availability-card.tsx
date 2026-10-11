@@ -3,10 +3,12 @@
 import { Card, CardContent } from "@/components/ui/card"
 import { tournamentPath } from "@/lib/paths"
 import type { Answer } from "@/lib/planning"
+import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
+import { ChevronRight, CircleCheck, CircleDot, CircleHelp, CircleX, Pencil } from "lucide-react"
 import Link from "next/link"
 import { useState } from "react"
-import { AvailabilityInput, answerColor, answerLabel, type LevelRef } from "./availability-input"
+import { AvailabilityInput, answerLabel, type LevelRef } from "./availability-input"
 
 interface Props {
   tournament: { id: string; slug?: string | null; name: string }
@@ -17,8 +19,8 @@ interface Props {
 }
 
 // Asks the signed-in player whether they take part in a tournament that is being planned.
-// While the answer is open it is a card that stands out; once answered it shrinks to a single
-// quiet line that shows the answer and opens again to change it.
+// While the answer is open it is a card that stands out; once answered it shrinks to a slim
+// bar that says the answer in its colour and opens again to change it.
 export function AvailabilityCard({ tournament, playerId, answer, note, levels }: Props) {
   // Follow the input without reloading the page
   const [current, setCurrent] = useState(answer)
@@ -28,19 +30,31 @@ export function AvailabilityCard({ tournament, playerId, answer, note, levels }:
   const planning = `${tournamentPath(tournament)}/planung`
 
   if (!open && current !== "OPEN") {
+    // A slim bar in the colour of the answer: a stripe on the left, the answer spelled out
+    const tone =
+      current === "FIX" ? { stripe: "bg-green-500", icon: "text-green-400", Icon: CircleCheck, text: "Du bist fix dabei" }
+      : current === "MAYBE" ? { stripe: "bg-[#FBD00D]", icon: "text-[#FBD00D]", Icon: CircleHelp, text: "Du bist vielleicht dabei" }
+      : current === "OUT" ? { stripe: "bg-[#ED1F24]", icon: "text-[#ED1F24]", Icon: CircleX, text: "Du bist nicht dabei" }
+      : { stripe: "bg-[#6b8fff]", icon: "text-[#6b8fff]", Icon: CircleDot, text: `Deine Antwort: ${answerLabel(current, levels)}` }
     return (
-      <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1 px-1 text-xs text-[#5e5858]">
-        <span>Planung {tournament.name}:</span>
-        <span className={cn("whitespace-nowrap rounded-full border px-2 py-0.5 text-[11px] font-medium", answerColor(current))}>
-          {answerLabel(current, levels)}
+      <div className="relative flex flex-wrap items-center gap-x-3 gap-y-2 overflow-hidden rounded-xl border border-[#2d2829] bg-[#1c1819] py-2.5 pl-5 pr-3">
+        <span className={cn("absolute inset-y-0 left-0 w-1.5", tone.stripe)} />
+        <tone.Icon size={18} className={cn("shrink-0", tone.icon)} />
+        <p className="min-w-0 flex-1 basis-48 text-sm">
+          <span className="font-semibold text-[#f5f0f0]">{tone.text}</span>
+          <span className="text-[#9a9090]"> · {tournament.name}</span>
+          {currentNote && <span className="block truncate text-xs text-[#9a9090]">„{currentNote}“</span>}
+        </p>
+        <span className="flex items-center gap-1.5">
+          <Button variant="ghost" size="sm" onClick={() => setOpen(true)}>
+            <Pencil size={13} />
+            Ändern
+          </Button>
+          <Link href={planning} className="inline-flex h-8 items-center gap-1 rounded-md px-3 text-sm font-medium text-[#FBD00D] hover:bg-[#251f20]">
+            Planung
+            <ChevronRight size={14} />
+          </Link>
         </span>
-        {currentNote && <span className="min-w-0 max-w-full truncate text-[#9a9090]">{currentNote}</span>}
-        <button type="button" onClick={() => setOpen(true)} className="text-[#9a9090] underline decoration-dotted underline-offset-2 hover:text-[#f5f0f0]">
-          ändern
-        </button>
-        <Link href={planning} className="text-[#9a9090] underline decoration-dotted underline-offset-2 hover:text-[#f5f0f0]">
-          alle ansehen
-        </Link>
       </div>
     )
   }
