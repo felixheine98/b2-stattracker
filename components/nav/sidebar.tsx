@@ -59,7 +59,7 @@ export function Sidebar({ userName, role, profileHref }: SidebarProps) {
       </button>
       <div className={cn("flex items-center gap-3 py-4 border-b border-[#2d2829]", collapsed ? "justify-center px-2" : "px-5")}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={`${BASE_PATH}/b2-logo.svg`} alt="" className={cn("object-contain", collapsed ? "h-9 w-9" : "h-11 w-11")} />
+        <img src={`${BASE_PATH}/b2-logo.svg?v=lion-20261011`} alt="" className={cn("object-contain", collapsed ? "h-9 w-9" : "h-11 w-11")} />
         {!collapsed && <span className="font-bold text-[#f5f0f0] text-xl tracking-tight">B2 Stats</span>}
       </div>
 

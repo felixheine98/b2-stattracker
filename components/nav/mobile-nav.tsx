@@ -27,7 +27,7 @@ export function MobileTopBar({ userName, role, profileHref }: Props) {
   return (
     <header className="relative z-20 flex items-center gap-2.5 border-b border-[#2d2829] bg-[#1c1819] px-4 py-2 md:hidden">
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src={`${BASE_PATH}/b2-logo.svg`} alt="" className="h-8 w-8 object-contain" />
+      <img src={`${BASE_PATH}/b2-logo.svg?v=lion-20261011`} alt="" className="h-8 w-8 object-contain" />
       <span className="flex-1 text-base font-bold tracking-tight text-[#f5f0f0]">B2 Stats</span>
       <button
         type="button"
