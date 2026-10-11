@@ -3,6 +3,7 @@ import { confirmedTmId, opponentNameKey } from "@/lib/opponents"
 import { matchPath, playerPath, tournamentPath } from "@/lib/paths"
 import { allNames } from "@/lib/player-names"
 import { currentStatus, dayKey, formatDay, tournamentReferenceDate } from "@/lib/player-status"
+import { matchTag } from "@/lib/match-order"
 import type { SearchEntry } from "@/lib/search"
 import { stageName } from "@/lib/stages"
 
@@ -18,7 +19,7 @@ export async function searchIndex(): Promise<SearchEntry[]> {
     db.match.findMany({
       where: { tournamentLineupId: { not: null } },
       select: {
-        id: true, slug: true, date: true, opponent: true, tournamentId: true,
+        id: true, slug: true, date: true, opponent: true, tournamentId: true, number: true, label: true,
         stage: { select: { type: true, number: true } },
         tournamentLineup: { select: { id: true, slug: true, name: true } },
         opponentLineup: { select: { name: true, aliases: true, team: { select: { name: true, aliases: true } } } },
@@ -79,7 +80,7 @@ export async function searchIndex(): Promise<SearchEntry[]> {
         kind: "match",
         id: m.id,
         title: seeding ? `${lineup.name} · Seeding` : `${lineup.name} vs ${m.opponent ?? "Unbekannt"}`,
-        detail: [seeding ? null : stageName(m.stage, tournament.stages), m.date ? formatDay(m.date) : null, tournament.name].filter(Boolean).join(" · "),
+        detail: [seeding ? null : stageName(m.stage, tournament.stages), matchTag(m) || null, m.date ? formatDay(m.date) : null, tournament.name].filter(Boolean).join(" · "),
         href: matchPath(tournament, lineup, m),
         terms: [
           m.opponent, opponent?.name, ...(opponent?.aliases ?? []), opponent?.team?.name, ...(opponent?.team?.aliases ?? []),

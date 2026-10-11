@@ -33,6 +33,8 @@ const createSchema = z.object({
   opponentTeamId: z.string().nullable().optional(),
   date: z.string().nullable().optional(),
   notes: z.string().nullable().optional(),
+  number: z.number().int().min(1).max(999).nullable().optional(),
+  label: z.string().trim().max(60).nullable().optional(),
   // Every match belongs to a lineup of the tournament
   lineupId: z.string().min(1),
 })
@@ -85,6 +87,8 @@ export async function POST(req: Request, { params }: Params) {
       opponentLineupId: opponent?.id ?? null,
       date: parsed.data.date ? new Date(parsed.data.date) : null,
       notes: parsed.data.notes ?? null,
+      number: parsed.data.number ?? null,
+      label: parsed.data.label || null,
       tournamentLineupId: tl.id,
       subMatches: {
         create: subMatchFormats.map((sm) => ({ ...sm, lineup: lineupCreate })),

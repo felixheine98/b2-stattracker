@@ -28,6 +28,7 @@ import { cn, formatLabel } from "@/lib/utils"
 import type { Format } from "@prisma/client"
 import { buildAggregates, matchesOfFormats, matchesOfLineups, matchesOfStages, type StatsMatch } from "@/lib/format-stats"
 import { buildMapAggregates } from "@/lib/map-stats"
+import { matchTag, sortMatches } from "@/lib/match-order"
 import { sortStages, stageName, stagePlanOf, type StageRef } from "@/lib/stages"
 import { useIdListParam } from "@/lib/use-id-list-param"
 import { StatsFilter } from "@/components/stats-filter"
@@ -82,6 +83,9 @@ interface Match {
   opponent?: string | null
   date?: Date | null
   notes?: string | null
+  number?: number | null
+  label?: string | null
+  createdAt: Date
   tournamentLineupId?: string | null
   tournamentLineup?: { name: string } | null
   _count: { subMatches: number }
@@ -570,7 +574,12 @@ export function TournamentDetailView({ tournament: initial, players, statsMatche
         ) : (
           <div className="space-y-5">
             {stages.map((stage) => {
-              const stageMatches = matches.filter((m) => m.stage.id === stage.id)
+              // Lineup by lineup, each in the order of its match numbers
+              const lineupIndex = (m: Match) => {
+                const index = lineups.findIndex((l) => l.id === m.tournamentLineupId)
+                return index === -1 ? lineups.length : index
+              }
+              const stageMatches = sortMatches(matches.filter((m) => m.stage.id === stage.id)).sort((a, b) => lineupIndex(a) - lineupIndex(b))
               return (
                 <div key={stage.id}>
                   <StageHeading stage={stage} stages={stages} startDate={tournament.startDate ?? tournament.createdAt} />
@@ -588,6 +597,7 @@ export function TournamentDetailView({ tournament: initial, players, statsMatche
                                 <div className="min-w-0">
                                   <div className="flex items-center gap-2 flex-wrap">
                                     <p className="text-sm font-medium text-[#f5f0f0]">
+                                      {matchTag(match) && <span className="mr-2 font-mono text-xs text-[#FBD00D]">{matchTag(match)}</span>}
                                       {[lineups.find((l) => l.id === match.tournamentLineupId)?.name, match.stage.type === "SEEDING" ? null : match.opponent].filter(Boolean).join(" vs ") || (match.stage.type === "SEEDING" ? "Seeding" : "Unknown opponent")}
                                     </p>
                                   </div>

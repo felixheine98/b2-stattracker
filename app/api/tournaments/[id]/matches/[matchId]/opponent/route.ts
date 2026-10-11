@@ -14,10 +14,10 @@ export async function GET(_req: Request, { params }: Params) {
   const match = await db.match.findUnique({ where: { id: matchId, tournamentId: id }, include: { ...opponentMatchInclude, opponentLineup: { include: { team: true } }, confirmations: { orderBy: { createdAt: "desc" } } } })
   if (!match) return NextResponse.json({ error: "Match nicht gefunden." }, { status: 404 })
   const actors = await db.user.findMany({ where: { id: { in: match.confirmations.map(c => c.userId) } }, select: { id: true, name: true } })
-  return NextResponse.json({ opponent: match.opponent, opponentLineupId: match.opponentLineupId, opponentLineup: match.opponentLineup, date: match.date, notes: match.notes, closedAt: match.closedAt, confirmedOutcome: match.confirmedOutcome, resultRevision: match.resultRevision, suggestedOutcome: suggestMatchOutcome(match.subMatches), confirmations: match.confirmations.map(c => ({ ...c, actor: actors.find(u => u.id === c.userId)?.name ?? (c.userId.startsWith("system:") ? "System · Sammelabschluss" : "Gelöschter Account") })) })
+  return NextResponse.json({ opponent: match.opponent, opponentLineupId: match.opponentLineupId, opponentLineup: match.opponentLineup, date: match.date, notes: match.notes, number: match.number, label: match.label, closedAt: match.closedAt, confirmedOutcome: match.confirmedOutcome, resultRevision: match.resultRevision, suggestedOutcome: suggestMatchOutcome(match.subMatches), confirmations: match.confirmations.map(c => ({ ...c, actor: actors.find(u => u.id === c.userId)?.name ?? (c.userId.startsWith("system:") ? "System · Sammelabschluss" : "Gelöschter Account") })) })
 }
 const schema = z.discriminatedUnion("action", [
-  z.object({ action: z.literal("edit"), opponent: z.string().trim().max(100).nullish(), opponentLineupId: z.string().nullish(), opponentTeamId: z.string().nullish(), date: z.string().date().nullish(), notes: z.string().max(10000).nullish(), alias: z.string().trim().min(1).max(100).optional() }),
+  z.object({ action: z.literal("edit"), opponent: z.string().trim().max(100).nullish(), opponentLineupId: z.string().nullish(), opponentTeamId: z.string().nullish(), date: z.string().date().nullish(), notes: z.string().max(10000).nullish(), number: z.number().int().min(1).max(999).nullish(), label: z.string().trim().max(60).nullish(), alias: z.string().trim().min(1).max(100).optional() }),
   z.object({ action: z.literal("confirm"), revision: z.number().int().min(0), outcome: z.enum(["W", "L", "D"]) }),
   z.object({ action: z.literal("reopen") }),
 ])
@@ -42,7 +42,7 @@ export async function PATCH(req: Request, { params }: Params) {
         const hasSelection = input.opponent !== undefined || input.opponentLineupId !== undefined || input.opponentTeamId !== undefined
         const opponent = match.stage.type === "SEEDING" ? null : hasSelection ? await resolveMatchOpponent(tx, id, { lineupId: input.opponentLineupId, teamId: input.opponentTeamId, name: input.opponent }) : match.opponentLineupId ? await tx.opponentLineup.findUnique({ where: { id: match.opponentLineupId } }) : null
         if (input.alias && opponent) await tx.opponentLineup.update({ where: { id: opponent.id }, data: { aliases: [...new Set([...opponent.aliases, input.alias])] } })
-        await tx.match.update({ where: { id: matchId }, data: { opponent: opponent?.name ?? null, opponentLineupId: opponent?.id ?? null, date: input.date === undefined ? undefined : input.date ? new Date(input.date) : null, notes: input.notes === undefined ? undefined : input.notes ?? null } })
+        await tx.match.update({ where: { id: matchId }, data: { opponent: opponent?.name ?? null, opponentLineupId: opponent?.id ?? null, date: input.date === undefined ? undefined : input.date ? new Date(input.date) : null, notes: input.notes === undefined ? undefined : input.notes ?? null, number: input.number === undefined ? undefined : input.number ?? null, label: input.label === undefined ? undefined : input.label || null } })
       }
     })
     if (input.action === "edit") await syncTournamentSlugs(id)

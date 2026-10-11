@@ -21,6 +21,7 @@ import { roundPlacements, roundScore } from "@/lib/round-score"
 import { dayKey, formatDay } from "@/lib/player-status"
 import { sortStages, stageDate, stageName, type StageRef } from "@/lib/stages"
 import { useMemo, useState } from "react"
+import { matchTag } from "@/lib/match-order"
 import { EcmImportDialog } from "./ecm-import-dialog"
 import { MatchCsvImportDialog } from "./match-csv-import-dialog"
 import { RoundEntryDialog } from "./round-entry-dialog"
@@ -83,6 +84,8 @@ interface Match {
   opponent?: string | null
   date?: Date | null
   notes?: string | null
+  number?: number | null
+  label?: string | null
   ecmUrl?: string | null
   tournamentLineup?: TournamentLineup | null
   tournament: {
@@ -412,6 +415,7 @@ export function MatchDetailView({ match: initialMatch, allPlayers, guestTmIds, t
           <div className="min-w-0 flex-1 basis-full lg:basis-0">
             <div className="flex items-center gap-2 mb-1 flex-wrap">
               <h1 className="text-2xl font-bold text-[#f5f0f0]">{matchTitle}</h1>
+              {matchTag(initialMatch) && <Badge variant="default">{matchTag(initialMatch)}</Badge>}
               {/* A match can be moved between match days and playoffs, but never into or out of the seeding */}
               {canEdit && !isSeeding ? (
                 <Badge variant="primary" className="relative focus-within:ring-2 focus-within:ring-[#FBD00D]">

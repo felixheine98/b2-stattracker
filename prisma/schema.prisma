@@ -320,6 +320,10 @@ model Match {
   resultRevision      Int @default(0)
   date                DateTime?
   notes               String?
+  // Position among the matches of its lineup in the stage (#1, #2, ...) and a name such as
+  // "Upper Final"; both optional (see lib/match-order.ts)
+  number              Int?
+  label               String?
   // eCircuitMania match page the results were imported from
   ecmUrl              String?
   createdAt           DateTime          @default(now())

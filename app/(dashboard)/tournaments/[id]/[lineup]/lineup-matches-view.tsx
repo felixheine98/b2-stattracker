@@ -21,6 +21,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent } from "@/components/ui/card"
 import { buildAggregates, matchesOfFormats, matchesOfStages } from "@/lib/format-stats"
 import { buildMapAggregates } from "@/lib/map-stats"
+import { matchTag, nextMatchNumber, sortMatches } from "@/lib/match-order"
 import { sortStages, stageDate, stageName, suggestStage, type StageRef } from "@/lib/stages"
 import { useIdListParam } from "@/lib/use-id-list-param"
 import { StatsFilter } from "@/components/stats-filter"
@@ -62,6 +63,9 @@ interface Match {
   opponent?: string | null
   date?: Date | null
   notes?: string | null
+  number?: number | null
+  label?: string | null
+  createdAt: Date
   _count: { subMatches: number }
   subMatches: SubMatch[]
 }
@@ -129,6 +133,7 @@ export function LineupMatchesView({ lineup, guestTmIds, trialTmIds, profilePaths
   const [showAddMatch, setShowAddMatch] = useState(false)
   const [stageId, setStageId] = useState("")
   const [matchDate, setMatchDate] = useState("")
+  const [matchNumber, setMatchNumber] = useState("")
   const isSeeding = stages.find((st) => st.id === stageId)?.type === "SEEDING"
   const [matchError, setMatchError] = useState("")
   const [matchLoading, setMatchLoading] = useState(false)
@@ -138,6 +143,8 @@ export function LineupMatchesView({ lineup, guestTmIds, trialTmIds, profilePaths
   function selectStage(id: string) {
     const stage = stages.find((st) => st.id === id)
     setStageId(id)
+    // Numbered on from the matches the stage already has
+    setMatchNumber(String(nextMatchNumber(matches.filter((m) => m.stage.id === id))))
     setMatchDate(stage ? stageDate(stage, stages, new Date(startDate)).toISOString().slice(0, 10) : "")
   }
 
@@ -164,6 +171,8 @@ export function LineupMatchesView({ lineup, guestTmIds, trialTmIds, profilePaths
         opponentTeamId: opponentValue.teamId,
         date: matchDate || null,
         notes: form.get("notes") || null,
+        number: matchNumber ? Number(matchNumber) : null,
+        label: (form.get("label") as string | null)?.trim() || null,
         lineupId: lineup.id,
       }),
     })
@@ -320,7 +329,7 @@ export function LineupMatchesView({ lineup, guestTmIds, trialTmIds, profilePaths
         ) : (
           <div className="space-y-5">
             {stages.map((stage) => {
-              const stageMatches = matches.filter((m) => m.stage.id === stage.id)
+              const stageMatches = sortMatches(matches.filter((m) => m.stage.id === stage.id))
               return (
                 <div key={stage.id}>
                   <StageHeading stage={stage} stages={stages} startDate={startDate} />
@@ -338,6 +347,7 @@ export function LineupMatchesView({ lineup, guestTmIds, trialTmIds, profilePaths
                               <div className="min-w-0">
                                 <div className="flex items-center gap-2 flex-wrap">
                                   <p className="text-sm font-medium text-[#f5f0f0]">
+                                    {matchTag(match) && <span className="mr-2 font-mono text-xs text-[#FBD00D]">{matchTag(match)}</span>}
                                     {match.stage.type === "SEEDING" ? "Seeding" : match.opponent ?? "Unknown opponent"}
                                   </p>
                                 </div>
@@ -419,6 +429,17 @@ export function LineupMatchesView({ lineup, guestTmIds, trialTmIds, profilePaths
               <OpponentPicker competitionId={tournament.id} value={opponentValue} onChange={setOpponentValue} />
             </div>
           )}
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-[7rem_1fr]">
+            <div className="space-y-1.5">
+              <Label htmlFor="number">Nummer</Label>
+              <Input id="number" type="number" min={1} max={999} inputMode="numeric" value={matchNumber} onChange={(e) => setMatchNumber(e.target.value)} placeholder="#" />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="label">Bezeichnung <span className="text-[#5e5858]">(optional)</span></Label>
+              <Input id="label" name="label" maxLength={60} placeholder="z. B. Upper Final" />
+            </div>
+          </div>
+          <p className="-mt-2 text-xs text-[#5e5858]">Die Matches eines Abschnitts stehen in der Reihenfolge ihrer Nummern.</p>
           <div className="space-y-1.5">
             <Label htmlFor="date">Date</Label>
             <Input id="date" name="date" type="date" value={matchDate} onChange={(e) => setMatchDate(e.target.value)} />
