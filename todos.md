@@ -13,7 +13,7 @@
 ## Teilweise erledigt
 
 - [ ] best performer pro match/week/tourney
-  - [x] pro tourney und pro abschnitt (week) auf dem dashboard, nach pace
+  - [x] pro tourney und pro abschnitt (week) auf dem dashboard, nach Ø platz
   - [ ] pro match
 
 - [ ] spieler-profile: eigene seite pro spieler (idee boris; gibt dem spielertab mehr zweck als nur spieler/gäste anlegen)
