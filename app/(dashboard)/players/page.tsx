@@ -8,7 +8,7 @@ export default async function PlayersPage() {
     auth(),
     db.player.findMany({ where: { isOpponentOnly: false },
       include: {
-        user: { select: { id: true, name: true, email: true, username: true } },
+        user: { select: { id: true, name: true, email: true, username: true, role: true } },
         statusChanges: { orderBy: { effectiveFrom: "asc" } },
         nameChanges: { orderBy: { effectiveFrom: "asc" } },
         // Tournaments the player took part in, for the status history

@@ -48,7 +48,7 @@ export async function PATCH(req: Request, { params }: Params) {
 
   const player = await db.player.findUnique({
     where: { id },
-    include: { user: { select: { id: true, name: true, email: true, username: true } } },
+    include: { user: { select: { id: true, name: true, email: true, username: true, role: true } } },
   })
 
   return NextResponse.json(player)

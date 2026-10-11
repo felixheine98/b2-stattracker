@@ -21,6 +21,7 @@ import { Dialog, DialogTitle } from "@/components/ui/dialog"
 import { cn } from "@/lib/utils"
 import { ArrowLeftRight, Check, History, KeyRound, Link2, Link2Off, Pencil, Plus, RefreshCw, Search, Trash2, User, Wand2, X } from "lucide-react"
 import { searchPlayers } from "@/lib/player-search"
+import { canManage as canManageRole } from "@/lib/roles"
 
 interface UserOption {
   id: string
@@ -52,11 +53,9 @@ interface Player {
       tournament: { id: string; name: string; startDate: Date | null; createdAt: Date }
     }
   }>
-  user?: { id: string; name: string; email: string | null; username: string } | null
+  user?: { id: string; name: string; email: string | null; username: string; role?: string } | null
   // Tournaments with at least one round driven for us
   tournamentsPlayed?: number
-  // Manages the team: listed apart at the top of the members
-  teamManager?: boolean
 }
 
 // A player found on trackmania.io
@@ -178,8 +177,10 @@ export function PlayersView({ players: initial, users, canManage }: Props) {
   const guests = found.filter((p) => currentStatus(p) === "GUEST")
   const formers = found.filter((p) => currentStatus(p) === "FORMER")
   // The team's managers stand apart at the top of the members
-  const managers = members.filter((p) => p.teamManager)
-  const visible = { members: [...managers, ...members.filter((p) => !p.teamManager)], trial: trials, guests, former: formers }[tab]
+  // Managers are the members whose account is admin or manager
+  const isManager = (p: Player) => canManageRole(p.user?.role)
+  const managers = members.filter(isManager)
+  const visible = { members: [...managers, ...members.filter((p) => !isManager(p))], trial: trials, guests, former: formers }[tab]
   const newStatus = TAB_STATUS[tab]
   const addLabel = `${STATUS_LABEL[newStatus]} hinzufügen`
   const movePlayer = players.find((p) => p.id === moveId)
