@@ -1,6 +1,10 @@
 @import "tailwindcss";
 
 :root {
+  /* Tells the browser to draw what it draws itself (dropdown lists, date pickers, scrollbars)
+     in the dark; a light theme has to set this to light */
+  color-scheme: dark;
+
   --bg: #0e0b0b;
   --surface: #1c1819;
   --surface-raised: #251f20;
