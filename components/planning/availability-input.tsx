@@ -14,10 +14,11 @@ export interface LevelRef {
 // Colours of the levels, also used for the dots in the lineup variants
 export function answerColor(answer: Answer): string {
   if (answer === "FIX") return "border-green-500/40 bg-green-500/15 text-ok"
-  if (answer === "MAYBE") return "border-brand/40 bg-brand/15 text-brand-ink"
+  if (answer === "MAYBE") return "border-info/40 bg-info/15 text-info"
   if (answer === "OUT") return "border-danger/40 bg-danger/15 text-danger"
   if (answer === "OPEN") return "border-line-strong bg-raised text-fg-muted"
-  return "border-info/40 bg-info/15 text-info"
+  // The team's own levels: violet, so they stay apart from the blue of "maybe"
+  return "border-violet/40 bg-violet/15 text-violet"
 }
 
 export function answerLabel(answer: Answer, levels: LevelRef[]): string {

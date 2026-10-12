@@ -33,9 +33,9 @@ export function AvailabilityCard({ tournament, playerId, answer, note, levels }:
     // A slim bar in the colour of the answer: a stripe on the left, the answer spelled out
     const tone =
       current === "FIX" ? { stripe: "bg-green-500", icon: "text-ok", Icon: CircleCheck, text: "You're available" }
-      : current === "MAYBE" ? { stripe: "bg-brand", icon: "text-brand-ink", Icon: CircleHelp, text: "You're a maybe" }
+      : current === "MAYBE" ? { stripe: "bg-info", icon: "text-info", Icon: CircleHelp, text: "You're a maybe" }
       : current === "OUT" ? { stripe: "bg-danger", icon: "text-danger", Icon: CircleX, text: "You're not available" }
-      : { stripe: "bg-info", icon: "text-info", Icon: CircleDot, text: `Your answer: ${answerLabel(current, levels)}` }
+      : { stripe: "bg-violet", icon: "text-violet", Icon: CircleDot, text: `Your answer: ${answerLabel(current, levels)}` }
     return (
       <div className="relative flex flex-wrap items-center gap-x-3 gap-y-2 overflow-hidden rounded-xl border border-line bg-surface py-2.5 pl-5 pr-3">
         <span className={cn("absolute inset-y-0 left-0 w-1.5", tone.stripe)} />

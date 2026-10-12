@@ -184,7 +184,7 @@ export function PlanningView({ initial, ownPlayerId, userId, canManage }: Props)
           </p>
           <div className="flex flex-wrap items-center gap-2">
             {levels.map((l) => (
-              <span key={l.id} className="inline-flex items-center gap-1.5 rounded-full border border-info/40 bg-info/15 py-1 pl-3 pr-2 text-xs text-info">
+              <span key={l.id} className="inline-flex items-center gap-1.5 rounded-full border border-violet/40 bg-violet/15 py-1 pl-3 pr-2 text-xs text-violet">
                 {l.name}
                 <button
                   type="button"

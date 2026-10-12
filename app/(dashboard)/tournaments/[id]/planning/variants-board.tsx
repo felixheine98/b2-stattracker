@@ -41,10 +41,10 @@ const POOL = "pool"
 
 function dotColor(answer: Answer): string {
   if (answer === "FIX") return "bg-green-400"
-  if (answer === "MAYBE") return "bg-brand"
+  if (answer === "MAYBE") return "bg-info"
   if (answer === "OUT") return "bg-danger"
   if (answer === "OPEN") return "bg-fg-subtle"
-  return "bg-info"
+  return "bg-violet"
 }
 
 // A text field that saves when left or on Enter, not on every key
