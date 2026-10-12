@@ -13,6 +13,8 @@ Die Vorschau gilt 30 Minuten. Bei Ladefehlern oder zwischenzeitlichen Änderunge
 
 | Ausgabe | Teams insgesamt | B2-Vorschläge | Quelle |
 | --- | ---: | ---: | --- |
+| 24h Race #0 | 60 | 0 (von Hand: „Bavaria Two") | [TFH](https://trackmaniaforhours.com/event/24h/race/0/teams) |
+| 24h Race #1 | 60 | 0 (von Hand: „Bavaria Two Gold", „Bavaria Two Silver") | [TFH](https://trackmaniaforhours.com/event/24h/race/1/teams) |
 | 24h Race #2 | 159 | 4 | [TFH](https://trackmaniaforhours.com/event/24h/race/2/teams) |
 | 24h Race #3 | 168 | 4 | [TFH](https://trackmaniaforhours.com/event/24h/race/3/teams) |
 | 24h Race #4 | 188 | 6 | [TFH](https://trackmaniaforhours.com/event/24h/race/4/teams) |

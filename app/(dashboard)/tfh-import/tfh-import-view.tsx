@@ -65,7 +65,7 @@ export function TfhImportView({ players, initialUrl }: { players: Array<{ id: st
     <details className="rounded-lg border border-line p-3 text-sm">
       <summary className="cursor-pointer text-fg-muted">Historical B2 editions</summary>
       <div className="mt-3 flex flex-wrap gap-2">
-        {["24h/race/2", "24h/race/3", "24h/race/4", "12h/rpg/1", "12h/rpg/2", "12h/rpg/3"].map(path => <Button key={path} variant="outline" size="sm" disabled={busy} onClick={() => { setUrl(`https://trackmaniaforhours.com/event/${path}/teams`); setPreview(null); setError("") }}>{path.replace("/race/", " #").replace("/rpg/", " RPG #")}</Button>)}
+        {["24h/race/0", "24h/race/1", "24h/race/2", "24h/race/3", "24h/race/4", "12h/rpg/1", "12h/rpg/2", "12h/rpg/3"].map(path => <Button key={path} variant="outline" size="sm" disabled={busy} onClick={() => { setUrl(`https://trackmaniaforhours.com/event/${path}/teams`); setPreview(null); setError("") }}>{path.replace("/race/", " #").replace("/rpg/", " RPG #")}</Button>)}
       </div>
     </details>
     {error && <p role="alert" className="rounded-lg border border-danger/30 p-3 text-sm text-danger">{error}</p>}
