@@ -84,7 +84,7 @@ export function MobileTopBar({ userName, role, profileHref }: Props) {
               className="flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-sm text-[#c5bfbf] hover:bg-[#251f20]"
             >
               <Smartphone size={16} />
-              Two-factor &amp; passkeys
+              Sign-in security
             </button>
             <button
               type="button"

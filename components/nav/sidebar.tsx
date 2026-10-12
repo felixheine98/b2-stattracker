@@ -143,14 +143,14 @@ export function Sidebar({ userName, role, profileHref }: SidebarProps) {
         </button>
         <button
           onClick={() => setShowTwoFactor(true)}
-          title={collapsed ? "Two-factor & passkeys" : undefined}
+          title={collapsed ? "Sign-in security" : undefined}
           className={cn(
             "flex w-full items-center gap-3 rounded-md py-2 text-sm font-medium text-[#9a9090] hover:bg-[#251f20] hover:text-[#f5f0f0] transition-colors",
             collapsed ? "justify-center px-0" : "px-3"
           )}
         >
           <Smartphone size={16} className="shrink-0" />
-          {!collapsed && "Two-factor & passkeys"}
+          {!collapsed && "Sign-in security"}
         </button>
         <button
           onClick={() => signOut({ callbackUrl: `${BASE_PATH}/login` })}

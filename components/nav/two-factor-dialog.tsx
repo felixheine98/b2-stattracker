@@ -137,7 +137,7 @@ export function TwoFactorDialog({ onClose }: { onClose: () => void }) {
 
   return (
     <Dialog open onClose={onClose}>
-      <DialogTitle>Two-factor &amp; passkeys</DialogTitle>
+      <DialogTitle>Sign-in security</DialogTitle>
       {!status ? (
         <p className={error ? "text-sm text-[#ED1F24]" : "text-sm text-[#9a9090]"}>{error || "Loading…"}</p>
       ) : (
