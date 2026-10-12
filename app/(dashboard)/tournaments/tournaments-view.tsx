@@ -95,6 +95,7 @@ export function TournamentsView({ tournaments: initial, canManage, isAdmin }: { 
           <p className="text-fg-muted text-sm mt-0.5">{tournaments.length} tournaments</p>
         </div>
         <div className="flex flex-wrap gap-2">
+        {tournaments.some((t) => t.tfhRace) && <Link href="/tfh"><Button variant="outline">TFH driver totals</Button></Link>}
         {isAdmin && <Link href="/tfh-import"><Button variant="outline">Import TFH race</Button></Link>}
         {canManage && (
           <Button onClick={openForm}>

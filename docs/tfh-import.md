@@ -24,6 +24,10 @@ Die Vorschau gilt 30 Minuten. Bei Ladefehlern oder zwischenzeitlichen Änderunge
 
 TFH-Ausgaben erscheinen in der gemeinsamen Turnierübersicht. Jede ausgewählte Teamteilnahme erhält ein eigenes historisches Lineup mit Links zu den Spielerprofilen. Die Rennseite zeigt Gesamtwertung, Fahrerkennzahlen und einzelne Rundenabschlüsse; breite Tabellen scrollen auf dem Handy mit fester erster Spalte.
 
+Über den B2-Lineups steht auf der Rennseite das **B2 driver ranking**: alle Fahrer aller B2-Teams dieser Ausgabe in einer Tabelle, standardmäßig nach CPM, per Klick auf eine Spalte nach Checkpoints, Fahrzeit, bester oder durchschnittlicher Runde oder Abschlüssen. Fahrer mit gleichem Wert teilen sich den Rang, Fahrer ohne Wert stehen ohne Rang am Ende.
+
+Unter **Tournaments → TFH driver totals** (`/tfh`) steht die Übersicht über alle Ausgaben. Sie vergleicht nur addierbare Werte: gefahrene Ausgaben, Fahrzeit und Checkpoints. Fehlt bei einem Fahrer ein Quellwert, ist seine Summe mit * als unvollständig markiert.
+
 Spielerprofile haben einen separaten **TFH endurance**-Abschnitt mit Anzahl der Ausgaben und gesamter bekannter Fahrzeit. Fehlen Fahrzeiten, wird die Zusammenfassung als unvollständig gekennzeichnet. CPM und Rundenzeiten werden je Rennen angezeigt; TFH zählt nicht in die bisherigen Round-Statistiken hinein.
 
 Fahrzeiten kommen in Sekunden, Runden- und Checkpointzeiten in Millisekunden. Fehlende Kennzahlen erscheinen als **—**. Die genauen Typwerte der Rundenabschlüsse bleiben gespeichert, werden aber nicht interpretiert. Stints und Fahrerwechsel werden nicht aus den Abschlüssen abgeleitet.

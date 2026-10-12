@@ -1,7 +1,7 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest"
 import { PrismaClient } from "@prisma/client"
 import { execFileSync } from "node:child_process"
-import { previewTfhImport, saveTfhImport, getTfhRace, getTfhPlayerResults, isTfhTournament } from "./tfh-db"
+import { previewTfhImport, saveTfhImport, getTfhRace, getTfhPlayerResults, getTfhB2Results, isTfhTournament } from "./tfh-db"
 
 describe.skipIf(process.env.TFH_DB_TESTS !== "1")("TFH archive with PostgreSQL", () => {
   const root = new PrismaClient(), schema = `tfh_test_${crypto.randomUUID().replaceAll("-", "")}`
@@ -37,6 +37,24 @@ describe.skipIf(process.env.TFH_DB_TESTS !== "1")("TFH archive with PostgreSQL",
     expect(await getTfhPlayerResults(f.player.id, client)).toMatchObject([{ team: { race: { tournament: { id: saved.tournamentId } } }, playTimeSeconds: 1200 }])
     expect(await getTfhPlayerResults("no-participation", client)).toEqual([])
     expect(await isTfhTournament(saved.tournamentId, client)).toBe(true)
+  })
+  it("lists the results of the B2 drivers of every archived edition for the comparison over all editions", async () => {
+    const saved: Array<{ player: { id: string }; tournamentId: string }> = []
+    for (const event of [20, 21]) {
+      const f = await fixture(event)
+      const preview = await previewTfhImport({ url: f.url }, "admin", client, f.fetcher)
+      const { tournamentId } = await saveTfhImport({ draftId: preview.draftId, assignments: preview.assignments.map(a => ({ accountId: a.accountId, playerId: a.playerId! })) }, "admin", client)
+      saved.push({ player: f.player, tournamentId })
+    }
+    const results = (await getTfhB2Results(client)).filter(r => saved.some(s => s.player.id === r.playerId))
+    expect(results).toHaveLength(2)
+    for (const s of saved) {
+      expect(results).toContainEqual(expect.objectContaining({
+        playerId: s.player.id, checkpoints: 100, playTimeSeconds: 1200,
+        player: expect.objectContaining({ id: s.player.id, name: "Current driver name" }),
+        team: expect.objectContaining({ isB2: true, race: expect.objectContaining({ tournamentId: s.tournamentId }) }),
+      }))
+    }
   })
   it("requires the preview owner and all distinct driver assignments before storing anything", async () => {
     const f = await fixture(10)

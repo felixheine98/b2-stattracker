@@ -34,6 +34,8 @@ Bestätigt: Jedes B2-Team erhält pro TFH-Ausgabe ein eigenes Turnier-Lineup mit
 
 Bestätigt: Spielerprofile fassen die Anzahl der TFH-Teilnahmen und die gesamte Fahrzeit zusammen. CPM und Rundenzeiten werden je Rennen angezeigt und verglichen; es gibt keine gemeinsame Leistungsrangliste über unterschiedliche TFH-Ausgaben. Die bisherigen Rundenstatistiken bleiben davon getrennt.
 
+Bestätigt (ergänzt am 12.10.2026): Jede Rennseite hat ein B2-Fahrerranking, das alle Fahrer aller B2-Teams dieser Ausgabe in einer Tabelle vergleicht, standardmäßig nach CPM. Zusätzlich gibt es eine Übersicht über alle Ausgaben. Sie vergleicht nur, was sich über verschiedene Rennen addieren lässt: gefahrene Ausgaben, Fahrzeit und Checkpoints. CPM und Rundenzeiten bleiben auf das einzelne Rennen beschränkt; die Regel „keine gemeinsame Leistungsrangliste über unterschiedliche Ausgaben" gilt für sie weiter.
+
 Bestätigt: TFH ist die maßgebliche Quelle für Platzierungen, Checkpoints, Fahrzeiten und Rundenabschlüsse. Ergebniswerte werden nicht manuell überschrieben; Korrekturen erfolgen durch erneuten Import. B2-Auswahl und Spielerzuordnungen bleiben im Stattracker korrigierbar.
 
 Bestätigt: Der Import lädt die Gesamtwertung und die Detaildaten aller ausgewählten B2-Teams vollständig und speichert sie gemeinsam. Bei Ladefehlern wird das Speichern blockiert; vorhandene Daten bleiben unverändert. Kennzahlen, welche die Quelle selbst nicht bereitstellt, werden als fehlend angezeigt, nicht als Zahlenwert null oder unbelegter Ersatzwert.

@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input"
 import { Select } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/card"
+import { TfhDriverRanking } from "./driver-ranking"
 
 type Race = NonNullable<Awaited<ReturnType<typeof getTfhRace>>>
 type Driver = Race["teams"][number]["drivers"][number]
@@ -55,6 +56,7 @@ export function TfhRaceView({ race, isAdmin, initialLineupId }: { race: Race; is
       {isAdmin && <Link href={`/tfh-import?url=${encodeURIComponent(race.sourceUrl)}`}><Button variant="outline"><RefreshCw size={14} />Update from TFH</Button></Link>}
     </div>
     <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-fg-muted"><a href={race.sourceUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-brand-ink">TFH source<ExternalLink size={12} /></a><span>Imported {new Date(race.importedAt).toLocaleString("en-GB")}</span><span>Missing source values appear as —.</span></div>
+    {!initialLineupId && <TfhDriverRanking race={race} />}
     <section className="space-y-3"><h2 className="text-lg font-semibold">B2 lineups</h2>
       {ourTeams.map(t => <Card key={t.id} id={`team-${t.sourceTeamId}`}>
         <CardHeader><div className="flex flex-wrap items-center justify-between gap-2"><CardTitle className="break-words">{t.lineup ? <Link href={lineupPath(race.tournament, t.lineup)} className="hover:text-brand-ink">{t.name}</Link> : t.name}</CardTitle><span className="text-sm text-brand-ink">#{t.rank} · {t.checkpoints ?? "—"} CP</span></div></CardHeader>
