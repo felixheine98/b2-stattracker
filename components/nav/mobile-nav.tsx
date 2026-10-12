@@ -2,13 +2,14 @@
 
 import { BASE_PATH } from "@/lib/base-path"
 import { cn } from "@/lib/utils"
-import { ChevronDown, KeyRound, LogOut, Search } from "lucide-react"
+import { ChevronDown, KeyRound, LogOut, Search, Smartphone } from "lucide-react"
 import { openSearch } from "@/components/search/search-dialog"
 import { signOut } from "next-auth/react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { useState } from "react"
 import { ChangePasswordDialog } from "./change-password-dialog"
+import { TwoFactorDialog } from "./two-factor-dialog"
 import { accountsItem, canSeeAccounts, isActiveItem, navItems, profileItem } from "./nav-items"
 
 interface Props {
@@ -23,6 +24,7 @@ export function MobileTopBar({ userName, role, profileHref }: Props) {
   const pathname = usePathname()
   const [open, setOpen] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
+  const [showTwoFactor, setShowTwoFactor] = useState(false)
 
   return (
     <header className="relative z-20 flex items-center gap-2.5 border-b border-[#2d2829] bg-[#1c1819] px-4 py-2 md:hidden">
@@ -78,6 +80,14 @@ export function MobileTopBar({ userName, role, profileHref }: Props) {
             </button>
             <button
               type="button"
+              onClick={() => { setOpen(false); setShowTwoFactor(true) }}
+              className="flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-sm text-[#c5bfbf] hover:bg-[#251f20]"
+            >
+              <Smartphone size={16} />
+              Two-factor sign-in
+            </button>
+            <button
+              type="button"
               onClick={() => signOut({ callbackUrl: `${BASE_PATH}/login` })}
               className="flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-sm text-[#c5bfbf] hover:bg-[#251f20] hover:text-[#ED1F24]"
             >
@@ -88,6 +98,7 @@ export function MobileTopBar({ userName, role, profileHref }: Props) {
         </>
       )}
       {showPassword && <ChangePasswordDialog onClose={() => setShowPassword(false)} />}
+      {showTwoFactor && <TwoFactorDialog onClose={() => setShowTwoFactor(false)} />}
     </header>
   )
 }

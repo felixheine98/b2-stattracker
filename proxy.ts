@@ -22,6 +22,13 @@ export default auth((req) => {
     return NextResponse.redirect(new URL(`${BASE}${loginPath(stripped, req.nextUrl.search)}`, req.nextUrl.origin))
   }
 
+  // An account that has to use two-factor sign-in gets nowhere else until it is set up
+  const isMfaSetup = stripped === "/mfa-setup" || stripped.startsWith("/api/account/totp")
+  if (isLoggedIn && req.auth?.user?.mfaSetupRequired && !isMfaSetup) {
+    if (stripped.startsWith("/api/")) return NextResponse.json({ error: "Set up two-factor sign-in first" }, { status: 403 })
+    return NextResponse.redirect(new URL(`${BASE}/mfa-setup`, req.nextUrl.origin))
+  }
+
   if (isLoggedIn && isAuthPage) {
     return NextResponse.redirect(new URL(`${BASE}${nextPathAfterLogin(req.nextUrl.searchParams.get("next"))}`, req.nextUrl.origin))
   }

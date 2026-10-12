@@ -20,12 +20,13 @@ export async function GET() {
       email: true,
       role: true,
       createdAt: true,
+      totpEnabledAt: true,
       player: { select: { id: true, name: true } },
     },
     orderBy: { createdAt: "asc" },
   })
 
-  return NextResponse.json(users)
+  return NextResponse.json(users.map(({ totpEnabledAt, ...user }) => ({ ...user, twoFactor: !!totpEnabledAt })))
 }
 
 const createSchema = z.object({

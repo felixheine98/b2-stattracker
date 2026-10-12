@@ -9,6 +9,7 @@
 - [ ] validierung von importierten daten zu eingegebenen daten (match) -> passt das gegner team etc
 - [ ] tournaments seite bei mehreren comps: bleibt eine einfache liste der turniere, anordnung prüfen wenn es mehr werden
 - [ ] lineup einteilung für einzelne matches bzw match days
+- [ ] passkeys (WebAuthn) als weitere anmelde-methode neben TOTP
 
 ## Teilweise erledigt
 
@@ -37,3 +38,4 @@
   - [x] pro comp für 1 lineup, pro week für alle lineups (umschalter "nach map" im stats-bereich von lineup- und turnierseite, filter lineup/abschnitt/format)
   - [x] team-sicht pro map in der lineup-übersicht: eine zeile pro map mit maps w/l, rounds w/l, beste und Ø zeit (ohne einzelne spieler)
 - [x] übersichts seite (dashboard): overall-kacheln, aktuelle turniere und letztes turnier mit bilanz pro lineup, best performer und eigenen stats; app komplett auf englisch
+- [x] two-factor sign-in mit authenticator-app (TOTP): pflicht für admins, freiwillig für alle anderen; recovery-codes, sperre nach 5 falschen codes, reset durch admin/manager

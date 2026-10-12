@@ -41,6 +41,18 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  // Two-factor sign-in with an authenticator app. The secret is stored encrypted and only
+  // counts once totpEnabledAt is set; before that it is a setup that was started.
+  totpSecret        String?
+  totpEnabledAt     DateTime?
+  // Time step of the last accepted code, so a code cannot be used twice
+  totpLastStep      Int?
+  // Hashes of the recovery codes that are still unused
+  totpRecoveryCodes String[] @default([])
+  // Wrong codes in a row, and until when the second step is locked after too many
+  totpFailures      Int      @default(0)
+  totpLockedUntil   DateTime?
+
   player   Player? @relation(fields: [playerId], references: [id])
   playerId String? @unique
 

@@ -4,11 +4,12 @@ import { BASE_PATH } from "@/lib/base-path"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
-import { KeyRound, LogOut, Search, ShieldCheck, PanelLeftClose, PanelLeftOpen } from "lucide-react"
+import { KeyRound, LogOut, Search, ShieldCheck, Smartphone, PanelLeftClose, PanelLeftOpen } from "lucide-react"
 import { openSearch } from "@/components/search/search-dialog"
 import { isActiveItem, navItems, profileItem } from "./nav-items"
 import { useState, useSyncExternalStore } from "react"
 import { ChangePasswordDialog } from "./change-password-dialog"
+import { TwoFactorDialog } from "./two-factor-dialog"
 import { signOut } from "next-auth/react"
 
 // Whether the sidebar is collapsed to its icons, remembered per browser
@@ -37,6 +38,7 @@ export function Sidebar({ userName, role, profileHref }: SidebarProps) {
   const collapsed = useSyncExternalStore(subscribeCollapsed, () => localStorage.getItem(COLLAPSED_KEY) === "1", () => false)
 
   const [showPassword, setShowPassword] = useState(false)
+  const [showTwoFactor, setShowTwoFactor] = useState(false)
 
   function toggleCollapsed() {
     localStorage.setItem(COLLAPSED_KEY, collapsed ? "0" : "1")
@@ -140,6 +142,17 @@ export function Sidebar({ userName, role, profileHref }: SidebarProps) {
           {!collapsed && "Change password"}
         </button>
         <button
+          onClick={() => setShowTwoFactor(true)}
+          title={collapsed ? "Two-factor sign-in" : undefined}
+          className={cn(
+            "flex w-full items-center gap-3 rounded-md py-2 text-sm font-medium text-[#9a9090] hover:bg-[#251f20] hover:text-[#f5f0f0] transition-colors",
+            collapsed ? "justify-center px-0" : "px-3"
+          )}
+        >
+          <Smartphone size={16} className="shrink-0" />
+          {!collapsed && "Two-factor sign-in"}
+        </button>
+        <button
           onClick={() => signOut({ callbackUrl: `${BASE_PATH}/login` })}
           title={collapsed ? `Sign out (${userName})` : undefined}
           className={cn(
@@ -152,6 +165,7 @@ export function Sidebar({ userName, role, profileHref }: SidebarProps) {
         </button>
       </div>
       {showPassword && <ChangePasswordDialog onClose={() => setShowPassword(false)} />}
+      {showTwoFactor && <TwoFactorDialog onClose={() => setShowTwoFactor(false)} />}
     </aside>
   )
 }

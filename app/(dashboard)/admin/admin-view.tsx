@@ -9,7 +9,7 @@ import { Dialog, DialogTitle } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select } from "@/components/ui/select"
-import { ChevronDown, KeyRound, Plus, Shield, ShieldCheck, Trash2, User } from "lucide-react"
+import { ChevronDown, KeyRound, Plus, Shield, ShieldCheck, Smartphone, Trash2, User } from "lucide-react"
 import { useState } from "react"
 import { ResetPasswordDialog } from "./reset-password-dialog"
 
@@ -22,6 +22,8 @@ interface UserRow {
   email: string | null
   role: Role
   createdAt: Date
+  // Signs in with a code from an authenticator app (missing on accounts created in this session)
+  twoFactor?: boolean
   player: { id: string; name: string } | null
   // Lineups this account is responsible for (missing on accounts created in this session)
   managedLineups?: Array<{ lineup: { id: string; name: string; tournament: { name: string } } }>
@@ -76,6 +78,13 @@ export function AdminView({ users: initial, currentUserId, isAdmin }: Props) {
     if (!res.ok) return
     const updated = await res.json()
     setUsers((u) => u.map((user) => (user.id === userId ? { ...user, role: updated.role } : user)))
+  }
+
+  // For someone who lost the phone and the recovery codes: the account signs in with the password alone again
+  async function handleResetTwoFactor(user: UserRow) {
+    if (!confirm(`Turn off two-factor sign-in for ${user.name}? They sign in with their password alone until they set it up again.`)) return
+    const res = await fetch(`${BASE_PATH}/api/admin/users/${user.id}/totp`, { method: "DELETE" })
+    if (res.ok) setUsers((u) => u.map((row) => (row.id === user.id ? { ...row, twoFactor: false } : row)))
   }
 
   async function handleDelete(userId: string) {
@@ -148,6 +157,12 @@ export function AdminView({ users: initial, currentUserId, isAdmin }: Props) {
                   <td className="px-4 py-3 max-md:order-1 max-md:block max-md:min-w-0 max-md:p-0">
                     <div className="font-medium text-[#f5f0f0] max-md:text-base">{user.name}</div>
                     {user.email && <div className="text-xs text-[#5e5858]">{user.email}</div>}
+                    {user.twoFactor && (
+                      <div className="flex items-center gap-1 text-xs text-[#9a9090]">
+                        <Smartphone size={11} />
+                        Two-factor sign-in
+                      </div>
+                    )}
                     {!!user.managedLineups?.length && (
                       <div className="text-xs text-[#9a9090]">
                         Responsible for: {user.managedLineups.map((m) => `${m.lineup.tournament.name} / ${m.lineup.name}`).join(", ")}
@@ -205,6 +220,18 @@ export function AdminView({ users: initial, currentUserId, isAdmin }: Props) {
                       >
                         <KeyRound size={14} />
                         <span className="md:hidden">Reset password</span>
+                      </Button>
+                    )}
+                    {!isSelf && user.twoFactor && (isAdmin || user.role === "PLAYER") && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleResetTwoFactor(user)}
+                        title="Turn off two-factor sign-in"
+                        className="text-[#5e5858] hover:text-[#FBD00D]"
+                      >
+                        <Smartphone size={14} />
+                        <span className="md:hidden">Reset 2FA</span>
                       </Button>
                     )}
                     {!isSelf && (isAdmin || user.role === "PLAYER") && (
