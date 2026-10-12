@@ -148,7 +148,7 @@ export async function getTfhB2Results(database: PrismaClient = db) {
     select: {
       playerId: true, checkpoints: true, playTimeSeconds: true,
       player: { select: { id: true, slug: true, name: true } },
-      team: { select: { isB2: true, race: { select: { id: true, tournamentId: true } } } },
+      team: { select: { isB2: true, race: { select: { id: true, tournamentId: true, kind: true } } } },
     },
   })
 }

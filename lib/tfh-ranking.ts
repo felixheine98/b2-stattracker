@@ -66,3 +66,11 @@ export function rankTfhTotals(results: TfhResult[], metric: TfhTotalMetric, orde
   const ranked = totals.map(t => ({ rank: 1 + totals.findIndex(other => other[metric] === t[metric]), playerId: t.playerId, races: t.races, checkpoints: t.checkpoints, playTimeSeconds: t.playTimeSeconds, incomplete: t.incomplete }))
   return order === "worst" ? ranked.reverse() : ranked
 }
+
+// 24h races and 12h RPG races are different styles of driving, so their totals are kept apart
+const KIND_ORDER = ["24h", "12h"]
+
+export function splitTfhByKind<R extends { kind: string }>(results: R[]): Array<{ kind: string; results: R[] }> {
+  const kinds = [...new Set(results.map(r => r.kind))].sort((a, b) => (KIND_ORDER.indexOf(a) + 1 || 99) - (KIND_ORDER.indexOf(b) + 1 || 99) || a.localeCompare(b))
+  return kinds.map(kind => ({ kind, results: results.filter(r => r.kind === kind) }))
+}

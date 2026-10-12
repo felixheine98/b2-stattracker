@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { rankTfhDrivers, rankTfhTotals } from "./tfh-ranking"
+import { rankTfhDrivers, rankTfhTotals, splitTfhByKind } from "./tfh-ranking"
 
 const driver = (sourceName: string, values: Partial<{ cpm: number | null; checkpoints: number | null; playTimeSeconds: number | null; bestLapMs: number | null; averageLapMs: number | null; finishes: unknown[] }> = {}) =>
   ({ sourceName, cpm: null, checkpoints: null, playTimeSeconds: null, bestLapMs: null, averageLapMs: null, finishes: [], ...values })
@@ -94,3 +94,18 @@ describe("rankTfhTotals", () => {
   })
 })
 
+describe("splitTfhByKind", () => {
+  it("keeps 24h and 12h races apart, the 24h races first, and leaves out a kind nobody drove", () => {
+    const results = [
+      { playerId: "anna", kind: "12h" },
+      { playerId: "ben", kind: "24h" },
+      { playerId: "anna", kind: "24h" },
+    ]
+    expect(splitTfhByKind(results)).toEqual([
+      { kind: "24h", results: [{ playerId: "ben", kind: "24h" }, { playerId: "anna", kind: "24h" }] },
+      { kind: "12h", results: [{ playerId: "anna", kind: "12h" }] },
+    ])
+    expect(splitTfhByKind([{ playerId: "anna", kind: "12h" }]).map(g => g.kind)).toEqual(["12h"])
+    expect(splitTfhByKind([])).toEqual([])
+  })
+})

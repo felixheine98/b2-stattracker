@@ -6,15 +6,15 @@ import { TfhTotalsView } from "@/components/tfh/totals-view"
 export default async function TfhTotalsPage() {
   const [results, races] = await Promise.all([
     getTfhB2Results(),
-    db.tfhRace.findMany({ orderBy: { tournament: { startDate: "desc" } }, select: { id: true, tournament: { select: { id: true, name: true, slug: true } } } }),
+    db.tfhRace.findMany({ orderBy: { tournament: { startDate: "desc" } }, select: { id: true, kind: true, tournament: { select: { id: true, name: true, slug: true } } } }),
   ])
   const players = [...new Map(results.map(r => [r.player.id, r.player])).values()]
 
   return (
     <TfhTotalsView
-      results={results.map(r => ({ playerId: r.playerId, raceId: r.team.race.id, checkpoints: r.checkpoints, playTimeSeconds: r.playTimeSeconds }))}
+      results={results.map(r => ({ playerId: r.playerId, raceId: r.team.race.id, kind: r.team.race.kind, checkpoints: r.checkpoints, playTimeSeconds: r.playTimeSeconds }))}
       players={players}
-      races={races.map(r => ({ id: r.tournament.id, name: r.tournament.name, slug: r.tournament.slug }))}
+      races={races.map(r => ({ id: r.tournament.id, name: r.tournament.name, slug: r.tournament.slug, kind: r.kind }))}
     />
   )
 }

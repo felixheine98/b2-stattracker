@@ -52,7 +52,7 @@ describe.skipIf(process.env.TFH_DB_TESTS !== "1")("TFH archive with PostgreSQL",
       expect(results).toContainEqual(expect.objectContaining({
         playerId: s.player.id, checkpoints: 100, playTimeSeconds: 1200,
         player: expect.objectContaining({ id: s.player.id, name: "Current driver name" }),
-        team: expect.objectContaining({ isB2: true, race: expect.objectContaining({ tournamentId: s.tournamentId }) }),
+        team: expect.objectContaining({ isB2: true, race: expect.objectContaining({ tournamentId: s.tournamentId, kind: "24h" }) }),
       }))
     }
   })
