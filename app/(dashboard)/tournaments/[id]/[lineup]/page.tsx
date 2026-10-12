@@ -8,6 +8,8 @@ import { lineupPath, playerPath } from "@/lib/paths"
 import { resolveLineup, resolveTournament } from "@/lib/slugs-db"
 import { withCompNames } from "@/lib/player-names-db"
 import { LineupMatchesView } from "./lineup-matches-view"
+import { getTfhRace } from "@/lib/tfh-db"
+import { TfhRaceView } from "@/components/tfh/race-view"
 
 interface Props {
   params: Promise<{ id: string; lineup: string }>
@@ -22,6 +24,12 @@ export default async function LineupMatchesPage({ params }: Props) {
   if (tournamentParam !== foundTournament.slug || lineupParam !== foundLineup.slug) redirect(lineupPath(foundTournament, foundLineup))
   const tournamentId = foundTournament.id
   const lineupId = foundLineup.id
+  const tfh = await getTfhRace(tournamentId)
+  if (tfh) {
+    if (!tfh.teams.some(t => t.lineupId === lineupId && t.isB2)) notFound()
+    const session = await auth()
+    return <TfhRaceView race={tfh} initialLineupId={lineupId} isAdmin={(session?.user as { role?: string })?.role === "ADMIN"} />
+  }
 
   const [session, lineup, players] = await Promise.all([
     auth(),

@@ -31,13 +31,14 @@ interface Tournament {
   endDate?: Date | null
   createdAt: Date
   _count: { matches: number }
+  tfhRace?: { kind: string; _count: { teams: number } } | null
 }
 
 function formatBadgeVariant(format: Format): "primary" | "secondary" {
   return format === "TIME_ATTACK_10" ? "primary" : "secondary"
 }
 
-export function TournamentsView({ tournaments: initial, canManage }: { tournaments: Tournament[]; canManage: boolean }) {
+export function TournamentsView({ tournaments: initial, canManage, isAdmin }: { tournaments: Tournament[]; canManage: boolean; isAdmin: boolean }) {
   const router = useRouter()
   const [tournaments, setTournaments] = useSyncedState(initial)
   const [showForm, setShowForm] = useState(false)
@@ -93,12 +94,15 @@ export function TournamentsView({ tournaments: initial, canManage }: { tournamen
           <h1 className="text-2xl font-bold text-fg">Tournaments</h1>
           <p className="text-fg-muted text-sm mt-0.5">{tournaments.length} tournaments</p>
         </div>
+        <div className="flex flex-wrap gap-2">
+        {isAdmin && <Link href="/tfh-import"><Button variant="outline">Import TFH race</Button></Link>}
         {canManage && (
           <Button onClick={openForm}>
             <Plus size={16} />
             New Tournament
           </Button>
         )}
+        </div>
       </div>
 
       {tournaments.length === 0 ? (
@@ -117,6 +121,7 @@ export function TournamentsView({ tournaments: initial, canManage }: { tournamen
                   <div className="flex items-start justify-between gap-2">
                     <CardTitle className="text-base">{t.name}</CardTitle>
                     <div className="flex flex-wrap gap-1 justify-end shrink-0">
+                      {t.tfhRace && <Badge variant="primary">{t.tfhRace.kind === "24h" ? "24h endurance" : "12h RPG"}</Badge>}
                       {t.formats.slice(0, 3).map((f, i) => (
                         <Badge key={i} variant={formatBadgeVariant(f)}>
                           {formatLabel(f)}
@@ -131,7 +136,7 @@ export function TournamentsView({ tournaments: initial, canManage }: { tournamen
                 </CardHeader>
                 <CardContent>
                   <div className="flex items-center justify-between text-sm text-fg-subtle">
-                    <span>{t._count.matches} match{t._count.matches !== 1 ? "es" : ""}</span>
+                    <span>{t.tfhRace ? `${t.tfhRace._count.teams} teams` : `${t._count.matches} match${t._count.matches !== 1 ? "es" : ""}`}</span>
                     <div className="flex items-center gap-1">
                       {t.startDate && (
                         <span>{formatDay(t.startDate)}</span>

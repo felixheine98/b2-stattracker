@@ -1,3 +1,4 @@
+import { isTfhTournament } from "@/lib/tfh-db"
 import { LINEUP_MANAGERS_INCLUDE } from "@/lib/lineup-access-db"
 import { syncTournamentSlugs } from "@/lib/slugs-db"
 import { withCompNames } from "@/lib/player-names-db"
@@ -16,9 +17,9 @@ export async function GET(_req: Request, { params }: Params) {
   const session = await auth()
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
-  const { lineupId } = await params
+  const { id, lineupId } = await params
   const lineup = await db.tournamentLineup.findUnique({
-    where: { id: lineupId },
+    where: { id: lineupId, tournamentId: id },
     include: {
       slots: { include: { player: true } },
       matches: {
@@ -45,6 +46,7 @@ export async function PATCH(req: Request, { params }: Params) {
   if (!canManage((session.user as { role?: string }).role)) return NextResponse.json({ error: "Forbidden" }, { status: 403 })
 
   const { id, lineupId } = await params
+  if (await isTfhTournament(id)) return NextResponse.json({ error: "TFH races and lineups are maintained through the TFH import preview." }, { status: 409 })
   const body = await req.json()
   const parsed = updateSchema.safeParse(body)
   if (!parsed.success) {
@@ -58,7 +60,7 @@ export async function PATCH(req: Request, { params }: Params) {
   }
 
   const lineup = await db.tournamentLineup.update({
-    where: { id: lineupId },
+    where: { id: lineupId, tournamentId: id },
     data: {
       ...(parsed.data.name !== undefined && { name: parsed.data.name }),
       ...(playerIds !== undefined && {
@@ -78,7 +80,7 @@ export async function PATCH(req: Request, { params }: Params) {
   })
 
   await syncTournamentSlugs(id)
-  const { slug } = await db.tournamentLineup.findUniqueOrThrow({ where: { id: lineupId }, select: { slug: true } })
+  const { slug } = await db.tournamentLineup.findUniqueOrThrow({ where: { id: lineupId, tournamentId: id }, select: { slug: true } })
 
   return NextResponse.json(await withCompNames({ ...lineup, slug }, lineup.tournament))
 }
@@ -89,6 +91,7 @@ export async function DELETE(_req: Request, { params }: Params) {
   if (!canManage((session.user as { role?: string }).role)) return NextResponse.json({ error: "Forbidden" }, { status: 403 })
 
   const { id, lineupId } = await params
+  if (await isTfhTournament(id)) return NextResponse.json({ error: "TFH races and lineups are maintained through the TFH import preview." }, { status: 409 })
   // Matches always belong to a lineup, so they have to go (or move) first
   const matches = await db.match.count({ where: { tournamentLineupId: lineupId } })
   if (matches > 0) {
@@ -97,7 +100,7 @@ export async function DELETE(_req: Request, { params }: Params) {
       { status: 409 }
     )
   }
-  await db.tournamentLineup.delete({ where: { id: lineupId } })
+  await db.tournamentLineup.delete({ where: { id: lineupId, tournamentId: id } })
   await syncTournamentSlugs(id)
   return new NextResponse(null, { status: 204 })
 }

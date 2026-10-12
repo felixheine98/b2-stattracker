@@ -14,6 +14,7 @@ export default async function EcmImportPage() {
 
   await ensureSlugs()
   const all = await db.tournament.findMany({
+    where: { tfhRace: { is: null } },
     orderBy: { createdAt: "desc" },
     select: {
       id: true,

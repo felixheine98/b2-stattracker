@@ -1,3 +1,4 @@
+import { isTfhTournament } from "@/lib/tfh-db"
 import { syncTournamentSlugs } from "@/lib/slugs-db"
 import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
@@ -56,6 +57,7 @@ export async function PATCH(req: Request, { params }: Params) {
   if (!canManage((session.user as { role?: string }).role)) return NextResponse.json({ error: "Forbidden" }, { status: 403 })
 
   const { id } = await params
+  if (await isTfhTournament(id)) return NextResponse.json({ error: "TFH races and lineups are maintained through the TFH import preview." }, { status: 409 })
   const body = await req.json()
   const parsed = patchSchema.safeParse(body)
   if (!parsed.success) {

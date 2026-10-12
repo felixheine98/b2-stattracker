@@ -44,6 +44,7 @@ export default async function DashboardPage() {
     userId ? db.user.findUnique({ where: { id: userId }, select: { playerId: true } }) : null,
     db.player.findMany({ where: { isOpponentOnly: false }, select: { id: true, slug: true, tmId: true, name: true, initialStatus: true, statusChanges: true } }),
     db.tournament.findMany({
+      where: { tfhRace: { is: null } },
       select: {
         id: true, slug: true, name: true, startDate: true, endDate: true, createdAt: true,
         stages: { select: { id: true, type: true, number: true } },
@@ -113,7 +114,7 @@ export default async function DashboardPage() {
         <h2 className={HEADING}>Overall</h2>
         <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
           <Tile label="Members" value={memberCount} icon={<Users size={15} className="text-brand-ink" />} />
-          <Tile label="Tournaments" value={tournaments.length} icon={<Trophy size={15} className="text-brand-ink" />} />
+          <Tile label="Round tournaments" value={tournaments.length} icon={<Trophy size={15} className="text-brand-ink" />} />
           <Tile
             label="Matches"
             value={matches.length}

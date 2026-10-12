@@ -1,3 +1,4 @@
+import { isTfhTournament } from "@/lib/tfh-db"
 import { LINEUP_MANAGERS_INCLUDE } from "@/lib/lineup-access-db"
 import { syncTournamentSlugs } from "@/lib/slugs-db"
 import { withCompNames } from "@/lib/player-names-db"
@@ -39,6 +40,7 @@ export async function POST(req: Request, { params }: Params) {
   if (!canManage((session.user as { role?: string }).role)) return NextResponse.json({ error: "Forbidden" }, { status: 403 })
 
   const { id } = await params
+  if (await isTfhTournament(id)) return NextResponse.json({ error: "TFH races and lineups are maintained through the TFH import preview." }, { status: 409 })
   const tournament = await db.tournament.findUnique({ where: { id } })
   if (!tournament) return NextResponse.json({ error: "Tournament not found" }, { status: 404 })
 

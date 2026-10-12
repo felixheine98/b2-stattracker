@@ -8,6 +8,8 @@ import { tournamentPath } from "@/lib/paths"
 import { resolveTournament } from "@/lib/slugs-db"
 import { withCompNames } from "@/lib/player-names-db"
 import { TournamentDetailView } from "./tournament-detail-view"
+import { getTfhRace } from "@/lib/tfh-db"
+import { TfhRaceView } from "@/components/tfh/race-view"
 
 interface Props {
   params: Promise<{ id: string }>
@@ -20,6 +22,11 @@ export default async function TournamentDetailPage({ params }: Props) {
   if (!found) notFound()
   if (param !== found.slug) redirect(tournamentPath(found))
   const id = found.id
+  const tfh = await getTfhRace(id)
+  if (tfh) {
+    const session = await auth()
+    return <TfhRaceView race={tfh} isAdmin={(session?.user as { role?: string })?.role === "ADMIN"} />
+  }
 
   const [session, tournament, players, statsMatches] = await Promise.all([
     auth(),

@@ -8,6 +8,8 @@ import { resolvePlayer } from "@/lib/slugs-db"
 import { sortStages, stageName } from "@/lib/stages"
 import { notFound, redirect } from "next/navigation"
 import { PlayerProfileView, type CompView } from "./player-profile-view"
+import { getTfhPlayerResults } from "@/lib/tfh-db"
+import { TfhPlayerSection } from "@/components/tfh/player-section"
 
 interface Props {
   params: Promise<{ id: string }>
@@ -21,7 +23,7 @@ export default async function PlayerProfilePage({ params }: Props) {
   if (param !== found.slug) redirect(playerPath(found))
   const id = found.id
 
-  const [session, player, tournaments, matches, opponentResults] = await Promise.all([
+  const [session, player, tournaments, matches, opponentResults, tfhResults] = await Promise.all([
     auth(),
     db.player.findUnique({
       where: { id },
@@ -36,6 +38,7 @@ export default async function PlayerProfilePage({ params }: Props) {
       },
     }),
     db.tournament.findMany({
+      where: { tfhRace: { is: null } },
       select: {
         id: true, slug: true, name: true, startDate: true, createdAt: true,
         stages: { select: { id: true, type: true, number: true } },
@@ -67,6 +70,7 @@ export default async function PlayerProfilePage({ params }: Props) {
       },
     }),
     db.roundResult.count({ where: { playerId: id, isOurTeam: false } }),
+    getTfhPlayerResults(id),
   ])
   if (!player) notFound()
 
@@ -128,6 +132,8 @@ export default async function PlayerProfilePage({ params }: Props) {
       comps={comps}
       hasOpponentProfile={opponentResults > 0}
       canManage={canManage((session?.user as { role?: string })?.role)}
+      endurance={<TfhPlayerSection results={tfhResults} />}
+      hasEndurance={tfhResults.length > 0}
     />
   )
 }

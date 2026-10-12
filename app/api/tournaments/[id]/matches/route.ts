@@ -1,3 +1,4 @@
+import { isTfhTournament } from "@/lib/tfh-db"
 import { OpponentError, resolveMatchOpponent } from "@/lib/opponents-db"
 import { syncTournamentSlugs } from "@/lib/slugs-db"
 import { auth } from "@/lib/auth"
@@ -46,6 +47,7 @@ export async function POST(req: Request, { params }: Params) {
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
   const { id } = await params
+  if (await isTfhTournament(id)) return NextResponse.json({ error: "TFH races and lineups are maintained through the TFH import preview." }, { status: 409 })
   const tournament = await db.tournament.findUnique({ where: { id } })
   if (!tournament) return NextResponse.json({ error: "Tournament not found" }, { status: 404 })
 

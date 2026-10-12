@@ -11,9 +11,10 @@ export default async function TournamentsPage() {
     db.tournament.findMany({
       // The latest tournament first, by the day it starts
       orderBy: [{ startDate: { sort: "desc", nulls: "last" } }, { createdAt: "desc" }],
-      include: { _count: { select: { matches: true } } },
+      include: { _count: { select: { matches: true } }, tfhRace: { select: { kind: true, _count: { select: { teams: true } } } } },
     }),
   ])
 
-  return <TournamentsView tournaments={tournaments} canManage={canManage((session?.user as { role?: string })?.role)} />
+  const role = (session?.user as { role?: string })?.role
+  return <TournamentsView tournaments={tournaments} canManage={canManage(role)} isAdmin={role === "ADMIN"} />
 }

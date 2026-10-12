@@ -125,6 +125,8 @@ model Player {
   opponentTeamSlots     OpponentTeamSlot[]
   opponentLineupSlots   OpponentLineupSlot[]
   opponentIdentities    OpponentIdentity[]
+  tfhDrivers            TfhDriver[]
+  tfhIdentities         TfhIdentity[]
 }
 
 // A switch between team member and guest, valid from the given day on
@@ -168,6 +170,7 @@ model Tournament {
   stages          Stage[]
   planning        Planning?
   opponentLineups OpponentLineup[]
+  tfhRace         TfhRace?
 }
 
 // Planning a tournament before it has lineups: who is available and which lineups to build
@@ -310,6 +313,7 @@ model TournamentLineup {
   slots    TournamentLineupSlot[]
   matches  Match[]
   managers TournamentLineupManager[]
+  tfhTeam  TfhTeam?
 
   @@unique([tournamentId, slug])
 }
@@ -530,4 +534,95 @@ model RoundResult {
   isOurTeam  Boolean @default(false)
 
   @@unique([roundId, tmId])
+}
+
+// Source results of an endurance race stay separate from round-format statistics.
+model TfhRace {
+  id             String @id @default(cuid())
+  sourceEventId  Int @unique
+  sourceUrl      String
+  kind           String
+  mapName        String?
+  tournamentId   String @unique
+  tournament     Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  importedAt     DateTime @default(now())
+  revision       Int @default(1)
+  teams          TfhTeam[]
+  identities     TfhIdentity[]
+}
+
+model TfhTeam {
+  id             String @id @default(cuid())
+  raceId         String
+  race           TfhRace @relation(fields: [raceId], references: [id], onDelete: Cascade)
+  sourceTeamId   Int
+  name           String
+  tag            String
+  rank           Int
+  checkpoints    Int?
+  lastCpMs       Int?
+  isB2           Boolean @default(false)
+  lineupId       String? @unique
+  lineup         TournamentLineup? @relation(fields: [lineupId], references: [id], onDelete: Cascade)
+  drivers        TfhDriver[]
+
+  @@unique([raceId, sourceTeamId])
+}
+
+model TfhDriver {
+  id              String @id @default(cuid())
+  teamId          String
+  team            TfhTeam @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  accountId       String
+  sourceName      String
+  playerId        String
+  player          Player @relation(fields: [playerId], references: [id], onDelete: Restrict)
+  checkpoints     Int?
+  playTimeSeconds Int?
+  cpm             Float?
+  bestLapMs       Int?
+  averageLapMs    Int?
+  bestSplits      Int[]
+  averageSplits   Int[]
+  finishes        TfhFinish[]
+
+  @@unique([teamId, accountId])
+  @@index([playerId])
+}
+
+model TfhFinish {
+  id         String @id @default(cuid())
+  driverId   String
+  driver     TfhDriver @relation(fields: [driverId], references: [id], onDelete: Cascade)
+  number     Int
+  timestamp  DateTime
+  timeMs     Int?
+  sourceRank Int?
+  sourceType Int?
+
+  @@unique([driverId, number])
+}
+
+// Explicit account assignments survive replacement results and deselected teams.
+model TfhIdentity {
+  id        String @id @default(cuid())
+  raceId    String
+  race      TfhRace @relation(fields: [raceId], references: [id], onDelete: Cascade)
+  accountId String
+  playerId  String
+  player    Player @relation(fields: [playerId], references: [id], onDelete: Restrict)
+
+  @@unique([raceId, accountId])
+}
+
+// The confirmation saves the server's preview snapshot, never client-supplied results.
+model TfhImportDraft {
+  id           String @id @default(cuid())
+  ownerId      String
+  sourceEventId Int
+  baseRevision Int
+  payload      Json
+  expiresAt    DateTime
+
+  @@index([expiresAt])
 }

@@ -59,6 +59,8 @@ interface Props {
   // The player also drove against us; those rounds are on the opponent profile
   hasOpponentProfile: boolean
   canManage: boolean
+  endurance: React.ReactNode
+  hasEndurance: boolean
 }
 
 const STATUS_TEXT: Record<PlayerStatus, string> = { MEMBER: "Member", TRIAL: "Trial", GUEST: "Guest", FORMER: "Former" }
@@ -254,7 +256,7 @@ function CompCard({ comp, initiallyOpen }: { comp: CompView; initiallyOpen: bool
   )
 }
 
-export function PlayerProfileView({ player: initial, total, formats, comps, hasOpponentProfile, canManage }: Props) {
+export function PlayerProfileView({ player: initial, total, formats, comps, hasOpponentProfile, canManage, endurance, hasEndurance }: Props) {
   const router = useRouter()
   const [player, setPlayer] = useSyncedState(initial)
   const [dialog, setDialog] = useState<"name" | "move" | "history" | null>(null)
@@ -320,6 +322,7 @@ export function PlayerProfileView({ player: initial, total, formats, comps, hasO
       </div>
 
       {comps.length === 0 ? (
+        !hasEndurance &&
         <p className="rounded-xl border border-line bg-surface p-5 text-sm text-fg-muted">
           Not part of a tournament yet and no recorded rounds.
         </p>
@@ -350,6 +353,8 @@ export function PlayerProfileView({ player: initial, total, formats, comps, hasO
           </section>
         </>
       )}
+
+      {endurance}
 
       {dialog === "name" && (
         <NameHistoryDialog

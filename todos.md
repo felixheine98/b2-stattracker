@@ -30,6 +30,7 @@
 
 ## Erledigt
 
+- [x] TFH-Langstreckenarchiv: Admin-Import mit Vorschau für abgeschlossene 24h-/12h-RPG-Ausgaben, Gesamtwertung, historische B2-Lineups, Fahrerstatistiken und separater Profilabschnitt; [Bedienung](docs/tfh-import.md) und [Entscheidung](docs/adr/001-tfh-import.md)
 - [x] Match nachträglich bearbeiten (Datum, Gegner, Notizen)
 - [x] Gegner-DB umgesetzt: [vereinbartes Konzept](docs/gegner-db-konzept.md) – feste Teams, Competition-Lineups/Mixes, Logos, Spielerzuordnung und Stats; gezielte manuelle Übernahme aus dem Team-Spreadsheet
 - [x] suchfunktion: globale suche (Strg+K) über spieler, gegnerteams, gegner-lineups, gegnerische spieler, turniere und matches
