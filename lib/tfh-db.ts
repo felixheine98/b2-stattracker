@@ -140,13 +140,13 @@ export async function getTfhPlayerResults(playerId: string, database: PrismaClie
   return database.tfhDriver.findMany({ where: { playerId }, orderBy: { team: { race: { tournament: { startDate: "desc" } } } }, include: { team: { include: { lineup: true, race: { include: { tournament: true } } } } } })
 }
 
-// The results of all B2 drivers over all archived editions, for the comparison of what adds up
-// (editions, play time, checkpoints). Drivers are only stored for teams selected as B2.
+// The results of all B2 drivers over all archived editions, for the totals over several editions
+// (editions, play time, checkpoints, finishes and the pace from them). Drivers are only stored for teams selected as B2.
 export async function getTfhB2Results(database: PrismaClient = db) {
   return database.tfhDriver.findMany({
     where: { team: { isB2: true } },
     select: {
-      playerId: true, checkpoints: true, playTimeSeconds: true,
+      playerId: true, checkpoints: true, playTimeSeconds: true, _count: { select: { finishes: true } },
       player: { select: { id: true, slug: true, name: true } },
       team: { select: { isB2: true, race: { select: { id: true, tournamentId: true, kind: true } } } },
     },

@@ -2,7 +2,7 @@ import { db } from "@/lib/db"
 import { getTfhB2Results } from "@/lib/tfh-db"
 import { TfhTotalsView } from "@/components/tfh/totals-view"
 
-// All B2 drivers over all archived TFH editions; the ranking by pace is on the page of each race
+// All B2 drivers over all archived TFH editions; the exact ranking of one race is on its own page
 export default async function TfhTotalsPage() {
   const [results, races] = await Promise.all([
     getTfhB2Results(),
@@ -12,7 +12,7 @@ export default async function TfhTotalsPage() {
 
   return (
     <TfhTotalsView
-      results={results.map(r => ({ playerId: r.playerId, raceId: r.team.race.id, kind: r.team.race.kind, checkpoints: r.checkpoints, playTimeSeconds: r.playTimeSeconds }))}
+      results={results.map(r => ({ playerId: r.playerId, raceId: r.team.race.id, kind: r.team.race.kind, checkpoints: r.checkpoints, playTimeSeconds: r.playTimeSeconds, finishes: r._count.finishes }))}
       players={players}
       races={races.map(r => ({ id: r.tournament.id, name: r.tournament.name, slug: r.tournament.slug, kind: r.kind }))}
     />
