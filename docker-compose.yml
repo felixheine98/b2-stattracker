@@ -27,7 +27,11 @@ services:
       retries: 5
 
   app:
-    build: .
+    build:
+      context: .
+      # The path the app is served under is fixed when the production image is built
+      args:
+        BASE_PATH: ${BASE_PATH:-/b2-stats}
 
     security_opt:
       - no-new-privileges:true
