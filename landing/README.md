@@ -33,9 +33,9 @@ stats app under `/stats`.
    TMIO_USER_AGENT="B2 Stats (b2-esports.com/stats; <contact>)"
    ```
 
-   then `docker compose up -d`. From then on the app only answers under the new address;
-   everyone signs in again. (The production image fixes the path when it is built:
-   `docker compose -f docker-compose.yml build --build-arg BASE_PATH=/stats`.)
+   then `docker compose up -d --build`. From then on the app only answers under the new address;
+   everyone signs in again. (The production image fixes the path when it is built; the build
+   takes it from `.env`.)
 
 5. Old address: remove the `location /b2-stats { ... }` block from
    `/etc/nginx/sites-available/reh-netsolutions.cc` and reload nginx.

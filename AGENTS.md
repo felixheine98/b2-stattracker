@@ -12,12 +12,19 @@ Do not create a new branch for every task. For small, quick tasks, do not branch
 
 Changes to logic (calculations, data transformations, anything in `lib/`) are done test-first: write a failing test, then the code that passes it. Keep such logic in plain `.ts` modules without JSX so it can be tested directly. Pure UI and layout changes need no tests.
 
-Tests are Vitest files next to the module (`lib/foo.test.ts`). The host has Node 18, which is too old for Vitest, so run tests, typecheck and lint inside the app container:
+Tests are Vitest files next to the module (`lib/foo.test.ts`). The host has Node 18, which is too old for Vitest, so run tests, typecheck and lint inside the dev container (the production container has neither the sources nor the dev dependencies):
 
 ```
-docker compose exec app npm test
-docker compose exec app npx tsc --noEmit -p .
+docker compose -f docker-compose.dev.yml exec app npm test
+docker compose -f docker-compose.dev.yml exec app npx tsc --noEmit -p .
 ```
+
+# Production and dev
+
+Two setups run side by side:
+
+- Production (`docker-compose.yml`, served under `BASE_PATH`): a built image. Code changes only show up after `docker compose up -d --build`.
+- Dev (`docker-compose.dev.yml`, served under `DEV_BASE_PATH`, default `/stats-dev`): `next dev` on the mounted source with hot reload, and its own database, a copy of the production data. Schema changes are applied there on restart (`docker compose -f docker-compose.dev.yml restart app`), never to production.
 
 # Mobile
 

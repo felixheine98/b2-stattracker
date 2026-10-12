@@ -1,0 +1,87 @@
+# Dev setup next to production: its own project, database and address.
+#   docker compose -f docker-compose.dev.yml up -d --build
+# Runs `next dev` on the mounted source, so code changes show up without a rebuild. It is served
+# under DEV_BASE_PATH (nginx has to send that path to DEV_PORT) and works on a copy of the data,
+# so a schema change tried here cannot break production (see docker-dev-entrypoint.sh: db push).
+# Production is the plain docker-compose.yml: docker compose up -d --build
+name: b2-stattracker-dev
+
+services:
+  db:
+    image: postgres:16-alpine
+
+    security_opt:
+      - no-new-privileges:true
+
+    mem_limit: 512m
+    pids_limit: 150
+
+    restart: unless-stopped
+
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:?POSTGRES_USER is required}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+      POSTGRES_DB: ${POSTGRES_DB:?POSTGRES_DB is required}
+
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - pg_isready -U ${POSTGRES_USER:-stattracker}
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+
+    security_opt:
+      - no-new-privileges:true
+
+    cap_drop:
+      - ALL
+
+    tmpfs:
+      - /tmp:size=64m,mode=1777
+
+    mem_limit: 3g
+    pids_limit: 1000
+
+    restart: unless-stopped
+
+    ports:
+      - "127.0.0.1:${DEV_PORT:-3052}:3000"
+
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:?POSTGRES_USER is required}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}@db:5432/${POSTGRES_DB:?POSTGRES_DB is required}
+      # Same sign-in as production: on the same host both share the session cookie
+      AUTH_URL: ${AUTH_URL:-https://reh-netsolutions.cc/api/auth}
+      AUTH_SECRET: ${NEXTAUTH_SECRET:?NEXTAUTH_SECRET is required}
+      AUTH_TRUST_HOST: "true"
+      BASE_PATH: ${DEV_BASE_PATH:-/stats-dev}
+      TMIO_USER_AGENT: ${TMIO_USER_AGENT:-}
+
+    volumes:
+      - .:/app
+      - node_modules:/app/node_modules
+
+    depends_on:
+      db:
+        condition: service_healthy
+
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - wget -q --spider http://127.0.0.1:3000${DEV_BASE_PATH:-/stats-dev}/login || exit 1
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 180s
+
+volumes:
+  postgres_data:
+  node_modules:
