@@ -9,7 +9,8 @@ export default async function TournamentsPage() {
   const [session, tournaments] = await Promise.all([
     auth(),
     db.tournament.findMany({
-      orderBy: { createdAt: "desc" },
+      // The latest tournament first, by the day it starts
+      orderBy: [{ startDate: { sort: "desc", nulls: "last" } }, { createdAt: "desc" }],
       include: { _count: { select: { matches: true } } },
     }),
   ])

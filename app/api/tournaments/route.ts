@@ -13,7 +13,8 @@ export async function GET() {
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
   const tournaments = await db.tournament.findMany({
-    orderBy: { createdAt: "desc" },
+    // The latest tournament first, by the day it starts
+    orderBy: [{ startDate: { sort: "desc", nulls: "last" } }, { createdAt: "desc" }],
     include: { _count: { select: { matches: true } } },
   })
 
