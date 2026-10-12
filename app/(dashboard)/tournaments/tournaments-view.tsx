@@ -90,8 +90,8 @@ export function TournamentsView({ tournaments: initial, canManage }: { tournamen
     <div className="space-y-6 max-w-4xl">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-[#f5f0f0]">Tournaments</h1>
-          <p className="text-[#9a9090] text-sm mt-0.5">{tournaments.length} tournaments</p>
+          <h1 className="text-2xl font-bold text-fg">Tournaments</h1>
+          <p className="text-fg-muted text-sm mt-0.5">{tournaments.length} tournaments</p>
         </div>
         {canManage && (
           <Button onClick={openForm}>
@@ -104,15 +104,15 @@ export function TournamentsView({ tournaments: initial, canManage }: { tournamen
       {tournaments.length === 0 ? (
         <Card>
           <CardContent className="py-12 text-center">
-            <Trophy size={32} className="mx-auto text-[#5e5858] mb-3" />
-            <p className="text-[#9a9090] text-sm">No tournaments yet. Create your first one.</p>
+            <Trophy size={32} className="mx-auto text-fg-subtle mb-3" />
+            <p className="text-fg-muted text-sm">No tournaments yet. Create your first one.</p>
           </CardContent>
         </Card>
       ) : (
         <div className="grid gap-3 sm:grid-cols-2">
           {tournaments.map((t) => (
             <Link key={t.id} href={tournamentPath(t)}>
-              <Card className="h-full hover:border-[#3a3435] transition-colors cursor-pointer">
+              <Card className="h-full hover:border-line-strong transition-colors cursor-pointer">
                 <CardHeader>
                   <div className="flex items-start justify-between gap-2">
                     <CardTitle className="text-base">{t.name}</CardTitle>
@@ -130,7 +130,7 @@ export function TournamentsView({ tournaments: initial, canManage }: { tournamen
                   {t.description && <CardDescription>{t.description}</CardDescription>}
                 </CardHeader>
                 <CardContent>
-                  <div className="flex items-center justify-between text-sm text-[#5e5858]">
+                  <div className="flex items-center justify-between text-sm text-fg-subtle">
                     <span>{t._count.matches} match{t._count.matches !== 1 ? "es" : ""}</span>
                     <div className="flex items-center gap-1">
                       {t.startDate && (
@@ -158,7 +158,7 @@ export function TournamentsView({ tournaments: initial, canManage }: { tournamen
             <FormatBuilder value={formats} onChange={setFormats} />
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="description">Description <span className="text-[#5e5858]">(optional)</span></Label>
+            <Label htmlFor="description">Description <span className="text-fg-subtle">(optional)</span></Label>
             <Textarea id="description" name="description" rows={2} />
           </div>
           <StagePlanFields value={stagePlan} onChange={setStagePlan} />
@@ -172,7 +172,7 @@ export function TournamentsView({ tournaments: initial, canManage }: { tournamen
               <Input id="endDate" name="endDate" type="date" />
             </div>
           </div>
-          {error && <p className="text-sm text-[#ED1F24]">{error}</p>}
+          {error && <p className="text-sm text-danger">{error}</p>}
           <div className="dialog-footer flex gap-2 justify-end pt-1">
             <Button variant="ghost" type="button" onClick={() => setShowForm(false)}>Cancel</Button>
             <Button type="submit" disabled={loading}>{loading ? "Creating…" : "Create Tournament"}</Button>

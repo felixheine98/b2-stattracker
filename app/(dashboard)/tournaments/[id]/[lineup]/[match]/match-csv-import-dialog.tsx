@@ -22,7 +22,7 @@ interface Props {
   onImported: () => void
 }
 
-const selectClass = "h-9 rounded-md border border-[#3a3435] bg-[#251f20] px-2 text-sm text-[#f5f0f0] focus:outline-none focus:ring-2 focus:ring-[#FBD00D]"
+const selectClass = "h-9 rounded-md border border-line-strong bg-raised px-2 text-sm text-fg focus:outline-none focus:ring-2 focus:ring-brand"
 
 // Import of a whole match from the CSV of a match dumper. Nothing is saved before the user
 // has seen what the file was turned into: which rounds go to which sub-match, who drives
@@ -134,19 +134,19 @@ export function MatchCsvImportDialog({ tournamentId, matchId, subMatches, ownPla
           onDrop={(e) => { e.preventDefault(); setDragOver(false); loadFiles(e.dataTransfer.files) }}
           className={cn(
             "flex cursor-pointer flex-col items-center gap-1 rounded-lg border border-dashed px-4 py-5 text-center transition-colors",
-            dragOver ? "border-[#FBD00D] bg-[#FBD00D]/5" : "border-[#3a3435] hover:border-[#5e5858]"
+            dragOver ? "border-brand bg-brand/5" : "border-line-strong hover:border-fg-subtle"
           )}
         >
-          <Upload size={18} className="text-[#9a9090]" />
-          <span className="text-sm text-[#f5f0f0]">{fileNames.length > 0 ? fileNames.join(", ") : "Pick the match dumper's CSV or drop it here"}</span>
-          <span className="text-xs text-[#5e5858]">One file for the whole match or several, for example one per map. Nothing is saved before the preview.</span>
+          <Upload size={18} className="text-fg-muted" />
+          <span className="text-sm text-fg">{fileNames.length > 0 ? fileNames.join(", ") : "Pick the match dumper's CSV or drop it here"}</span>
+          <span className="text-xs text-fg-subtle">One file for the whole match or several, for example one per map. Nothing is saved before the preview.</span>
           <input type="file" accept=".csv,text/csv" multiple className="hidden" onChange={(e) => loadFiles(e.target.files)} />
         </label>
 
         {blocks.length > 0 && (
           <>
             {guests.length > 0 && (
-              <p className="rounded-lg border border-[#002484]/50 bg-[#002484]/15 px-3 py-2 text-xs text-[#6b8fff]">
+              <p className="rounded-lg border border-navy/50 bg-navy/15 px-3 py-2 text-xs text-info">
                 Will be added as a guest: {guests.map((g) => g.name).join(", ")}
               </p>
             )}
@@ -160,10 +160,10 @@ export function MatchCsvImportDialog({ tournamentId, matchId, subMatches, ownPla
                 { label: "Opponent", list: blockDrivers(block).filter((d) => !ourTmIds.has(d.tmId)) },
               ]
               return (
-                <section key={i} className="space-y-3 rounded-xl border border-[#2d2829] bg-[#0e0c0d] p-3">
+                <section key={i} className="space-y-3 rounded-xl border border-line bg-canvas p-3">
                   <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-                    <h3 className="min-w-0 break-words text-sm font-semibold text-[#f5f0f0]">{block.track || "No map"}</h3>
-                    <span className="text-xs text-[#9a9090]">{plan.rounds.length} of {block.rounds.length} rounds</span>
+                    <h3 className="min-w-0 break-words text-sm font-semibold text-fg">{block.track || "No map"}</h3>
+                    <span className="text-xs text-fg-muted">{plan.rounds.length} of {block.rounds.length} rounds</span>
                     <select
                       value={targets[i]}
                       onChange={(e) => setTargets((t) => t.map((old, j) => (j === i ? e.target.value : old)))}
@@ -178,10 +178,10 @@ export function MatchCsvImportDialog({ tournamentId, matchId, subMatches, ownPla
                   </div>
 
                   {target && target.rounds.length > 0 && (
-                    <p className="text-xs text-[#cd7f32]">Replaces the {target.rounds.length} rounds this sub-match already has.</p>
+                    <p className="text-xs text-bronze">Replaces the {target.rounds.length} rounds this sub-match already has.</p>
                   )}
                   {targets[i] && plan.warnings.map((w) => (
-                    <p key={w} className="flex items-start gap-1.5 text-xs text-[#cd7f32]">
+                    <p key={w} className="flex items-start gap-1.5 text-xs text-bronze">
                       <TriangleAlert size={13} className="mt-0.5 shrink-0" />
                       {w}{target ? ` (${formatLabel(target.format)})` : ""}. Check the sides or the sub-match.
                     </p>
@@ -191,9 +191,9 @@ export function MatchCsvImportDialog({ tournamentId, matchId, subMatches, ownPla
                   <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                     {sides.map((side) => (
                       <div key={side.label}>
-                        <p className={cn("mb-1 text-[11px] font-semibold uppercase tracking-wider", side.label === "Us" ? "text-[#FBD00D]" : "text-[#5e5858]")}>{side.label}</p>
+                        <p className={cn("mb-1 text-[11px] font-semibold uppercase tracking-wider", side.label === "Us" ? "text-brand-ink" : "text-fg-subtle")}>{side.label}</p>
                         <div className="flex flex-wrap gap-1.5">
-                          {side.list.length === 0 && <span className="text-xs text-[#5e5858]">nobody</span>}
+                          {side.list.length === 0 && <span className="text-xs text-fg-subtle">nobody</span>}
                           {side.list.map((d) => {
                             // Putting an unknown driver on our side adds a guest, which only managers may do
                             const blocked = !canManage && !knownTmIds.has(d.tmId) && !ourTmIds.has(d.tmId)
@@ -204,11 +204,11 @@ export function MatchCsvImportDialog({ tournamentId, matchId, subMatches, ownPla
                                 onClick={() => move(d.tmId)}
                                 disabled={blocked}
                                 title={blocked ? "Not in the system: an admin or manager has to add the driver as a guest first" : "Move to the other side"}
-                                className="inline-flex items-center gap-1.5 rounded-full border border-[#2d2829] bg-[#251f20] px-2.5 py-1 text-xs text-[#c5bfbf] hover:border-[#5e5858] hover:text-[#f5f0f0] disabled:cursor-not-allowed disabled:opacity-60"
+                                className="inline-flex items-center gap-1.5 rounded-full border border-line bg-raised px-2.5 py-1 text-xs text-fg-soft hover:border-fg-subtle hover:text-fg disabled:cursor-not-allowed disabled:opacity-60"
                               >
                                 {d.name}
-                                {!knownTmIds.has(d.tmId) && ourTmIds.has(d.tmId) && <span className="text-[#6b8fff]">new</span>}
-                                <ArrowLeftRight size={11} className="text-[#5e5858]" />
+                                {!knownTmIds.has(d.tmId) && ourTmIds.has(d.tmId) && <span className="text-info">new</span>}
+                                <ArrowLeftRight size={11} className="text-fg-subtle" />
                               </button>
                             )
                           })}
@@ -217,7 +217,7 @@ export function MatchCsvImportDialog({ tournamentId, matchId, subMatches, ownPla
                     ))}
                   </div>
 
-                  <ul className="divide-y divide-[#1c1819] rounded-lg border border-[#2d2829]">
+                  <ul className="divide-y divide-surface rounded-lg border border-line">
                     {block.rounds.map((round) => {
                       const on = selected.has(round.key)
                       const planned = plan.rounds.find((r) => r.key === round.key)
@@ -226,12 +226,12 @@ export function MatchCsvImportDialog({ tournamentId, matchId, subMatches, ownPla
                       return (
                         <li key={round.key}>
                           <label className={cn("flex cursor-pointer flex-wrap items-center gap-x-3 gap-y-0.5 px-3 py-2 text-xs", !on && "opacity-60")}>
-                            <input type="checkbox" checked={on} onChange={() => toggleRound(round.key)} className="h-4 w-4 accent-[#FBD00D]" />
-                            <span className="w-16 font-medium text-[#f5f0f0]">Round {round.number}</span>
-                            <span className="w-14 text-[#9a9090]">{round.entries.filter((e) => e.timeMs !== null).length} drivers</span>
-                            {winner && <span className="font-mono text-[#c5bfbf]">{winner.name} {formatTime(winner.timeMs!)}</span>}
-                            {reason && <span className="text-[#cd7f32]">{reason}</span>}
-                            {planned && planned.dnfs.length > 0 && <span className="text-[#9a9090]">DNF: {planned.dnfs.join(", ")}</span>}
+                            <input type="checkbox" checked={on} onChange={() => toggleRound(round.key)} className="h-4 w-4 accent-brand" />
+                            <span className="w-16 font-medium text-fg">Round {round.number}</span>
+                            <span className="w-14 text-fg-muted">{round.entries.filter((e) => e.timeMs !== null).length} drivers</span>
+                            {winner && <span className="font-mono text-fg-soft">{winner.name} {formatTime(winner.timeMs!)}</span>}
+                            {reason && <span className="text-bronze">{reason}</span>}
+                            {planned && planned.dnfs.length > 0 && <span className="text-fg-muted">DNF: {planned.dnfs.join(", ")}</span>}
                           </label>
                         </li>
                       )
@@ -243,8 +243,8 @@ export function MatchCsvImportDialog({ tournamentId, matchId, subMatches, ownPla
           </>
         )}
 
-        {doubled && <p className="text-sm text-[#ED1F24]">Two blocks point to the same sub-match. Every block needs its own.</p>}
-        {error && <p className="text-sm text-[#ED1F24]">{error}</p>}
+        {doubled && <p className="text-sm text-danger">Two blocks point to the same sub-match. Every block needs its own.</p>}
+        {error && <p className="text-sm text-danger">{error}</p>}
         <div className="dialog-footer flex justify-end gap-2">
           <Button variant="ghost" onClick={onClose}>Cancel</Button>
           <Button onClick={handleSave} disabled={saving || roundCount === 0 || doubled}>

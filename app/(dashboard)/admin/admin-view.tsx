@@ -127,8 +127,8 @@ export function AdminView({ users: initial, currentUserId, isAdmin }: Props) {
     <div className="space-y-6 max-w-5xl">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-[#f5f0f0]">Accounts</h1>
-          <p className="text-[#9a9090] text-sm mt-0.5">{users.length} accounts</p>
+          <h1 className="text-2xl font-bold text-fg">Accounts</h1>
+          <p className="text-fg-muted text-sm mt-0.5">{users.length} accounts</p>
         </div>
         <Button onClick={() => { setShowForm(true); setError("") }}>
           <Plus size={16} />
@@ -136,15 +136,15 @@ export function AdminView({ users: initial, currentUserId, isAdmin }: Props) {
         </Button>
       </div>
 
-      <div className="rounded-xl border border-[#2d2829] overflow-hidden max-md:overflow-visible max-md:border-0">
+      <div className="rounded-xl border border-line overflow-hidden max-md:overflow-visible max-md:border-0">
         {/* From 768px a table; on phones the same rows are laid out as one card per account */}
         <table className="w-full text-sm max-md:block">
           <thead className="max-md:hidden">
-            <tr className="border-b border-[#2d2829] bg-[#251f20]">
-              <th className="text-left px-4 py-3 text-[#9a9090] font-medium">User</th>
-              <th className="text-left px-4 py-3 text-[#9a9090] font-medium">Username</th>
-              <th className="text-left px-4 py-3 text-[#9a9090] font-medium">Player profile</th>
-              <th className="text-left px-4 py-3 text-[#9a9090] font-medium">Role</th>
+            <tr className="border-b border-line bg-raised">
+              <th className="text-left px-4 py-3 text-fg-muted font-medium">User</th>
+              <th className="text-left px-4 py-3 text-fg-muted font-medium">Username</th>
+              <th className="text-left px-4 py-3 text-fg-muted font-medium">Player profile</th>
+              <th className="text-left px-4 py-3 text-fg-muted font-medium">Role</th>
               <th className="px-4 py-3" />
             </tr>
           </thead>
@@ -153,29 +153,29 @@ export function AdminView({ users: initial, currentUserId, isAdmin }: Props) {
               const RoleIcon = ROLE_ICON[user.role]
               const isSelf = user.id === currentUserId
               return (
-                <tr key={user.id} className="border-b border-[#2d2829] last:border-0 hover:bg-[#251f20]/40 transition-colors max-md:grid max-md:grid-cols-[1fr_auto] max-md:items-center max-md:gap-x-3 max-md:gap-y-2 max-md:rounded-xl max-md:border max-md:bg-[#1c1819] max-md:p-3.5 max-md:last:border">
+                <tr key={user.id} className="border-b border-line last:border-0 hover:bg-raised/40 transition-colors max-md:grid max-md:grid-cols-[1fr_auto] max-md:items-center max-md:gap-x-3 max-md:gap-y-2 max-md:rounded-xl max-md:border max-md:bg-surface max-md:p-3.5 max-md:last:border">
                   <td className="px-4 py-3 max-md:order-1 max-md:block max-md:min-w-0 max-md:p-0">
-                    <div className="font-medium text-[#f5f0f0] max-md:text-base">{user.name}</div>
-                    {user.email && <div className="text-xs text-[#5e5858]">{user.email}</div>}
+                    <div className="font-medium text-fg max-md:text-base">{user.name}</div>
+                    {user.email && <div className="text-xs text-fg-subtle">{user.email}</div>}
                     {user.twoFactor && (
-                      <div className="flex items-center gap-1 text-xs text-[#9a9090]">
+                      <div className="flex items-center gap-1 text-xs text-fg-muted">
                         <Smartphone size={11} />
                         Two-factor sign-in / passkey
                       </div>
                     )}
                     {!!user.managedLineups?.length && (
-                      <div className="text-xs text-[#9a9090]">
+                      <div className="text-xs text-fg-muted">
                         Responsible for: {user.managedLineups.map((m) => `${m.lineup.tournament.name} / ${m.lineup.name}`).join(", ")}
                       </div>
                     )}
                   </td>
-                  <td className="px-4 py-3 font-mono text-xs text-[#9a9090] max-md:order-3 max-md:block max-md:min-w-0 max-md:truncate max-md:p-0">{user.username}</td>
-                  <td className="px-4 py-3 text-[#9a9090] max-md:order-4 max-md:block max-md:p-0 max-md:text-right max-md:text-xs">
-                    <span className="text-[#5e5858] md:hidden">Player: </span>
+                  <td className="px-4 py-3 font-mono text-xs text-fg-muted max-md:order-3 max-md:block max-md:min-w-0 max-md:truncate max-md:p-0">{user.username}</td>
+                  <td className="px-4 py-3 text-fg-muted max-md:order-4 max-md:block max-md:p-0 max-md:text-right max-md:text-xs">
+                    <span className="text-fg-subtle md:hidden">Player: </span>
                     {user.player ? (
-                      <span className="text-[#f5f0f0]">{user.player.name}</span>
+                      <span className="text-fg">{user.player.name}</span>
                     ) : (
-                      <span className="text-[#3a3435]">—</span>
+                      <span className="text-line-strong">—</span>
                     )}
                   </td>
                   <td className="px-4 py-3 max-md:order-2 max-md:block max-md:p-0 max-md:text-right">
@@ -188,7 +188,7 @@ export function AdminView({ users: initial, currentUserId, isAdmin }: Props) {
                       <Badge
                         variant={ROLE_BADGE[user.role]}
                         className={cn(
-                          "relative focus-within:ring-2 focus-within:ring-[#FBD00D]",
+                          "relative focus-within:ring-2 focus-within:ring-brand",
                           updatingRole === user.id && "opacity-50"
                         )}
                       >
@@ -209,14 +209,14 @@ export function AdminView({ users: initial, currentUserId, isAdmin }: Props) {
                       </Badge>
                     )}
                   </td>
-                  <td className="px-4 py-3 text-right whitespace-nowrap max-md:order-5 max-md:col-span-2 max-md:flex max-md:justify-between max-md:border-t max-md:border-[#2d2829] max-md:p-0 max-md:pt-2 max-md:empty:hidden">
+                  <td className="px-4 py-3 text-right whitespace-nowrap max-md:order-5 max-md:col-span-2 max-md:flex max-md:justify-between max-md:border-t max-md:border-line max-md:p-0 max-md:pt-2 max-md:empty:hidden">
                     {!isSelf && (isAdmin || user.role === "PLAYER") && (
                       <Button
                         variant="ghost"
                         size="sm"
                         onClick={() => setResetUser(user)}
                         title="Reset password"
-                        className="text-[#5e5858] hover:text-[#FBD00D]"
+                        className="text-fg-subtle hover:text-brand-ink"
                       >
                         <KeyRound size={14} />
                         <span className="md:hidden">Reset password</span>
@@ -228,7 +228,7 @@ export function AdminView({ users: initial, currentUserId, isAdmin }: Props) {
                         size="sm"
                         onClick={() => handleResetTwoFactor(user)}
                         title="Turn off two-factor sign-in and remove passkeys"
-                        className="text-[#5e5858] hover:text-[#FBD00D]"
+                        className="text-fg-subtle hover:text-brand-ink"
                       >
                         <Smartphone size={14} />
                         <span className="md:hidden">Reset 2FA</span>
@@ -240,7 +240,7 @@ export function AdminView({ users: initial, currentUserId, isAdmin }: Props) {
                         size="sm"
                         onClick={() => handleDelete(user.id)}
                         disabled={deleting === user.id}
-                        className="text-[#5e5858] hover:text-[#ED1F24]"
+                        className="text-fg-subtle hover:text-danger"
                       >
                         <Trash2 size={14} />
                         <span className="md:hidden">Delete</span>
@@ -270,7 +270,7 @@ export function AdminView({ users: initial, currentUserId, isAdmin }: Props) {
             </div>
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="email">Email <span className="text-[#5e5858]">(optional)</span></Label>
+            <Label htmlFor="email">Email <span className="text-fg-subtle">(optional)</span></Label>
             <Input id="email" name="email" type="email" />
           </div>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -289,7 +289,7 @@ export function AdminView({ users: initial, currentUserId, isAdmin }: Props) {
               </div>
             )}
           </div>
-          {error && <p className="text-sm text-[#ED1F24]">{error}</p>}
+          {error && <p className="text-sm text-danger">{error}</p>}
           <div className="dialog-footer flex gap-2 justify-end pt-1">
             <Button variant="ghost" type="button" onClick={() => setShowForm(false)}>Cancel</Button>
             <Button type="submit" disabled={loading}>{loading ? "Creating…" : "Create User"}</Button>

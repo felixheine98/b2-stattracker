@@ -207,7 +207,7 @@ export function EcmImportDialog({ subMatches, allPlayers, startDay, canManage, i
   }
 
   const selectClass =
-    "h-8 rounded-md border border-[#3a3435] bg-[#251f20] px-2 text-xs text-[#f5f0f0] focus:outline-none focus:ring-2 focus:ring-[#FBD00D]"
+    "h-8 rounded-md border border-line-strong bg-raised px-2 text-xs text-fg focus:outline-none focus:ring-2 focus:ring-brand"
 
   return (
     <Dialog open onClose={onClose} className="max-w-2xl">
@@ -215,12 +215,12 @@ export function EcmImportDialog({ subMatches, allPlayers, startDay, canManage, i
 
       {!payload ? (
         <div className="space-y-4">
-          <p className="text-sm text-[#c5bfbf]">
+          <p className="text-sm text-fg-soft">
             The bookmark is the quickest way: it reads the match page on ecircuitmania.com and brings
             you straight here with the data.
           </p>
           <EcmBookmarkletSetup />
-          <p className="text-xs text-[#5e5858]">
+          <p className="text-xs text-fg-subtle">
             Only if the bookmark shows a window to copy from (very large match): paste the copied data here.
           </p>
           <Textarea
@@ -230,7 +230,7 @@ export function EcmImportDialog({ subMatches, allPlayers, startDay, canManage, i
             className="font-mono text-xs"
             placeholder="Paste the copied data here (Ctrl+V)"
           />
-          {text.trim() && <p className="text-sm text-[#ED1F24]">This is not data from the eCM bookmark.</p>}
+          {text.trim() && <p className="text-sm text-danger">This is not data from the eCM bookmark.</p>}
           <div className="dialog-footer flex justify-end">
             <Button variant="ghost" onClick={onClose}>Cancel</Button>
           </div>
@@ -239,7 +239,7 @@ export function EcmImportDialog({ subMatches, allPlayers, startDay, canManage, i
         <div className="space-y-4">
           {payload.teams.length > 1 && (
             <div className="flex items-center gap-2 text-sm">
-              <span className="text-[#9a9090]">Unser Team</span>
+              <span className="text-fg-muted">Unser Team</span>
               {payload.teams.map((team, i) => (
                 <button
                   key={team.name}
@@ -247,8 +247,8 @@ export function EcmImportDialog({ subMatches, allPlayers, startDay, canManage, i
                   onClick={() => setTeamChoice(i)}
                   className={`rounded-full border px-3 py-1 text-xs transition-colors ${
                     i === ourTeam
-                      ? "border-[#FBD00D]/50 bg-[#FBD00D]/10 text-[#f5f0f0]"
-                      : "border-[#2d2829] text-[#9a9090] hover:border-[#3a3435]"
+                      ? "border-brand/50 bg-brand/10 text-fg"
+                      : "border-line text-fg-muted hover:border-line-strong"
                   }`}
                 >
                   {team.name}
@@ -258,30 +258,30 @@ export function EcmImportDialog({ subMatches, allPlayers, startDay, canManage, i
           )}
 
           <div className="space-y-1.5">
-            <p className="text-xs font-semibold uppercase tracking-wider text-[#9a9090]">Sets</p>
+            <p className="text-xs font-semibold uppercase tracking-wider text-fg-muted">Sets</p>
             {payload.sets.map((set, i) => {
               const a = analyses[i]
               return (
-                <div key={i} className="flex flex-wrap items-center gap-x-3 rounded-lg border border-[#2d2829] px-3 py-2 text-sm">
+                <div key={i} className="flex flex-wrap items-center gap-x-3 rounded-lg border border-line px-3 py-2 text-sm">
                   {repairs[i].dropped.length > 0 && (
-                    <p className="order-last w-full pt-1 text-xs text-[#cd7f32]">
+                    <p className="order-last w-full pt-1 text-xs text-bronze">
                       Ignored, as surplus and never finished:{" "}
                       {repairs[i].dropped.map((d) => `${d.player} (round ${d.round})`).join(", ")}
                     </p>
                   )}
                   {repairs[i].added.length > 0 && (
-                    <p className="order-last w-full pt-1 text-xs text-[#cd7f32]">
+                    <p className="order-last w-full pt-1 text-xs text-bronze">
                       Missing on eCM, added as DNF:{" "}
                       {repairs[i].added.map((d) => `${d.player} (round ${d.round})`).join(", ")}
                     </p>
                   )}
-                  <span className="font-medium text-[#f5f0f0]">{set.label}</span>
-                  <span className="text-[#9a9090]">{set.map}</span>
+                  <span className="font-medium text-fg">{set.label}</span>
+                  <span className="text-fg-muted">{set.map}</span>
                   {a.error ? (
-                    <span className="ml-auto text-xs text-[#ED1F24]">cannot be imported: {a.error}</span>
+                    <span className="ml-auto text-xs text-danger">cannot be imported: {a.error}</span>
                   ) : (
                     <>
-                      <span className="text-xs text-[#5e5858]">
+                      <span className="text-xs text-fg-subtle">
                         {a.size}v{a.size} · {set.rounds.length} rounds · {a.ourNames.join(", ")}
                       </span>
                       <select
@@ -309,15 +309,15 @@ export function EcmImportDialog({ subMatches, allPlayers, startDay, canManage, i
 
           {neededNames.length > 0 && (
             <div className="space-y-1.5">
-              <p className="text-xs font-semibold uppercase tracking-wider text-[#9a9090]">Assign players</p>
+              <p className="text-xs font-semibold uppercase tracking-wider text-fg-muted">Assign players</p>
               <div className="grid grid-cols-1 gap-x-4 sm:grid-cols-2 gap-y-1.5">
                 {neededNames.map((name) => (
-                  <label key={name} className="flex items-center justify-between gap-2 text-sm text-[#c5bfbf]">
+                  <label key={name} className="flex items-center justify-between gap-2 text-sm text-fg-soft">
                     {name}
                     <select
                       value={playerIdFor(name)}
                       onChange={(e) => setMappingEdits((m) => ({ ...m, [name]: e.target.value }))}
-                      className={`${selectClass} w-40 ${playerIdFor(name) ? "" : "border-[#ED1F24]"}`}
+                      className={`${selectClass} w-40 ${playerIdFor(name) ? "" : "border-danger"}`}
                     >
                       <option value="">— pick —</option>
                       <optgroup label="Members">
@@ -341,15 +341,15 @@ export function EcmImportDialog({ subMatches, allPlayers, startDay, canManage, i
 
           {canManage && nameDiffs.length > 0 && startDay <= localTodayKey() && (
             <div className="space-y-1">
-              <p className="text-xs font-semibold uppercase tracking-wider text-[#9a9090]">Differing names</p>
+              <p className="text-xs font-semibold uppercase tracking-wider text-fg-muted">Differing names</p>
               {nameDiffs.map(({ ecmName, player }) => (
-                <p key={ecmName} className="flex flex-wrap items-center gap-x-2 text-xs text-[#cd7f32]">
+                <p key={ecmName} className="flex flex-wrap items-center gap-x-2 text-xs text-bronze">
                   eCM: {ecmName} · with you in this tournament: {player.name}
                   <button
                     type="button"
                     onClick={() => adoptEcmName(ecmName, player.id)}
                     disabled={renaming === ecmName}
-                    className="text-[#FBD00D] hover:underline disabled:opacity-50"
+                    className="text-brand-ink hover:underline disabled:opacity-50"
                   >
                     save as the name from the start of the tournament
                   </button>
@@ -359,12 +359,12 @@ export function EcmImportDialog({ subMatches, allPlayers, startDay, canManage, i
           )}
 
           {!canManage && problems.some((p) => p.includes("not all players are assigned")) && (
-            <p className="text-xs text-[#9a9090]">If a player is missing from the list, a manager has to add them first.</p>
+            <p className="text-xs text-fg-muted">If a player is missing from the list, a manager has to add them first.</p>
           )}
           {problems.map((problem) => (
-            <p key={problem} className="text-xs text-[#ED1F24]">{problem}</p>
+            <p key={problem} className="text-xs text-danger">{problem}</p>
           ))}
-          {error && <p className="text-sm text-[#ED1F24]">{error}</p>}
+          {error && <p className="text-sm text-danger">{error}</p>}
 
           <div className="dialog-footer flex gap-2 justify-end">
             <Button variant="ghost" onClick={() => setText("")}>Back</Button>

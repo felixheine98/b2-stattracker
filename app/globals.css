@@ -2,7 +2,7 @@
 
 :root {
   /* Tells the browser to draw what it draws itself (dropdown lists, date pickers, scrollbars)
-     in the dark; a light theme has to set this to light */
+     in the dark */
   color-scheme: dark;
 
   --bg: #0e0b0b;
@@ -12,18 +12,89 @@
   --border-strong: #3a3435;
 
   --fg: #f5f0f0;
+  --fg-soft: #c5bfbf;
   --fg-muted: #9a9090;
   --fg-subtle: #5e5858;
 
   --primary: #FBD00D;
   --primary-hover: #e6bc0c;
   --primary-fg: #1a1718;
+  /* The team colour as text: yellow on the dark theme */
+  --primary-ink: #FBD00D;
 
   --secondary: #002484;
   --secondary-hover: #001e70;
+  /* Blue as text, lighter than the team's navy so it reads on dark */
+  --info: #6b8fff;
 
   --destructive: #ED1F24;
   --destructive-hover: #d61c21;
+
+  --ok: #4ade80;
+  --violet: #c084fc;
+  --bronze: #cd7f32;
+}
+
+/* The light theme (chosen in the account menu, see lib/theme.ts): the same team colours on a
+   warm white. Yellow stays for buttons and highlights; as text it would not read, so text in
+   the team colour is the navy instead. */
+:root[data-theme="light"] {
+  color-scheme: light;
+
+  --bg: #f4f2ee;
+  --surface: #ffffff;
+  --surface-raised: #efece6;
+  --border: #e0dbd3;
+  --border-strong: #c9c2b8;
+
+  --fg: #1a1718;
+  --fg-soft: #3d3839;
+  --fg-muted: #696162;
+  --fg-subtle: #8a8283;
+
+  --primary-ink: #002484;
+
+  --info: #1f4fd6;
+
+  --destructive: #d61c21;
+  --destructive-hover: #b9171b;
+
+  --ok: #15803d;
+  --violet: #7e22ce;
+  --bronze: #9a5a1c;
+}
+
+/* For the few things that differ by more than a colour: light:hidden, light:block, ... */
+@custom-variant light (&:where([data-theme="light"], [data-theme="light"] *));
+
+/* The colours as Tailwind names: bg-surface, text-fg-muted, border-line, ... */
+@theme inline {
+  --color-canvas: var(--bg);
+  --color-surface: var(--surface);
+  --color-raised: var(--surface-raised);
+  --color-line: var(--border);
+  --color-line-strong: var(--border-strong);
+
+  --color-fg: var(--fg);
+  --color-fg-soft: var(--fg-soft);
+  --color-fg-muted: var(--fg-muted);
+  --color-fg-subtle: var(--fg-subtle);
+
+  --color-brand: var(--primary);
+  --color-brand-hover: var(--primary-hover);
+  --color-brand-fg: var(--primary-fg);
+  --color-brand-ink: var(--primary-ink);
+
+  --color-navy: var(--secondary);
+  --color-navy-hover: var(--secondary-hover);
+  --color-info: var(--info);
+
+  --color-danger: var(--destructive);
+  --color-danger-hover: var(--destructive-hover);
+
+  --color-ok: var(--ok);
+  --color-violet: var(--violet);
+  --color-bronze: var(--bronze);
 }
 
 body {

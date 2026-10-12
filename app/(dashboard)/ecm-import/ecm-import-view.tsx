@@ -117,8 +117,8 @@ export function EcmImportView({ tournaments }: { tournaments: Tournament[] }) {
     return (
       <div className="max-w-2xl space-y-5">
         <div>
-          <h1 className="text-2xl font-bold text-[#f5f0f0]">eCM import</h1>
-          <p className="mt-0.5 text-sm text-[#9a9090]">
+          <h1 className="text-2xl font-bold text-fg">eCM import</h1>
+          <p className="mt-0.5 text-sm text-fg-muted">
             {fragment ? "The data that came along cannot be read. Please start the bookmark on the eCM match page once more." : "The eCM bookmark brings you here with the data of a match."}
           </p>
         </div>
@@ -133,18 +133,18 @@ export function EcmImportView({ tournaments }: { tournaments: Tournament[] }) {
   return (
     <div className="max-w-xl space-y-5">
       <div>
-        <h1 className="text-2xl font-bold text-[#f5f0f0]">eCM import</h1>
-        <p className="mt-0.5 text-sm text-[#9a9090]">
+        <h1 className="text-2xl font-bold text-fg">eCM import</h1>
+        <p className="mt-0.5 text-sm text-fg-muted">
           {teams.join(" vs ")} · {payload.sets.length} sets, {rounds} rounds read
         </p>
       </div>
 
       {tournaments.length === 0 || !tournament || !lineup ? (
-        <p className="text-sm text-[#ED1F24]">There is no tournament with a lineup yet that could be imported into.</p>
+        <p className="text-sm text-danger">There is no tournament with a lineup yet that could be imported into.</p>
       ) : (
         <>
           {!suggestion && (
-            <p className="rounded-lg border border-[#cd7f32]/40 bg-[#cd7f32]/10 px-3 py-2 text-sm text-[#cd7f32]">
+            <p className="rounded-lg border border-bronze/40 bg-bronze/10 px-3 py-2 text-sm text-bronze">
               Neither team is named like one of your lineups. Please pick tournament and lineup yourself.
             </p>
           )}
@@ -184,12 +184,12 @@ export function EcmImportView({ tournaments }: { tournaments: Tournament[] }) {
                   onClick={() => setPickedMatch(m.id)}
                   className={cn(
                     "flex w-full items-center gap-3 rounded-lg border px-3 py-2.5 text-left text-sm transition-colors",
-                    matchId === m.id ? "border-[#FBD00D]/50 bg-[#FBD00D]/10 text-[#f5f0f0]" : "border-[#2d2829] text-[#9a9090]"
+                    matchId === m.id ? "border-brand/50 bg-brand/10 text-fg" : "border-line text-fg-muted"
                   )}
                 >
                   <span className="flex-1">{m.opponent ? `vs ${m.opponent}` : "Seeding / no opponent"}</span>
-                  <span className="text-xs text-[#5e5858]">{matchStage ? stageName(matchStage, stages) : ""}</span>
-                  {suggestedMatches.includes(m.id) && <span className="text-xs text-[#FBD00D]">suggested</span>}
+                  <span className="text-xs text-fg-subtle">{matchStage ? stageName(matchStage, stages) : ""}</span>
+                  {suggestedMatches.includes(m.id) && <span className="text-xs text-brand-ink">suggested</span>}
                 </button>
               )
             })}
@@ -198,13 +198,13 @@ export function EcmImportView({ tournaments }: { tournaments: Tournament[] }) {
               onClick={() => setPickedMatch(NEW_MATCH)}
               className={cn(
                 "w-full rounded-lg border px-3 py-2.5 text-left text-sm transition-colors",
-                matchId === NEW_MATCH ? "border-[#FBD00D]/50 bg-[#FBD00D]/10 text-[#f5f0f0]" : "border-dashed border-[#3a3435] text-[#9a9090]"
+                matchId === NEW_MATCH ? "border-brand/50 bg-brand/10 text-fg" : "border-dashed border-line-strong text-fg-muted"
               )}
             >
               + Add a new match
             </button>
             {matchId === NEW_MATCH && (
-              <div className="grid grid-cols-1 gap-3 rounded-lg border border-[#2d2829] p-3 sm:grid-cols-2">
+              <div className="grid grid-cols-1 gap-3 rounded-lg border border-line p-3 sm:grid-cols-2">
                 <div className="space-y-1.5">
                   <Label htmlFor="ecm-stage">Stage</Label>
                   <Select id="ecm-stage" className={selectClass} value={stage?.id ?? ""} onChange={(e) => setPickedStage(e.target.value)}>
@@ -223,13 +223,13 @@ export function EcmImportView({ tournaments }: { tournaments: Tournament[] }) {
             )}
           </div>
 
-          <label className="flex items-start gap-2 text-sm text-[#9a9090]"><input type="checkbox" checked={rememberAlias} onChange={e => setRememberAlias(e.target.checked)} />Remember the import name for the chosen opponent in this tournament</label>
+          <label className="flex items-start gap-2 text-sm text-fg-muted"><input type="checkbox" checked={rememberAlias} onChange={e => setRememberAlias(e.target.checked)} />Remember the import name for the chosen opponent in this tournament</label>
 
-          {error && <p className="text-sm text-[#ED1F24]">{error}</p>}
+          {error && <p className="text-sm text-danger">{error}</p>}
           <Button onClick={proceed} disabled={saving} className="w-full sm:w-auto">
             {saving ? "One moment…" : matchId === NEW_MATCH ? "Add match and import" : "Continue to the import"}
           </Button>
-          <p className="text-xs text-[#5e5858]">
+          <p className="text-xs text-fg-subtle">
             After that the match page opens the assignment of sets and players. Nothing is saved before that.
           </p>
         </>

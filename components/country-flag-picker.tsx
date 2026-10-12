@@ -48,7 +48,7 @@ export function CountryFlagPicker({ player, onChange }: Props) {
         aria-expanded={!!at}
         aria-label={`Change country of ${player.name}`}
         title={player.country ? `${countryName(player.country)} · change` : "Pick a country"}
-        className="shrink-0 rounded-full ring-offset-2 ring-offset-[#1c1819] hover:ring-2 hover:ring-[#FBD00D] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FBD00D]"
+        className="shrink-0 rounded-full ring-offset-2 ring-offset-surface hover:ring-2 hover:ring-brand focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
       >
         <PlayerAvatar player={player} />
       </button>
@@ -58,7 +58,7 @@ export function CountryFlagPicker({ player, onChange }: Props) {
           <div
             role="menu"
             style={{ left: at.x, top: at.y }}
-            className="fixed z-50 flex gap-1.5 rounded-lg border border-[#3a3435] bg-[#1c1819] p-1.5 shadow-xl"
+            className="fixed z-50 flex gap-1.5 rounded-lg border border-line-strong bg-surface p-1.5 shadow-xl"
           >
             {countryOptions(player.country).map((c) => (
               <button
@@ -69,7 +69,7 @@ export function CountryFlagPicker({ player, onChange }: Props) {
                 onClick={() => pick(c.code)}
                 title={c.name}
                 aria-label={c.name}
-                className={cn("rounded-full p-0.5 hover:bg-[#3a3435]", c.code === player.country && "ring-2 ring-[#FBD00D]")}
+                className={cn("rounded-full p-0.5 hover:bg-line-strong", c.code === player.country && "ring-2 ring-brand")}
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={`${BASE_PATH}/flags/${c.code}.svg`} alt="" className="h-7 w-7 rounded-full object-cover" />
@@ -83,8 +83,8 @@ export function CountryFlagPicker({ player, onChange }: Props) {
               title="No country"
               aria-label="No country"
               className={cn(
-                "flex h-8 w-8 items-center justify-center rounded-full text-[#9a9090] hover:bg-[#3a3435] hover:text-[#f5f0f0]",
-                !player.country && "ring-2 ring-[#FBD00D]"
+                "flex h-8 w-8 items-center justify-center rounded-full text-fg-muted hover:bg-line-strong hover:text-fg",
+                !player.country && "ring-2 ring-brand"
               )}
             >
               <X size={15} />

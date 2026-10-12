@@ -13,11 +13,11 @@ export interface LevelRef {
 
 // Colours of the levels, also used for the dots in the lineup variants
 export function answerColor(answer: Answer): string {
-  if (answer === "FIX") return "border-green-500/40 bg-green-500/15 text-green-400"
-  if (answer === "MAYBE") return "border-[#FBD00D]/40 bg-[#FBD00D]/15 text-[#FBD00D]"
-  if (answer === "OUT") return "border-[#ED1F24]/40 bg-[#ED1F24]/15 text-[#ED1F24]"
-  if (answer === "OPEN") return "border-[#3a3435] bg-[#251f20] text-[#9a9090]"
-  return "border-[#6b8fff]/40 bg-[#6b8fff]/15 text-[#6b8fff]"
+  if (answer === "FIX") return "border-green-500/40 bg-green-500/15 text-ok"
+  if (answer === "MAYBE") return "border-brand/40 bg-brand/15 text-brand-ink"
+  if (answer === "OUT") return "border-danger/40 bg-danger/15 text-danger"
+  if (answer === "OPEN") return "border-line-strong bg-raised text-fg-muted"
+  return "border-info/40 bg-info/15 text-info"
 }
 
 export function answerLabel(answer: Answer, levels: LevelRef[]): string {
@@ -112,7 +112,7 @@ export function AvailabilityInput({ tournamentId, playerId, answer, note, levels
               onClick={() => choose(o.value)}
               className={cn(
                 "whitespace-nowrap rounded-full border px-3 py-1 text-xs font-medium transition-colors",
-                shown === o.value ? answerColor(o.value) : "border-[#2d2829] text-[#5e5858] hover:border-[#3a3435] hover:text-[#9a9090]"
+                shown === o.value ? answerColor(o.value) : "border-line text-fg-subtle hover:border-line-strong hover:text-fg-muted"
               )}
             >
               {o.label}
@@ -134,12 +134,12 @@ export function AvailabilityInput({ tournamentId, playerId, answer, note, levels
             maxLength={300}
             placeholder="Note (e.g. only from match day 2)"
             aria-label="Note"
-            className="h-8 min-w-0 flex-1 rounded-md border border-dashed border-[#2d2829] bg-transparent px-2.5 text-xs text-[#c5bfbf] placeholder:text-[#5e5858] focus:border-solid focus:border-[#FBD00D] focus:outline-none"
+            className="h-8 min-w-0 flex-1 rounded-md border border-dashed border-line bg-transparent px-2.5 text-xs text-fg-soft placeholder:text-fg-subtle focus:border-solid focus:border-brand focus:outline-none"
           />
         ) : (
-          note && <span className="min-w-0 flex-1 text-xs text-[#9a9090]">{note}</span>
+          note && <span className="min-w-0 flex-1 text-xs text-fg-muted">{note}</span>
         ))}
-      {error && <span className="text-xs text-[#ED1F24]">{error}</span>}
+      {error && <span className="text-xs text-danger">{error}</span>}
     </div>
   )
 }

@@ -32,11 +32,11 @@ export function PillSelect({ options, selected, onChange, className }: Props) {
   const pill = (active: boolean) =>
     cn(
       "whitespace-nowrap rounded-md px-3 py-1 text-xs font-medium transition-colors",
-      active ? "bg-[#FBD00D]/15 text-[#FBD00D]" : "text-[#9a9090] hover:text-[#f5f0f0]"
+      active ? "bg-brand/15 text-brand-ink" : "text-fg-muted hover:text-fg"
     )
   return (
     <div className={cn("flex max-w-full flex-wrap items-center gap-x-3 gap-y-1.5", className)}>
-      <div className="inline-flex max-w-full flex-wrap gap-1 rounded-lg border border-[#2d2829] bg-[#1c1819] p-1">
+      <div className="inline-flex max-w-full flex-wrap gap-1 rounded-lg border border-line bg-surface p-1">
         <button type="button" aria-pressed={selected.length === 0} onClick={() => onChange([])} className={pill(selected.length === 0)}>
           All
         </button>
@@ -51,12 +51,12 @@ export function PillSelect({ options, selected, onChange, className }: Props) {
         role="checkbox"
         aria-checked={multi}
         onClick={() => setMulti(!multi)}
-        className={cn("inline-flex items-center gap-1.5 text-xs transition-colors", multi ? "text-[#c5bfbf]" : "text-[#5e5858] hover:text-[#9a9090]")}
+        className={cn("inline-flex items-center gap-1.5 text-xs transition-colors", multi ? "text-fg-soft" : "text-fg-subtle hover:text-fg-muted")}
       >
         <span
           className={cn(
             "flex h-3.5 w-3.5 items-center justify-center rounded-[3px] border",
-            multi ? "border-[#FBD00D] bg-[#FBD00D] text-[#1a1718]" : "border-[#5e5858]"
+            multi ? "border-brand bg-brand text-brand-fg" : "border-fg-subtle"
           )}
         >
           {multi && <Check size={10} strokeWidth={3.5} />}

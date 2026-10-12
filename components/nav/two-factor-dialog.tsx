@@ -117,7 +117,7 @@ export function TwoFactorDialog({ onClose }: { onClose: () => void }) {
       <Dialog open onClose={onClose}>
         <DialogTitle>Turn off the authenticator app</DialogTitle>
         <form onSubmit={turnOff} className="space-y-4">
-          <p className="text-sm text-[#9a9090]">
+          <p className="text-sm text-fg-muted">
             Codes from the app and the recovery codes stop working. To move to a new phone or get new recovery codes,
             turn it off and set it up again.
           </p>
@@ -125,7 +125,7 @@ export function TwoFactorDialog({ onClose }: { onClose: () => void }) {
             <Label htmlFor="totp-off-password">Your password</Label>
             <Input id="totp-off-password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="current-password" required />
           </div>
-          {error && <p className="text-sm text-[#ED1F24]">{error}</p>}
+          {error && <p className="text-sm text-danger">{error}</p>}
           <div className="dialog-footer flex gap-2 justify-end">
             <Button variant="ghost" type="button" onClick={backToOverview}>Cancel</Button>
             <Button variant="outline" type="submit" disabled={loading}>{loading ? "Turning off…" : "Turn off"}</Button>
@@ -139,24 +139,24 @@ export function TwoFactorDialog({ onClose }: { onClose: () => void }) {
     <Dialog open onClose={onClose}>
       <DialogTitle>Sign-in security</DialogTitle>
       {!status ? (
-        <p className={error ? "text-sm text-[#ED1F24]" : "text-sm text-[#9a9090]"}>{error || "Loading…"}</p>
+        <p className={error ? "text-sm text-danger" : "text-sm text-fg-muted"}>{error || "Loading…"}</p>
       ) : (
         <div className="space-y-5">
-          {status.required && <p className="text-sm text-[#9a9090]">Your account has to keep at least one of the two.</p>}
+          {status.required && <p className="text-sm text-fg-muted">Your account has to keep at least one of the two.</p>}
 
           <section className="space-y-2">
             <div className="flex flex-wrap items-center justify-between gap-2">
-              <h3 className="text-sm font-medium text-[#f5f0f0]">Authenticator app</h3>
+              <h3 className="text-sm font-medium text-fg">Authenticator app</h3>
               {status.enabled ? (
                 <Button variant="outline" size="sm" onClick={() => setView("totp-off")}>Turn off</Button>
               ) : (
                 <Button variant="outline" size="sm" onClick={() => setView("totp-setup")}>Set up</Button>
               )}
             </div>
-            <p className="text-sm text-[#9a9090]">
+            <p className="text-sm text-fg-muted">
               {status.enabled ? (
                 <>
-                  <span className="text-[#FBD00D]">On</span> – signing in with your password asks for a code. {status.recoveryCodesLeft} recovery{" "}
+                  <span className="text-brand-ink">On</span> – signing in with your password asks for a code. {status.recoveryCodesLeft} recovery{" "}
                   {status.recoveryCodesLeft === 1 ? "code" : "codes"} left.
                 </>
               ) : (
@@ -165,25 +165,25 @@ export function TwoFactorDialog({ onClose }: { onClose: () => void }) {
             </p>
           </section>
 
-          <section className="space-y-2 border-t border-[#2d2829] pt-4">
+          <section className="space-y-2 border-t border-line pt-4">
             <div className="flex flex-wrap items-center justify-between gap-2">
-              <h3 className="text-sm font-medium text-[#f5f0f0]">Passkeys</h3>
+              <h3 className="text-sm font-medium text-fg">Passkeys</h3>
               <Button variant="outline" size="sm" onClick={() => setView("passkey-add")}>Add passkey</Button>
             </div>
             {passkeys.length === 0 ? (
-              <p className="text-sm text-[#9a9090]">None yet. A passkey signs you in with your fingerprint, face or PIN, without password.</p>
+              <p className="text-sm text-fg-muted">None yet. A passkey signs you in with your fingerprint, face or PIN, without password.</p>
             ) : (
-              <ul className="divide-y divide-[#2d2829] rounded-lg border border-[#2d2829]">
+              <ul className="divide-y divide-line rounded-lg border border-line">
                 {passkeys.map((passkey) => (
                   <li key={passkey.id} className="flex items-center gap-2 px-3 py-2">
                     <div className="min-w-0 flex-1">
-                      <div className="truncate text-sm text-[#f5f0f0]">{passkey.name}</div>
-                      <div className="text-xs text-[#5e5858]">
+                      <div className="truncate text-sm text-fg">{passkey.name}</div>
+                      <div className="text-xs text-fg-subtle">
                         Added {new Date(passkey.createdAt).toLocaleDateString()}
                         {passkey.lastUsedAt ? ` · last used ${new Date(passkey.lastUsedAt).toLocaleDateString()}` : " · not used yet"}
                       </div>
                     </div>
-                    <Button variant="ghost" size="sm" onClick={() => removePasskey(passkey)} title="Remove passkey" aria-label={`Remove passkey ${passkey.name}`} className="text-[#5e5858] hover:text-[#ED1F24]">
+                    <Button variant="ghost" size="sm" onClick={() => removePasskey(passkey)} title="Remove passkey" aria-label={`Remove passkey ${passkey.name}`} className="text-fg-subtle hover:text-danger">
                       <Trash2 size={14} />
                     </Button>
                   </li>
@@ -192,7 +192,7 @@ export function TwoFactorDialog({ onClose }: { onClose: () => void }) {
             )}
           </section>
 
-          {error && <p className="text-sm text-[#ED1F24]">{error}</p>}
+          {error && <p className="text-sm text-danger">{error}</p>}
           <div className="dialog-footer flex justify-end">
             <Button onClick={onClose}>Close</Button>
           </div>

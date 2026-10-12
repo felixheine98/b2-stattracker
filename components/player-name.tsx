@@ -2,7 +2,7 @@
 export function PlayerName({ name, currentName }: { name: string; currentName?: string | null }) {
   if (!currentName || currentName === name) return <>{name}</>
   return (
-    <span title={`today: ${currentName}`} className="cursor-help underline decoration-dotted decoration-[#5e5858] underline-offset-2">
+    <span title={`today: ${currentName}`} className="cursor-help underline decoration-dotted decoration-fg-subtle underline-offset-2">
       {name}
     </span>
   )

@@ -54,7 +54,7 @@ export function PasskeyAdd({ onDone, onCancel }: Props) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <p className="text-sm text-[#c5bfbf]">
+      <p className="text-sm text-fg-soft">
         A passkey lives on your device or in your password manager and signs you in with your fingerprint, face or
         PIN – without password and without a code.
       </p>
@@ -66,7 +66,7 @@ export function PasskeyAdd({ onDone, onCancel }: Props) {
         <Label htmlFor="passkey-password">Your password</Label>
         <Input id="passkey-password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="current-password" required />
       </div>
-      {error && <p className="text-sm text-[#ED1F24]">{error}</p>}
+      {error && <p className="text-sm text-danger">{error}</p>}
       <div className="dialog-footer flex gap-2 justify-end">
         {onCancel && <Button variant="ghost" type="button" onClick={onCancel}>Cancel</Button>}
         <Button type="submit" disabled={loading}>{loading ? "Waiting for the device…" : "Create passkey"}</Button>

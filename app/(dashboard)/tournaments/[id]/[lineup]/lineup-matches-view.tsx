@@ -202,15 +202,15 @@ export function LineupMatchesView({ lineup, guestTmIds, trialTmIds, profilePaths
       <div>
         <Link
           href={tournamentPath(tournament)}
-          className="inline-flex items-center gap-1 text-sm text-[#9a9090] hover:text-[#f5f0f0] mb-4"
+          className="inline-flex items-center gap-1 text-sm text-fg-muted hover:text-fg mb-4"
         >
           <ArrowLeft size={14} />
           {tournament.name}
         </Link>
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="min-w-0">
-            <h1 className="text-2xl font-bold text-[#f5f0f0] mb-1">{lineup.name}</h1>
-            <p className="text-xs text-[#5e5858]">Lineup · {tournament.name}</p>
+            <h1 className="text-2xl font-bold text-fg mb-1">{lineup.name}</h1>
+            <p className="text-xs text-fg-subtle">Lineup · {tournament.name}</p>
           </div>
           {canEdit && (
             <Button onClick={openAddMatch} className="shrink-0">
@@ -223,7 +223,7 @@ export function LineupMatchesView({ lineup, guestTmIds, trialTmIds, profilePaths
 
       {/* Players */}
       <div>
-        <h2 className="text-sm font-semibold text-[#9a9090] uppercase tracking-wider mb-3 flex items-center gap-2">
+        <h2 className="text-sm font-semibold text-fg-muted uppercase tracking-wider mb-3 flex items-center gap-2">
           <Users size={14} />
           Players ({lineup.slots.length})
         </h2>
@@ -235,26 +235,26 @@ export function LineupMatchesView({ lineup, guestTmIds, trialTmIds, profilePaths
                 "inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-sm",
                 // Players who are responsible for the lineup stand out
                 responsiblePlayerIds.has(slot.player.id)
-                  ? "border-[#FBD00D]/50 bg-[#FBD00D]/10 text-[#f5f0f0]"
-                  : "border-[#2d2829] bg-[#251f20] text-[#c5bfbf]"
+                  ? "border-brand/50 bg-brand/10 text-fg"
+                  : "border-line bg-raised text-fg-soft"
               )}
             >
               <PlayerAvatar player={slot.player} className="h-5 w-5 text-[10px]" />
-              <Link href={profilePath(slot.player.tmId) ?? "/players"} className="hover:text-[#FBD00D]">
+              <Link href={profilePath(slot.player.tmId) ?? "/players"} className="hover:text-brand-ink">
                 <PlayerName name={slot.player.name} currentName={slot.player.currentName} />
               </Link>
               {isGuest(slot.player.tmId) && <GuestBadge />}
 {isTrial(slot.player.tmId) && <TrialBadge />}
-              {responsiblePlayerIds.has(slot.player.id) && <ShieldCheck size={13} className="text-[#FBD00D]" aria-label="responsible" />}
+              {responsiblePlayerIds.has(slot.player.id) && <ShieldCheck size={13} className="text-brand-ink" aria-label="responsible" />}
             </span>
           ))}
         </div>
         {lineup.managers.length > 0 && (
-          <p className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-1.5 text-sm text-[#9a9090]">
-            <ShieldCheck size={14} className="text-[#FBD00D]" />
+          <p className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-1.5 text-sm text-fg-muted">
+            <ShieldCheck size={14} className="text-brand-ink" />
             Responsible:
             {lineup.managers.map(({ user }) => (
-              <span key={user.id} className="inline-flex items-center gap-1.5 text-[#f5f0f0]">
+              <span key={user.id} className="inline-flex items-center gap-1.5 text-fg">
                 {user.name}
                 <Badge variant={user.role === "PLAYER" ? "primary" : "default"}>
                   {user.role === "ADMIN" ? "Admin" : user.role === "MANAGER" ? "Manager" : "Lineup-Manager"}
@@ -264,7 +264,7 @@ export function LineupMatchesView({ lineup, guestTmIds, trialTmIds, profilePaths
           </p>
         )}
         {editExpired && (
-          <p className="mt-2 text-xs text-[#cd7f32]">
+          <p className="mt-2 text-xs text-bronze">
             The tournament ended more than a week ago. Changes to matches and results now go through a manager.
           </p>
         )}
@@ -274,7 +274,7 @@ export function LineupMatchesView({ lineup, guestTmIds, trialTmIds, profilePaths
       {hasStats && (
         <div>
           <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-            <h2 className="text-sm font-semibold text-[#9a9090] uppercase tracking-wider flex items-center gap-2">
+            <h2 className="text-sm font-semibold text-fg-muted uppercase tracking-wider flex items-center gap-2">
               <BarChart2 size={14} />
               Overall stats
             </h2>
@@ -294,10 +294,10 @@ export function LineupMatchesView({ lineup, guestTmIds, trialTmIds, profilePaths
             />
           )}
           {aggregates.length === 0 ? (
-            <p className="text-sm text-[#5e5858]">No data for this selection.</p>
+            <p className="text-sm text-fg-subtle">No data for this selection.</p>
           ) : (
             <div className="mb-4 space-y-2">
-              <h3 className="text-xs font-semibold uppercase tracking-wider text-[#5e5858]">Maps at a glance</h3>
+              <h3 className="text-xs font-semibold uppercase tracking-wider text-fg-subtle">Maps at a glance</h3>
               <MapOverviewTable maps={mapAggregates} />
             </div>
           )}
@@ -320,7 +320,7 @@ export function LineupMatchesView({ lineup, guestTmIds, trialTmIds, profilePaths
       {/* Matches */}
       <div>
         <div className="flex items-center justify-between mb-3">
-          <h2 className="text-sm font-semibold text-[#9a9090] uppercase tracking-wider flex items-center gap-2">
+          <h2 className="text-sm font-semibold text-fg-muted uppercase tracking-wider flex items-center gap-2">
             <Swords size={14} />
             Matches ({matches.length})
           </h2>
@@ -329,8 +329,8 @@ export function LineupMatchesView({ lineup, guestTmIds, trialTmIds, profilePaths
         {matches.length === 0 ? (
           <Card>
             <CardContent className="py-10 text-center">
-              <Swords size={28} className="mx-auto text-[#5e5858] mb-3" />
-              <p className="text-[#9a9090] text-sm">No matches with this lineup yet.</p>
+              <Swords size={28} className="mx-auto text-fg-subtle mb-3" />
+              <p className="text-fg-muted text-sm">No matches with this lineup yet.</p>
             </CardContent>
           </Card>
         ) : (
@@ -341,24 +341,24 @@ export function LineupMatchesView({ lineup, guestTmIds, trialTmIds, profilePaths
                 <div key={stage.id}>
                   <StageHeading stage={stage} stages={stages} startDate={startDate} />
                   {stageMatches.length === 0 ? (
-                    <p className="text-xs text-[#5e5858]">No matches yet.</p>
+                    <p className="text-xs text-fg-subtle">No matches yet.</p>
                   ) : (
                     <div className="space-y-2">
                       {stageMatches.map((match) => (
                       <div key={match.id} className="flex items-center gap-2">
                       <Link href={matchPath(tournament, lineup, match)} className="flex-1 min-w-0">
-                        <Card className="hover:border-[#3a3435] transition-colors cursor-pointer">
+                        <Card className="hover:border-line-strong transition-colors cursor-pointer">
                           <CardContent className="py-3 flex items-center justify-between">
                             <div className="flex items-center gap-3 min-w-0">
-                              <Swords size={15} className="text-[#9a9090] shrink-0" />
+                              <Swords size={15} className="text-fg-muted shrink-0" />
                               <div className="min-w-0">
                                 <div className="flex items-center gap-2 flex-wrap">
-                                  <p className="text-sm font-medium text-[#f5f0f0]">
-                                    {matchTag(match) && <span className="mr-2 font-mono text-xs text-[#FBD00D]">{matchTag(match)}</span>}
+                                  <p className="text-sm font-medium text-fg">
+                                    {matchTag(match) && <span className="mr-2 font-mono text-xs text-brand-ink">{matchTag(match)}</span>}
                                     {match.stage.type === "SEEDING" ? "Seeding" : match.opponent ?? "Unknown opponent"}
                                   </p>
                                 </div>
-                                <div className="flex items-center gap-3 text-xs text-[#5e5858]">
+                                <div className="flex items-center gap-3 text-xs text-fg-subtle">
                                   {match.date && (
                                     <span className="flex items-center gap-1">
                                       <Calendar size={10} />
@@ -369,7 +369,7 @@ export function LineupMatchesView({ lineup, guestTmIds, trialTmIds, profilePaths
                                 </div>
                               </div>
                             </div>
-                            <ChevronRight size={16} className="text-[#5e5858] shrink-0" />
+                            <ChevronRight size={16} className="text-fg-subtle shrink-0" />
                           </CardContent>
                         </Card>
                       </Link>
@@ -379,7 +379,7 @@ export function LineupMatchesView({ lineup, guestTmIds, trialTmIds, profilePaths
                           size="sm"
                           onClick={() => handleDeleteMatch(match.id)}
                           disabled={deletingMatch === match.id}
-                          className="shrink-0 text-[#5e5858] hover:text-[#ED1F24]"
+                          className="shrink-0 text-fg-subtle hover:text-danger"
                         >
                           <Trash2 size={14} />
                         </Button>
@@ -401,9 +401,9 @@ export function LineupMatchesView({ lineup, guestTmIds, trialTmIds, profilePaths
         <form onSubmit={handleCreateMatch} className="space-y-4">
           <div className="space-y-1.5">
             <Label>Lineup</Label>
-            <div className="rounded-lg border border-[#FBD00D]/50 bg-[#FBD00D]/10 px-3 py-2 text-sm">
-              <span className="font-medium text-[#f5f0f0]">{lineup.name}</span>
-              <span className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-xs text-[#9a9090]">
+            <div className="rounded-lg border border-brand/50 bg-brand/10 px-3 py-2 text-sm">
+              <span className="font-medium text-fg">{lineup.name}</span>
+              <span className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-xs text-fg-muted">
                 {lineup.slots.map((s) => (
                   <span key={s.id} className="inline-flex items-center gap-1">
                     {s.player.name}
@@ -424,7 +424,7 @@ export function LineupMatchesView({ lineup, guestTmIds, trialTmIds, profilePaths
               ))}
             </Select>
             {!isSeeding && (
-              <p className="text-xs text-[#5e5858]">
+              <p className="text-xs text-fg-subtle">
                 Creates {nonSeedingFormats.length} sub-match{nonSeedingFormats.length !== 1 ? "es" : ""} automatically:{" "}
                 {nonSeedingFormats.map((f) => formatLabel(f)).join(", ") || "no non-seeding formats configured"}
               </p>
@@ -442,21 +442,21 @@ export function LineupMatchesView({ lineup, guestTmIds, trialTmIds, profilePaths
               <Input id="number" type="number" min={1} max={999} inputMode="numeric" value={matchNumber} onChange={(e) => setMatchNumber(e.target.value)} placeholder="#" />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="label">Name <span className="text-[#5e5858]">(optional)</span></Label>
+              <Label htmlFor="label">Name <span className="text-fg-subtle">(optional)</span></Label>
               <Input id="label" name="label" maxLength={60} placeholder="e.g. Upper Final" />
             </div>
           </div>
-          <p className="-mt-2 text-xs text-[#5e5858]">The number counts on through the whole tournament. Within a stage the matches are listed in this order.</p>
+          <p className="-mt-2 text-xs text-fg-subtle">The number counts on through the whole tournament. Within a stage the matches are listed in this order.</p>
           <div className="space-y-1.5">
             <Label htmlFor="date">Date</Label>
             <Input id="date" name="date" type="date" value={matchDate} onChange={(e) => setMatchDate(e.target.value)} />
-            <p className="text-xs text-[#5e5858]">Prefilled with the day of the stage; only change it if the match is played on another day.</p>
+            <p className="text-xs text-fg-subtle">Prefilled with the day of the stage; only change it if the match is played on another day.</p>
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="notes">Notes <span className="text-[#5e5858]">(optional)</span></Label>
+            <Label htmlFor="notes">Notes <span className="text-fg-subtle">(optional)</span></Label>
             <Textarea id="notes" name="notes" rows={2} />
           </div>
-          {matchError && <p className="text-sm text-[#ED1F24]">{matchError}</p>}
+          {matchError && <p className="text-sm text-danger">{matchError}</p>}
           <div className="dialog-footer flex gap-2 justify-end">
             <Button variant="ghost" type="button" onClick={() => setShowAddMatch(false)}>Cancel</Button>
             <Button type="submit" disabled={matchLoading}>{matchLoading ? "Creating…" : "Create Match"}</Button>

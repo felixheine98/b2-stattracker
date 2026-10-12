@@ -32,39 +32,39 @@ export function FormatBuilder({ value, onChange }: Props) {
             key={f}
             type="button"
             onClick={() => onChange([...value, f])}
-            className="inline-flex items-center gap-1 rounded-md border border-[#2d2829] bg-[#1c1819] px-2 py-1 text-xs text-[#9a9090] hover:border-[#FBD00D]/50 hover:text-[#f5f0f0] transition-colors"
+            className="inline-flex items-center gap-1 rounded-md border border-line bg-surface px-2 py-1 text-xs text-fg-muted hover:border-brand/50 hover:text-fg transition-colors"
           >
             <Plus size={10} />
             {formatLabelLong(f)}
           </button>
         ))}
       </div>
-      <div className="min-h-10 rounded-lg border border-[#2d2829] bg-[#0e0c0d] p-2 flex flex-wrap gap-1.5">
+      <div className="min-h-10 rounded-lg border border-line bg-canvas p-2 flex flex-wrap gap-1.5">
         {value.length === 0 && (
-          <span className="text-xs text-[#5e5858] self-center">Click formats above to build the sequence</span>
+          <span className="text-xs text-fg-subtle self-center">Click formats above to build the sequence</span>
         )}
         {value.map((f, i) => (
           <span
             key={i}
-            className="inline-flex items-center gap-1 rounded-md border border-[#2d2829] bg-[#1c1819] px-1.5 py-0.5 text-xs text-[#f5f0f0]"
+            className="inline-flex items-center gap-1 rounded-md border border-line bg-surface px-1.5 py-0.5 text-xs text-fg"
           >
             <button
               type="button"
               onClick={() => move(i, i - 1)}
               disabled={i === 0}
               aria-label={`Move ${formatLabel(f)} forward`}
-              className="text-[#5e5858] hover:text-[#FBD00D] disabled:opacity-30 disabled:hover:text-[#5e5858]"
+              className="text-fg-subtle hover:text-brand-ink disabled:opacity-30 disabled:hover:text-fg-subtle"
             >
               <ChevronLeft size={12} />
             </button>
-            <span className="text-[#5e5858]">{i + 1}.</span>
+            <span className="text-fg-subtle">{i + 1}.</span>
             {formatLabel(f)}
             <button
               type="button"
               onClick={() => move(i, i + 1)}
               disabled={i === value.length - 1}
               aria-label={`Move ${formatLabel(f)} back`}
-              className="text-[#5e5858] hover:text-[#FBD00D] disabled:opacity-30 disabled:hover:text-[#5e5858]"
+              className="text-fg-subtle hover:text-brand-ink disabled:opacity-30 disabled:hover:text-fg-subtle"
             >
               <ChevronRight size={12} />
             </button>
@@ -72,7 +72,7 @@ export function FormatBuilder({ value, onChange }: Props) {
               type="button"
               onClick={() => onChange(value.filter((_, idx) => idx !== i))}
               aria-label={`Remove ${formatLabel(f)}`}
-              className="text-[#5e5858] hover:text-[#ED1F24] ml-0.5"
+              className="text-fg-subtle hover:text-danger ml-0.5"
             >
               <X size={10} />
             </button>

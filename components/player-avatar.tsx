@@ -15,14 +15,14 @@ export function PlayerAvatar({ player, className }: Props) {
         src={`${BASE_PATH}/flags/${player.country}.svg`}
         alt={player.country.toUpperCase()}
         title={player.country.toUpperCase()}
-        className={cn("h-6 w-6 shrink-0 rounded-full object-cover ring-1 ring-[#3a3435]", className)}
+        className={cn("h-6 w-6 shrink-0 rounded-full object-cover ring-1 ring-line-strong", className)}
       />
     )
   }
   return (
     <div
       className={cn(
-        "h-6 w-6 rounded-full bg-[#FBD00D]/15 flex items-center justify-center text-[#FBD00D] text-xs font-bold shrink-0",
+        "h-6 w-6 rounded-full bg-brand/15 flex items-center justify-center text-brand-ink text-xs font-bold shrink-0",
         className
       )}
     >

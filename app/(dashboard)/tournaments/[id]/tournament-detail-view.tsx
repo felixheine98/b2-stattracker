@@ -336,14 +336,14 @@ export function TournamentDetailView({ tournament: initial, players, statsMatche
       <div>
         <Link
           href="/tournaments"
-          className="inline-flex items-center gap-1 text-sm text-[#9a9090] hover:text-[#f5f0f0] mb-4"
+          className="inline-flex items-center gap-1 text-sm text-fg-muted hover:text-fg mb-4"
         >
           <ArrowLeft size={14} />
           Tournaments
         </Link>
         <div className="flex items-start justify-between gap-4">
           <div className="min-w-0">
-            <h1 className="text-2xl font-bold text-[#f5f0f0] mb-1">{tournament.name}</h1>
+            <h1 className="text-2xl font-bold text-fg mb-1">{tournament.name}</h1>
             <div className="flex flex-wrap gap-1 mb-1">
               {tournament.formats.map((f, i) => (
                 <Badge key={i} variant={formatBadgeVariant(f)}>
@@ -352,10 +352,10 @@ export function TournamentDetailView({ tournament: initial, players, statsMatche
               ))}
             </div>
             {tournament.description && (
-              <p className="text-[#9a9090] text-sm">{tournament.description}</p>
+              <p className="text-fg-muted text-sm">{tournament.description}</p>
             )}
             {(tournament.startDate || tournament.endDate) && (
-              <div className="flex items-center gap-1.5 text-xs text-[#5e5858] mt-1">
+              <div className="flex items-center gap-1.5 text-xs text-fg-subtle mt-1">
                 <Calendar size={12} />
                 {tournament.startDate && formatDay(tournament.startDate)}
                 {tournament.startDate && tournament.endDate && " – "}
@@ -372,7 +372,7 @@ export function TournamentDetailView({ tournament: initial, players, statsMatche
               <Button
                 variant="ghost"
                 size="sm"
-                className="text-[#5e5858] hover:text-[#ED1F24]"
+                className="text-fg-subtle hover:text-danger"
                 onClick={() => setShowDeleteConfirm(true)}
               >
                 <Trash2 size={14} />
@@ -385,7 +385,7 @@ export function TournamentDetailView({ tournament: initial, players, statsMatche
       {/* Planning: the player's own answer while it is open, and the way to the planning page */}
       {planningCard && <AvailabilityCard {...planningCard} />}
       {hasPlanning && !planningCard && (
-        <Link href={`${tournamentPath(tournament)}/planning`} className="inline-flex items-center gap-1.5 text-sm text-[#FBD00D] hover:underline">
+        <Link href={`${tournamentPath(tournament)}/planning`} className="inline-flex items-center gap-1.5 text-sm text-brand-ink hover:underline">
           <ClipboardList size={14} />
           {lineups.length > 0 ? "View planning (closed)" : "To the planning"}
         </Link>
@@ -395,12 +395,12 @@ export function TournamentDetailView({ tournament: initial, players, statsMatche
       <div>
         <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
           <div>
-            <h2 className="text-lg font-semibold text-[#f5f0f0] flex items-center gap-2">
-              <Users size={18} className="text-[#FBD00D]" />
+            <h2 className="text-lg font-semibold text-fg flex items-center gap-2">
+              <Users size={18} className="text-brand-ink" />
               Lineups
-              <span className="text-sm font-normal text-[#5e5858]">{lineups.length}</span>
+              <span className="text-sm font-normal text-fg-subtle">{lineups.length}</span>
             </h2>
-            <p className="text-xs text-[#9a9090] mt-0.5">Open a lineup to see its matches and add new ones.</p>
+            <p className="text-xs text-fg-muted mt-0.5">Open a lineup to see its matches and add new ones.</p>
           </div>
           {canManage && (
             <div className="flex flex-wrap items-center gap-2">
@@ -422,8 +422,8 @@ export function TournamentDetailView({ tournament: initial, players, statsMatche
         {lineups.length === 0 ? (
           <Card>
             <CardContent className="py-6 text-center">
-              <Users size={22} className="mx-auto text-[#5e5858] mb-2" />
-              <p className="text-[#9a9090] text-sm">No lineups yet. Create a lineup first – matches are added inside a lineup.</p>
+              <Users size={22} className="mx-auto text-fg-subtle mb-2" />
+              <p className="text-fg-muted text-sm">No lineups yet. Create a lineup first – matches are added inside a lineup.</p>
             </CardContent>
           </Card>
         ) : (
@@ -433,12 +433,12 @@ export function TournamentDetailView({ tournament: initial, players, statsMatche
               return (
               <div key={lineup.id} className="relative group">
                 <Link href={lineupPath(tournament, lineup)} className="block">
-                  <Card className="border-[#3a3435] hover:border-[#FBD00D]/50 transition-colors cursor-pointer">
+                  <Card className="border-line-strong hover:border-brand/50 transition-colors cursor-pointer">
                     <CardContent className="p-4">
                       <div className="flex items-start justify-between gap-2 mb-3">
-                        <p className="text-base font-semibold text-[#f5f0f0]">
+                        <p className="text-base font-semibold text-fg">
                           {lineup.name}
-                          <span className="ml-2 inline-flex items-center gap-1 align-middle text-xs font-normal text-[#9a9090]">
+                          <span className="ml-2 inline-flex items-center gap-1 align-middle text-xs font-normal text-fg-muted">
                             {lineup.slots.length}
                             <User size={12} />
                           </span>
@@ -448,7 +448,7 @@ export function TournamentDetailView({ tournament: initial, players, statsMatche
                             <Button
                               variant="ghost"
                               size="sm"
-                              className="h-6 w-6 p-0 text-[#5e5858] hover:text-[#f5f0f0]"
+                              className="h-6 w-6 p-0 text-fg-subtle hover:text-fg"
                               onClick={(e) => { e.preventDefault(); openEditLineupForm(lineup) }}
                             >
                               <Pencil size={11} />
@@ -456,7 +456,7 @@ export function TournamentDetailView({ tournament: initial, players, statsMatche
                             <Button
                               variant="ghost"
                               size="sm"
-                              className="h-6 w-6 p-0 text-[#5e5858] hover:text-[#ED1F24]"
+                              className="h-6 w-6 p-0 text-fg-subtle hover:text-danger"
                               onClick={(e) => { e.preventDefault(); handleDeleteLineup(lineup.id) }}
                               disabled={deletingLineup === lineup.id}
                             >
@@ -473,8 +473,8 @@ export function TournamentDetailView({ tournament: initial, players, statsMatche
                               "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs",
                               // Players who are responsible for the lineup stand out
                               lineup.managers?.some((m) => m.user.playerId === slot.player.id)
-                                ? "border-[#FBD00D]/50 bg-[#FBD00D]/10 text-[#f5f0f0]"
-                                : "border-[#2d2829] bg-[#251f20] text-[#c5bfbf]"
+                                ? "border-brand/50 bg-brand/10 text-fg"
+                                : "border-line bg-raised text-fg-soft"
                             )}
                           >
                             <PlayerAvatar player={slot.player} className="h-3.5 w-3.5 text-[9px]" />
@@ -484,12 +484,12 @@ export function TournamentDetailView({ tournament: initial, players, statsMatche
                           </span>
                         ))}
                       </div>
-                      <div className="mt-3 flex items-center justify-between border-t border-[#2d2829] pt-3 text-xs">
-                        <span className="flex items-center gap-1.5 text-[#9a9090]">
+                      <div className="mt-3 flex items-center justify-between border-t border-line pt-3 text-xs">
+                        <span className="flex items-center gap-1.5 text-fg-muted">
                           <Swords size={12} />
                           {matchCount} match{matchCount !== 1 ? "es" : ""}
                         </span>
-                        <span className="flex items-center gap-0.5 font-medium text-[#FBD00D]">
+                        <span className="flex items-center gap-0.5 font-medium text-brand-ink">
                           Open lineup
                           <ChevronRight size={14} />
                         </span>
@@ -517,7 +517,7 @@ export function TournamentDetailView({ tournament: initial, players, statsMatche
         return (
           <div>
             <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-              <h2 className="text-sm font-semibold text-[#9a9090] uppercase tracking-wider flex items-center gap-2">
+              <h2 className="text-sm font-semibold text-fg-muted uppercase tracking-wider flex items-center gap-2">
                 <BarChart2 size={14} />
                 Overall stats
               </h2>
@@ -538,7 +538,7 @@ export function TournamentDetailView({ tournament: initial, players, statsMatche
               ]}
             />
             {aggregates.length === 0 ? (
-              <p className="text-sm text-[#5e5858]">No data for this selection.</p>
+              <p className="text-sm text-fg-subtle">No data for this selection.</p>
             ) : statsByMap ? (
               <div className="space-y-4">
                 {mapAggregates.map((agg) => (
@@ -560,15 +560,15 @@ export function TournamentDetailView({ tournament: initial, players, statsMatche
       {/* Matches section */}
       <div>
         <div className="flex items-center justify-between mb-3">
-          <h2 className="text-sm font-semibold text-[#9a9090] uppercase tracking-wider">
+          <h2 className="text-sm font-semibold text-fg-muted uppercase tracking-wider">
             Matches ({matches.length})
           </h2>
         </div>
         {matches.length === 0 ? (
           <Card>
             <CardContent className="py-10 text-center">
-              <Swords size={28} className="mx-auto text-[#5e5858] mb-3" />
-              <p className="text-[#9a9090] text-sm">No matches yet. Open a lineup to add the first match.</p>
+              <Swords size={28} className="mx-auto text-fg-subtle mb-3" />
+              <p className="text-fg-muted text-sm">No matches yet. Open a lineup to add the first match.</p>
             </CardContent>
           </Card>
         ) : (
@@ -584,24 +584,24 @@ export function TournamentDetailView({ tournament: initial, players, statsMatche
                 <div key={stage.id}>
                   <StageHeading stage={stage} stages={stages} startDate={tournament.startDate ?? tournament.createdAt} />
                   {stageMatches.length === 0 ? (
-                    <p className="text-xs text-[#5e5858]">No matches yet.</p>
+                    <p className="text-xs text-fg-subtle">No matches yet.</p>
                   ) : (
                     <div className="space-y-2">
                       {stageMatches.map((match) => (
                       <div key={match.id} className="flex items-center gap-2">
                         <Link href={matchPath(tournament, lineups.find((l) => l.id === match.tournamentLineupId) ?? { id: match.tournamentLineupId ?? "" }, match)} className="flex-1 min-w-0">
-                          <Card className="hover:border-[#3a3435] transition-colors cursor-pointer">
+                          <Card className="hover:border-line-strong transition-colors cursor-pointer">
                             <CardContent className="py-3 flex items-center justify-between">
                               <div className="flex items-center gap-3 min-w-0">
-                                <Swords size={15} className="text-[#9a9090] shrink-0" />
+                                <Swords size={15} className="text-fg-muted shrink-0" />
                                 <div className="min-w-0">
                                   <div className="flex items-center gap-2 flex-wrap">
-                                    <p className="text-sm font-medium text-[#f5f0f0]">
-                                      {matchTag(match) && <span className="mr-2 font-mono text-xs text-[#FBD00D]">{matchTag(match)}</span>}
+                                    <p className="text-sm font-medium text-fg">
+                                      {matchTag(match) && <span className="mr-2 font-mono text-xs text-brand-ink">{matchTag(match)}</span>}
                                       {[lineups.find((l) => l.id === match.tournamentLineupId)?.name, match.stage.type === "SEEDING" ? null : match.opponent].filter(Boolean).join(" vs ") || (match.stage.type === "SEEDING" ? "Seeding" : "Unknown opponent")}
                                     </p>
                                   </div>
-                                  <div className="flex items-center gap-3 text-xs text-[#5e5858]">
+                                  <div className="flex items-center gap-3 text-xs text-fg-subtle">
                                     {match.date && (
                                       <span>{formatDay(match.date)}</span>
                                     )}
@@ -611,7 +611,7 @@ export function TournamentDetailView({ tournament: initial, players, statsMatche
                                   </div>
                                 </div>
                               </div>
-                              <ChevronRight size={16} className="text-[#5e5858] shrink-0" />
+                              <ChevronRight size={16} className="text-fg-subtle shrink-0" />
                             </CardContent>
                           </Card>
                         </Link>
@@ -621,7 +621,7 @@ export function TournamentDetailView({ tournament: initial, players, statsMatche
                             size="sm"
                             onClick={() => handleDeleteMatch(match.id)}
                             disabled={deletingMatch === match.id}
-                            className="shrink-0 text-[#5e5858] hover:text-[#ED1F24]"
+                            className="shrink-0 text-fg-subtle hover:text-danger"
                           >
                             <Trash2 size={14} />
                           </Button>
@@ -655,7 +655,7 @@ export function TournamentDetailView({ tournament: initial, players, statsMatche
             <FormatBuilder value={editFormats} onChange={setEditFormats} />
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="edit-desc">Description <span className="text-[#5e5858]">(optional)</span></Label>
+            <Label htmlFor="edit-desc">Description <span className="text-fg-subtle">(optional)</span></Label>
             <Textarea
               id="edit-desc"
               value={editDescription}
@@ -684,7 +684,7 @@ export function TournamentDetailView({ tournament: initial, players, statsMatche
               />
             </div>
           </div>
-          {editError && <p className="text-sm text-[#ED1F24]">{editError}</p>}
+          {editError && <p className="text-sm text-danger">{editError}</p>}
           <div className="dialog-footer flex gap-2 justify-end">
             <Button variant="ghost" onClick={() => setShowEdit(false)}>Cancel</Button>
             <Button onClick={handleEditSave} disabled={editLoading || !editName.trim() || editFormats.length === 0}>
@@ -697,8 +697,8 @@ export function TournamentDetailView({ tournament: initial, players, statsMatche
       {/* Delete Tournament Confirm Dialog */}
       <Dialog open={showDeleteConfirm} onClose={() => setShowDeleteConfirm(false)}>
         <DialogTitle>Delete Tournament</DialogTitle>
-        <p className="text-sm text-[#9a9090] mb-4">
-          This will permanently delete <span className="text-[#f5f0f0] font-medium">{tournament.name}</span> and all
+        <p className="text-sm text-fg-muted mb-4">
+          This will permanently delete <span className="text-fg font-medium">{tournament.name}</span> and all
           its lineups, matches, sub-matches, and round results. This action cannot be undone.
         </p>
         <div className="dialog-footer flex gap-2 justify-end">
@@ -706,7 +706,7 @@ export function TournamentDetailView({ tournament: initial, players, statsMatche
           <Button
             onClick={handleDeleteTournament}
             disabled={deleteLoading}
-            className="bg-[#ED1F24] hover:bg-[#ED1F24]/80 text-white border-[#ED1F24]"
+            className="bg-danger hover:bg-danger/80 text-white border-danger"
           >
             {deleteLoading ? "Deleting…" : "Delete Tournament"}
           </Button>
@@ -734,7 +734,7 @@ export function TournamentDetailView({ tournament: initial, players, statsMatche
                   return (
                     <span
                       key={id}
-                      className="inline-flex items-center gap-1.5 rounded-full border border-[#FBD00D]/30 bg-[#FBD00D]/10 py-0.5 pl-2.5 pr-1.5 text-xs text-[#f5f0f0]"
+                      className="inline-flex items-center gap-1.5 rounded-full border border-brand/30 bg-brand/10 py-0.5 pl-2.5 pr-1.5 text-xs text-fg"
                     >
                       {player.name}
                       {isGuest(player.tmId) && <GuestBadge />}
@@ -743,7 +743,7 @@ export function TournamentDetailView({ tournament: initial, players, statsMatche
                         type="button"
                         onClick={() => setLineupPlayerIds((ids) => ids.filter((x) => x !== id))}
                         aria-label={`Remove ${player.name}`}
-                        className="text-[#9a9090] hover:text-[#ED1F24]"
+                        className="text-fg-muted hover:text-danger"
                       >
                         <X size={12} />
                       </button>
@@ -754,11 +754,11 @@ export function TournamentDetailView({ tournament: initial, players, statsMatche
             )}
           </div>
           <div className="space-y-1.5">
-            <Label>Players <span className="text-[#5e5858]">({lineupPlayerIds.length} selected)</span></Label>
+            <Label>Players <span className="text-fg-subtle">({lineupPlayerIds.length} selected)</span></Label>
             {players.length === 0 ? (
-              <p className="text-sm text-[#9a9090]">
+              <p className="text-sm text-fg-muted">
                 No players yet.{" "}
-                <Link href="/players" className="text-[#FBD00D] hover:underline">Add players first.</Link>
+                <Link href="/players" className="text-brand-ink hover:underline">Add players first.</Link>
               </p>
             ) : (
               <>
@@ -772,11 +772,11 @@ export function TournamentDetailView({ tournament: initial, players, statsMatche
                 isGuest={isGuest}
                 onPick={(id) => setLineupPlayerIds((ids) => (ids.includes(id) ? ids : [...ids, id]))}
               />
-              <div className="space-y-2 max-h-64 overflow-y-auto rounded-lg border border-[#2d2829] bg-[#0e0c0d] p-3">
+              <div className="space-y-2 max-h-64 overflow-y-auto rounded-lg border border-line bg-canvas p-3">
                 {playerGroups.map((group) => (
                   <div key={group.label ?? "members"} className="space-y-2">
                     {group.label && (
-                      <p className="border-t border-[#2d2829] pt-2 text-[10px] font-semibold uppercase tracking-wider text-[#5e5858]">
+                      <p className="border-t border-line pt-2 text-[10px] font-semibold uppercase tracking-wider text-fg-subtle">
                         {group.label}
                       </p>
                     )}
@@ -790,10 +790,10 @@ export function TournamentDetailView({ tournament: initial, players, statsMatche
                     return (
                       <div key={p.id} className="flex items-center gap-3 opacity-50" title={`Already in lineup ${otherLineup.name}`}>
                         <input type="checkbox" disabled className="h-4 w-4" />
-                        <span className="text-sm text-[#9a9090]">{p.name}</span>
+                        <span className="text-sm text-fg-muted">{p.name}</span>
                         {isGuest(p.tmId) && <GuestBadge />}
 {isTrial(p.tmId) && <TrialBadge />}
-                        <span className="text-xs text-[#9a9090] ml-auto">in {otherLineup.name}</span>
+                        <span className="text-xs text-fg-muted ml-auto">in {otherLineup.name}</span>
                       </div>
                     )
                   }
@@ -807,12 +807,12 @@ export function TournamentDetailView({ tournament: initial, players, statsMatche
                             selected ? ids.filter((id) => id !== p.id) : [...ids, p.id]
                           )
                         }
-                        className="h-4 w-4 accent-[#FBD00D]"
+                        className="h-4 w-4 accent-brand"
                       />
-                      <span className="text-sm text-[#f5f0f0] group-hover:text-white">{p.name}</span>
+                      <span className="text-sm text-fg group-hover:text-white">{p.name}</span>
                       {isGuest(p.tmId) && <GuestBadge />}
 {isTrial(p.tmId) && <TrialBadge />}
-                      <span className="text-xs text-[#5e5858] font-mono ml-auto">{p.tmId.slice(0, 8)}…</span>
+                      <span className="text-xs text-fg-subtle font-mono ml-auto">{p.tmId.slice(0, 8)}…</span>
                     </label>
                   )
                 })}
@@ -823,8 +823,8 @@ export function TournamentDetailView({ tournament: initial, players, statsMatche
             )}
           </div>
           <div className="space-y-1.5">
-            <Label>Responsible <span className="text-[#5e5858]">(optional)</span></Label>
-            <p className="text-xs text-[#5e5858]">
+            <Label>Responsible <span className="text-fg-subtle">(optional)</span></Label>
+            <p className="text-xs text-fg-subtle">
               Whoever is listed here may add matches of this lineup and maintain results, until a week after the tournament ends.
             </p>
             {lineupManagerIds.length > 0 && (
@@ -833,13 +833,13 @@ export function TournamentDetailView({ tournament: initial, players, statsMatche
                   const user = users.find((u) => u.id === id)
                   if (!user) return null
                   return (
-                    <span key={id} className="inline-flex items-center gap-1.5 rounded-full border border-[#FBD00D]/30 bg-[#FBD00D]/10 py-0.5 pl-2.5 pr-1.5 text-xs text-[#f5f0f0]">
+                    <span key={id} className="inline-flex items-center gap-1.5 rounded-full border border-brand/30 bg-brand/10 py-0.5 pl-2.5 pr-1.5 text-xs text-fg">
                       {user.name}
                       <button
                         type="button"
                         onClick={() => setLineupManagerIds((ids) => ids.filter((x) => x !== id))}
                         aria-label={`Remove ${user.name}`}
-                        className="text-[#9a9090] hover:text-[#ED1F24]"
+                        className="text-fg-muted hover:text-danger"
                       >
                         <X size={12} />
                       </button>
@@ -857,7 +857,7 @@ export function TournamentDetailView({ tournament: initial, players, statsMatche
             />
             {/* The accounts of the lineup's players are the most likely choice */}
             {users.some((u) => u.playerId && lineupPlayerIds.includes(u.playerId) && !lineupManagerIds.includes(u.id)) && (
-              <div className="flex flex-wrap items-center gap-1.5 text-xs text-[#5e5858]">
+              <div className="flex flex-wrap items-center gap-1.5 text-xs text-fg-subtle">
                 From the lineup:
                 {users
                   .filter((u) => u.playerId && lineupPlayerIds.includes(u.playerId) && !lineupManagerIds.includes(u.id))
@@ -866,7 +866,7 @@ export function TournamentDetailView({ tournament: initial, players, statsMatche
                       key={u.id}
                       type="button"
                       onClick={() => setLineupManagerIds((ids) => [...ids, u.id])}
-                      className="rounded-full border border-[#2d2829] px-2.5 py-0.5 text-[#9a9090] hover:border-[#3a3435] hover:text-[#f5f0f0]"
+                      className="rounded-full border border-line px-2.5 py-0.5 text-fg-muted hover:border-line-strong hover:text-fg"
                     >
                       + {u.name}
                     </button>
@@ -874,7 +874,7 @@ export function TournamentDetailView({ tournament: initial, players, statsMatche
               </div>
             )}
           </div>
-          {lineupError && <p className="text-sm text-[#ED1F24]">{lineupError}</p>}
+          {lineupError && <p className="text-sm text-danger">{lineupError}</p>}
           <div className="dialog-footer flex gap-2 justify-end">
             <Button variant="ghost" onClick={() => setShowLineupForm(false)}>Cancel</Button>
             <Button

@@ -43,7 +43,7 @@ export function PlayerSearch({ players, isGuest, onPick, placeholder = "Find a p
 
   return (
     <div className="relative">
-      <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#5e5858]" />
+      <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-fg-subtle" />
       <Input
         value={query}
         onChange={(e) => { setQuery(e.target.value); setActive(0) }}
@@ -54,8 +54,8 @@ export function PlayerSearch({ players, isGuest, onPick, placeholder = "Find a p
         className="pl-9"
       />
       {query.trim() && (
-        <div className="absolute left-0 right-0 top-full z-20 mt-1 rounded-lg border border-[#3a3435] bg-[#1c1819] p-1 shadow-lg">
-          {matches.length === 0 && <p className="px-2.5 py-1.5 text-xs text-[#5e5858]">{emptyText}</p>}
+        <div className="absolute left-0 right-0 top-full z-20 mt-1 rounded-lg border border-line-strong bg-surface p-1 shadow-lg">
+          {matches.length === 0 && <p className="px-2.5 py-1.5 text-xs text-fg-subtle">{emptyText}</p>}
           {matches.map((p, i) => (
             <button
               key={p.id}
@@ -65,8 +65,8 @@ export function PlayerSearch({ players, isGuest, onPick, placeholder = "Find a p
               onMouseDown={(e) => e.preventDefault()}
               onClick={() => pick(p.id)}
               className={cn(
-                "flex w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-left text-sm text-[#f5f0f0]",
-                i === active && "bg-[#FBD00D]/10"
+                "flex w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-left text-sm text-fg",
+                i === active && "bg-brand/10"
               )}
             >
               {p.name}

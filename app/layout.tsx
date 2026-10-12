@@ -1,4 +1,6 @@
 import type { Metadata, Viewport } from "next"
+import { cookies } from "next/headers"
+import { THEME_COLOR, THEME_COOKIE, themeFromCookie } from "@/lib/theme"
 import { Inter, Space_Grotesk } from "next/font/google"
 import "./globals.css"
 import { Providers } from "./providers"
@@ -11,13 +13,18 @@ export const metadata: Metadata = {
   description: "Track your Trackmania team's tournament performance",
 }
 
-export const viewport: Viewport = {
-  themeColor: "#111214",
+// The theme someone chose in the account menu; dark without a choice
+async function chosenTheme() {
+  return themeFromCookie((await cookies()).get(THEME_COOKIE)?.value)
 }
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export async function generateViewport(): Promise<Viewport> {
+  return { themeColor: THEME_COLOR[await chosenTheme()] }
+}
+
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`h-full ${inter.variable} ${spaceGrotesk.variable}`}>
+    <html lang="en" data-theme={await chosenTheme()} className={`h-full ${inter.variable} ${spaceGrotesk.variable}`}>
       <body className="min-h-full antialiased">
         <Providers>{children}</Providers>
       </body>

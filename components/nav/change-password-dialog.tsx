@@ -43,7 +43,7 @@ export function ChangePasswordDialog({ onClose }: { onClose: () => void }) {
       <DialogTitle>Change password</DialogTitle>
       {saved ? (
         <div className="space-y-4">
-          <p className="text-sm text-[#c5bfbf]">Your password is changed. It applies from the next sign-in.</p>
+          <p className="text-sm text-fg-soft">Your password is changed. It applies from the next sign-in.</p>
           <div className="dialog-footer flex justify-end">
             <Button onClick={onClose}>Close</Button>
           </div>
@@ -57,13 +57,13 @@ export function ChangePasswordDialog({ onClose }: { onClose: () => void }) {
           <div className="space-y-1.5">
             <Label htmlFor="pw-new">New password</Label>
             <Input id="pw-new" type="password" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="new-password" minLength={8} required />
-            <p className="text-xs text-[#5e5858]">At least 8 characters.</p>
+            <p className="text-xs text-fg-subtle">At least 8 characters.</p>
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="pw-repeat">Repeat new password</Label>
             <Input id="pw-repeat" type="password" value={repeat} onChange={(e) => setRepeat(e.target.value)} autoComplete="new-password" required />
           </div>
-          {error && <p className="text-sm text-[#ED1F24]">{error}</p>}
+          {error && <p className="text-sm text-danger">{error}</p>}
           <div className="dialog-footer flex gap-2 justify-end">
             <Button variant="ghost" type="button" onClick={onClose}>Cancel</Button>
             <Button type="submit" disabled={loading}>{loading ? "Saving…" : "Change password"}</Button>

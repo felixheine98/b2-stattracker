@@ -71,15 +71,15 @@ export function PlanningView({ initial, ownPlayerId, userId, canManage }: Props)
   const rowName = (row: Row) => (
     <div className="flex min-w-0 items-center gap-2 md:w-52 md:shrink-0">
       <PlayerAvatar player={row.player} />
-      <span className="truncate text-sm font-medium text-[#f5f0f0]">{row.player.name}</span>
+      <span className="truncate text-sm font-medium text-fg">{row.player.name}</span>
       {row.guest && <GuestBadge />}
-      {row.player.id === ownPlayerId && <span className="text-xs text-[#FBD00D]">you</span>}
+      {row.player.id === ownPlayerId && <span className="text-xs text-brand-ink">you</span>}
       {layout === "list" && canManage && !archived && row.guest && (
         <button
           type="button"
           onClick={() => call(`/entries/${row.player.id}`, "DELETE")}
           title="Take off the list"
-          className="ml-auto text-[#5e5858] hover:text-[#ED1F24] md:ml-0"
+          className="ml-auto text-fg-subtle hover:text-danger md:ml-0"
         >
           <X size={13} />
         </button>
@@ -110,35 +110,35 @@ export function PlanningView({ initial, ownPlayerId, userId, canManage }: Props)
   return (
     <div className={cn("space-y-6", tab === "variants" ? "max-w-7xl" : "max-w-4xl")}>
       <div>
-        <Link href={tournamentPath(tournament)} className="mb-4 inline-flex items-center gap-1 text-sm text-[#9a9090] hover:text-[#f5f0f0]">
+        <Link href={tournamentPath(tournament)} className="mb-4 inline-flex items-center gap-1 text-sm text-fg-muted hover:text-fg">
           <ArrowLeft size={14} />
           {tournament.name}
         </Link>
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <h1 className="text-2xl font-bold text-[#f5f0f0]">Planning</h1>
+          <h1 className="text-2xl font-bold text-fg">Planning</h1>
           {presence.length > 0 && (
-            <p className="flex flex-wrap items-center gap-1.5 text-xs text-[#9a9090]">
+            <p className="flex flex-wrap items-center gap-1.5 text-xs text-fg-muted">
               here right now:
               {presence.map((p) => (
-                <span key={p.userId} className="rounded-full border border-[#6b8fff]/40 bg-[#6b8fff]/15 px-2 py-0.5 text-[#6b8fff]">{p.name}</span>
+                <span key={p.userId} className="rounded-full border border-info/40 bg-info/15 px-2 py-0.5 text-info">{p.name}</span>
               ))}
             </p>
           )}
         </div>
-        <p className="mt-0.5 text-sm text-[#9a9090]">
+        <p className="mt-0.5 text-sm text-fg-muted">
           {rows.length} on the list, {open} without an answer
         </p>
       </div>
 
       {archived && (
-        <p className="rounded-lg border border-[#2d2829] bg-[#1c1819] px-4 py-2.5 text-sm text-[#c5bfbf]">
+        <p className="rounded-lg border border-line bg-surface px-4 py-2.5 text-sm text-fg-soft">
           This planning is closed: the tournament has its lineups. Nothing can be changed here any more.
           {adoptedName && <> “{adoptedName}” was taken over.</>}
         </p>
       )}
 
       {variants && (
-        <div className="inline-flex rounded-lg border border-[#2d2829] p-1" role="tablist">
+        <div className="inline-flex rounded-lg border border-line p-1" role="tablist">
           {([
             ["availability", "Availability"],
             ["variants", `Variants (${variants.length})`],
@@ -151,7 +151,7 @@ export function PlanningView({ initial, ownPlayerId, userId, canManage }: Props)
               onClick={() => selectTab(value)}
               className={cn(
                 "whitespace-nowrap rounded-md px-4 py-1.5 text-sm font-medium transition-colors",
-                tab === value ? "bg-[#FBD00D]/15 text-[#FBD00D]" : "text-[#9a9090] hover:text-[#f5f0f0]"
+                tab === value ? "bg-brand/15 text-brand-ink" : "text-fg-muted hover:text-fg"
               )}
             >
               {label}
@@ -177,20 +177,20 @@ export function PlanningView({ initial, ownPlayerId, userId, canManage }: Props)
       ) : (
         <>
       {canManage && !archived && (
-        <div className="space-y-2 rounded-xl border border-[#2d2829] p-4">
-          <h2 className="text-xs font-semibold uppercase tracking-wider text-[#9a9090]">Extra levels</h2>
-          <p className="text-xs text-[#5e5858]">
+        <div className="space-y-2 rounded-xl border border-line p-4">
+          <h2 className="text-xs font-semibold uppercase tracking-wider text-fg-muted">Extra levels</h2>
+          <p className="text-xs text-fg-subtle">
             Next to “Available”, “Maybe” and “Not available”, for this planning only – e.g. “stand-in only”.
           </p>
           <div className="flex flex-wrap items-center gap-2">
             {levels.map((l) => (
-              <span key={l.id} className="inline-flex items-center gap-1.5 rounded-full border border-[#6b8fff]/40 bg-[#6b8fff]/15 py-1 pl-3 pr-2 text-xs text-[#6b8fff]">
+              <span key={l.id} className="inline-flex items-center gap-1.5 rounded-full border border-info/40 bg-info/15 py-1 pl-3 pr-2 text-xs text-info">
                 {l.name}
                 <button
                   type="button"
                   onClick={() => { if (confirm(`Remove the level “${l.name}”? Whoever chose it is without an answer again.`)) call(`/levels/${l.id}`, "DELETE") }}
                   aria-label={`Remove ${l.name}`}
-                  className="hover:text-[#ED1F24]"
+                  className="hover:text-danger"
                 >
                   <X size={12} />
                 </button>
@@ -207,12 +207,12 @@ export function PlanningView({ initial, ownPlayerId, userId, canManage }: Props)
         </div>
       )}
 
-      {error && <p className="text-sm text-[#ED1F24]">{error}</p>}
+      {error && <p className="text-sm text-danger">{error}</p>}
 
       <div>
         <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-          <h2 className="text-xs font-semibold uppercase tracking-wider text-[#9a9090]">Availability</h2>
-          <div className="inline-flex rounded-lg border border-[#2d2829] p-0.5" role="tablist" aria-label="Layout of the list">
+          <h2 className="text-xs font-semibold uppercase tracking-wider text-fg-muted">Availability</h2>
+          <div className="inline-flex rounded-lg border border-line p-0.5" role="tablist" aria-label="Layout of the list">
             {([["groups", "Groups"], ["list", "List"]] as const).map(([value, label]) => (
               <button
                 key={value}
@@ -222,7 +222,7 @@ export function PlanningView({ initial, ownPlayerId, userId, canManage }: Props)
                 onClick={() => setLayout(value)}
                 className={cn(
                   "rounded-md px-3 py-1 text-xs font-medium transition-colors",
-                  layout === value ? "bg-[#FBD00D]/15 text-[#FBD00D]" : "text-[#9a9090] hover:text-[#f5f0f0]"
+                  layout === value ? "bg-brand/15 text-brand-ink" : "text-fg-muted hover:text-fg"
                 )}
               >
                 {label}
@@ -230,19 +230,19 @@ export function PlanningView({ initial, ownPlayerId, userId, canManage }: Props)
             ))}
           </div>
         </div>
-        {rows.length === 0 && <p className="rounded-xl border border-[#2d2829] px-4 py-6 text-center text-sm text-[#5e5858]">Nobody on the list yet.</p>}
+        {rows.length === 0 && <p className="rounded-xl border border-line px-4 py-6 text-center text-sm text-fg-subtle">Nobody on the list yet.</p>}
 
         {layout === "list" ? (
           rows.length > 0 && (
-            <div className="overflow-hidden rounded-xl border border-[#2d2829]">
+            <div className="overflow-hidden rounded-xl border border-line">
               {/* The viewer's own row first, the others by name */}
               {[...rows].sort((a, b) => Number(b.player.id === ownPlayerId) - Number(a.player.id === ownPlayerId)).map((row, i) => (
                 <div
                   key={row.player.id}
                   className={cn(
                     "flex flex-col gap-2 px-3.5 py-3 md:flex-row md:items-center md:gap-4",
-                    i > 0 && "border-t border-[#2d2829]",
-                    row.player.id === ownPlayerId ? "bg-[#FBD00D]/5" : i % 2 === 0 ? "bg-[#1c1819]" : "bg-[#1c1819]/60"
+                    i > 0 && "border-t border-line",
+                    row.player.id === ownPlayerId ? "bg-brand/5" : i % 2 === 0 ? "bg-surface" : "bg-surface/60"
                   )}
                 >
                   {rowName(row)}
@@ -255,7 +255,7 @@ export function PlanningView({ initial, ownPlayerId, userId, canManage }: Props)
           <div className="space-y-4">
             {/* The viewer's own answer stands apart at the top, ready to change */}
             {ownRow && (
-              <div className="flex flex-col gap-2 rounded-xl border border-[#FBD00D]/30 bg-[#FBD00D]/5 px-3.5 py-3 md:flex-row md:items-center md:gap-4">
+              <div className="flex flex-col gap-2 rounded-xl border border-brand/30 bg-brand/5 px-3.5 py-3 md:flex-row md:items-center md:gap-4">
                 {rowName(ownRow)}
                 {rowInput(ownRow)}
               </div>
@@ -263,38 +263,38 @@ export function PlanningView({ initial, ownPlayerId, userId, canManage }: Props)
             {/* Everyone sorted into their answer: who is in, who is not, who has yet to say */}
             <div className="grid grid-cols-1 items-start gap-3 sm:grid-cols-2 lg:grid-cols-3">
               {groups.map((group) => (
-                <section key={group.answer} className="overflow-hidden rounded-xl border border-[#2d2829] bg-[#1c1819]">
+                <section key={group.answer} className="overflow-hidden rounded-xl border border-line bg-surface">
                   <h3 className={cn("flex items-center justify-between border-b px-3 py-2 text-xs font-semibold uppercase tracking-wider", answerColor(group.answer))}>
                     {group.label}
                     <span className="font-mono">{group.rows.length}</span>
                   </h3>
-                  {group.rows.length === 0 && <p className="px-3 py-2 text-xs text-[#5e5858]">nobody</p>}
+                  {group.rows.length === 0 && <p className="px-3 py-2 text-xs text-fg-subtle">nobody</p>}
                   <ul>
                     {group.rows.map((row) => {
                       const own = row.player.id === ownPlayerId
                       const editable = !archived && (canManage || own)
                       return (
-                        <li key={row.player.id} className="border-t border-[#2d2829]/60 first:border-0">
+                        <li key={row.player.id} className="border-t border-line/60 first:border-0">
                           <button
                             type="button"
                             disabled={!editable}
                             onClick={() => setEditing(editing === row.player.id ? null : row.player.id)}
                             aria-expanded={editable ? editing === row.player.id : undefined}
                             title={editable ? "Change answer" : undefined}
-                            className={cn("flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm", editable && "hover:bg-[#251f20]", own && "bg-[#FBD00D]/5")}
+                            className={cn("flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm", editable && "hover:bg-raised", own && "bg-brand/5")}
                           >
                             <PlayerAvatar player={row.player} className="h-5 w-5 text-[10px]" />
-                            <span className="min-w-0 truncate text-[#f5f0f0]">{row.player.name}</span>
+                            <span className="min-w-0 truncate text-fg">{row.player.name}</span>
                             {row.guest && <GuestBadge />}
-                            {own && <span className="text-xs text-[#FBD00D]">you</span>}
-                            {row.note && <span className="ml-auto min-w-0 max-w-[55%] truncate text-xs text-[#9a9090]" title={row.note}>{row.note}</span>}
+                            {own && <span className="text-xs text-brand-ink">you</span>}
+                            {row.note && <span className="ml-auto min-w-0 max-w-[55%] truncate text-xs text-fg-muted" title={row.note}>{row.note}</span>}
                           </button>
                           {editable && editing === row.player.id && (
-                            <div className="space-y-2 border-t border-[#2d2829]/60 bg-[#0e0c0d] px-3 py-2.5">
+                            <div className="space-y-2 border-t border-line/60 bg-canvas px-3 py-2.5">
                               {/* Stacked: a group is too narrow for buttons and note side by side */}
                               {rowInput(row, "md:flex-col md:items-stretch")}
                               {canManage && row.guest && (
-                                <button type="button" onClick={() => call(`/entries/${row.player.id}`, "DELETE")} className="text-xs text-[#5e5858] hover:text-[#ED1F24]">
+                                <button type="button" onClick={() => call(`/entries/${row.player.id}`, "DELETE")} className="text-xs text-fg-subtle hover:text-danger">
                                   Take off the list
                                 </button>
                               )}
@@ -313,7 +313,7 @@ export function PlanningView({ initial, ownPlayerId, userId, canManage }: Props)
 
       {canManage && !archived && addable.length > 0 && (
         <div className="space-y-1.5">
-          <h2 className="text-xs font-semibold uppercase tracking-wider text-[#9a9090]">Add a guest</h2>
+          <h2 className="text-xs font-semibold uppercase tracking-wider text-fg-muted">Add a guest</h2>
           <PlayerSearch
             players={addable}
             isGuest={() => true}

@@ -55,8 +55,8 @@ export function MapStatsTable({ agg, isGuest, isTrial, lineupName, profilePath, 
     return (
       <th onClick={() => toggleSort(col)} className={cn("py-2 font-medium whitespace-nowrap cursor-pointer select-none group", className)}>
         <span className="inline-flex items-center gap-1">
-          <span className={cn("transition-colors", active ? "text-[#f5f0f0]" : "text-[#5e5858] group-hover:text-[#9a9090]")}>{label}</span>
-          <span className={cn("text-[9px] transition-colors", active ? "text-[#FBD00D]" : "text-[#2d2829] group-hover:text-[#3a3435]")}>
+          <span className={cn("transition-colors", active ? "text-fg" : "text-fg-subtle group-hover:text-fg-muted")}>{label}</span>
+          <span className={cn("text-[9px] transition-colors", active ? "text-brand-ink" : "text-line group-hover:text-line-strong")}>
             {active && sortDir === "desc" ? "▼" : "▲"}
           </span>
         </span>
@@ -67,20 +67,20 @@ export function MapStatsTable({ agg, isGuest, isTrial, lineupName, profilePath, 
   return (
     <div>
       <div className="flex flex-wrap items-center gap-2 mb-2">
-        <span className="text-sm font-semibold text-[#f5f0f0]">{agg.track ?? "No map"}</span>
+        <span className="text-sm font-semibold text-fg">{agg.track ?? "No map"}</span>
         {agg.formats.map((format) => (
           <Badge key={format} variant="secondary">{formatLabel(format)}</Badge>
         ))}
-        <span className="text-xs text-[#5e5858]">
+        <span className="text-xs text-fg-subtle">
           Map: {agg.mapWon}W{agg.mapDrawn > 0 ? ` – ${agg.mapDrawn}D` : ""} – {agg.mapLost}L
           &nbsp;·&nbsp;Rounds: {agg.teamRoundsWon}W – {agg.teamRoundsLost}L
         </span>
       </div>
-      <div className="overflow-x-auto rounded-lg border border-[#2d2829]">
+      <div className="overflow-x-auto rounded-lg border border-line">
         <table className="w-full text-xs">
           <thead>
-            <tr className="border-b border-[#2d2829] bg-[#1c1819]">
-              {th("name", "Player", "sticky left-0 z-[1] bg-[#1c1819] text-left pl-3 pr-4")}
+            <tr className="border-b border-line bg-surface">
+              {th("name", "Player", "sticky left-0 z-[1] bg-surface text-left pl-3 pr-4")}
               {lineupName && th("lineup", "Lineup", "text-left px-3")}
               {th("rounds", "Rounds", "text-right px-3")}
               {th("best", "Best time", "text-right px-3")}
@@ -93,10 +93,10 @@ export function MapStatsTable({ agg, isGuest, isTrial, lineupName, profilePath, 
           </thead>
           <tbody>
             {players.map((p) => (
-              <tr key={p.tmId} className="border-b border-[#1c1819] hover:bg-[#1c1819]/60">
-                <td className="sticky left-0 z-[1] bg-[#0e0b0b] py-1.5 pl-3 pr-4 text-[#f5f0f0] font-medium whitespace-nowrap max-md:shadow-[1px_0_0_#2d2829]">
+              <tr key={p.tmId} className="border-b border-surface hover:bg-surface/60">
+                <td className="sticky left-0 z-[1] bg-canvas py-1.5 pl-3 pr-4 text-fg font-medium whitespace-nowrap max-md:shadow-[1px_0_0_#2d2829]">
                   {profilePath?.(p.tmId) ? (
-                    <Link href={profilePath(p.tmId)!} className="hover:text-[#FBD00D]">
+                    <Link href={profilePath(p.tmId)!} className="hover:text-brand-ink">
                       <PlayerName name={p.name} currentName={p.currentName} />
                     </Link>
                   ) : (
@@ -105,18 +105,18 @@ export function MapStatsTable({ agg, isGuest, isTrial, lineupName, profilePath, 
                   {isGuest(p.tmId) && <GuestBadge className="ml-1.5" />}
                   {isTrial(p.tmId) && <TrialBadge className="ml-1.5" />}
                 </td>
-                {lineupName && <td className="py-1.5 px-3 text-[#c5bfbf] whitespace-nowrap">{lineupName(p.tmId) ?? "—"}</td>}
-                <td className="py-1.5 px-3 text-right text-[#c5bfbf]">{p.rounds}</td>
-                <td className="py-1.5 px-3 text-right text-[#FBD00D] font-mono">{p.bestMs === null ? "—" : formatTime(p.bestMs)}</td>
-                <td className="py-1.5 px-3 text-right text-[#f5f0f0] font-mono" title="Average gap to the fastest time of the round, without DNFs">
+                {lineupName && <td className="py-1.5 px-3 text-fg-soft whitespace-nowrap">{lineupName(p.tmId) ?? "—"}</td>}
+                <td className="py-1.5 px-3 text-right text-fg-soft">{p.rounds}</td>
+                <td className="py-1.5 px-3 text-right text-brand-ink font-mono">{p.bestMs === null ? "—" : formatTime(p.bestMs)}</td>
+                <td className="py-1.5 px-3 text-right text-fg font-mono" title="Average gap to the fastest time of the round, without DNFs">
                   {formatGapSeconds(mapGapMs(p))}
                 </td>
                 {showPlacement && (
-                  <td className="py-1.5 px-3 text-right text-[#c5bfbf] font-mono">{p.rounds > 0 ? (p.placementSum / p.rounds).toFixed(3) : "—"}</td>
+                  <td className="py-1.5 px-3 text-right text-fg-soft font-mono">{p.rounds > 0 ? (p.placementSum / p.rounds).toFixed(3) : "—"}</td>
                 )}
-                <td className="py-1.5 px-3 text-right text-[#c5bfbf]">{p.dnfs}</td>
-                <td className="py-1.5 px-3 text-right text-[#f5f0f0]">{p.roundsWon}</td>
-                <td className="py-1.5 pr-3 text-right text-[#f5f0f0]">{p.roundsLost}</td>
+                <td className="py-1.5 px-3 text-right text-fg-soft">{p.dnfs}</td>
+                <td className="py-1.5 px-3 text-right text-fg">{p.roundsWon}</td>
+                <td className="py-1.5 pr-3 text-right text-fg">{p.roundsLost}</td>
               </tr>
             ))}
           </tbody>
@@ -128,14 +128,14 @@ export function MapStatsTable({ agg, isGuest, isTrial, lineupName, profilePath, 
 
 // How the team does on each map: one row per map, without single players
 export function MapOverviewTable({ maps }: { maps: MapAggregate[] }) {
-  const th = "px-3 py-2 text-right font-medium whitespace-nowrap text-[#9a9090]"
-  const td = "px-3 py-1.5 text-right whitespace-nowrap text-[#c5bfbf]"
+  const th = "px-3 py-2 text-right font-medium whitespace-nowrap text-fg-muted"
+  const td = "px-3 py-1.5 text-right whitespace-nowrap text-fg-soft"
   return (
-    <div className="overflow-x-auto rounded-lg border border-[#2d2829]">
+    <div className="overflow-x-auto rounded-lg border border-line">
       <table className="w-full text-xs">
         <thead>
-          <tr className="border-b border-[#2d2829] bg-[#1c1819]">
-            <th className="sticky left-0 z-[1] bg-[#1c1819] py-2 pl-3 pr-4 text-left font-medium text-[#9a9090]">Map</th>
+          <tr className="border-b border-line bg-surface">
+            <th className="sticky left-0 z-[1] bg-surface py-2 pl-3 pr-4 text-left font-medium text-fg-muted">Map</th>
             <th className={cn(th, "text-left")}>Formats</th>
             <th className={th} title="Sub-matches won, drawn and lost on this map">Maps W–D–L</th>
             <th className={th}>Rounds W–L</th>
@@ -149,13 +149,13 @@ export function MapOverviewTable({ maps }: { maps: MapAggregate[] }) {
             const decided = agg.teamRoundsWon + agg.teamRoundsLost
             const avg = teamAvgMs(agg)
             return (
-              <tr key={agg.track ?? ""} className="border-b border-[#1c1819] last:border-0">
-                <td className="sticky left-0 z-[1] bg-[#0e0b0b] py-1.5 pl-3 pr-4 font-medium whitespace-nowrap text-[#f5f0f0] max-md:shadow-[1px_0_0_#2d2829]">{agg.track ?? "No map"}</td>
+              <tr key={agg.track ?? ""} className="border-b border-surface last:border-0">
+                <td className="sticky left-0 z-[1] bg-canvas py-1.5 pl-3 pr-4 font-medium whitespace-nowrap text-fg max-md:shadow-[1px_0_0_#2d2829]">{agg.track ?? "No map"}</td>
                 <td className={cn(td, "text-left")}>{agg.formats.map((f) => formatLabel(f)).join(", ")}</td>
-                <td className={cn(td, "font-mono text-[#f5f0f0]")}>{agg.mapWon}–{agg.mapDrawn}–{agg.mapLost}</td>
+                <td className={cn(td, "font-mono text-fg")}>{agg.mapWon}–{agg.mapDrawn}–{agg.mapLost}</td>
                 <td className={cn(td, "font-mono")}>{agg.teamRoundsWon}–{agg.teamRoundsLost}</td>
                 <td className={cn(td, "font-mono")}>{decided > 0 ? `${Math.round((agg.teamRoundsWon / decided) * 100)} %` : "—"}</td>
-                <td className={cn(td, "font-mono text-[#FBD00D]")}>{agg.teamBestMs === null ? "—" : formatTime(agg.teamBestMs)}</td>
+                <td className={cn(td, "font-mono text-brand-ink")}>{agg.teamBestMs === null ? "—" : formatTime(agg.teamBestMs)}</td>
                 <td className={cn(td, "font-mono")}>{avg === null ? "—" : formatTime(Math.round(avg))}</td>
               </tr>
             )
@@ -169,7 +169,7 @@ export function MapOverviewTable({ maps }: { maps: MapAggregate[] }) {
 // Switches a stats section between the tables per format and per map
 export function StatsViewToggle({ byMap, onChange }: { byMap: boolean; onChange: (byMap: boolean) => void }) {
   return (
-    <div className="inline-flex rounded-lg border border-[#2d2829] p-0.5" role="tablist" aria-label="Split of the stats">
+    <div className="inline-flex rounded-lg border border-line p-0.5" role="tablist" aria-label="Split of the stats">
       {([[false, "By format"], [true, "By map"]] as const).map(([value, label]) => (
         <button
           key={label}
@@ -179,7 +179,7 @@ export function StatsViewToggle({ byMap, onChange }: { byMap: boolean; onChange:
           onClick={() => onChange(value)}
           className={cn(
             "rounded-md px-3 py-1 text-xs font-medium transition-colors",
-            byMap === value ? "bg-[#FBD00D]/15 text-[#FBD00D]" : "text-[#9a9090] hover:text-[#f5f0f0]"
+            byMap === value ? "bg-brand/15 text-brand-ink" : "text-fg-muted hover:text-fg"
           )}
         >
           {label}

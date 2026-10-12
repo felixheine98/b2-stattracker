@@ -27,7 +27,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
       <div className="flex min-w-0 flex-1 flex-col">
         <MobileTopBar userName={userName} role={role} profileHref={profileHref} />
         {/* Extra room on the left for the sidebar toggle */}
-        <main className="flex-1 overflow-y-auto overflow-x-hidden bg-[#0e0b0b] p-4 md:p-6 md:pl-14">{children}</main>
+        <main className="flex-1 overflow-y-auto overflow-x-hidden bg-canvas p-4 md:p-6 md:pl-14">{children}</main>
         <MobileTabBar role={role} profileHref={profileHref} />
       </div>
       <SearchDialog />

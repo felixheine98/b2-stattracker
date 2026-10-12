@@ -4,13 +4,15 @@
 
 - [ ] als member -> in tourney übersicht der eigenen stats, danach kann man sich durch die stats durchklicken
 - [ ] kategorisierung der comps nach style? (tech mixed rpg ice fs etc)
-- [ ] Design/UI/UX Verbesserungen
-  - light theme + weitere themes (dark bleibt default)
 - [ ] validierung von importierten daten zu eingegebenen daten (match) -> passt das gegner team etc
 - [ ] tournaments seite bei mehreren comps: bleibt eine einfache liste der turniere, anordnung prüfen wenn es mehr werden
 - [ ] lineup einteilung für einzelne matches bzw match days
 
 ## Teilweise erledigt
+
+- [ ] Design/UI/UX Verbesserungen
+  - [x] light theme in den b2 farben, umschalter im account-menü (dark bleibt default); farben sind jetzt theme-variablen statt fester hex-werte
+  - [ ] weitere themes
 
 - [ ] best performer pro match/week/tourney
   - [x] pro tourney und pro abschnitt (week) auf dem dashboard, nach Ø platz

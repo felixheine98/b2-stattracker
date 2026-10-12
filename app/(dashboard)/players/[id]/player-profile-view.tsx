@@ -68,10 +68,10 @@ const avgPlace = (line: StatLine) => (line.roundsPlayed > 0 ? (line.placementSum
 
 function Tile({ label, value, hint }: { label: string; value: React.ReactNode; hint?: React.ReactNode }) {
   return (
-    <div className="rounded-xl border border-[#2d2829] bg-[#1c1819] px-4 py-3">
-      <p className="text-xs text-[#9a9090]">{label}</p>
-      <p className="mt-0.5 font-mono text-xl font-semibold text-[#f5f0f0]">{value}</p>
-      {hint && <p className="mt-0.5 text-xs text-[#5e5858]">{hint}</p>}
+    <div className="rounded-xl border border-line bg-surface px-4 py-3">
+      <p className="text-xs text-fg-muted">{label}</p>
+      <p className="mt-0.5 font-mono text-xl font-semibold text-fg">{value}</p>
+      {hint && <p className="mt-0.5 text-xs text-fg-subtle">{hint}</p>}
     </div>
   )
 }
@@ -79,14 +79,14 @@ function Tile({ label, value, hint }: { label: string; value: React.ReactNode; h
 const paceHint = (pace: RankedPace) =>
   pace.value === null ? "no timed round" : `Team ${formatPacePct(pace.team)} · ${rankLabel(pace.rank, pace.of)}`
 
-const TH = "px-3 py-2 text-right font-medium whitespace-nowrap text-[#9a9090]"
-const TD = "px-3 py-1.5 text-right whitespace-nowrap text-[#c5bfbf]"
-const FIRST_TH = "sticky left-0 z-[1] bg-[#1c1819] py-2 pl-3 pr-4 text-left font-medium whitespace-nowrap text-[#9a9090]"
-const FIRST_TD = "sticky left-0 z-[1] bg-[#0e0b0b] py-1.5 pl-3 pr-4 text-left font-medium whitespace-nowrap text-[#f5f0f0] max-md:shadow-[1px_0_0_#2d2829]"
+const TH = "px-3 py-2 text-right font-medium whitespace-nowrap text-fg-muted"
+const TD = "px-3 py-1.5 text-right whitespace-nowrap text-fg-soft"
+const FIRST_TH = "sticky left-0 z-[1] bg-surface py-2 pl-3 pr-4 text-left font-medium whitespace-nowrap text-fg-muted"
+const FIRST_TD = "sticky left-0 z-[1] bg-canvas py-1.5 pl-3 pr-4 text-left font-medium whitespace-nowrap text-fg max-md:shadow-[1px_0_0_#2d2829]"
 
 function Table({ children }: { children: React.ReactNode }) {
   return (
-    <div className="overflow-x-auto rounded-lg border border-[#2d2829]">
+    <div className="overflow-x-auto rounded-lg border border-line">
       <table className="w-full text-xs">{children}</table>
     </div>
   )
@@ -94,27 +94,27 @@ function Table({ children }: { children: React.ReactNode }) {
 
 // One row per format: the placement only means something within a format
 function FormatTable({ formats }: { formats: FormatLine[] }) {
-  if (formats.length === 0) return <p className="text-xs text-[#5e5858]">No rounds counted yet.</p>
+  if (formats.length === 0) return <p className="text-xs text-fg-subtle">No rounds counted yet.</p>
   return (
     <Table>
       <thead>
-        <tr className="border-b border-[#2d2829] bg-[#1c1819]">
+        <tr className="border-b border-line bg-surface">
           <th className={FIRST_TH}>Format</th>
           {["Played", "Avg place", "Pace", "Team", "Rank", "DNF", "Round W", "Round L"].map((h) => <th key={h} className={TH}>{h}</th>)}
         </tr>
       </thead>
       <tbody>
         {formats.map((f) => (
-          <tr key={f.format} className="border-b border-[#1c1819] last:border-0">
+          <tr key={f.format} className="border-b border-surface last:border-0">
             <td className={FIRST_TD}>{formatLabel(f.format)}</td>
             <td className={TD}>{f.roundsPlayed}</td>
             <td className={cn(TD, "font-mono")}>{avgPlace(f)}</td>
-            <td className={cn(TD, "font-mono text-[#f5f0f0]")}>{formatPacePct(f.pace.value)}</td>
+            <td className={cn(TD, "font-mono text-fg")}>{formatPacePct(f.pace.value)}</td>
             <td className={cn(TD, "font-mono")}>{formatPacePct(f.pace.team)}</td>
             <td className={TD}>{rankLabel(f.pace.rank, f.pace.of)}</td>
             <td className={TD}>{f.dnfs}</td>
-            <td className={cn(TD, "text-[#f5f0f0]")}>{f.roundsWon}</td>
-            <td className={cn(TD, "text-[#f5f0f0]")}>{f.roundsLost}</td>
+            <td className={cn(TD, "text-fg")}>{f.roundsWon}</td>
+            <td className={cn(TD, "text-fg")}>{f.roundsLost}</td>
           </tr>
         ))}
       </tbody>
@@ -126,7 +126,7 @@ function MapTable({ maps }: { maps: CompView["maps"] }) {
   return (
     <Table>
       <thead>
-        <tr className="border-b border-[#2d2829] bg-[#1c1819]">
+        <tr className="border-b border-line bg-surface">
           <th className={FIRST_TH}>Map</th>
           {["PB", "Rank", "Gap", "Rounds", "Avg gap", "Rank"].map((h, i) => <th key={i} className={TH}>{h}</th>)}
           <th className={cn(TH, "text-left")}>PB driven in</th>
@@ -134,16 +134,16 @@ function MapTable({ maps }: { maps: CompView["maps"] }) {
       </thead>
       <tbody>
         {maps.map((m) => (
-          <tr key={m.track} className="border-b border-[#1c1819] last:border-0">
+          <tr key={m.track} className="border-b border-surface last:border-0">
             <td className={FIRST_TD}>{m.track}</td>
-            <td className={cn(TD, "font-mono text-[#FBD00D]")}>{m.pbMs === null ? "—" : formatTime(m.pbMs)}</td>
+            <td className={cn(TD, "font-mono text-brand-ink")}>{m.pbMs === null ? "—" : formatTime(m.pbMs)}</td>
             <td className={TD}>{rankLabel(m.pbRank, m.pbOf)}</td>
             <td className={cn(TD, "font-mono")}>{formatGapSeconds(m.pbGapMs)}</td>
             <td className={TD}>{m.rounds}</td>
-            <td className={cn(TD, "font-mono text-[#f5f0f0]")}>{formatGapSeconds(m.avgGapMs)}</td>
+            <td className={cn(TD, "font-mono text-fg")}>{formatGapSeconds(m.avgGapMs)}</td>
             <td className={TD}>{rankLabel(m.avgGapRank, m.avgGapOf)}</td>
             <td className={cn(TD, "text-left")}>
-              {m.pbMatchPath ? <Link href={m.pbMatchPath} className="text-[#FBD00D] hover:underline">Match →</Link> : "—"}
+              {m.pbMatchPath ? <Link href={m.pbMatchPath} className="text-brand-ink hover:underline">Match →</Link> : "—"}
             </td>
           </tr>
         ))}
@@ -156,7 +156,7 @@ function MatchTable({ matches }: { matches: CompView["matches"] }) {
   return (
     <Table>
       <thead>
-        <tr className="border-b border-[#2d2829] bg-[#1c1819]">
+        <tr className="border-b border-line bg-surface">
           <th className={FIRST_TH}>Match</th>
           <th className={cn(TH, "text-left")}>Stage</th>
           <th className={cn(TH, "text-left")}>Lineup</th>
@@ -167,15 +167,15 @@ function MatchTable({ matches }: { matches: CompView["matches"] }) {
       </thead>
       <tbody>
         {matches.map((m) => (
-          <tr key={m.matchId} className="border-b border-[#1c1819] last:border-0">
+          <tr key={m.matchId} className="border-b border-surface last:border-0">
             <td className={FIRST_TD}>
-              <Link href={m.path} className="hover:text-[#FBD00D] hover:underline">vs {m.opponent ?? "Unknown"}</Link>
+              <Link href={m.path} className="hover:text-brand-ink hover:underline">vs {m.opponent ?? "Unknown"}</Link>
             </td>
             <td className={cn(TD, "text-left")}>{m.stage}</td>
             <td className={cn(TD, "text-left")}>{m.lineupName}</td>
             <td className={cn(TD, "text-left")}>{m.day ? formatDay(m.day) : "—"}</td>
             <td className={TD}>{m.roundsPlayed}</td>
-            <td className={cn(TD, "font-mono text-[#f5f0f0]")}>{formatPacePct(m.pace)}</td>
+            <td className={cn(TD, "font-mono text-fg")}>{formatPacePct(m.pace)}</td>
           </tr>
         ))}
       </tbody>
@@ -186,48 +186,48 @@ function MatchTable({ matches }: { matches: CompView["matches"] }) {
 function CompCard({ comp, initiallyOpen }: { comp: CompView; initiallyOpen: boolean }) {
   const [open, setOpen] = useState(initiallyOpen)
   return (
-    <div className="overflow-hidden rounded-xl border border-[#2d2829] bg-[#1c1819]">
+    <div className="overflow-hidden rounded-xl border border-line bg-surface">
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
         aria-expanded={open}
-        className="flex w-full items-start gap-3 p-4 text-left hover:bg-[#251f20]/50"
+        className="flex w-full items-start gap-3 p-4 text-left hover:bg-raised/50"
       >
-        <Trophy size={16} className="mt-1 shrink-0 text-[#FBD00D]" />
+        <Trophy size={16} className="mt-1 shrink-0 text-brand-ink" />
         <span className="min-w-0 flex-1">
           <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
-            <span className="break-words font-semibold text-[#f5f0f0]">{comp.name}</span>
-            {comp.status === "TRIAL" ? <TrialBadge /> : comp.status === "MEMBER" ? <span className="text-xs text-[#9a9090]">Member</span> : <GuestBadge />}
+            <span className="break-words font-semibold text-fg">{comp.name}</span>
+            {comp.status === "TRIAL" ? <TrialBadge /> : comp.status === "MEMBER" ? <span className="text-xs text-fg-muted">Member</span> : <GuestBadge />}
           </span>
-          <span className="mt-1 flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-[#9a9090]">
+          <span className="mt-1 flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-fg-muted">
             {comp.day && <span>{formatDay(comp.day)}</span>}
             <span>{comp.lineups.map((l) => l.name).join(", ") || "no lineup"}</span>
             {comp.deployed ? (
               <>
                 <span>{comp.total.roundsPlayed} rounds</span>
-                <span className="font-mono text-[#c5bfbf]">Pace {formatPacePct(comp.total.pace.value)}</span>
+                <span className="font-mono text-fg-soft">Pace {formatPacePct(comp.total.pace.value)}</span>
               </>
             ) : (
-              <span className="text-[#cd7f32]">not fielded</span>
+              <span className="text-bronze">not fielded</span>
             )}
           </span>
         </span>
-        {open ? <ChevronUp size={16} className="mt-1 shrink-0 text-[#5e5858]" /> : <ChevronDown size={16} className="mt-1 shrink-0 text-[#5e5858]" />}
+        {open ? <ChevronUp size={16} className="mt-1 shrink-0 text-fg-subtle" /> : <ChevronDown size={16} className="mt-1 shrink-0 text-fg-subtle" />}
       </button>
 
       {open && (
-        <div className="space-y-5 border-t border-[#2d2829] bg-[#0e0c0d] p-4">
+        <div className="space-y-5 border-t border-line bg-canvas p-4">
           <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm">
-            <Link href={comp.path} className="text-[#FBD00D] hover:underline">To the tournament →</Link>
+            <Link href={comp.path} className="text-brand-ink hover:underline">To the tournament →</Link>
             {comp.lineups.map((l) => (
-              <Link key={l.id} href={l.path} className="text-[#c5bfbf] hover:text-[#f5f0f0] hover:underline">{l.name} →</Link>
+              <Link key={l.id} href={l.path} className="text-fg-soft hover:text-fg hover:underline">{l.name} →</Link>
             ))}
           </div>
-          {!comp.deployed && <p className="text-xs text-[#5e5858]">In the roster, but without a recorded round.</p>}
+          {!comp.deployed && <p className="text-xs text-fg-subtle">In the roster, but without a recorded round.</p>}
           {comp.total.roundsPlayed > 0 && (
             <section className="space-y-2">
-              <h3 className="text-sm font-semibold text-[#f5f0f0]">Stats</h3>
-              <p className="text-xs text-[#5e5858]">
+              <h3 className="text-sm font-semibold text-fg">Stats</h3>
+              <p className="text-xs text-fg-subtle">
                 Pace {formatPacePct(comp.total.pace.value)} · {paceHint(comp.total.pace)}
               </p>
               <FormatTable formats={comp.formats} />
@@ -235,8 +235,8 @@ function CompCard({ comp, initiallyOpen }: { comp: CompView; initiallyOpen: bool
           )}
           {comp.maps.length > 0 && (
             <section className="space-y-2">
-              <h3 className="text-sm font-semibold text-[#f5f0f0]">Maps</h3>
-              <p className="text-xs text-[#5e5858]">
+              <h3 className="text-sm font-semibold text-fg">Maps</h3>
+              <p className="text-xs text-fg-subtle">
                 PB compared with the bests of our drivers. Avg gap to the fastest time of each round, both teams.
               </p>
               <MapTable maps={comp.maps} />
@@ -244,7 +244,7 @@ function CompCard({ comp, initiallyOpen }: { comp: CompView; initiallyOpen: bool
           )}
           {comp.matches.length > 0 && (
             <section className="space-y-2">
-              <h3 className="text-sm font-semibold text-[#f5f0f0]">Matches</h3>
+              <h3 className="text-sm font-semibold text-fg">Matches</h3>
               <MatchTable matches={comp.matches} />
             </section>
           )}
@@ -272,7 +272,7 @@ export function PlayerProfileView({ player: initial, total, formats, comps, hasO
 
   return (
     <div className="max-w-5xl space-y-6">
-      <Link href="/players" className="inline-flex items-center gap-1.5 text-sm text-[#9a9090] hover:text-[#f5f0f0]">
+      <Link href="/players" className="inline-flex items-center gap-1.5 text-sm text-fg-muted hover:text-fg">
         <ArrowLeft size={14} />
         Players
       </Link>
@@ -281,20 +281,20 @@ export function PlayerProfileView({ player: initial, total, formats, comps, hasO
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
             <PlayerAvatar player={player} className="h-8 w-8 text-base" />
-            <h1 className="break-words text-2xl font-bold text-[#f5f0f0]">{player.name}</h1>
+            <h1 className="break-words text-2xl font-bold text-fg">{player.name}</h1>
             <Badge variant={status === "MEMBER" ? "primary" : status === "TRIAL" ? "secondary" : "default"}>{STATUS_TEXT[status]}</Badge>
           </div>
-          <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-sm text-[#9a9090]">
+          <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-sm text-fg-muted">
             {player.country && <span>{countryName(player.country)}</span>}
             {formerNames.length > 0 && <span>formerly: {formerNames.join(", ")}</span>}
             {tmId && (
-              <a href={`https://trackmania.io/#/player/${tmId}`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-[#FBD00D] hover:underline">
+              <a href={`https://trackmania.io/#/player/${tmId}`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-brand-ink hover:underline">
                 Trackmania.io
                 <ExternalLink size={12} />
               </a>
             )}
             {hasOpponentProfile && (
-              <Link href={`/opponents/players/${player.id}`} className="inline-flex items-center gap-1 text-[#FBD00D] hover:underline">
+              <Link href={`/opponents/players/${player.id}`} className="inline-flex items-center gap-1 text-brand-ink hover:underline">
                 <Swords size={12} />
                 Rounds against us
               </Link>
@@ -320,13 +320,13 @@ export function PlayerProfileView({ player: initial, total, formats, comps, hasO
       </div>
 
       {comps.length === 0 ? (
-        <p className="rounded-xl border border-[#2d2829] bg-[#1c1819] p-5 text-sm text-[#9a9090]">
+        <p className="rounded-xl border border-line bg-surface p-5 text-sm text-fg-muted">
           Not part of a tournament yet and no recorded rounds.
         </p>
       ) : (
         <>
           <section className="space-y-3">
-            <h2 className="text-lg font-semibold text-[#f5f0f0]">Overall</h2>
+            <h2 className="text-lg font-semibold text-fg">Overall</h2>
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
               <Tile label="Comps" value={comps.length} />
               <Tile label="Rounds" value={total.roundsPlayed} />
@@ -338,14 +338,14 @@ export function PlayerProfileView({ player: initial, total, formats, comps, hasO
                 hint={decided > 0 ? `${((total.roundsWon / decided) * 100).toFixed(0)} % won` : undefined}
               />
             </div>
-            <p className="text-xs text-[#5e5858]">
+            <p className="text-xs text-fg-subtle">
               Pace: average gap to the fastest time of the round (both teams), without DNFs. Seeding does not count.
             </p>
             <FormatTable formats={formats} />
           </section>
 
           <section className="space-y-3">
-            <h2 className="text-lg font-semibold text-[#f5f0f0]">Tournaments</h2>
+            <h2 className="text-lg font-semibold text-fg">Tournaments</h2>
             {comps.map((comp, i) => <CompCard key={comp.tournamentId} comp={comp} initiallyOpen={i === 0} />)}
           </section>
         </>

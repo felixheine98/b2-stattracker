@@ -107,7 +107,7 @@ export function StatusMoveDialog({ player, onClose, onChanged }: Props) {
                 aria-pressed={target === s}
                 className={cn(
                   "rounded-md border px-3 py-1.5 text-sm font-medium transition-colors",
-                  target === s ? "border-[#FBD00D]/50 bg-[#FBD00D]/15 text-[#FBD00D]" : "border-[#3a3435] text-[#9a9090] hover:text-[#f5f0f0]"
+                  target === s ? "border-brand/50 bg-brand/15 text-brand-ink" : "border-line-strong text-fg-muted hover:text-fg"
                 )}
               >
                 {STATUS_LABEL[s]}
@@ -115,7 +115,7 @@ export function StatusMoveDialog({ player, onClose, onChanged }: Props) {
             ))}
           </div>
         </div>
-        <p className="text-sm text-[#9a9090]">
+        <p className="text-sm text-fg-muted">
           Lineups, results and the flag stay as they are. Tournaments that started before the chosen day keep showing{" "}
           {player.name} {AS_STATUS[current]}.
           {target === "FORMER" && " Former players are no longer offered for picking; profile and results are kept."}
@@ -132,24 +132,24 @@ export function StatusMoveDialog({ player, onClose, onChanged }: Props) {
             required
           />
           {lastChange && (
-            <p className="text-xs text-[#5e5858]">
+            <p className="text-xs text-fg-subtle">
               Must be after the previous switch on {formatDay(lastChange.effectiveFrom)}.
             </p>
           )}
         </div>
         {player.user && (target === "GUEST" || target === "TRIAL") && (
-          <p className="flex items-start gap-2 rounded-lg border border-[#cd7f32]/40 bg-[#cd7f32]/10 px-3 py-2 text-xs text-[#cd7f32]">
+          <p className="flex items-start gap-2 rounded-lg border border-bronze/40 bg-bronze/10 px-3 py-2 text-xs text-bronze">
             <KeyRound size={14} className="mt-0.5 shrink-0" />
             The login “{player.user.username}” stays active. Delete it on the Accounts page if this person should no longer have access.
           </p>
         )}
         {player.user && target === "FORMER" && (
-          <p className="flex items-start gap-2 rounded-lg border border-[#ED1F24]/40 bg-[#ED1F24]/10 px-3 py-2 text-xs text-[#ED1F24]">
+          <p className="flex items-start gap-2 rounded-lg border border-danger/40 bg-danger/10 px-3 py-2 text-xs text-danger">
             <KeyRound size={14} className="mt-0.5 shrink-0" />
             The login “{player.user.username}” is deleted with this. The person can no longer sign in afterwards.
           </p>
         )}
-        {error && <p className="text-sm text-[#ED1F24]">{error}</p>}
+        {error && <p className="text-sm text-danger">{error}</p>}
         <div className="dialog-footer flex gap-2 justify-end">
           <Button variant="ghost" onClick={onClose}>Cancel</Button>
           <Button onClick={handleMove} disabled={loading || !date}>
@@ -200,20 +200,20 @@ export function StatusHistoryDialog({ player, canManage, onClose, onChanged }: P
       <DialogTitle>Status history of {player.name}</DialogTitle>
       <div className="space-y-4">
         <ol className="space-y-2">
-          <li className="flex items-center gap-3 rounded-lg border border-[#2d2829] px-3 py-2 text-sm">
+          <li className="flex items-center gap-3 rounded-lg border border-line px-3 py-2 text-sm">
             {/* Whoever joined later starts as a guest: that stretch is the time before they joined */}
             {player.initialStatus === "GUEST" && changes.length > 0 ? (
-              <span className="text-xs text-[#5e5858]">before joining</span>
+              <span className="text-xs text-fg-subtle">before joining</span>
             ) : (
               <>
-                <span className="w-24 shrink-0 text-xs text-[#5e5858]">from the start</span>
-                <span className="font-medium text-[#f5f0f0]">{STATUS_LABEL[player.initialStatus]}</span>
+                <span className="w-24 shrink-0 text-xs text-fg-subtle">from the start</span>
+                <span className="font-medium text-fg">{STATUS_LABEL[player.initialStatus]}</span>
               </>
             )}
           </li>
           {timeline.map((entry) =>
             entry.kind === "change" ? (
-              <li key={entry.change.id} className="flex items-center gap-3 rounded-lg border border-[#FBD00D]/30 bg-[#FBD00D]/5 px-3 py-2 text-sm">
+              <li key={entry.change.id} className="flex items-center gap-3 rounded-lg border border-brand/30 bg-brand/5 px-3 py-2 text-sm">
                 {canManage ? (
                   <Input
                     type="date"
@@ -224,9 +224,9 @@ export function StatusHistoryDialog({ player, canManage, onClose, onChanged }: P
                     className="h-8 w-36 shrink-0 text-xs"
                   />
                 ) : (
-                  <span className="w-24 shrink-0 text-xs text-[#9a9090]">{formatDay(entry.day)}</span>
+                  <span className="w-24 shrink-0 text-xs text-fg-muted">{formatDay(entry.day)}</span>
                 )}
-                <span className="flex-1 font-medium text-[#f5f0f0]">{STATUS_LABEL[entry.change.status]}</span>
+                <span className="flex-1 font-medium text-fg">{STATUS_LABEL[entry.change.status]}</span>
                 {canManage && dates[entry.change.id] && dates[entry.change.id] !== entry.day && (
                   <Button size="sm" onClick={() => send(entry.change, "PATCH", "Failed to save")} disabled={loading}>Save</Button>
                 )}
@@ -235,7 +235,7 @@ export function StatusHistoryDialog({ player, canManage, onClose, onChanged }: P
                     type="button"
                     onClick={() => confirm("Remove this switch?") && send(entry.change, "DELETE", "Failed to remove")}
                     disabled={loading}
-                    className="text-[#5e5858] hover:text-[#ED1F24] disabled:opacity-40"
+                    className="text-fg-subtle hover:text-danger disabled:opacity-40"
                     title="Remove this switch"
                   >
                     <Trash2 size={14} />
@@ -244,13 +244,13 @@ export function StatusHistoryDialog({ player, canManage, onClose, onChanged }: P
               </li>
             ) : (
               <li key={`${entry.slot.lineup.tournament.id}-${entry.slot.lineup.name}`} className="flex items-center gap-3 px-3 py-1 text-sm">
-                <span className="w-24 shrink-0 text-xs text-[#5e5858]">{formatDay(entry.day)}</span>
-                <Trophy size={13} className="shrink-0 text-[#5e5858]" />
-                <span className="flex-1 text-[#c5bfbf]">
+                <span className="w-24 shrink-0 text-xs text-fg-subtle">{formatDay(entry.day)}</span>
+                <Trophy size={13} className="shrink-0 text-fg-subtle" />
+                <span className="flex-1 text-fg-soft">
                   {entry.slot.lineup.tournament.name}
-                  <span className="text-[#5e5858]"> · {entry.slot.lineup.name}</span>
+                  <span className="text-fg-subtle"> · {entry.slot.lineup.name}</span>
                 </span>
-                <span className={cn("text-xs", entry.status === "GUEST" ? "text-[#cd7f32]" : "text-[#9a9090]")}>
+                <span className={cn("text-xs", entry.status === "GUEST" ? "text-bronze" : "text-fg-muted")}>
                   {AS_STATUS[entry.status]}
                 </span>
               </li>
@@ -258,9 +258,9 @@ export function StatusHistoryDialog({ player, canManage, onClose, onChanged }: P
           )}
         </ol>
         {timeline.length === 0 && (
-          <p className="text-xs text-[#5e5858]">No switches and no tournaments yet.</p>
+          <p className="text-xs text-fg-subtle">No switches and no tournaments yet.</p>
         )}
-        {error && <p className="text-sm text-[#ED1F24]">{error}</p>}
+        {error && <p className="text-sm text-danger">{error}</p>}
         <div className="dialog-footer flex justify-end">
           <Button variant="ghost" onClick={onClose}>Close</Button>
         </div>

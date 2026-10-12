@@ -52,8 +52,8 @@ export function FormatStatsTable({ agg, isGuest, isTrial, lineupName, profilePat
     return (
       <th onClick={() => toggleSort(col)} className={cn("py-2 font-medium whitespace-nowrap cursor-pointer select-none group", className)}>
         <span className="inline-flex items-center gap-1">
-          <span className={cn("transition-colors", active ? "text-[#f5f0f0]" : "text-[#5e5858] group-hover:text-[#9a9090]")}>{label}</span>
-          <span className={cn("text-[9px] transition-colors", active ? "text-[#FBD00D]" : "text-[#2d2829] group-hover:text-[#3a3435]")}>
+          <span className={cn("transition-colors", active ? "text-fg" : "text-fg-subtle group-hover:text-fg-muted")}>{label}</span>
+          <span className={cn("text-[9px] transition-colors", active ? "text-brand-ink" : "text-line group-hover:text-line-strong")}>
             {active && sortDir === "desc" ? "▼" : "▲"}
           </span>
         </span>
@@ -67,16 +67,16 @@ export function FormatStatsTable({ agg, isGuest, isTrial, lineupName, profilePat
         <Badge variant={agg.format === "TIME_ATTACK_10" ? "primary" : "secondary"}>
           {formatLabel(agg.format)}
         </Badge>
-        <span className="text-xs text-[#5e5858]">
+        <span className="text-xs text-fg-subtle">
           Map: {agg.mapWon}W{agg.mapDrawn > 0 ? ` – ${agg.mapDrawn}D` : ""} – {agg.mapLost}L
           &nbsp;·&nbsp;Rounds: {agg.teamRoundsWon}W – {agg.teamRoundsLost}L
         </span>
       </div>
-      <div className="overflow-x-auto rounded-lg border border-[#2d2829]">
+      <div className="overflow-x-auto rounded-lg border border-line">
         <table className="w-full text-xs">
           <thead>
-            <tr className="border-b border-[#2d2829] bg-[#1c1819]">
-              {th("name", "Player", "sticky left-0 z-[1] bg-[#1c1819] text-left pl-3 pr-4")}
+            <tr className="border-b border-line bg-surface">
+              {th("name", "Player", "sticky left-0 z-[1] bg-surface text-left pl-3 pr-4")}
               {lineupName && th("lineup", "Lineup", "text-left px-3")}
               {th("played", "Played", "text-right px-3")}
               {th("placementSum", "Place sum", "text-right px-3")}
@@ -89,10 +89,10 @@ export function FormatStatsTable({ agg, isGuest, isTrial, lineupName, profilePat
           </thead>
           <tbody>
             {players.map((p) => (
-              <tr key={p.tmId} className="border-b border-[#1c1819] hover:bg-[#1c1819]/60">
-                <td className="sticky left-0 z-[1] bg-[#0e0b0b] py-1.5 pl-3 pr-4 text-[#f5f0f0] font-medium whitespace-nowrap max-md:shadow-[1px_0_0_#2d2829]">
+              <tr key={p.tmId} className="border-b border-surface hover:bg-surface/60">
+                <td className="sticky left-0 z-[1] bg-canvas py-1.5 pl-3 pr-4 text-fg font-medium whitespace-nowrap max-md:shadow-[1px_0_0_#2d2829]">
                   {profilePath?.(p.tmId) ? (
-                    <Link href={profilePath(p.tmId)!} className="hover:text-[#FBD00D]">
+                    <Link href={profilePath(p.tmId)!} className="hover:text-brand-ink">
                       <PlayerName name={p.name} currentName={p.currentName} />
                     </Link>
                   ) : (
@@ -101,18 +101,18 @@ export function FormatStatsTable({ agg, isGuest, isTrial, lineupName, profilePat
                   {isGuest(p.tmId) && <GuestBadge className="ml-1.5" />}
 {isTrial(p.tmId) && <TrialBadge className="ml-1.5" />}
                 </td>
-                {lineupName && <td className="py-1.5 px-3 text-[#c5bfbf] whitespace-nowrap">{lineupName(p.tmId) ?? "—"}</td>}
-                <td className="py-1.5 px-3 text-right text-[#c5bfbf]">{p.roundsPlayed}</td>
-                <td className="py-1.5 px-3 text-right text-[#c5bfbf]">{p.placementSum}</td>
-                <td className="py-1.5 px-3 text-right text-[#c5bfbf] font-mono">
+                {lineupName && <td className="py-1.5 px-3 text-fg-soft whitespace-nowrap">{lineupName(p.tmId) ?? "—"}</td>}
+                <td className="py-1.5 px-3 text-right text-fg-soft">{p.roundsPlayed}</td>
+                <td className="py-1.5 px-3 text-right text-fg-soft">{p.placementSum}</td>
+                <td className="py-1.5 px-3 text-right text-fg-soft font-mono">
                   {p.roundsPlayed > 0 ? (p.placementSum / p.roundsPlayed).toFixed(3) : "—"}
                 </td>
-                <td className="py-1.5 px-3 text-right text-[#c5bfbf] font-mono" title="Average gap to the fastest time of the round, without DNFs">
+                <td className="py-1.5 px-3 text-right text-fg-soft font-mono" title="Average gap to the fastest time of the round, without DNFs">
                   {formatPacePct(pacePct(p.pace))}
                 </td>
-                <td className="py-1.5 px-3 text-right text-[#c5bfbf]">{p.dnfs}</td>
-                <td className="py-1.5 px-3 text-right text-[#f5f0f0]">{p.roundsWon}</td>
-                <td className="py-1.5 pr-3 text-right text-[#f5f0f0]">{p.roundsLost}</td>
+                <td className="py-1.5 px-3 text-right text-fg-soft">{p.dnfs}</td>
+                <td className="py-1.5 px-3 text-right text-fg">{p.roundsWon}</td>
+                <td className="py-1.5 pr-3 text-right text-fg">{p.roundsLost}</td>
               </tr>
             ))}
           </tbody>

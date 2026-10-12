@@ -28,23 +28,23 @@ export function EcmBookmarkletSetup() {
   }
 
   return (
-    <div className="space-y-3 text-sm text-[#c5bfbf]">
+    <div className="space-y-3 text-sm text-fg-soft">
       <div className="flex flex-wrap items-center gap-2">
         <a
           ref={setHref}
           onClick={(e) => e.preventDefault()}
-          className="inline-block cursor-grab rounded-md border border-[#FBD00D]/50 bg-[#FBD00D]/10 px-2.5 py-1 text-xs font-medium text-[#FBD00D]"
+          className="inline-block cursor-grab rounded-md border border-brand/50 bg-brand/10 px-2.5 py-1 text-xs font-medium text-brand-ink"
         >
           eCM → B2 Stats
         </a>
-        <button type="button" onClick={copy} className="rounded-md border border-[#3a3435] px-2.5 py-1 text-xs text-[#f5f0f0] hover:bg-[#251f20]">
+        <button type="button" onClick={copy} className="rounded-md border border-line-strong px-2.5 py-1 text-xs text-fg hover:bg-raised">
           {copied ? "Address copied ✓" : "Copy address"}
         </button>
       </div>
-      {error && <p className="text-xs text-[#ED1F24]">{error}</p>}
+      {error && <p className="text-xs text-danger">{error}</p>}
 
-      <details className="rounded-lg border border-[#2d2829] px-3 py-2" open>
-        <summary className="cursor-pointer text-xs font-semibold uppercase tracking-wider text-[#9a9090]">On a computer</summary>
+      <details className="rounded-lg border border-line px-3 py-2" open>
+        <summary className="cursor-pointer text-xs font-semibold uppercase tracking-wider text-fg-muted">On a computer</summary>
         <ol className="mt-2 list-decimal space-y-1.5 pl-5">
           <li>Drag the yellow link into the bookmarks bar (show it with ⌘⇧B or Ctrl+Shift+B).</li>
           <li>Open the match page on ecircuitmania.com and click the bookmark.</li>
@@ -52,8 +52,8 @@ export function EcmBookmarkletSetup() {
         </ol>
       </details>
 
-      <details className="rounded-lg border border-[#2d2829] px-3 py-2">
-        <summary className="cursor-pointer text-xs font-semibold uppercase tracking-wider text-[#9a9090]">On a phone</summary>
+      <details className="rounded-lg border border-line px-3 py-2">
+        <summary className="cursor-pointer text-xs font-semibold uppercase tracking-wider text-fg-muted">On a phone</summary>
         <ol className="mt-2 list-decimal space-y-1.5 pl-5">
           <li>Tap “Copy address” above.</li>
           <li>
@@ -69,7 +69,7 @@ export function EcmBookmarkletSetup() {
             Start it on the eCM match page. Safari: tap the address bar and tap the tile “eCM”. Chrome: type
             “eCM” into the address bar and tap the bookmark among the suggestions.
           </li>
-          <li className="list-none text-xs text-[#5e5858]">
+          <li className="list-none text-xs text-fg-subtle">
             Pasting the copied address into the address bar yourself does not work – the browser blocks that.
           </li>
         </ol>

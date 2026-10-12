@@ -177,21 +177,21 @@ function SubMatchStatsTable({ sm, number, isGuest, isTrial }: { sm: SubMatch; nu
   }
 
   const track = sm.rounds[0]?.track
-  const resultColor = teamStats.ourRoundsWon > teamStats.ourRoundsLost ? "text-[#FBD00D]"
-    : teamStats.ourRoundsLost > teamStats.ourRoundsWon ? "text-[#ED1F24]" : "text-[#9a9090]"
+  const resultColor = teamStats.ourRoundsWon > teamStats.ourRoundsLost ? "text-brand-ink"
+    : teamStats.ourRoundsLost > teamStats.ourRoundsWon ? "text-danger" : "text-fg-muted"
 
   function th(col: SortCol, label: string, left?: boolean) {
     const active = sortCol === col
     return (
       <th
         onClick={() => toggleSort(col)}
-        className={`py-1.5 px-2 font-medium cursor-pointer select-none whitespace-nowrap group ${left ? "sticky left-0 z-[1] bg-[#0e0b0b] text-left pl-3 pr-4" : "text-right"}`}
+        className={`py-1.5 px-2 font-medium cursor-pointer select-none whitespace-nowrap group ${left ? "sticky left-0 z-[1] bg-canvas text-left pl-3 pr-4" : "text-right"}`}
       >
         <span className="inline-flex items-center gap-1 justify-end">
-          <span className={`transition-colors ${active ? "text-[#f5f0f0]" : "text-[#5e5858] group-hover:text-[#9a9090]"}`}>
+          <span className={`transition-colors ${active ? "text-fg" : "text-fg-subtle group-hover:text-fg-muted"}`}>
             {label}
           </span>
-          <span className={`text-[9px] transition-colors ${active ? "text-[#FBD00D]" : "text-[#2d2829] group-hover:text-[#3a3435]"}`}>
+          <span className={`text-[9px] transition-colors ${active ? "text-brand-ink" : "text-line group-hover:text-line-strong"}`}>
             {active && sortDir === "desc" ? "▼" : "▲"}
           </span>
         </span>
@@ -205,10 +205,10 @@ function SubMatchStatsTable({ sm, number, isGuest, isTrial }: { sm: SubMatch; nu
         <Badge variant={sm.format === "TIME_ATTACK_10" ? "primary" : "secondary"}>
           {formatLabel(sm.format)}
         </Badge>
-        <span className="text-sm text-[#f5f0f0]">{track || `#${number}`}</span>
+        <span className="text-sm text-fg">{track || `#${number}`}</span>
         <Wdl won={teamStats.ourRoundsWon} drawn={teamStats.ourRoundsDrawn} lost={teamStats.ourRoundsLost} unit="Rounds" className={`text-sm font-bold ${resultColor}`} />
       </div>
-      <div className="overflow-x-auto rounded-lg border border-[#2d2829]">
+      <div className="overflow-x-auto rounded-lg border border-line">
       {/* Fixed column widths, so the columns line up across the tables of a match */}
       <table className="w-full min-w-[720px] table-fixed text-xs">
         <colgroup>
@@ -216,7 +216,7 @@ function SubMatchStatsTable({ sm, number, isGuest, isTrial }: { sm: SubMatch; nu
           <col span={7} />
         </colgroup>
         <thead>
-          <tr className="border-b border-[#2d2829]">
+          <tr className="border-b border-line">
             {th("name", "Player", true)}
             {th("played", "Played")}
             {th("placementSum", "Place sum")}
@@ -230,25 +230,25 @@ function SubMatchStatsTable({ sm, number, isGuest, isTrial }: { sm: SubMatch; nu
         <tbody>
           {sorted.length === 0 && (
             <tr>
-              <td colSpan={8} className="py-3 text-center text-[#5e5858]">No data yet</td>
+              <td colSpan={8} className="py-3 text-center text-fg-subtle">No data yet</td>
             </tr>
           )}
           {sorted.map((row) => (
-            <tr key={row.tmId} className="border-b border-[#1c1819] hover:bg-[#1c1819]/50">
-              <td className="sticky left-0 z-[1] bg-[#0e0b0b] py-1.5 pl-3 pr-4 text-[#f5f0f0] font-medium whitespace-nowrap max-md:shadow-[1px_0_0_#2d2829]">
+            <tr key={row.tmId} className="border-b border-surface hover:bg-surface/50">
+              <td className="sticky left-0 z-[1] bg-canvas py-1.5 pl-3 pr-4 text-fg font-medium whitespace-nowrap max-md:shadow-[1px_0_0_#2d2829]">
                 <PlayerName name={row.name} currentName={row.currentName} />
                 {isGuest(row.tmId) && <GuestBadge className="ml-1.5" />}
 {isTrial(row.tmId) && <TrialBadge className="ml-1.5" />}
               </td>
-              <td className="py-1.5 px-2 text-right text-[#c5bfbf]">{row.roundsPlayed}</td>
-              <td className="py-1.5 px-2 text-right text-[#c5bfbf]">{row.placementSum}</td>
-              <td className="py-1.5 px-2 text-right text-[#c5bfbf] font-mono">
+              <td className="py-1.5 px-2 text-right text-fg-soft">{row.roundsPlayed}</td>
+              <td className="py-1.5 px-2 text-right text-fg-soft">{row.placementSum}</td>
+              <td className="py-1.5 px-2 text-right text-fg-soft font-mono">
                 {row.avg > 0 ? row.avg.toFixed(3) : "—"}
               </td>
-              <td className="py-1.5 px-2 text-right text-[#c5bfbf]">{row.dnfs}</td>
-              <td className="py-1.5 px-2 text-right text-[#FBD00D] font-mono">{row.bestTime != null ? formatTime(row.bestTime) : "—"}</td>
-              <td className="py-1.5 px-2 text-right text-[#c5bfbf] font-mono">{row.medianTime != null ? formatTime(Math.round(row.medianTime)) : "—"}</td>
-              <td className="py-1.5 px-2 text-right text-[#c5bfbf] font-mono">{row.avgTime != null ? formatTime(Math.round(row.avgTime)) : "—"}</td>
+              <td className="py-1.5 px-2 text-right text-fg-soft">{row.dnfs}</td>
+              <td className="py-1.5 px-2 text-right text-brand-ink font-mono">{row.bestTime != null ? formatTime(row.bestTime) : "—"}</td>
+              <td className="py-1.5 px-2 text-right text-fg-soft font-mono">{row.medianTime != null ? formatTime(Math.round(row.medianTime)) : "—"}</td>
+              <td className="py-1.5 px-2 text-right text-fg-soft font-mono">{row.avgTime != null ? formatTime(Math.round(row.avgTime)) : "—"}</td>
             </tr>
           ))}
         </tbody>
@@ -400,13 +400,13 @@ export function MatchDetailView({ match: initialMatch, allPlayers, guestTmIds, t
               ? lineupPath(initialMatch.tournament, matchLineup)
               : tournamentPath(initialMatch.tournament)
           }
-          className="inline-flex flex-wrap items-center gap-x-2 text-sm text-[#9a9090] hover:text-[#f5f0f0] mb-4"
+          className="inline-flex flex-wrap items-center gap-x-2 text-sm text-fg-muted hover:text-fg mb-4"
         >
           <ArrowLeft size={14} />
           {initialMatch.tournament.name}
           {matchLineup && (
             <>
-              <span className="text-[#5e5858]">/</span>
+              <span className="text-fg-subtle">/</span>
               {matchLineup.name}
             </>
           )}
@@ -414,11 +414,11 @@ export function MatchDetailView({ match: initialMatch, allPlayers, guestTmIds, t
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="min-w-0 flex-1 basis-full lg:basis-0">
             <div className="flex items-center gap-2 mb-1 flex-wrap">
-              <h1 className="text-2xl font-bold text-[#f5f0f0]">{matchTitle}</h1>
+              <h1 className="text-2xl font-bold text-fg">{matchTitle}</h1>
               {matchTag(initialMatch) && <Badge variant="default">{matchTag(initialMatch)}</Badge>}
               {/* A match can be moved between match days and playoffs, but never into or out of the seeding */}
               {canEdit && !isSeeding ? (
-                <Badge variant="primary" className="relative focus-within:ring-2 focus-within:ring-[#FBD00D]">
+                <Badge variant="primary" className="relative focus-within:ring-2 focus-within:ring-brand">
                   {stageName(stage, stages)}
                   <ChevronDown size={12} className="ml-1" />
                   <select
@@ -437,13 +437,13 @@ export function MatchDetailView({ match: initialMatch, allPlayers, guestTmIds, t
               ) : (
                 <Badge variant="primary">{stageName(stage, stages)}</Badge>
               )}
-              <span className="text-xs text-[#5e5858]">
+              <span className="text-xs text-fg-subtle">
                 {formatDay(stageDate(stage, stages, new Date(initialMatch.tournament.startDate ?? initialMatch.tournament.createdAt)))}
               </span>
             </div>
-            {stageError && <p className="text-xs text-[#ED1F24]">{stageError}</p>}
+            {stageError && <p className="text-xs text-danger">{stageError}</p>}
             {initialMatch.date && (
-              <p className="text-[#9a9090] text-sm">
+              <p className="text-fg-muted text-sm">
                 {new Date(initialMatch.date).toLocaleDateString("en-GB", {
                   weekday: "long",
                   year: "numeric",
@@ -452,13 +452,13 @@ export function MatchDetailView({ match: initialMatch, allPlayers, guestTmIds, t
                 })}
               </p>
             )}
-            {initialMatch.notes && <p className="text-[#5e5858] text-sm mt-1">{initialMatch.notes}</p>}
+            {initialMatch.notes && <p className="text-fg-subtle text-sm mt-1">{initialMatch.notes}</p>}
             {ecmUrl && (
               <a
                 href={ecmUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="mt-1 inline-flex max-w-full items-center gap-1.5 text-xs text-[#9a9090] hover:text-[#FBD00D]"
+                className="mt-1 inline-flex max-w-full items-center gap-1.5 text-xs text-fg-muted hover:text-brand-ink"
               >
                 <ExternalLink size={12} className="shrink-0" />
                 <span className="truncate">{ecmUrl.replace(/^https:\/\//, "")}</span>
@@ -468,15 +468,15 @@ export function MatchDetailView({ match: initialMatch, allPlayers, guestTmIds, t
             {/* Lineup of this match, fixed when the match is created */}
             {matchLineup && (
               <div className="mt-3">
-                <p className="text-xs text-[#9a9090] mb-1.5 flex items-center gap-1.5">
-                  <Users size={12} className="text-[#FBD00D]" />
+                <p className="text-xs text-fg-muted mb-1.5 flex items-center gap-1.5">
+                  <Users size={12} className="text-brand-ink" />
                   {matchLineup.name}
                 </p>
                 <div className="flex flex-wrap gap-1.5">
                   {matchLineup.slots.map((slot) => (
                     <span
                       key={slot.id}
-                      className="inline-flex items-center gap-1.5 rounded-full bg-[#251f20] border border-[#2d2829] px-2.5 py-1 text-xs text-[#c5bfbf]"
+                      className="inline-flex items-center gap-1.5 rounded-full bg-raised border border-line px-2.5 py-1 text-xs text-fg-soft"
                     >
                       <PlayerAvatar player={slot.player} className="h-4 w-4 text-[9px]" />
                       <PlayerName name={slot.player.name} currentName={slot.player.currentName} />
@@ -505,10 +505,10 @@ export function MatchDetailView({ match: initialMatch, allPlayers, guestTmIds, t
               <Card className="shrink-0">
                 <CardContent className="py-2 px-4">
                   <div className="text-center">
-                    <p className="text-2xl font-bold text-[#f5f0f0]">
+                    <p className="text-2xl font-bold text-fg">
                       <Wdl won={matchStats.subMatchesWon} drawn={matchStats.subMatchesDrawn} lost={matchStats.subMatchesLost} unit="Sub-Matches" />
                     </p>
-                    <p className="text-xs text-[#5e5858]">sub-match score</p>
+                    <p className="text-xs text-fg-subtle">sub-match score</p>
                   </div>
                 </CardContent>
               </Card>
@@ -521,7 +521,7 @@ export function MatchDetailView({ match: initialMatch, allPlayers, guestTmIds, t
       {/* Player stats, one table per sub-match */}
       {subMatches.some((sm) => sm.rounds.length > 0) && (
         <div>
-          <h2 className="text-sm font-semibold text-[#9a9090] uppercase tracking-wider mb-3 flex items-center gap-2">
+          <h2 className="text-sm font-semibold text-fg-muted uppercase tracking-wider mb-3 flex items-center gap-2">
             <BarChart2 size={14} />
             Stats
           </h2>
@@ -541,22 +541,22 @@ export function MatchDetailView({ match: initialMatch, allPlayers, guestTmIds, t
           const totalRounds = sm.rounds.length
 
           return (
-            <div key={sm.id} className="rounded-xl border border-[#2d2829] overflow-hidden">
+            <div key={sm.id} className="rounded-xl border border-line overflow-hidden">
               {/* Sub-match header */}
               <button
                 type="button"
-                className="w-full flex items-center justify-between gap-2 px-4 py-3 bg-[#1c1819] hover:bg-[#211e1f] transition-colors text-left"
+                className="w-full flex items-center justify-between gap-2 px-4 py-3 bg-surface hover:bg-raised transition-colors text-left"
                 onClick={() => toggleExpanded(sm.id)}
               >
                 <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1">
-                  <span className="text-xs font-medium text-[#5e5858] w-5">{idx + 1}.</span>
+                  <span className="text-xs font-medium text-fg-subtle w-5">{idx + 1}.</span>
                   <Badge variant={sm.format === "TIME_ATTACK_10" ? "primary" : "secondary"}>
                     {formatLabel(sm.format)}
                   </Badge>
-                  <span className="text-sm text-[#9a9090] max-md:hidden">{formatLabelLong(sm.format)}</span>
-                  {sm.rounds[0]?.track && <span className="text-sm text-[#f5f0f0]">{sm.rounds[0].track}</span>}
+                  <span className="text-sm text-fg-muted max-md:hidden">{formatLabelLong(sm.format)}</span>
+                  {sm.rounds[0]?.track && <span className="text-sm text-fg">{sm.rounds[0].track}</span>}
                   {totalRounds > 0 && (
-                    <span className="text-xs text-[#5e5858]">{totalRounds} round{totalRounds !== 1 ? "s" : ""}</span>
+                    <span className="text-xs text-fg-subtle">{totalRounds} round{totalRounds !== 1 ? "s" : ""}</span>
                   )}
                   {(stats.ourRoundsWon + stats.ourRoundsLost + stats.ourRoundsDrawn) > 0 && (
                     <Badge variant={stats.ourRoundsWon > stats.ourRoundsLost ? "primary" : stats.ourRoundsWon < stats.ourRoundsLost ? "red" : "default"}>
@@ -564,33 +564,33 @@ export function MatchDetailView({ match: initialMatch, allPlayers, guestTmIds, t
                     </Badge>
                   )}
                 </div>
-                {isOpen ? <ChevronUp size={16} className="text-[#5e5858]" /> : <ChevronDown size={16} className="text-[#5e5858]" />}
+                {isOpen ? <ChevronUp size={16} className="text-fg-subtle" /> : <ChevronDown size={16} className="text-fg-subtle" />}
               </button>
 
               {/* Sub-match content */}
               {isOpen && (
-                <div className="border-t border-[#2d2829] p-4 space-y-4 bg-[#0e0c0d]">
+                <div className="border-t border-line p-4 space-y-4 bg-canvas">
                   {/* Summary */}
                   {totalRounds > 0 && (
-                    <div className="flex flex-wrap gap-x-8 gap-y-2 rounded-xl border border-[#2d2829] bg-[#1c1819] px-5 py-3 text-sm">
+                    <div className="flex flex-wrap gap-x-8 gap-y-2 rounded-xl border border-line bg-surface px-5 py-3 text-sm">
                       <div>
-                        <p className="text-xs text-[#9a9090]">Rounds</p>
-                        <p className="text-[#f5f0f0] font-medium">{totalRounds}</p>
+                        <p className="text-xs text-fg-muted">Rounds</p>
+                        <p className="text-fg font-medium">{totalRounds}</p>
                       </div>
                       <div>
-                        <p className="text-xs text-[#9a9090]">Our rounds won</p>
-                        <p className="text-[#f5f0f0] font-medium">{stats.ourRoundsWon} / {totalRounds}</p>
+                        <p className="text-xs text-fg-muted">Our rounds won</p>
+                        <p className="text-fg font-medium">{stats.ourRoundsWon} / {totalRounds}</p>
                       </div>
                       {stats.bestOurTime && (
                         <div>
-                          <p className="text-xs text-[#9a9090]">Our best time</p>
-                          <p className="text-[#FBD00D] font-mono font-medium">{formatTime(stats.bestOurTime)}</p>
+                          <p className="text-xs text-fg-muted">Our best time</p>
+                          <p className="text-brand-ink font-mono font-medium">{formatTime(stats.bestOurTime)}</p>
                         </div>
                       )}
                       {stats.bestOpponentTime && (
                         <div>
-                          <p className="text-xs text-[#9a9090]">Opponent best</p>
-                          <p className="text-[#c5bfbf] font-mono">{formatTime(stats.bestOpponentTime)}</p>
+                          <p className="text-xs text-fg-muted">Opponent best</p>
+                          <p className="text-fg-soft font-mono">{formatTime(stats.bestOpponentTime)}</p>
                         </div>
                       )}
                     </div>
@@ -621,20 +621,20 @@ export function MatchDetailView({ match: initialMatch, allPlayers, guestTmIds, t
                         type="button"
                         aria-expanded={roundsOpen.has(sm.id)}
                         onClick={() => toggleRounds(sm.id)}
-                        className="w-full flex items-center justify-between rounded-lg border border-[#2d2829] bg-[#1c1819] px-4 py-2.5 text-left hover:bg-[#211e1f] transition-colors"
+                        className="w-full flex items-center justify-between rounded-lg border border-line bg-surface px-4 py-2.5 text-left hover:bg-raised transition-colors"
                       >
-                        <span className="text-xs font-semibold text-[#9a9090] uppercase tracking-wider">
+                        <span className="text-xs font-semibold text-fg-muted uppercase tracking-wider">
                           Round Results
-                          <span className="ml-2 font-normal normal-case tracking-normal text-[#5e5858]">
+                          <span className="ml-2 font-normal normal-case tracking-normal text-fg-subtle">
                             {totalRounds} round{totalRounds !== 1 ? "s" : ""}
                           </span>
                         </span>
-                        {roundsOpen.has(sm.id) ? <ChevronUp size={16} className="text-[#5e5858]" /> : <ChevronDown size={16} className="text-[#5e5858]" />}
+                        {roundsOpen.has(sm.id) ? <ChevronUp size={16} className="text-fg-subtle" /> : <ChevronDown size={16} className="text-fg-subtle" />}
                       </button>
                       {/* Removing rounds: mark any number of them, e.g. a warm-up round an import brought along */}
                       {sm.id in picking && (
-                        <div className="sticky top-0 z-[2] flex flex-wrap items-center justify-between gap-2 rounded-lg border border-[#ED1F24]/40 bg-[#1c1819] px-3 py-2 text-sm">
-                          <span className="text-[#c5bfbf]">{picking[sm.id].length} of {totalRounds} rounds marked</span>
+                        <div className="sticky top-0 z-[2] flex flex-wrap items-center justify-between gap-2 rounded-lg border border-danger/40 bg-surface px-3 py-2 text-sm">
+                          <span className="text-fg-soft">{picking[sm.id].length} of {totalRounds} rounds marked</span>
                           <span className="flex flex-wrap gap-2">
                             <Button variant="ghost" size="sm" onClick={() => stopPicking(sm.id)}>Cancel</Button>
                             <Button variant="destructive" size="sm" onClick={() => removePicked(sm.id)} disabled={removing || picking[sm.id].length === 0}>
@@ -652,7 +652,7 @@ export function MatchDetailView({ match: initialMatch, allPlayers, guestTmIds, t
                         const score = roundScore(round.results)
 
                         return (
-                          <Card key={round.id} className={cn(score?.outcome === "W" && "border-[#FBD00D]/30", picking[sm.id]?.includes(round.id) && "border-[#ED1F24]/60 bg-[#ED1F24]/5")}>
+                          <Card key={round.id} className={cn(score?.outcome === "W" && "border-brand/30", picking[sm.id]?.includes(round.id) && "border-danger/60 bg-danger/5")}>
                             <CardContent className="pt-4">
                               <div className="flex items-center gap-3 mb-3">
                                 {sm.id in picking && (
@@ -661,15 +661,15 @@ export function MatchDetailView({ match: initialMatch, allPlayers, guestTmIds, t
                                     checked={picking[sm.id].includes(round.id)}
                                     onChange={() => togglePicked(sm.id, round.id)}
                                     aria-label={`Mark round ${round.number + 1} for deletion`}
-                                    className="h-4 w-4 accent-[#ED1F24]"
+                                    className="h-4 w-4 accent-danger"
                                   />
                                 )}
                                 <Badge variant="default">Round {round.number + 1}</Badge>
-                                {round.track && <span className="text-xs text-[#5e5858]">{round.track}</span>}
+                                {round.track && <span className="text-xs text-fg-subtle">{round.track}</span>}
                                 {score?.outcome === "W" && <Badge variant="primary">WIN</Badge>}
                                 {score?.outcome === "L" && <Badge variant="red">LOSS</Badge>}
                                 {score?.outcome === "D" && <Badge variant="default">DRAW</Badge>}
-                                {score && <span className="text-xs font-mono text-[#9a9090]" title="Points: us – opponent">{score.ours}–{score.theirs}</span>}
+                                {score && <span className="text-xs font-mono text-fg-muted" title="Points: us – opponent">{score.ours}–{score.theirs}</span>}
                               </div>
                               {/* Phones: one list in finishing order, our players highlighted */}
                               <ol className="space-y-1 md:hidden">
@@ -680,7 +680,7 @@ export function MatchDetailView({ match: initialMatch, allPlayers, guestTmIds, t
                                       key={r.id}
                                       className={cn(
                                         "flex items-center gap-2 rounded-md px-2 py-1 text-sm",
-                                        r.isOurTeam ? "bg-[#FBD00D]/10 text-[#f5f0f0]" : "text-[#9a9090]"
+                                        r.isOurTeam ? "bg-brand/10 text-fg" : "text-fg-muted"
                                       )}
                                     >
                                       <span className={`w-6 shrink-0 text-xs font-bold font-mono ${rankColor(rank)}`}>#{rank}</span>
@@ -698,7 +698,7 @@ export function MatchDetailView({ match: initialMatch, allPlayers, guestTmIds, t
                               </ol>
                               <div className="hidden grid-cols-2 gap-4 md:grid">
                                 <div>
-                                  <p className="text-xs text-[#FBD00D] font-medium mb-2 flex items-center gap-1">
+                                  <p className="text-xs text-brand-ink font-medium mb-2 flex items-center gap-1">
                                     <Trophy size={10} />
                                     Our team
                                   </p>
@@ -710,7 +710,7 @@ export function MatchDetailView({ match: initialMatch, allPlayers, guestTmIds, t
                                           <span className={`w-5 shrink-0 text-xs font-bold font-mono ${rankColor(rank)}`}>
                                             #{rank}
                                           </span>
-                                          <span className="text-[#f5f0f0] flex-1 truncate">
+                                          <span className="text-fg flex-1 truncate">
                                             <PlayerName name={r.playerName} currentName={r.currentName} />
                                             {isGuest(r.tmId) && <GuestBadge className="ml-1.5" />}
 {isTrial(r.tmId) && <TrialBadge className="ml-1.5" />}
@@ -724,7 +724,7 @@ export function MatchDetailView({ match: initialMatch, allPlayers, guestTmIds, t
                                   </div>
                                 </div>
                                 <div>
-                                  <p className="text-xs text-[#5e5858] font-medium mb-2">Opponent</p>
+                                  <p className="text-xs text-fg-subtle font-medium mb-2">Opponent</p>
                                   <div className="space-y-1">
                                     {oppResults.map((r) => {
                                       const rank = rankMap.get(r.id) ?? 0
@@ -733,7 +733,7 @@ export function MatchDetailView({ match: initialMatch, allPlayers, guestTmIds, t
                                           <span className={`w-5 shrink-0 text-xs font-bold font-mono ${rankColor(rank)}`}>
                                             #{rank}
                                           </span>
-                                          <span className="text-[#9a9090] flex-1 truncate">{r.playerName}</span>
+                                          <span className="text-fg-muted flex-1 truncate">{r.playerName}</span>
                                           <span className={`font-mono shrink-0 ${rankColor(rank)}`}>
                                             {r.dnf ? "DNF" : r.timeMs != null ? formatTime(r.timeMs) : "—"}
                                           </span>
@@ -752,8 +752,8 @@ export function MatchDetailView({ match: initialMatch, allPlayers, guestTmIds, t
 
                   {totalRounds === 0 && (
                     <div className="py-6 text-center">
-                      <Clock size={24} className="mx-auto text-[#5e5858] mb-2" />
-                      <p className="text-[#9a9090] text-xs">No results yet. Enter rounds manually or import a CSV.</p>
+                      <Clock size={24} className="mx-auto text-fg-subtle mb-2" />
+                      <p className="text-fg-muted text-xs">No results yet. Enter rounds manually or import a CSV.</p>
                     </div>
                   )}
                 </div>
@@ -813,10 +813,10 @@ export function MatchDetailView({ match: initialMatch, allPlayers, guestTmIds, t
 }
 
 function rankColor(rank: number): string {
-  if (rank === 1) return "text-[#FBD00D]"
-  if (rank === 2) return "text-[#c5bfbf]"
-  if (rank === 3) return "text-[#cd7f32]"
-  return "text-[#5e5858]"
+  if (rank === 1) return "text-brand-ink"
+  if (rank === 2) return "text-fg-soft"
+  if (rank === 3) return "text-bronze"
+  return "text-fg-subtle"
 }
 
 function computeStats(rounds: Round[]) {

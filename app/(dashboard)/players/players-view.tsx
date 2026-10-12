@@ -106,12 +106,12 @@ interface Props {
 // A trackmania.io value that differs from ours, with the two ways to settle it
 function HintLine({ label, canManage, onAdopt, onDismiss }: { label: string; canManage: boolean; onAdopt: () => void; onDismiss: () => void }) {
   return (
-    <p className="mt-1 flex flex-wrap items-center gap-x-2 text-[11px] font-normal text-[#cd7f32]">
+    <p className="mt-1 flex flex-wrap items-center gap-x-2 text-[11px] font-normal text-bronze">
       {label}
       {canManage && (
         <>
-          <button type="button" onClick={onAdopt} className="text-[#FBD00D] hover:underline">Adopt</button>
-          <button type="button" onClick={onDismiss} className="text-[#9a9090] hover:underline">Hide</button>
+          <button type="button" onClick={onAdopt} className="text-brand-ink hover:underline">Adopt</button>
+          <button type="button" onClick={onDismiss} className="text-fg-muted hover:underline">Hide</button>
         </>
       )}
     </p>
@@ -332,7 +332,7 @@ export function PlayersView({ players: initial, users, canManage }: Props) {
     return (
       <>
         <div className="relative">
-          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#5e5858]" />
+          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-fg-subtle" />
           <Input
             id={id}
             value={searchQuery}
@@ -343,13 +343,13 @@ export function PlayersView({ players: initial, users, canManage }: Props) {
             className="pl-9"
           />
         </div>
-        {searchLoading && <p className="text-xs text-[#5e5858]">Searching…</p>}
-        {searchError && <p className="text-xs text-[#ED1F24]">{searchError}</p>}
+        {searchLoading && <p className="text-xs text-fg-subtle">Searching…</p>}
+        {searchError && <p className="text-xs text-danger">{searchError}</p>}
         {searchResults && searchResults.length === 0 && !searchLoading && (
-          <p className="text-xs text-[#5e5858]">{emptyText}</p>
+          <p className="text-xs text-fg-subtle">{emptyText}</p>
         )}
         {searchResults && searchResults.length > 0 && (
-          <div className="max-h-52 space-y-1 overflow-y-auto rounded-lg border border-[#2d2829] bg-[#0e0c0d] p-1.5">
+          <div className="max-h-52 space-y-1 overflow-y-auto rounded-lg border border-line bg-canvas p-1.5">
             {searchResults.map((result) => (
               <button
                 key={result.id}
@@ -359,19 +359,19 @@ export function PlayersView({ players: initial, users, canManage }: Props) {
                 className={cn(
                   "flex w-full items-center gap-2.5 rounded-md border px-2.5 py-1.5 text-left text-sm transition-colors disabled:opacity-50",
                   picked?.id === result.id
-                    ? "border-[#FBD00D]/50 bg-[#FBD00D]/10"
-                    : "border-transparent hover:bg-[#251f20]"
+                    ? "border-brand/50 bg-brand/10"
+                    : "border-transparent hover:bg-raised"
                 )}
               >
                 <PlayerAvatar player={result} className="h-5 w-5 text-[10px]" />
-                <span className="font-medium text-[#f5f0f0]">{result.name}</span>
-                {result.clubTag && <span className="rounded bg-[#251f20] px-1.5 text-[10px] text-[#9a9090]">{result.clubTag}</span>}
-                <span className="ml-auto truncate text-xs text-[#5e5858]">
+                <span className="font-medium text-fg">{result.name}</span>
+                {result.clubTag && <span className="rounded bg-raised px-1.5 text-[10px] text-fg-muted">{result.clubTag}</span>}
+                <span className="ml-auto truncate text-xs text-fg-subtle">
                   {result.existing
                     ? `already added (${STATUS_LABEL[result.existing.status].toLowerCase()})`
                     : [result.region, result.countryName].filter(Boolean).join(", ")}
                 </span>
-                {picked?.id === result.id && <Check size={14} className="shrink-0 text-[#FBD00D]" />}
+                {picked?.id === result.id && <Check size={14} className="shrink-0 text-brand-ink" />}
               </button>
             ))}
           </div>
@@ -513,8 +513,8 @@ export function PlayersView({ players: initial, users, canManage }: Props) {
     <div className="space-y-6 max-w-5xl">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-[#f5f0f0]">Players</h1>
-          <p className="text-[#9a9090] text-sm mt-0.5">
+          <h1 className="text-2xl font-bold text-fg">Players</h1>
+          <p className="text-fg-muted text-sm mt-0.5">
             {count("MEMBER")} member{count("MEMBER") !== 1 ? "s" : ""}, {count("TRIAL")} on trial, {count("GUEST")} guest{count("GUEST") !== 1 ? "s" : ""}
           </p>
         </div>
@@ -548,7 +548,7 @@ export function PlayersView({ players: initial, users, canManage }: Props) {
       </div>
 
       <div className="flex flex-wrap items-center justify-between gap-3">
-      <div className="inline-flex max-w-full flex-wrap rounded-lg border border-[#2d2829] p-1" role="tablist">
+      <div className="inline-flex max-w-full flex-wrap rounded-lg border border-line p-1" role="tablist">
         {([
           ["members", "Members", members.length],
           ["trial", "Trial", trials.length],
@@ -563,17 +563,17 @@ export function PlayersView({ players: initial, users, canManage }: Props) {
             onClick={() => selectTab(value)}
             className={cn(
               "flex items-center gap-2 rounded-md px-4 py-1.5 text-sm font-medium transition-colors max-md:px-3",
-              tab === value ? "bg-[#FBD00D]/15 text-[#FBD00D]" : "text-[#9a9090] hover:text-[#f5f0f0]"
+              tab === value ? "bg-brand/15 text-brand-ink" : "text-fg-muted hover:text-fg"
             )}
           >
             {label}
-            <span className={cn("text-xs", tab === value ? "text-[#FBD00D]/70" : "text-[#5e5858]")}>{count}</span>
+            <span className={cn("text-xs", tab === value ? "text-brand-ink/70" : "text-fg-subtle")}>{count}</span>
           </button>
         ))}
       </div>
       {/* Quick search over all tabs: the numbers on the tabs show where the hits are */}
       <div className="relative w-full sm:w-64">
-        <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#5e5858]" />
+        <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-fg-subtle" />
         <Input
           type="search"
           value={filter}
@@ -588,9 +588,9 @@ export function PlayersView({ players: initial, users, canManage }: Props) {
       </div>
 
       {syncMessage && (
-        <p className="flex items-center justify-between gap-3 rounded-lg border border-[#2d2829] bg-[#1c1819] px-4 py-2 text-sm text-[#c5bfbf]">
+        <p className="flex items-center justify-between gap-3 rounded-lg border border-line bg-surface px-4 py-2 text-sm text-fg-soft">
           {syncMessage}
-          <button type="button" onClick={() => setSyncMessage("")} className="text-[#5e5858] hover:text-[#f5f0f0]" title="Close">
+          <button type="button" onClick={() => setSyncMessage("")} className="text-fg-subtle hover:text-fg" title="Close">
             <X size={14} />
           </button>
         </p>
@@ -599,8 +599,8 @@ export function PlayersView({ players: initial, users, canManage }: Props) {
       {visible.length === 0 ? (
         <Card>
           <CardContent className="py-12 text-center">
-            <User size={32} className="mx-auto text-[#5e5858] mb-3" />
-            <p className="text-[#9a9090] text-sm">
+            <User size={32} className="mx-auto text-fg-subtle mb-3" />
+            <p className="text-fg-muted text-sm">
               {filter.trim()
                 ? "No player in this tab matches the search. The numbers on the tabs show where the hits are."
                 : tab === "members"
@@ -615,16 +615,16 @@ export function PlayersView({ players: initial, users, canManage }: Props) {
         </Card>
       ) : (
         // The cells size themselves by the width of this box (@5xl / @7xl), so the table fits without scrolling
-        <div className="@container rounded-xl border border-[#2d2829] overflow-x-auto max-md:overflow-visible max-md:border-0">
+        <div className="@container rounded-xl border border-line overflow-x-auto max-md:overflow-visible max-md:border-0">
           {/* From 768px a table; on phones the same rows are laid out as one card per player */}
           <table className="w-full text-sm max-md:block">
             <thead className="max-md:hidden">
-              <tr className="border-b border-[#2d2829] bg-[#251f20]">
-                <th className="text-left px-3 py-3 @7xl:px-4 text-[#9a9090] font-medium">Name</th>
-                <th className="text-left px-3 py-3 @7xl:px-4 text-[#9a9090] font-medium">TM ID</th>
-                {tab !== "former" && <th className="text-left px-3 py-3 @7xl:px-4 text-[#9a9090] font-medium">{tab === "members" ? "Linked account" : "Login"}</th>}
-                <th className="text-left px-3 py-3 @7xl:px-4 text-[#9a9090] font-medium">Status</th>
-                <th className="text-right px-3 py-3 @7xl:px-4 text-[#9a9090] font-medium whitespace-nowrap">Tournaments played</th>
+              <tr className="border-b border-line bg-raised">
+                <th className="text-left px-3 py-3 @7xl:px-4 text-fg-muted font-medium">Name</th>
+                <th className="text-left px-3 py-3 @7xl:px-4 text-fg-muted font-medium">TM ID</th>
+                {tab !== "former" && <th className="text-left px-3 py-3 @7xl:px-4 text-fg-muted font-medium">{tab === "members" ? "Linked account" : "Login"}</th>}
+                <th className="text-left px-3 py-3 @7xl:px-4 text-fg-muted font-medium">Status</th>
+                <th className="text-right px-3 py-3 @7xl:px-4 text-fg-muted font-medium whitespace-nowrap">Tournaments played</th>
                 <th className="px-3 py-3 @7xl:px-4" />
               </tr>
             </thead>
@@ -633,31 +633,31 @@ export function PlayersView({ players: initial, users, canManage }: Props) {
                 <Fragment key={player.id}>
                 {/* Members: the managers first, under a heading of their own */}
                 {tab === "members" && managers.length > 0 && (i === 0 || i === managers.length) && (
-                  <tr className="border-b border-[#2d2829] bg-[#251f20]/60 max-md:block max-md:border-0 max-md:bg-transparent">
-                    <td colSpan={7} className="px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-[#9a9090] @7xl:px-4 max-md:block max-md:px-0.5 max-md:py-0">
+                  <tr className="border-b border-line bg-raised/60 max-md:block max-md:border-0 max-md:bg-transparent">
+                    <td colSpan={7} className="px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-fg-muted @7xl:px-4 max-md:block max-md:px-0.5 max-md:py-0">
                       {i === 0 ? "Manager" : "Member"}
                     </td>
                   </tr>
                 )}
                 <tr
-                  className={`border-b border-[#2d2829] last:border-0 ${i % 2 === 0 ? "bg-[#1c1819]" : "bg-[#1c1819]/60"} max-md:grid max-md:grid-cols-2 max-md:gap-x-3 max-md:gap-y-3 max-md:rounded-xl max-md:border max-md:bg-[#1c1819] max-md:p-3.5 max-md:last:border`}
+                  className={`border-b border-line last:border-0 ${i % 2 === 0 ? "bg-surface" : "bg-surface/60"} max-md:grid max-md:grid-cols-2 max-md:gap-x-3 max-md:gap-y-3 max-md:rounded-xl max-md:border max-md:bg-surface max-md:p-3.5 max-md:last:border`}
                 >
-                  <td className="px-3 py-3 @7xl:px-4 font-medium text-[#f5f0f0] max-md:order-1 max-md:col-span-2 max-md:block max-md:p-0 max-md:text-base">
+                  <td className="px-3 py-3 @7xl:px-4 font-medium text-fg max-md:order-1 max-md:col-span-2 max-md:block max-md:p-0 max-md:text-base">
                     <span className="flex items-center gap-2 whitespace-nowrap">
                       {/* The flag says the country; managers change it right there */}
                       {canManage ? <CountryFlagPicker player={player} onChange={(country) => handleCountry(player.id, country)} /> : <PlayerAvatar player={player} />}
-                      <Link href={playerPath(player)} className="hover:text-[#FBD00D] hover:underline">{player.name}</Link>
+                      <Link href={playerPath(player)} className="hover:text-brand-ink hover:underline">{player.name}</Link>
                       <button
                         type="button"
                         onClick={() => setNameDialog({ playerId: player.id })}
-                        className="text-[#3a3435] hover:text-[#f5f0f0]"
+                        className="text-line-strong hover:text-fg"
                         title={canManage ? "Rename / name history" : "Name history"}
                       >
                         <Pencil size={11} />
                       </button>
                     </span>
                     {allNames(player).length > 1 && (
-                      <p className="mt-0.5 text-[11px] font-normal text-[#5e5858]">
+                      <p className="mt-0.5 text-[11px] font-normal text-fg-subtle">
                         formerly: {allNames(player).filter((n) => n !== player.name).join(", ")}
                       </p>
                     )}
@@ -673,24 +673,24 @@ export function PlayersView({ players: initial, users, canManage }: Props) {
                         onDismiss={() => resolveHint(player, "country", "dismiss")} />
                     )}
                     {player.tmioCheckedAt && !player.tmioName && (
-                      <p className="mt-1 flex flex-wrap items-center gap-x-2 text-[11px] font-normal text-[#cd7f32]">
+                      <p className="mt-1 flex flex-wrap items-center gap-x-2 text-[11px] font-normal text-bronze">
                         not found on trackmania.io
                         {canManage && (
-                          <button type="button" onClick={() => openRelink(player)} className="text-[#FBD00D] hover:underline">Search</button>
+                          <button type="button" onClick={() => openRelink(player)} className="text-brand-ink hover:underline">Search</button>
                         )}
                       </p>
                     )}
                   </td>
-                  <td className="px-3 py-3 @7xl:px-4 font-mono text-xs text-[#5e5858] max-md:order-3 max-md:block max-md:min-w-0 max-md:p-0 max-md:text-right">
+                  <td className="px-3 py-3 @7xl:px-4 font-mono text-xs text-fg-subtle max-md:order-3 max-md:block max-md:min-w-0 max-md:p-0 max-md:text-right">
                     <span className="block w-[9ch] truncate @7xl:w-auto max-md:ml-auto max-md:w-[14ch]" title={player.tmId}>{player.tmId}</span>
                   </td>
                   {tab !== "former" && <td className="px-3 py-3 @7xl:px-4 max-md:order-5 max-md:col-span-2 max-md:block max-md:min-w-0 max-md:p-0">
-                    <span className="mb-1 block text-[10px] uppercase tracking-wider text-[#5e5858] md:hidden">{tab === "members" ? "Account" : "Login"}</span>
+                    <span className="mb-1 block text-[10px] uppercase tracking-wider text-fg-subtle md:hidden">{tab === "members" ? "Account" : "Login"}</span>
                     {tab !== "members" ? (
                       // Only members get a login; one from earlier is kept, a new one cannot be linked
                       player.user ? (
                         <div className="flex items-center gap-2">
-                          <span className="inline-flex items-center gap-1.5 text-xs text-[#cd7f32]">
+                          <span className="inline-flex items-center gap-1.5 text-xs text-bronze">
                             <KeyRound size={12} />
                             {player.user.username}
                           </span>
@@ -698,7 +698,7 @@ export function PlayersView({ players: initial, users, canManage }: Props) {
                             <button
                               onClick={() => handleLink(player.id, null)}
                               disabled={linking === player.id}
-                              className="text-[#5e5858] hover:text-[#ED1F24] disabled:opacity-40"
+                              className="text-fg-subtle hover:text-danger disabled:opacity-40"
                               title="Unlink"
                             >
                               <Link2Off size={13} />
@@ -706,7 +706,7 @@ export function PlayersView({ players: initial, users, canManage }: Props) {
                           )}
                         </div>
                       ) : (
-                        <span className="text-[#3a3435]">—</span>
+                        <span className="text-line-strong">—</span>
                       )
                     ) : canManage ? (
                       <div className="flex items-center gap-2">
@@ -714,7 +714,7 @@ export function PlayersView({ players: initial, users, canManage }: Props) {
                           value={player.user?.id ?? ""}
                           onChange={(e) => handleLink(player.id, e.target.value || null)}
                           disabled={linking === player.id}
-                          className="h-7 w-32 max-md:h-9 max-md:min-w-0 max-md:flex-1 text-ellipsis rounded border border-[#3a3435] bg-[#251f20] px-2 text-xs text-[#f5f0f0] focus:outline-none focus:ring-1 focus:ring-[#FBD00D] disabled:opacity-50"
+                          className="h-7 w-32 max-md:h-9 max-md:min-w-0 max-md:flex-1 text-ellipsis rounded border border-line-strong bg-raised px-2 text-xs text-fg focus:outline-none focus:ring-1 focus:ring-brand disabled:opacity-50"
                         >
                           <option value="">— no account —</option>
                           {availableUsers(player).map((u) => (
@@ -727,19 +727,19 @@ export function PlayersView({ players: initial, users, canManage }: Props) {
                           <button
                             onClick={() => handleLink(player.id, null)}
                             disabled={linking === player.id}
-                            className="text-[#5e5858] hover:text-[#ED1F24] disabled:opacity-40"
+                            className="text-fg-subtle hover:text-danger disabled:opacity-40"
                             title="Unlink"
                           >
                             <Link2Off size={13} />
                           </button>
                         )}
                         {!player.user && linking !== player.id && (
-                          <Link2 size={13} className="text-[#3a3435]" />
+                          <Link2 size={13} className="text-line-strong" />
                         )}
                       </div>
                     ) : (
-                      <span className="text-[#9a9090]">
-                        {player.user?.name ?? <span className="text-[#3a3435]">—</span>}
+                      <span className="text-fg-muted">
+                        {player.user?.name ?? <span className="text-line-strong">—</span>}
                       </span>
                     )}
                   </td>}
@@ -747,18 +747,18 @@ export function PlayersView({ players: initial, users, canManage }: Props) {
                     <button
                       type="button"
                       onClick={() => setHistoryId(player.id)}
-                      className="inline-flex items-center gap-1.5 text-left text-xs text-[#9a9090] hover:text-[#f5f0f0]"
+                      className="inline-flex items-center gap-1.5 text-left text-xs text-fg-muted hover:text-fg"
                       title="Show status history"
                     >
                       <History size={12} className="shrink-0" />
                       {statusSummary(player)}
                     </button>
                   </td>
-                  <td className="px-3 py-3 @7xl:px-4 text-right text-[#9a9090] max-md:order-6 max-md:col-span-2 max-md:block max-md:p-0 max-md:text-left max-md:text-xs">
+                  <td className="px-3 py-3 @7xl:px-4 text-right text-fg-muted max-md:order-6 max-md:col-span-2 max-md:block max-md:p-0 max-md:text-left max-md:text-xs">
                     {player.tournamentsPlayed ?? 0}
                     <span className="md:hidden"> tournament{player.tournamentsPlayed === 1 ? "" : "s"} played</span>
                   </td>
-                  <td className={cn("px-3 py-3 @7xl:px-4 text-right max-md:order-7 max-md:col-span-2 max-md:block max-md:border-t max-md:border-[#2d2829] max-md:p-0 max-md:pt-2.5", !canManage && "max-md:hidden")}>
+                  <td className={cn("px-3 py-3 @7xl:px-4 text-right max-md:order-7 max-md:col-span-2 max-md:block max-md:border-t max-md:border-line max-md:p-0 max-md:pt-2.5", !canManage && "max-md:hidden")}>
                     {canManage && (
                       <div className="flex items-center justify-end gap-1 max-md:justify-between">
                         <Button
@@ -766,7 +766,7 @@ export function PlayersView({ players: initial, users, canManage }: Props) {
                           size="sm"
                           onClick={() => handleSyncOne(player)}
                           disabled={!!syncProgress || !!syncingId}
-                          className="text-[#5e5858] hover:text-[#f5f0f0]"
+                          className="text-fg-subtle hover:text-fg"
                           title="Compare with trackmania.io"
                         >
                           <RefreshCw size={14} className={syncingId === player.id ? "animate-spin" : ""} />
@@ -787,7 +787,7 @@ export function PlayersView({ players: initial, users, canManage }: Props) {
                           size="sm"
                           onClick={() => handleDelete(player.id)}
                           disabled={deleting === player.id}
-                          className="text-[#5e5858] hover:text-[#ED1F24]"
+                          className="text-fg-subtle hover:text-danger"
                         >
                           <Trash2 size={14} />
                           <span className="md:hidden">Delete</span>
@@ -834,7 +834,7 @@ export function PlayersView({ players: initial, users, canManage }: Props) {
                 </Button>
               )}
             </div>
-            <p className="text-xs text-[#5e5858]">
+            <p className="text-xs text-fg-subtle">
               {picked
                 ? `Taken from trackmania.io${picked.country ? `, country ${countryName(picked.country)}` : ""}.`
                 : "Filled in when you pick a search result, or paste the UUID by hand."}
@@ -844,10 +844,10 @@ export function PlayersView({ players: initial, users, canManage }: Props) {
             <div className="space-y-1.5">
               <Label htmlFor="since">{newStatus === "TRIAL" ? "On trial since" : "Member since"}</Label>
               <Input id="since" type="date" value={formSince} max={localTodayKey()} onChange={(e) => setFormSince(e.target.value)} />
-              <p className="text-xs text-[#5e5858]">Leave empty for someone who has been with the team from the start.</p>
+              <p className="text-xs text-fg-subtle">Leave empty for someone who has been with the team from the start.</p>
             </div>
           )}
-          {error && <p className="text-sm text-[#ED1F24]">{error}</p>}
+          {error && <p className="text-sm text-danger">{error}</p>}
           <div className="dialog-footer flex gap-2 justify-end">
             <Button variant="ghost" type="button" onClick={closeForm}>Cancel</Button>
             <Button type="submit" disabled={loading}>
@@ -861,18 +861,18 @@ export function PlayersView({ players: initial, users, canManage }: Props) {
       <Dialog open={canManage && !!relinkPlayer} onClose={closeRelink} className="max-w-lg">
         <DialogTitle>Find {relinkPlayer?.name} on trackmania.io</DialogTitle>
         <div className="space-y-4">
-          <p className="text-sm text-[#9a9090]">
+          <p className="text-sm text-fg-muted">
             The saved TM ID is unknown to trackmania.io. Pick the right account to correct it; name, lineups and results stay as they are.
           </p>
           <div className="space-y-1.5">
             {searchField("tmio-relink-search", setPicked, "No player found. Try another part of the name.")}
           </div>
           {picked && relinkPlayer && (
-            <p className="break-all font-mono text-[11px] text-[#5e5858]">
-              {relinkPlayer.tmId} → <span className="text-[#f5f0f0]">{picked.id}</span>
+            <p className="break-all font-mono text-[11px] text-fg-subtle">
+              {relinkPlayer.tmId} → <span className="text-fg">{picked.id}</span>
             </p>
           )}
-          {relinkError && <p className="text-sm text-[#ED1F24]">{relinkError}</p>}
+          {relinkError && <p className="text-sm text-danger">{relinkError}</p>}
           <div className="dialog-footer flex gap-2 justify-end">
             <Button variant="ghost" type="button" onClick={closeRelink}>Cancel</Button>
             <Button type="button" onClick={handleRelink} disabled={!picked || relinkLoading}>

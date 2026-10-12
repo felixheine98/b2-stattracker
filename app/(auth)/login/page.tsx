@@ -79,8 +79,8 @@ export default function LoginPage() {
 
   if (credentials) {
     return (
-      <div className="rounded-xl border border-[#2d2829] bg-[#1c1819] p-6">
-        <h2 className="text-lg font-semibold text-[#f5f0f0] mb-5">Two-factor sign-in</h2>
+      <div className="rounded-xl border border-line bg-surface p-6">
+        <h2 className="text-lg font-semibold text-fg mb-5">Two-factor sign-in</h2>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-1.5">
             <Label htmlFor="code">{useRecoveryCode ? "Recovery code" : "Code from your authenticator app"}</Label>
@@ -90,16 +90,16 @@ export default function LoginPage() {
               <Input key="totp" id="code" name="code" type="text" inputMode="numeric" autoComplete="one-time-code" placeholder="123456" maxLength={7} className="font-mono tracking-widest" autoFocus required />
             )}
           </div>
-          {error && <p className="text-sm text-[#ED1F24]">{error}</p>}
+          {error && <p className="text-sm text-danger">{error}</p>}
           <Button type="submit" className="w-full" disabled={loading}>
             {loading ? "Signing in…" : "Sign in"}
           </Button>
         </form>
-        <div className="mt-4 flex flex-wrap justify-between gap-x-4 gap-y-2 text-sm text-[#5e5858]">
-          <button type="button" onClick={() => { setUseRecoveryCode((v) => !v); setError("") }} className="hover:text-[#f5f0f0]">
+        <div className="mt-4 flex flex-wrap justify-between gap-x-4 gap-y-2 text-sm text-fg-subtle">
+          <button type="button" onClick={() => { setUseRecoveryCode((v) => !v); setError("") }} className="hover:text-fg">
             {useRecoveryCode ? "Use a code from the app" : "Use a recovery code"}
           </button>
-          <button type="button" onClick={() => { setCredentials(null); setUseRecoveryCode(false); setError("") }} className="hover:text-[#f5f0f0]">
+          <button type="button" onClick={() => { setCredentials(null); setUseRecoveryCode(false); setError("") }} className="hover:text-fg">
             Back
           </button>
         </div>
@@ -108,8 +108,8 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="rounded-xl border border-[#2d2829] bg-[#1c1819] p-6">
-      <h2 className="text-lg font-semibold text-[#f5f0f0] mb-5">Sign in</h2>
+    <div className="rounded-xl border border-line bg-surface p-6">
+      <h2 className="text-lg font-semibold text-fg mb-5">Sign in</h2>
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="space-y-1.5">
           <Label htmlFor="login">Username or email</Label>
@@ -119,7 +119,7 @@ export default function LoginPage() {
           <Label htmlFor="password">Password</Label>
           <Input id="password" name="password" type="password" autoComplete="current-password" required />
         </div>
-        {error && <p className="text-sm text-[#ED1F24]">{error}</p>}
+        {error && <p className="text-sm text-danger">{error}</p>}
         <Button type="submit" className="w-full" disabled={loading}>
           {loading ? "Signing in…" : "Sign in"}
         </Button>
@@ -128,7 +128,7 @@ export default function LoginPage() {
           Sign in with a passkey
         </Button>
       </form>
-      <p className="mt-4 text-center text-sm text-[#5e5858]">
+      <p className="mt-4 text-center text-sm text-fg-subtle">
         No account? Ask an admin or manager to create one.
       </p>
     </div>

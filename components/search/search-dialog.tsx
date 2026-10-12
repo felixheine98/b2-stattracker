@@ -87,7 +87,7 @@ export function SearchDialog() {
   return (
     <Dialog open={open} onClose={close} className="max-w-xl md:mt-[10vh] md:max-h-[75vh] md:self-start">
       <div className="relative mr-8">
-        <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#5e5858]" />
+        <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-fg-subtle" />
         <Input
           autoFocus
           value={query}
@@ -101,16 +101,16 @@ export function SearchDialog() {
       </div>
 
       <div className="mt-4 space-y-4">
-        {failed && <p className="text-sm text-[#ED1F24]">The search could not be loaded.</p>}
+        {failed && <p className="text-sm text-danger">The search could not be loaded.</p>}
         {!failed && !query.trim() && (
-          <p className="text-sm text-[#5e5858]">Finds players (also by former names), opponent teams and their lineups, tournaments and matches.</p>
+          <p className="text-sm text-fg-subtle">Finds players (also by former names), opponent teams and their lineups, tournaments and matches.</p>
         )}
-        {!failed && query.trim() && entries === null && <p className="text-sm text-[#5e5858]">Loading…</p>}
-        {query.trim() && entries !== null && hits.length === 0 && <p className="text-sm text-[#5e5858]">Nothing found.</p>}
+        {!failed && query.trim() && entries === null && <p className="text-sm text-fg-subtle">Loading…</p>}
+        {query.trim() && entries !== null && hits.length === 0 && <p className="text-sm text-fg-subtle">Nothing found.</p>}
 
         {groups.map((group) => (
           <section key={group.kind}>
-            <h3 className="mb-1 px-2 text-[11px] font-medium uppercase tracking-wider text-[#5e5858]">{GROUP_LABEL[group.kind]}</h3>
+            <h3 className="mb-1 px-2 text-[11px] font-medium uppercase tracking-wider text-fg-subtle">{GROUP_LABEL[group.kind]}</h3>
             <ul>
               {group.hits.map(({ entry, via }) => {
                 const i = ++index
@@ -124,20 +124,20 @@ export function SearchDialog() {
                       onMouseMove={() => setActive(i)}
                       className={cn(
                         "flex w-full flex-wrap items-baseline gap-x-2 gap-y-0.5 rounded-md px-2 py-2 text-left text-sm",
-                        i === active ? "bg-[#FBD00D]/10 text-[#f5f0f0]" : "text-[#c5bfbf]"
+                        i === active ? "bg-brand/10 text-fg" : "text-fg-soft"
                       )}
                     >
                       <span className="min-w-0 break-words font-medium">{entry.title}</span>
-                      {via && <span className="text-xs text-[#9a9090]">also: {via}</span>}
-                      {entry.detail && <span className="text-xs text-[#5e5858]">{entry.detail}</span>}
-                      {entry.marker && <span className="text-xs text-[#cd7f32]">{entry.marker}</span>}
+                      {via && <span className="text-xs text-fg-muted">also: {via}</span>}
+                      {entry.detail && <span className="text-xs text-fg-subtle">{entry.detail}</span>}
+                      {entry.marker && <span className="text-xs text-bronze">{entry.marker}</span>}
                     </button>
                   </li>
                 )
               })}
             </ul>
             {group.total > group.hits.length && (
-              <p className="px-2 pt-1 text-xs text-[#5e5858]">+ {group.total - group.hits.length} more, narrow the search</p>
+              <p className="px-2 pt-1 text-xs text-fg-subtle">+ {group.total - group.hits.length} more, narrow the search</p>
             )}
           </section>
         ))}

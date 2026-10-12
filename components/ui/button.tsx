@@ -14,13 +14,13 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       <button
         ref={ref}
         className={cn(
-          "inline-flex shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-md font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FBD00D] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0e0b0b] disabled:pointer-events-none disabled:opacity-40",
+          "inline-flex shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-md font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-canvas disabled:pointer-events-none disabled:opacity-40",
           {
-            "bg-[#FBD00D] text-[#1a1718] hover:bg-[#e6bc0c]": variant === "default",
-            "bg-[#002484] text-white hover:bg-[#001e70]": variant === "secondary",
-            "border border-[#3a3435] bg-transparent text-[#f5f0f0] hover:bg-[#251f20] hover:border-[#5e5858]": variant === "outline",
-            "bg-transparent text-[#9a9090] hover:bg-[#251f20] hover:text-[#f5f0f0]": variant === "ghost",
-            "bg-[#ED1F24] text-white hover:bg-[#d61c21]": variant === "destructive",
+            "bg-brand text-brand-fg hover:bg-brand-hover": variant === "default",
+            "bg-navy text-white hover:bg-navy-hover": variant === "secondary",
+            "border border-line-strong bg-transparent text-fg hover:bg-raised hover:border-fg-subtle": variant === "outline",
+            "bg-transparent text-fg-muted hover:bg-raised hover:text-fg": variant === "ghost",
+            "bg-danger text-white hover:bg-danger-hover": variant === "destructive",
           },
           {
             "h-8 px-3 text-sm": size === "sm",

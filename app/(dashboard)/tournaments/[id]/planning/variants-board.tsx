@@ -41,10 +41,10 @@ const POOL = "pool"
 
 function dotColor(answer: Answer): string {
   if (answer === "FIX") return "bg-green-400"
-  if (answer === "MAYBE") return "bg-[#FBD00D]"
-  if (answer === "OUT") return "bg-[#ED1F24]"
-  if (answer === "OPEN") return "bg-[#5e5858]"
-  return "bg-[#6b8fff]"
+  if (answer === "MAYBE") return "bg-brand"
+  if (answer === "OUT") return "bg-danger"
+  if (answer === "OPEN") return "bg-fg-subtle"
+  return "bg-info"
 }
 
 // A text field that saves when left or on Enter, not on every key
@@ -65,7 +65,7 @@ function SavingInput({ value, onSave, onLeave, className, ...props }: { value: s
         onLeave?.()
       }}
       onKeyDown={(e) => { if (e.key === "Enter") e.currentTarget.blur() }}
-      className={cn("min-w-0 rounded-md border border-transparent bg-transparent focus:border-[#FBD00D] focus:outline-none", className)}
+      className={cn("min-w-0 rounded-md border border-transparent bg-transparent focus:border-brand focus:outline-none", className)}
     />
   )
 }
@@ -155,13 +155,13 @@ export function VariantsBoard({ tournamentId, tournamentHref, rows, levels, vari
     <div className="flex flex-wrap items-center gap-2">
       {asking ? (
         <>
-          <span className="text-sm text-[#c5bfbf]">How many lineups?</span>
+          <span className="text-sm text-fg-soft">How many lineups?</span>
           {[1, 2, 3, 4, 5, 6].map((n) => (
             <Button key={n} size="sm" variant="outline" onClick={() => { setAsking(false); run({ type: "createVariant", lineupCount: n }) }} className="w-9 px-0">
               {n}
             </Button>
           ))}
-          <button type="button" onClick={() => setAsking(false)} className="text-xs text-[#5e5858] hover:text-[#f5f0f0]">Cancel</button>
+          <button type="button" onClick={() => setAsking(false)} className="text-xs text-fg-subtle hover:text-fg">Cancel</button>
         </>
       ) : (
         <Button size="sm" variant={variants.length === 0 ? "default" : "outline"} onClick={() => setAsking(true)}>
@@ -174,8 +174,8 @@ export function VariantsBoard({ tournamentId, tournamentHref, rows, levels, vari
 
   return (
     <div className="space-y-4">
-      {variants.length === 0 && <p className="text-sm text-[#9a9090]">No variant yet.</p>}
-      {error && <p className="text-sm text-[#ED1F24]">{error}</p>}
+      {variants.length === 0 && <p className="text-sm text-fg-muted">No variant yet.</p>}
+      {error && <p className="text-sm text-danger">{error}</p>}
 
       {ordered.map((variant) => {
         const board = variantBoard(variant, rows)
@@ -206,9 +206,9 @@ export function VariantsBoard({ tournamentId, tournamentHref, rows, levels, vari
         const area = (target: string) =>
           cn(
             "rounded-lg border px-3 py-3 transition-colors",
-            target === POOL ? "border-dashed border-[#3a3435]" : "border-[#2d2829] bg-[#1c1819]",
-            dragOver === `${variant.id}:${target}` && "border-[#FBD00D] bg-[#FBD00D]/5",
-            picked && !archived && "cursor-pointer hover:border-[#FBD00D]/60"
+            target === POOL ? "border-dashed border-line-strong" : "border-line bg-surface",
+            dragOver === `${variant.id}:${target}` && "border-brand bg-brand/5",
+            picked && !archived && "cursor-pointer hover:border-brand/60"
           )
 
         const chip = (row: BoardRow & { note: string | null }, out = false) => {
@@ -231,40 +231,40 @@ export function VariantsBoard({ tournamentId, tournamentHref, rows, levels, vari
               }}
               title={[answerLabel(row.answer, levels), row.guest ? "Guest" : "", out ? "no longer available" : "", row.note ?? ""].filter(Boolean).join(" · ")}
               className={cn(
-                "inline-flex max-w-full items-center gap-1.5 rounded-md border bg-[#251f20] px-2.5 py-1.5 text-sm transition-colors",
-                out ? "border-[#ED1F24]/60 text-[#ED1F24]" : "border-[#2d2829] text-[#f5f0f0]",
-                isSelected && "ring-2 ring-[#FBD00D]",
+                "inline-flex max-w-full items-center gap-1.5 rounded-md border bg-raised px-2.5 py-1.5 text-sm transition-colors",
+                out ? "border-danger/60 text-danger" : "border-line text-fg",
+                isSelected && "ring-2 ring-brand",
                 // Someone else has picked this player up
-                holder && !isSelected && "ring-2 ring-[#6b8fff]",
+                holder && !isSelected && "ring-2 ring-info",
                 !archived && "cursor-grab active:cursor-grabbing"
               )}
             >
               <span className={cn("h-2 w-2 shrink-0 rounded-full", dotColor(row.answer))} />
               <span className="truncate">{row.player.name}</span>
               {out && <AlertTriangle size={11} className="shrink-0" />}
-              {holder && <span className="shrink-0 rounded bg-[#6b8fff] px-1 text-[10px] font-semibold text-[#0e0b0b]">{holder.name}</span>}
+              {holder && <span className="shrink-0 rounded bg-info px-1 text-[10px] font-semibold text-canvas">{holder.name}</span>}
               {/* The note belongs to the player in this variant and stays wherever they are moved */}
-              {row.note && <span className="max-w-[16ch] truncate text-[11px] text-[#9a9090]">{row.note}</span>}
+              {row.note && <span className="max-w-[16ch] truncate text-[11px] text-fg-muted">{row.note}</span>}
             </button>
           )
         }
 
         return (
-          <section key={variant.id} className={cn("space-y-4 rounded-xl border p-5", adopted ? "border-[#FBD00D]/60" : "border-[#2d2829]")}>
+          <section key={variant.id} className={cn("space-y-4 rounded-xl border p-5", adopted ? "border-brand/60" : "border-line")}>
             <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5">
               {archived ? (
-                <h3 className="text-base font-semibold text-[#f5f0f0]">{variant.name}</h3>
+                <h3 className="text-base font-semibold text-fg">{variant.name}</h3>
               ) : (
                 <SavingInput
                   value={variant.name}
                   onSave={(name) => { if (name) run({ type: "updateVariant", variantId: variant.id, name }) }}
                   aria-label="Name of the variant"
                   maxLength={60}
-                  className="h-8 w-48 max-w-full px-1.5 text-base font-semibold text-[#f5f0f0] hover:border-[#2d2829]"
+                  className="h-8 w-48 max-w-full px-1.5 text-base font-semibold text-fg hover:border-line"
                 />
               )}
               {adopted && (
-                <span className="inline-flex items-center gap-1 rounded-full bg-[#FBD00D] px-2.5 py-0.5 text-xs font-bold text-[#1a1718]">
+                <span className="inline-flex items-center gap-1 rounded-full bg-brand px-2.5 py-0.5 text-xs font-bold text-brand-fg">
                   <Check size={12} />
                   Taken over
                 </span>
@@ -277,19 +277,19 @@ export function VariantsBoard({ tournamentId, tournamentHref, rows, levels, vari
                 title={voted ? "Take the thumbs-up back" : "Vote for it"}
                 className={cn(
                   "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs transition-colors",
-                  voted ? "border-[#FBD00D]/50 bg-[#FBD00D]/15 text-[#FBD00D]" : "border-[#3a3435] text-[#9a9090] hover:text-[#f5f0f0]"
+                  voted ? "border-brand/50 bg-brand/15 text-brand-ink" : "border-line-strong text-fg-muted hover:text-fg"
                 )}
               >
                 <ThumbsUp size={11} />
                 {variant.votes.length > 0 ? variant.votes.map((v) => v.name).join(", ") : "In favour"}
               </button>
               {others.map((p) => (
-                <span key={p.userId} className="rounded-full border border-[#6b8fff]/40 bg-[#6b8fff]/15 px-2 py-0.5 text-[11px] text-[#6b8fff]">
+                <span key={p.userId} className="rounded-full border border-info/40 bg-info/15 px-2 py-0.5 text-[11px] text-info">
                   {p.name}{typingHere.includes(p) ? " is typing…" : ""}
                 </span>
               ))}
               {board.outCount > 0 && (
-                <span className="inline-flex items-center gap-1 text-xs text-[#ED1F24]">
+                <span className="inline-flex items-center gap-1 text-xs text-danger">
                   <AlertTriangle size={12} />
                   {board.outCount} nicht mehr dabei
                 </span>
@@ -300,14 +300,14 @@ export function VariantsBoard({ tournamentId, tournamentHref, rows, levels, vari
                     <Check size={14} />
                     Take over
                   </Button>
-                  <button type="button" onClick={() => run({ type: "createVariant", copyFrom: variant.id })} title="Copy variant" className="p-1.5 text-[#5e5858] hover:text-[#f5f0f0]">
+                  <button type="button" onClick={() => run({ type: "createVariant", copyFrom: variant.id })} title="Copy variant" className="p-1.5 text-fg-subtle hover:text-fg">
                     <Copy size={14} />
                   </button>
                   <button
                     type="button"
                     onClick={() => { if (confirm(`Delete the variant “${variant.name}”?`)) run({ type: "deleteVariant", variantId: variant.id }) }}
                     title="Delete variant"
-                    className="p-1.5 text-[#5e5858] hover:text-[#ED1F24]"
+                    className="p-1.5 text-fg-subtle hover:text-danger"
                   >
                     <Trash2 size={14} />
                   </button>
@@ -317,7 +317,7 @@ export function VariantsBoard({ tournamentId, tournamentHref, rows, levels, vari
 
             {/* The tapped player: where to put them, and the note on them in this variant */}
             {picked && !archived && (
-              <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 rounded-lg bg-[#FBD00D]/10 px-2.5 py-1.5 text-xs text-[#FBD00D]">
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 rounded-lg bg-brand/10 px-2.5 py-1.5 text-xs text-brand-ink">
                 <span><strong>{picked.player.name}</strong> selected – tap where to put them</span>
                 <SavingInput
                   key={picked.player.id}
@@ -327,13 +327,13 @@ export function VariantsBoard({ tournamentId, tournamentHref, rows, levels, vari
                   onLeave={() => setTyping(null)}
                   placeholder="Note on this player"
                   maxLength={300}
-                  className="h-7 min-w-40 flex-1 border-dashed border-[#FBD00D]/40 px-2 text-xs text-[#f5f0f0] placeholder:text-[#9a9090]"
+                  className="h-7 min-w-40 flex-1 border-dashed border-brand/40 px-2 text-xs text-fg placeholder:text-fg-muted"
                 />
               </div>
             )}
 
             <div className={cn(area(POOL), "flex min-h-14 flex-wrap items-center gap-2")} {...dropProps(POOL)}>
-              <span className="mr-1 text-[11px] font-semibold uppercase tracking-wider text-[#5e5858]">Not placed {board.pool.length}</span>
+              <span className="mr-1 text-[11px] font-semibold uppercase tracking-wider text-fg-subtle">Not placed {board.pool.length}</span>
               {board.pool.map((row) => chip(row))}
             </div>
 
@@ -342,23 +342,23 @@ export function VariantsBoard({ tournamentId, tournamentHref, rows, levels, vari
                 <div key={lineup.id} className={cn(area(lineup.id), "space-y-2")} {...dropProps(lineup.id)}>
                   <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
                     {archived ? (
-                      <p className="flex-1 text-sm font-semibold text-[#f5f0f0]">{lineup.name}</p>
+                      <p className="flex-1 text-sm font-semibold text-fg">{lineup.name}</p>
                     ) : (
                       <SavingInput
                         value={lineup.name}
                         onSave={(name) => { if (name) run({ type: "updateLineup", lineupId: lineup.id, name }) }}
                         aria-label="Name of the lineup"
                         maxLength={60}
-                        className="h-6 flex-1 px-1 text-sm font-semibold text-[#f5f0f0] hover:border-[#2d2829]"
+                        className="h-6 flex-1 px-1 text-sm font-semibold text-fg hover:border-line"
                       />
                     )}
-                    <span className="text-xs text-[#5e5858]">{lineup.players.length}</span>
+                    <span className="text-xs text-fg-subtle">{lineup.players.length}</span>
                     {!archived && (
                       <button
                         type="button"
                         onClick={() => { if (lineup.players.length === 0 || confirm(`Remove the lineup “${lineup.name}”? Its players go back to “Not placed”.`)) run({ type: "deleteLineup", lineupId: lineup.id }) }}
                         aria-label={`Remove ${lineup.name}`}
-                        className="p-0.5 text-[#5e5858] hover:text-[#ED1F24]"
+                        className="p-0.5 text-fg-subtle hover:text-danger"
                       >
                         <X size={12} />
                       </button>
@@ -373,7 +373,7 @@ export function VariantsBoard({ tournamentId, tournamentHref, rows, levels, vari
             </div>
 
             {archived ? (
-              variant.note && <p className="whitespace-pre-wrap text-xs text-[#9a9090]">{variant.note}</p>
+              variant.note && <p className="whitespace-pre-wrap text-xs text-fg-muted">{variant.note}</p>
             ) : (
               <SavingInput
                 value={variant.note ?? ""}
@@ -382,7 +382,7 @@ export function VariantsBoard({ tournamentId, tournamentHref, rows, levels, vari
                 onLeave={() => setTyping(null)}
                 placeholder="Notes on the variant"
                 maxLength={1000}
-                className="h-8 w-full border-dashed border-[#2d2829] px-2 text-xs text-[#c5bfbf] placeholder:text-[#5e5858]"
+                className="h-8 w-full border-dashed border-line px-2 text-xs text-fg-soft placeholder:text-fg-subtle"
               />
             )}
           </section>
@@ -402,7 +402,7 @@ function AddLineup({ onAdd }: { onAdd: (name: string) => void }) {
         e.preventDefault()
         if (name.trim()) { onAdd(name.trim()); setName("") }
       }}
-      className="flex items-center gap-1 self-start rounded-lg border border-dashed border-[#2d2829] px-3 py-3"
+      className="flex items-center gap-1 self-start rounded-lg border border-dashed border-line px-3 py-3"
     >
       <input
         value={name}
@@ -410,10 +410,10 @@ function AddLineup({ onAdd }: { onAdd: (name: string) => void }) {
         placeholder="+ Lineup"
         maxLength={60}
         aria-label="New lineup"
-        className="h-6 min-w-0 flex-1 bg-transparent px-1 text-sm text-[#f5f0f0] placeholder:text-[#5e5858] focus:outline-none"
+        className="h-6 min-w-0 flex-1 bg-transparent px-1 text-sm text-fg placeholder:text-fg-subtle focus:outline-none"
       />
       {name.trim() && (
-        <button type="submit" className="rounded-md bg-[#FBD00D] px-2 py-0.5 text-xs font-bold text-[#1a1718]">
+        <button type="submit" className="rounded-md bg-brand px-2 py-0.5 text-xs font-bold text-brand-fg">
           <Plus size={12} />
         </button>
       )}

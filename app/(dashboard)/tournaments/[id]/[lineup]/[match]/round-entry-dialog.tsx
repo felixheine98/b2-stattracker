@@ -57,8 +57,8 @@ function KeypadKey({ onPress, disabled, small, label, children }: { onPress: () 
       onPointerDown={(e) => e.preventDefault()}
       onClick={onPress}
       className={cn(
-        "flex h-11 items-center justify-center rounded-lg border border-[#3a3435] bg-[#251f20] font-bold text-[#f5f0f0] active:bg-[#3a3435] disabled:opacity-30",
-        small ? "text-xs text-[#9a9090]" : "text-lg"
+        "flex h-11 items-center justify-center rounded-lg border border-line-strong bg-raised font-bold text-fg active:bg-line-strong disabled:opacity-30",
+        small ? "text-xs text-fg-muted" : "text-lg"
       )}
     >
       {children}
@@ -67,10 +67,10 @@ function KeypadKey({ onPress, disabled, small, label, children }: { onPress: () 
 }
 
 function placementColor(position: number): string {
-  if (position === 1) return "text-[#FBD00D]"
-  if (position === 2) return "text-[#c5bfbf]"
-  if (position === 3) return "text-[#cd7f32]"
-  return "text-[#9a9090]"
+  if (position === 1) return "text-brand-ink"
+  if (position === 2) return "text-fg-soft"
+  if (position === 3) return "text-bronze"
+  return "text-fg-muted"
 }
 
 export function RoundEntryDialog({ subMatch, pool, allPlayers, isGuest, onClose, onSaved }: Props) {
@@ -376,25 +376,25 @@ export function RoundEntryDialog({ subMatch, pool, allPlayers, isGuest, onClose,
     <Dialog open onClose={requestClose} className="max-w-4xl">
       <DialogTitle>
         Enter rounds
-        <span className="ml-2 text-sm font-normal text-[#9a9090]">— {formatLabel(subMatch.format)}</span>
+        <span className="ml-2 text-sm font-normal text-fg-muted">— {formatLabel(subMatch.format)}</span>
       </DialogTitle>
 
       <div className="space-y-4">
         <div className="flex flex-wrap items-end gap-4">
           <div className="w-56">
-            <p className="text-xs text-[#9a9090] mb-1.5">Map</p>
+            <p className="text-xs text-fg-muted mb-1.5">Map</p>
             <Input value={track} onChange={(e) => { setTrack(e.target.value); setDirty(true) }} placeholder="e.g. Palmotropico" />
           </div>
           <div className="flex-1 min-w-64">
             <div className="flex items-center justify-between mb-1.5">
-              <p className="text-xs text-[#9a9090]">
-                Players <span className={ready ? "text-[#5e5858]" : "text-[#FBD00D]"}>{playerIds.length}/{size}</span>
+              <p className="text-xs text-fg-muted">
+                Players <span className={ready ? "text-fg-subtle" : "text-brand-ink"}>{playerIds.length}/{size}</span>
               </p>
               {pool.length > 0 && (
                 <button
                   type="button"
                   onClick={() => setShowAllPlayers((v) => !v)}
-                  className="text-xs text-[#5e5858] hover:text-[#f5f0f0]"
+                  className="text-xs text-fg-subtle hover:text-fg"
                 >
                   {showAllPlayers ? "Lineup only" : "All players"}
                 </button>
@@ -413,8 +413,8 @@ export function RoundEntryDialog({ subMatch, pool, allPlayers, isGuest, onClose,
                     className={cn(
                       "rounded-full border px-3 py-1 text-xs transition-colors disabled:opacity-40",
                       selected
-                        ? "border-[#FBD00D]/50 bg-[#FBD00D]/10 text-[#f5f0f0]"
-                        : "border-[#2d2829] text-[#9a9090] hover:border-[#3a3435] hover:text-[#f5f0f0]"
+                        ? "border-brand/50 bg-brand/10 text-fg"
+                        : "border-line text-fg-muted hover:border-line-strong hover:text-fg"
                     )}
                   >
                     {player.name}
@@ -427,13 +427,13 @@ export function RoundEntryDialog({ subMatch, pool, allPlayers, isGuest, onClose,
         </div>
 
         {!ready ? (
-          <p className="rounded-lg border border-dashed border-[#2d2829] py-8 text-center text-sm text-[#9a9090]">
+          <p className="rounded-lg border border-dashed border-line py-8 text-center text-sm text-fg-muted">
             Pick the {size} players who drove this map.
           </p>
         ) : (
           <>
             <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-              <div className="inline-flex rounded-md border border-[#2d2829] p-0.5 text-xs">
+              <div className="inline-flex rounded-md border border-line p-0.5 text-xs">
                 {([
                   ["positions", "Placements", Hash],
                   ["times", "Times", Timer],
@@ -444,7 +444,7 @@ export function RoundEntryDialog({ subMatch, pool, allPlayers, isGuest, onClose,
                     onClick={() => setMode(value)}
                     className={cn(
                       "inline-flex items-center gap-1 rounded px-2.5 py-1 transition-colors",
-                      mode === value ? "bg-[#FBD00D]/15 text-[#FBD00D]" : "text-[#5e5858] hover:text-[#9a9090]"
+                      mode === value ? "bg-brand/15 text-brand-ink" : "text-fg-subtle hover:text-fg-muted"
                     )}
                   >
                     <Icon size={12} />
@@ -452,7 +452,7 @@ export function RoundEntryDialog({ subMatch, pool, allPlayers, isGuest, onClose,
                   </button>
                 ))}
               </div>
-              <div className="inline-flex rounded-md border border-[#2d2829] p-0.5 text-xs">
+              <div className="inline-flex rounded-md border border-line p-0.5 text-xs">
                 {([
                   ["round", "Round by round", ArrowDown],
                   ["player", "Player by player", ArrowRight],
@@ -463,7 +463,7 @@ export function RoundEntryDialog({ subMatch, pool, allPlayers, isGuest, onClose,
                     onClick={() => setDirection(value)}
                     className={cn(
                       "inline-flex items-center gap-1 rounded px-2.5 py-1 transition-colors",
-                      direction === value ? "bg-[#251f20] text-[#f5f0f0]" : "text-[#5e5858] hover:text-[#9a9090]"
+                      direction === value ? "bg-raised text-fg" : "text-fg-subtle hover:text-fg-muted"
                     )}
                   >
                     <Icon size={12} />
@@ -471,9 +471,9 @@ export function RoundEntryDialog({ subMatch, pool, allPlayers, isGuest, onClose,
                   </button>
                 ))}
               </div>
-              <p className="ml-auto text-sm text-[#9a9090]">
+              <p className="ml-auto text-sm text-fg-muted">
                 {done.length} round{done.length !== 1 ? "s" : ""}
-                <Wdl won={won} drawn={drawn} lost={lost} unit="Rounds" className="ml-3 font-bold text-[#f5f0f0]" />
+                <Wdl won={won} drawn={drawn} lost={lost} unit="Rounds" className="ml-3 font-bold text-fg" />
               </p>
             </div>
 
@@ -481,16 +481,16 @@ export function RoundEntryDialog({ subMatch, pool, allPlayers, isGuest, onClose,
               <table className="border-separate border-spacing-1">
                 <thead>
                   <tr>
-                    <th className="sticky left-0 z-10 bg-[#1c1819]" />
+                    <th className="sticky left-0 z-10 bg-surface" />
                     {columns.map((_, c) => (
-                      <th key={c} className="text-[10px] font-medium text-[#5e5858]">R{c + 1}</th>
+                      <th key={c} className="text-[10px] font-medium text-fg-subtle">R{c + 1}</th>
                     ))}
                   </tr>
                 </thead>
                 <tbody>
                   {playerIds.map((id, p) => (
                     <tr key={id}>
-                      <td className="sticky left-0 z-10 bg-[#1c1819] pr-3 text-sm font-medium text-[#f5f0f0] whitespace-nowrap">
+                      <td className="sticky left-0 z-10 bg-surface pr-3 text-sm font-medium text-fg whitespace-nowrap">
                         {playerById.get(id)?.name ?? "?"}
                         {isGuest(playerById.get(id)?.tmId ?? "") && <GuestBadge className="ml-1.5" />}
                       </td>
@@ -520,8 +520,8 @@ export function RoundEntryDialog({ subMatch, pool, allPlayers, isGuest, onClose,
                                 onPaste={(e) => handleTimePaste(e, c, p)}
                                 onFocus={(e) => e.target.select()}
                                 className={cn(
-                                  "h-9 w-[5.5rem] rounded-md border bg-[#251f20] px-1 text-center font-mono text-sm text-[#f5f0f0] placeholder:text-[#5e5858] focus:outline-none focus:ring-2 focus:ring-[#FBD00D] disabled:border-dashed disabled:bg-transparent",
-                                  editable && parseTime(text) === undefined ? "border-[#ED1F24] text-[#ED1F24]" : "border-[#3a3435]"
+                                  "h-9 w-[5.5rem] rounded-md border bg-raised px-1 text-center font-mono text-sm text-fg placeholder:text-fg-subtle focus:outline-none focus:ring-2 focus:ring-brand disabled:border-dashed disabled:bg-transparent",
+                                  editable && parseTime(text) === undefined ? "border-danger text-danger" : "border-line-strong"
                                 )}
                               />
                             </td>
@@ -542,13 +542,13 @@ export function RoundEntryDialog({ subMatch, pool, allPlayers, isGuest, onClose,
                               onPaste={(e) => handlePaste(e, c, p)}
                               onFocus={(e) => { setCurrent({ c, p }); e.target.select() }}
                               className={cn(
-                                "h-9 w-9 rounded-md border bg-[#251f20] text-center font-mono text-sm font-bold caret-transparent focus:outline-none focus:ring-2 focus:ring-[#FBD00D]",
+                                "h-9 w-9 rounded-md border bg-raised text-center font-mono text-sm font-bold caret-transparent focus:outline-none focus:ring-2 focus:ring-brand",
                                 bad
-                                  ? "border-[#ED1F24] text-[#ED1F24]"
-                                  : cn("border-[#3a3435]", value === "dnf" ? "text-[10px] text-[#5e5858]" : value != null && placementColor(value)),
+                                  ? "border-danger text-danger"
+                                  : cn("border-line-strong", value === "dnf" ? "text-[10px] text-fg-subtle" : value != null && placementColor(value)),
                                 c === lastCol && "border-dashed bg-transparent",
                                 // On phones the keypad keeps writing to this cell even when it lost the focus
-                                isMobile && current.c === c && current.p === p && "ring-2 ring-[#FBD00D]"
+                                isMobile && current.c === c && current.p === p && "ring-2 ring-brand"
                               )}
                             />
                           </td>
@@ -558,7 +558,7 @@ export function RoundEntryDialog({ subMatch, pool, allPlayers, isGuest, onClose,
                   ))}
                   {mode === "positions" && (
                     <tr>
-                      <td className="sticky left-0 z-10 bg-[#1c1819] pr-3 text-xs text-[#9a9090] whitespace-nowrap">Opponent DNF</td>
+                      <td className="sticky left-0 z-10 bg-surface pr-3 text-xs text-fg-muted whitespace-nowrap">Opponent DNF</td>
                       {columns.map((column, c) => (
                         <td key={c}>
                           <input
@@ -578,9 +578,9 @@ export function RoundEntryDialog({ subMatch, pool, allPlayers, isGuest, onClose,
                             }}
                             onFocus={(e) => { setCurrent({ c, p: size }); e.target.select() }}
                             className={cn(
-                              "h-7 w-9 rounded-md border border-[#2d2829] bg-transparent text-center font-mono text-xs text-[#9a9090] caret-transparent focus:outline-none focus:ring-2 focus:ring-[#FBD00D]",
+                              "h-7 w-9 rounded-md border border-line bg-transparent text-center font-mono text-xs text-fg-muted caret-transparent focus:outline-none focus:ring-2 focus:ring-brand",
                               c === lastCol && "border-dashed",
-                              isMobile && current.c === c && current.p === size && "ring-2 ring-[#FBD00D]"
+                              isMobile && current.c === c && current.p === size && "ring-2 ring-brand"
                             )}
                           />
                         </td>
@@ -588,7 +588,7 @@ export function RoundEntryDialog({ subMatch, pool, allPlayers, isGuest, onClose,
                     </tr>
                   )}
                   <tr>
-                    <td className="sticky left-0 z-10 bg-[#1c1819] pr-3 text-[10px] uppercase tracking-wider text-[#5e5858]">
+                    <td className="sticky left-0 z-10 bg-surface pr-3 text-[10px] uppercase tracking-wider text-fg-subtle">
                       Points
                     </td>
                     {states.map((state, c) => (
@@ -597,16 +597,16 @@ export function RoundEntryDialog({ subMatch, pool, allPlayers, isGuest, onClose,
                           <>
                             <p className={cn(
                               "text-xs font-bold",
-                              state.outcome === "W" ? "text-[#FBD00D]" : state.outcome === "L" ? "text-[#ED1F24]" : "text-[#9a9090]"
+                              state.outcome === "W" ? "text-brand-ink" : state.outcome === "L" ? "text-danger" : "text-fg-muted"
                             )}>
                               {state.outcome}
                             </p>
-                            <p className="text-[10px] text-[#5e5858]">{state.ours}:{state.theirs}</p>
+                            <p className="text-[10px] text-fg-subtle">{state.ours}:{state.theirs}</p>
                           </>
                         )}
-                        {state.kind === "incomplete" && <p className="text-xs text-[#5e5858]">…</p>}
+                        {state.kind === "incomplete" && <p className="text-xs text-fg-subtle">…</p>}
                         {state.kind === "invalid" && (
-                          <p className="text-xs font-bold text-[#ED1F24]" title="Placement given twice or not possible because of DNFs">!</p>
+                          <p className="text-xs font-bold text-danger" title="Placement given twice or not possible because of DNFs">!</p>
                         )}
                       </td>
                     ))}
@@ -616,12 +616,12 @@ export function RoundEntryDialog({ subMatch, pool, allPlayers, isGuest, onClose,
             </div>
 
             {mode === "positions" && isMobile ? (
-              <p className="text-xs text-[#5e5858]">
+              <p className="text-xs text-fg-subtle">
                 Tap a cell and pick the place below; the marker moves on by itself. For opponent DNFs
                 tap the cell in the row “Opponent DNF” and pick the number.
               </p>
             ) : mode === "positions" ? (
-              <p className="text-xs text-[#5e5858]">
+              <p className="text-xs text-fg-subtle">
                 Type the placement 1–{maxPosition}; the cursor moves on by itself. D or X stands for DNF;
                 how many opponents did not finish goes into the row “Opponent DNF” (arrow key or click).
                 {maxPosition >= 10 && " 0 stands for place 10."} Arrow keys move around, Enter jumps
@@ -629,7 +629,7 @@ export function RoundEntryDialog({ subMatch, pool, allPlayers, isGuest, onClose,
                 can be pasted straight in.
               </p>
             ) : (
-              <p className="text-xs text-[#5e5858]">
+              <p className="text-xs text-fg-subtle">
                 Enter the time as 45.123 or 1:02.345, leave it empty when unknown. Enter jumps to the next cell.
                 The placement decides the score (shown as # in an empty cell); times do not change it.
               </p>
@@ -638,16 +638,16 @@ export function RoundEntryDialog({ subMatch, pool, allPlayers, isGuest, onClose,
         )}
 
         {ready && hasInvalidTimes && (
-          <p className="text-xs text-[#ED1F24]">At least one time is invalid.</p>
+          <p className="text-xs text-danger">At least one time is invalid.</p>
         )}
         {ready && hasProblems && (
-          <p className="text-xs text-[#ED1F24]">
+          <p className="text-xs text-danger">
             {states.some((s) => s.kind === "invalid")
               ? "At least one round has a placement that is given twice or not possible because of DNFs."
               : "At least one round is not complete yet."}
           </p>
         )}
-        {error && <p className="text-sm text-[#ED1F24]">{error}</p>}
+        {error && <p className="text-sm text-danger">{error}</p>}
 
         <div className="dialog-footer flex flex-col gap-2.5 md:flex-row md:justify-end">
           {isMobile && ready && mode === "positions" && (

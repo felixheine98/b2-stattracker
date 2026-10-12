@@ -49,8 +49,8 @@ export function ResetPasswordDialog({ user, onClose }: Props) {
     <Dialog open onClose={onClose}>
       <DialogTitle>Reset password</DialogTitle>
       <div className="space-y-4">
-        <p className="text-sm text-[#9a9090]">
-          New password for <span className="text-[#f5f0f0]">{user.name}</span> ({user.username}). The previous one no longer applies afterwards.
+        <p className="text-sm text-fg-muted">
+          New password for <span className="text-fg">{user.name}</span> ({user.username}). The previous one no longer applies afterwards.
         </p>
         <div className="space-y-1.5">
           <Label htmlFor="reset-password">New password</Label>
@@ -69,11 +69,11 @@ export function ResetPasswordDialog({ user, onClose }: Props) {
           </div>
         </div>
         {saved && (
-          <p className="text-sm text-[#FBD00D]">
+          <p className="text-sm text-brand-ink">
             Saved. Pass the password on now – it is not shown again after closing.
           </p>
         )}
-        {error && <p className="text-sm text-[#ED1F24]">{error}</p>}
+        {error && <p className="text-sm text-danger">{error}</p>}
         <div className="dialog-footer flex gap-2 justify-end">
           <Button variant="ghost" onClick={onClose}>{saved ? "Close" : "Cancel"}</Button>
           {!saved && <Button onClick={save} disabled={loading || password.length < 8}>{loading ? "Saving…" : "Set password"}</Button>}

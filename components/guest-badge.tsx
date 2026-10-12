@@ -5,7 +5,7 @@ export function GuestBadge({ className }: { className?: string }) {
   return (
     <span
       className={cn(
-        "inline-block rounded border border-[#3a3435] px-1 text-[9px] font-medium uppercase leading-[14px] tracking-wide text-[#9a9090]",
+        "inline-block rounded border border-line-strong px-1 text-[9px] font-medium uppercase leading-[14px] tracking-wide text-fg-muted",
         className
       )}
     >

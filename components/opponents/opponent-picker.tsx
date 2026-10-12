@@ -27,19 +27,19 @@ export function OpponentPicker({ competitionId, value, onChange, inputId = "oppo
   }
   return <div className="space-y-2">
     <Input id={inputId} name="opponent" aria-label="Find an opponent or add a new one" autoComplete="off" value={value.name} onFocus={() => setOpen(true)} onChange={e => { onChange({ name: e.target.value }); setOpen(true) }} placeholder="Find a team or mix…" />
-    {open && <div className="rounded-lg border border-[#3a3435] bg-[#251f20] p-2 space-y-2">
-      <label className="flex items-center gap-2 text-xs text-[#9a9090]"><input type="checkbox" checked={archive} onChange={e => setArchive(e.target.checked)} />Show archived</label>
+    {open && <div className="rounded-lg border border-line-strong bg-raised p-2 space-y-2">
+      <label className="flex items-center gap-2 text-xs text-fg-muted"><input type="checkbox" checked={archive} onChange={e => setArchive(e.target.checked)} />Show archived</label>
       <div className="max-h-56 overflow-y-auto">
-        {lineups.length > 0 && <p className="p-2 text-xs text-[#9a9090]">In this tournament</p>}
-        {lineups.map(l => <button type="button" key={l.id} className="flex w-full items-center gap-2 rounded p-2 text-left text-sm hover:bg-[#3a3435]" onClick={() => { onChange({ name: l.name, lineupId: l.id }); setOpen(false) }}><OpponentLogo name={l.name} logo={l.logo ?? l.team?.logo} size={28} /><span className="min-w-0 break-words">{l.name}{!l.teamId && <span className="ml-2 text-xs text-[#9a9090]">Mix</span>}{l.archived && " · archived"}</span></button>)}
-        {teams.length > 0 && <p className="p-2 text-xs text-[#9a9090]">Fixed teams</p>}
-        {teams.map(t => <button type="button" key={t.id} className="flex w-full items-center gap-2 rounded p-2 text-left text-sm hover:bg-[#3a3435]" onClick={() => { onChange({ name: t.name, teamId: t.id }); setOpen(false) }}><OpponentLogo name={t.name} logo={t.logo} size={28} /><span className="min-w-0 break-words">{t.name}{t.archived && " · archived"}</span></button>)}
+        {lineups.length > 0 && <p className="p-2 text-xs text-fg-muted">In this tournament</p>}
+        {lineups.map(l => <button type="button" key={l.id} className="flex w-full items-center gap-2 rounded p-2 text-left text-sm hover:bg-line-strong" onClick={() => { onChange({ name: l.name, lineupId: l.id }); setOpen(false) }}><OpponentLogo name={l.name} logo={l.logo ?? l.team?.logo} size={28} /><span className="min-w-0 break-words">{l.name}{!l.teamId && <span className="ml-2 text-xs text-fg-muted">Mix</span>}{l.archived && " · archived"}</span></button>)}
+        {teams.length > 0 && <p className="p-2 text-xs text-fg-muted">Fixed teams</p>}
+        {teams.map(t => <button type="button" key={t.id} className="flex w-full items-center gap-2 rounded p-2 text-left text-sm hover:bg-line-strong" onClick={() => { onChange({ name: t.name, teamId: t.id }); setOpen(false) }}><OpponentLogo name={t.name} logo={t.logo} size={28} /><span className="min-w-0 break-words">{t.name}{t.archived && " · archived"}</span></button>)}
       </div>
       {value.name.trim() && <div className="flex flex-wrap gap-2"><Button type="button" size="sm" variant="secondary" onClick={() => { onChange({ name: value.name.trim() }); setOpen(false) }}>Use as a mix</Button><Button type="button" size="sm" variant="secondary" onClick={createTeam}>Add fixed team</Button></div>}
-      <button type="button" className="text-xs text-[#9a9090]" onClick={() => setOpen(false)}>Close selection</button>
+      <button type="button" className="text-xs text-fg-muted" onClick={() => setOpen(false)}>Close selection</button>
     </div>}
-    {value.lineupId && <p className="text-xs text-[#9a9090]">Tournament lineup selected</p>}
-    {value.teamId && <p className="text-xs text-[#9a9090]">Fixed team selected · its tournament lineup is assigned</p>}
-    {error && <p className="text-sm text-[#ED1F24]" role="alert">{error}</p>}
+    {value.lineupId && <p className="text-xs text-fg-muted">Tournament lineup selected</p>}
+    {value.teamId && <p className="text-xs text-fg-muted">Fixed team selected · its tournament lineup is assigned</p>}
+    {error && <p className="text-sm text-danger" role="alert">{error}</p>}
   </div>
 }

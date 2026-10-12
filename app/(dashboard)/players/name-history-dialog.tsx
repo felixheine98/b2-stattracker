@@ -70,16 +70,16 @@ export function NameHistoryDialog({ player, suggestion, canManage, onClose, onCh
     <Dialog open onClose={onClose} className="max-w-lg">
       <DialogTitle>Names of {player.name}</DialogTitle>
       <div className="space-y-4">
-        <p className="text-xs text-[#5e5858]">
+        <p className="text-xs text-fg-subtle">
           Inside a tournament the name of its start day is shown. Everywhere else it is the current name.
         </p>
         <ol className="space-y-2">
-          <li className="flex items-center gap-3 rounded-lg border border-[#2d2829] px-3 py-2 text-sm">
-            <span className="w-36 shrink-0 text-xs text-[#5e5858]">from the start</span>
+          <li className="flex items-center gap-3 rounded-lg border border-line px-3 py-2 text-sm">
+            <span className="w-36 shrink-0 text-xs text-fg-subtle">from the start</span>
             {canManage ? (
               <Input value={initialName} onChange={(e) => setInitialName(e.target.value)} aria-label="Name from the start" className="h-8 flex-1 text-sm" />
             ) : (
-              <span className="flex-1 font-medium text-[#f5f0f0]">{player.initialName}</span>
+              <span className="flex-1 font-medium text-fg">{player.initialName}</span>
             )}
             {canManage && initialName.trim() && initialName.trim() !== player.initialName && (
               <Button size="sm" onClick={() => send("", "PUT", { initialName: initialName.trim() })} disabled={loading}>Save</Button>
@@ -90,7 +90,7 @@ export function NameHistoryDialog({ player, suggestion, canManage, onClose, onCh
             const edit = edits[change.id] ?? {}
             const changed = (edit.name !== undefined && edit.name.trim() !== change.name && edit.name.trim() !== "") || (edit.day !== undefined && edit.day !== day)
             return (
-              <li key={change.id} className="flex items-center gap-3 rounded-lg border border-[#FBD00D]/30 bg-[#FBD00D]/5 px-3 py-2 text-sm">
+              <li key={change.id} className="flex items-center gap-3 rounded-lg border border-brand/30 bg-brand/5 px-3 py-2 text-sm">
                 {canManage ? (
                   <>
                     <Input
@@ -112,7 +112,7 @@ export function NameHistoryDialog({ player, suggestion, canManage, onClose, onCh
                       type="button"
                       onClick={() => send(`/${change.id}`, "DELETE")}
                       disabled={loading}
-                      className="text-[#5e5858] hover:text-[#ED1F24] disabled:opacity-40"
+                      className="text-fg-subtle hover:text-danger disabled:opacity-40"
                       title="Remove this rename"
                     >
                       <Trash2 size={14} />
@@ -120,8 +120,8 @@ export function NameHistoryDialog({ player, suggestion, canManage, onClose, onCh
                   </>
                 ) : (
                   <>
-                    <span className="w-36 shrink-0 text-xs text-[#9a9090]">ab {formatDay(day)}</span>
-                    <span className="flex-1 font-medium text-[#f5f0f0]">{change.name}</span>
+                    <span className="w-36 shrink-0 text-xs text-fg-muted">ab {formatDay(day)}</span>
+                    <span className="flex-1 font-medium text-fg">{change.name}</span>
                   </>
                 )}
               </li>
@@ -130,7 +130,7 @@ export function NameHistoryDialog({ player, suggestion, canManage, onClose, onCh
         </ol>
 
         {canManage && (
-          <div className="space-y-1.5 border-t border-[#2d2829] pt-3">
+          <div className="space-y-1.5 border-t border-line pt-3">
             <Label htmlFor="rename-name">Rename</Label>
             <div className="flex items-center gap-2">
               <Input
@@ -144,13 +144,13 @@ export function NameHistoryDialog({ player, suggestion, canManage, onClose, onCh
               <Input id="rename-name" value={newName} onChange={(e) => setNewName(e.target.value)} placeholder="New name" className="flex-1" />
               <Button onClick={addRename} disabled={loading || !newName.trim() || !newDay}>Add</Button>
             </div>
-            <p className="text-xs text-[#5e5858]">
+            <p className="text-xs text-fg-subtle">
               The date is the day the name applies from. For an earlier name, simply pick a date in the past.
             </p>
           </div>
         )}
 
-        {error && <p className="text-sm text-[#ED1F24]">{error}</p>}
+        {error && <p className="text-sm text-danger">{error}</p>}
         <div className="dialog-footer flex justify-end">
           <Button variant="ghost" onClick={onClose}>Close</Button>
         </div>
