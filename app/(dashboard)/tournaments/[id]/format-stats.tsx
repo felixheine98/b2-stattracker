@@ -23,7 +23,8 @@ interface Props {
 type SortCol = "name" | "lineup" | "played" | "placementSum" | "avg" | "pace" | "dnfs" | "roundsWon" | "roundsLost"
 
 export function FormatStatsTable({ agg, isGuest, isTrial, lineupName, profilePath }: Props) {
-  const [sortCol, setSortCol] = useState<SortCol>("name")
+  // A ranking by default: the best average place first
+  const [sortCol, setSortCol] = useState<SortCol>("avg")
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc")
 
   const avg = (p: { roundsPlayed: number; placementSum: number }) => (p.roundsPlayed > 0 ? p.placementSum / p.roundsPlayed : Infinity)

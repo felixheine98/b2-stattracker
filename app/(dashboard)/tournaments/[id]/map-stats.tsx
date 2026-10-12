@@ -24,9 +24,9 @@ interface Props {
 
 type SortCol = "name" | "lineup" | "rounds" | "best" | "gap" | "avg" | "dnfs" | "roundsWon" | "roundsLost"
 
-// Who drives how well on a map: a ranking, so the fastest by average gap come first
+// Who drives how well on a map: a ranking by average place, or by average gap where places are not shown
 export function MapStatsTable({ agg, isGuest, isTrial, lineupName, profilePath, showPlacement }: Props) {
-  const [sortCol, setSortCol] = useState<SortCol>("gap")
+  const [sortCol, setSortCol] = useState<SortCol>(showPlacement ? "avg" : "gap")
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc")
 
   const avg = (p: { rounds: number; placementSum: number }) => (p.rounds > 0 ? p.placementSum / p.rounds : Infinity)
