@@ -8,8 +8,9 @@ interface Params {
   params: Promise<{ id: string }>
 }
 
-// Switch two-factor sign-in off for an account, for someone who lost the phone and the recovery
-// codes. The same rule as for passwords: admins for anyone, managers only for PLAYER accounts.
+// Switch two-factor sign-in off for an account and remove its passkeys, for someone who lost the
+// phone and the recovery codes. The same rule as for passwords: admins for anyone, managers only
+// for PLAYER accounts.
 export async function DELETE(_req: Request, { params }: Params) {
   const session = await auth()
   const sessionRole = session?.user?.role
@@ -23,5 +24,6 @@ export async function DELETE(_req: Request, { params }: Params) {
   }
 
   await clearTotp(id)
+  await db.passkey.deleteMany({ where: { userId: id } })
   return new NextResponse(null, { status: 204 })
 }

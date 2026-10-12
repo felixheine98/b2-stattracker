@@ -58,6 +58,34 @@ model User {
 
   managedLineups TournamentLineupManager[]
   planningVotes  PlanningVote[]
+  passkeys       Passkey[]
+}
+
+// A passkey (WebAuthn credential) of an account: signs in without password, with the
+// fingerprint, face or PIN of the device that holds it
+model Passkey {
+  id           String    @id @default(cuid())
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId       String
+  // As the browser names the credential (base64url)
+  credentialId String    @unique
+  publicKey    Bytes
+  counter      BigInt    @default(0)
+  transports   String[]  @default([])
+  // Given by the user, to tell several apart
+  name         String
+  createdAt    DateTime  @default(now())
+  lastUsedAt   DateTime?
+
+  @@index([userId])
+}
+
+// A challenge handed out for a passkey ceremony. Used once and only for a few minutes.
+model PasskeyChallenge {
+  challenge String   @id
+  // Set when it was handed out for adding a passkey to this account; null for a sign-in
+  userId    String?
+  expiresAt DateTime
 }
 
 model Player {

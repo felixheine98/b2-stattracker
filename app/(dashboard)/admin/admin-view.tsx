@@ -22,7 +22,7 @@ interface UserRow {
   email: string | null
   role: Role
   createdAt: Date
-  // Signs in with a code from an authenticator app (missing on accounts created in this session)
+  // Has an authenticator app or passkeys set up (missing on accounts created in this session)
   twoFactor?: boolean
   player: { id: string; name: string } | null
   // Lineups this account is responsible for (missing on accounts created in this session)
@@ -82,7 +82,7 @@ export function AdminView({ users: initial, currentUserId, isAdmin }: Props) {
 
   // For someone who lost the phone and the recovery codes: the account signs in with the password alone again
   async function handleResetTwoFactor(user: UserRow) {
-    if (!confirm(`Turn off two-factor sign-in for ${user.name}? They sign in with their password alone until they set it up again.`)) return
+    if (!confirm(`Turn off two-factor sign-in and remove all passkeys for ${user.name}? They sign in with their password alone until they set it up again.`)) return
     const res = await fetch(`${BASE_PATH}/api/admin/users/${user.id}/totp`, { method: "DELETE" })
     if (res.ok) setUsers((u) => u.map((row) => (row.id === user.id ? { ...row, twoFactor: false } : row)))
   }
@@ -160,7 +160,7 @@ export function AdminView({ users: initial, currentUserId, isAdmin }: Props) {
                     {user.twoFactor && (
                       <div className="flex items-center gap-1 text-xs text-[#9a9090]">
                         <Smartphone size={11} />
-                        Two-factor sign-in
+                        Two-factor sign-in / passkey
                       </div>
                     )}
                     {!!user.managedLineups?.length && (
@@ -227,7 +227,7 @@ export function AdminView({ users: initial, currentUserId, isAdmin }: Props) {
                         variant="ghost"
                         size="sm"
                         onClick={() => handleResetTwoFactor(user)}
-                        title="Turn off two-factor sign-in"
+                        title="Turn off two-factor sign-in and remove passkeys"
                         className="text-[#5e5858] hover:text-[#FBD00D]"
                       >
                         <Smartphone size={14} />

@@ -21,12 +21,13 @@ export async function GET() {
       role: true,
       createdAt: true,
       totpEnabledAt: true,
+      _count: { select: { passkeys: true } },
       player: { select: { id: true, name: true } },
     },
     orderBy: { createdAt: "asc" },
   })
 
-  return NextResponse.json(users.map(({ totpEnabledAt, ...user }) => ({ ...user, twoFactor: !!totpEnabledAt })))
+  return NextResponse.json(users.map(({ totpEnabledAt, _count, ...user }) => ({ ...user, twoFactor: !!totpEnabledAt || _count.passkeys > 0 })))
 }
 
 const createSchema = z.object({

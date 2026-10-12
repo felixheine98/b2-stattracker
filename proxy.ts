@@ -12,7 +12,8 @@ export default auth((req) => {
   // pathname may or may not include basePath depending on Next.js 16 proxy internals
   const stripped = pathname.startsWith(BASE) ? pathname.slice(BASE.length) || "/" : pathname
 
-  const isPublicApi = stripped.startsWith("/api/auth")
+  // The sign-in itself, and the challenge a passkey sign-in starts with
+  const isPublicApi = stripped.startsWith("/api/auth") || stripped === "/api/passkey/options"
   const isAuthPage = stripped === "/login"
 
   if (isPublicApi) return NextResponse.next()
@@ -22,8 +23,8 @@ export default auth((req) => {
     return NextResponse.redirect(new URL(`${BASE}${loginPath(stripped, req.nextUrl.search)}`, req.nextUrl.origin))
   }
 
-  // An account that has to use two-factor sign-in gets nowhere else until it is set up
-  const isMfaSetup = stripped === "/mfa-setup" || stripped.startsWith("/api/account/totp")
+  // An account that has to use a second factor gets nowhere else until one is set up
+  const isMfaSetup = stripped === "/mfa-setup" || stripped.startsWith("/api/account/totp") || stripped.startsWith("/api/account/passkeys")
   if (isLoggedIn && req.auth?.user?.mfaSetupRequired && !isMfaSetup) {
     if (stripped.startsWith("/api/")) return NextResponse.json({ error: "Set up two-factor sign-in first" }, { status: 403 })
     return NextResponse.redirect(new URL(`${BASE}/mfa-setup`, req.nextUrl.origin))

@@ -18,6 +18,7 @@ export default async function AdminPage() {
       role: true,
       createdAt: true,
       totpEnabledAt: true,
+      _count: { select: { passkeys: true } },
       player: { select: { id: true, name: true } },
       // Lineups this account is responsible for
       managedLineups: { select: { lineup: { select: { id: true, name: true, tournament: { select: { name: true } } } } } },
@@ -27,5 +28,5 @@ export default async function AdminPage() {
 
   const currentUserId = (session?.user as { id?: string })?.id ?? ""
 
-  return <AdminView users={users.map(({ totpEnabledAt, ...user }) => ({ ...user, twoFactor: !!totpEnabledAt }))} currentUserId={currentUserId} isAdmin={role === "ADMIN"} />
+  return <AdminView users={users.map(({ totpEnabledAt, _count, ...user }) => ({ ...user, twoFactor: !!totpEnabledAt || _count.passkeys > 0 }))} currentUserId={currentUserId} isAdmin={role === "ADMIN"} />
 }

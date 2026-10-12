@@ -2,11 +2,14 @@
 
 import { useState } from "react"
 import { signIn } from "next-auth/react"
+import { browserSupportsWebAuthn, startAuthentication } from "@simplewebauthn/browser"
+import { BASE_PATH } from "@/lib/base-path"
 import { useRouter } from "next/navigation"
 import { nextPathAfterLogin } from "@/lib/login-target"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
+import { KeyRound } from "lucide-react"
 
 export default function LoginPage() {
   const router = useRouter()
@@ -15,6 +18,33 @@ export default function LoginPage() {
   // Set once the password was right and the account asks for its second step
   const [credentials, setCredentials] = useState<{ login: string; password: string } | null>(null)
   const [useRecoveryCode, setUseRecoveryCode] = useState(false)
+
+  // Back to the page the link pointed to, if someone was sent here from one
+  function enter() {
+    router.push(nextPathAfterLogin(new URLSearchParams(window.location.search).get("next")))
+    router.refresh()
+  }
+
+  // Without password: the device offers its passkeys for this site and signs the challenge
+  async function handlePasskey() {
+    setError("")
+    if (!browserSupportsWebAuthn()) {
+      setError("This browser does not support passkeys")
+      return
+    }
+    setLoading(true)
+    const options = await fetch(`${BASE_PATH}/api/passkey/options`, { method: "POST" }).then((res) => (res.ok ? res.json() : null)).catch(() => null)
+    const response = options && (await startAuthentication(options).catch(() => null))
+    if (!response) {
+      setLoading(false)
+      if (!options) setError("Passkey sign-in is not available right now")
+      return
+    }
+    const result = await signIn("credentials", { passkey: JSON.stringify(response), redirect: false })
+    setLoading(false)
+    if (result?.error) setError("This passkey is not known here")
+    else enter()
+  }
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -37,13 +67,13 @@ export default function LoginPage() {
       setError(useRecoveryCode ? "This recovery code is not valid" : "The code is not correct")
     } else if (result?.code === "totp_locked") {
       setError("Too many wrong codes. Try again in 15 minutes.")
+    } else if (result?.code === "passkey_required") {
+      setError("This account signs in with a passkey")
     } else if (result?.error) {
       setCredentials(null)
       setError("Invalid username or password")
     } else {
-      // Back to the page the link pointed to, if someone was sent here from one
-      router.push(nextPathAfterLogin(new URLSearchParams(window.location.search).get("next")))
-      router.refresh()
+      enter()
     }
   }
 
@@ -92,6 +122,10 @@ export default function LoginPage() {
         {error && <p className="text-sm text-[#ED1F24]">{error}</p>}
         <Button type="submit" className="w-full" disabled={loading}>
           {loading ? "Signing in…" : "Sign in"}
+        </Button>
+        <Button type="button" variant="outline" className="w-full" onClick={handlePasskey} disabled={loading}>
+          <KeyRound size={16} />
+          Sign in with a passkey
         </Button>
       </form>
       <p className="mt-4 text-center text-sm text-[#5e5858]">

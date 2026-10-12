@@ -84,7 +84,7 @@ export function TotpSetup({ onDone, onCancel }: Props) {
         {error && <p className="text-sm text-[#ED1F24]">{error}</p>}
         <div className="dialog-footer flex gap-2 justify-end">
           {onCancel && <Button variant="ghost" type="button" onClick={onCancel}>Cancel</Button>}
-          <Button type="button" onClick={start} disabled={loading}>{loading ? "Starting…" : "Set up"}</Button>
+          <Button type="button" onClick={start} disabled={loading}>{loading ? "Starting…" : "Show QR code"}</Button>
         </div>
       </div>
     )
