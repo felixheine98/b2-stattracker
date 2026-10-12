@@ -79,6 +79,21 @@
   --table-hover: #f8f6f2;
 }
 
+/* Tints of the team yellow (selected tabs, the active page, badges, highlighted rows) are
+   made for a dark page: 10 % yellow on white is hardly there. On the light theme they are
+   drawn several times stronger, so the yellow carries as it does on the buttons. */
+:root[data-theme="light"] {
+  .bg-brand\/5 { background-color: color-mix(in oklab, var(--primary) 30%, transparent); }
+  .bg-brand\/10 { background-color: color-mix(in oklab, var(--primary) 55%, transparent); }
+  .bg-brand\/15 { background-color: color-mix(in oklab, var(--primary) 75%, transparent); }
+  .border-brand\/30,
+  .border-brand\/40,
+  .border-brand\/50,
+  .border-brand\/60,
+  .hover\:border-brand\/50:hover,
+  .hover\:border-brand\/60:hover { border-color: var(--primary); }
+}
+
 /* For the few things that differ by more than a colour: light:hidden, light:block, ... */
 @custom-variant light (&:where([data-theme="light"], [data-theme="light"] *));
 
