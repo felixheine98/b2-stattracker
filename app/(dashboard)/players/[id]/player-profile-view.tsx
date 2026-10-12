@@ -81,13 +81,13 @@ const paceHint = (pace: RankedPace) =>
 
 const TH = "px-3 py-2 text-right font-medium whitespace-nowrap text-fg-muted"
 const TD = "px-3 py-1.5 text-right whitespace-nowrap text-fg-soft"
-const FIRST_TH = "sticky left-0 z-[1] bg-surface py-2 pl-3 pr-4 text-left font-medium whitespace-nowrap text-fg-muted"
-const FIRST_TD = "sticky left-0 z-[1] bg-canvas py-1.5 pl-3 pr-4 text-left font-medium whitespace-nowrap text-fg max-md:shadow-[1px_0_0_#2d2829]"
+const FIRST_TH = "sticky left-0 z-[1] bg-table-head py-2 pl-3 pr-4 text-left font-medium whitespace-nowrap text-fg-muted"
+const FIRST_TD = "sticky left-0 z-[1] bg-table-cell py-1.5 pl-3 pr-4 text-left font-medium whitespace-nowrap text-fg max-md:shadow-[1px_0_0_var(--border)]"
 
 function Table({ children }: { children: React.ReactNode }) {
   return (
     <div className="overflow-x-auto rounded-lg border border-line">
-      <table className="w-full text-xs">{children}</table>
+      <table className="w-full text-xs bg-table-row">{children}</table>
     </div>
   )
 }
@@ -98,14 +98,14 @@ function FormatTable({ formats }: { formats: FormatLine[] }) {
   return (
     <Table>
       <thead>
-        <tr className="border-b border-line bg-surface">
+        <tr className="border-b border-line bg-table-head">
           <th className={FIRST_TH}>Format</th>
           {["Played", "Avg place", "Pace", "Team", "Rank", "DNF", "Round W", "Round L"].map((h) => <th key={h} className={TH}>{h}</th>)}
         </tr>
       </thead>
       <tbody>
         {formats.map((f) => (
-          <tr key={f.format} className="border-b border-surface last:border-0">
+          <tr key={f.format} className="border-b border-table-rule last:border-0">
             <td className={FIRST_TD}>{formatLabel(f.format)}</td>
             <td className={TD}>{f.roundsPlayed}</td>
             <td className={cn(TD, "font-mono")}>{avgPlace(f)}</td>
@@ -126,7 +126,7 @@ function MapTable({ maps }: { maps: CompView["maps"] }) {
   return (
     <Table>
       <thead>
-        <tr className="border-b border-line bg-surface">
+        <tr className="border-b border-line bg-table-head">
           <th className={FIRST_TH}>Map</th>
           {["PB", "Rank", "Gap", "Rounds", "Avg gap", "Rank"].map((h, i) => <th key={i} className={TH}>{h}</th>)}
           <th className={cn(TH, "text-left")}>PB driven in</th>
@@ -134,7 +134,7 @@ function MapTable({ maps }: { maps: CompView["maps"] }) {
       </thead>
       <tbody>
         {maps.map((m) => (
-          <tr key={m.track} className="border-b border-surface last:border-0">
+          <tr key={m.track} className="border-b border-table-rule last:border-0">
             <td className={FIRST_TD}>{m.track}</td>
             <td className={cn(TD, "font-mono text-brand-ink")}>{m.pbMs === null ? "—" : formatTime(m.pbMs)}</td>
             <td className={TD}>{rankLabel(m.pbRank, m.pbOf)}</td>
@@ -156,7 +156,7 @@ function MatchTable({ matches }: { matches: CompView["matches"] }) {
   return (
     <Table>
       <thead>
-        <tr className="border-b border-line bg-surface">
+        <tr className="border-b border-line bg-table-head">
           <th className={FIRST_TH}>Match</th>
           <th className={cn(TH, "text-left")}>Stage</th>
           <th className={cn(TH, "text-left")}>Lineup</th>
@@ -167,7 +167,7 @@ function MatchTable({ matches }: { matches: CompView["matches"] }) {
       </thead>
       <tbody>
         {matches.map((m) => (
-          <tr key={m.matchId} className="border-b border-surface last:border-0">
+          <tr key={m.matchId} className="border-b border-table-rule last:border-0">
             <td className={FIRST_TD}>
               <Link href={m.path} className="hover:text-brand-ink hover:underline">vs {m.opponent ?? "Unknown"}</Link>
             </td>

@@ -185,7 +185,7 @@ function SubMatchStatsTable({ sm, number, isGuest, isTrial }: { sm: SubMatch; nu
     return (
       <th
         onClick={() => toggleSort(col)}
-        className={`py-1.5 px-2 font-medium cursor-pointer select-none whitespace-nowrap group ${left ? "sticky left-0 z-[1] bg-canvas text-left pl-3 pr-4" : "text-right"}`}
+        className={`py-1.5 px-2 font-medium cursor-pointer select-none whitespace-nowrap group ${left ? "sticky left-0 z-[1] bg-table-cell text-left pl-3 pr-4" : "text-right"}`}
       >
         <span className="inline-flex items-center gap-1 justify-end">
           <span className={`transition-colors ${active ? "text-fg" : "text-fg-subtle group-hover:text-fg-muted"}`}>
@@ -210,7 +210,7 @@ function SubMatchStatsTable({ sm, number, isGuest, isTrial }: { sm: SubMatch; nu
       </div>
       <div className="overflow-x-auto rounded-lg border border-line">
       {/* Fixed column widths, so the columns line up across the tables of a match */}
-      <table className="w-full min-w-[720px] table-fixed text-xs">
+      <table className="w-full min-w-[720px] table-fixed text-xs bg-table-row">
         <colgroup>
           <col className="w-[22%]" />
           <col span={7} />
@@ -234,8 +234,8 @@ function SubMatchStatsTable({ sm, number, isGuest, isTrial }: { sm: SubMatch; nu
             </tr>
           )}
           {sorted.map((row) => (
-            <tr key={row.tmId} className="border-b border-surface hover:bg-surface/50">
-              <td className="sticky left-0 z-[1] bg-canvas py-1.5 pl-3 pr-4 text-fg font-medium whitespace-nowrap max-md:shadow-[1px_0_0_#2d2829]">
+            <tr key={row.tmId} className="border-b border-table-rule hover:bg-table-hover">
+              <td className="sticky left-0 z-[1] bg-table-cell py-1.5 pl-3 pr-4 text-fg font-medium whitespace-nowrap max-md:shadow-[1px_0_0_var(--border)]">
                 <PlayerName name={row.name} currentName={row.currentName} />
                 {isGuest(row.tmId) && <GuestBadge className="ml-1.5" />}
 {isTrial(row.tmId) && <TrialBadge className="ml-1.5" />}

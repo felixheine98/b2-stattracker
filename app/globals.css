@@ -33,6 +33,14 @@
   --ok: #4ade80;
   --violet: #c084fc;
   --bronze: #cd7f32;
+
+  /* Stats tables: on the dark theme only the head stands out from the page */
+  --table-head: var(--surface);
+  --table-row: transparent;
+  /* The first column stays in place when a table scrolls sideways and has to cover what passes under it */
+  --table-cell: var(--bg);
+  --table-rule: var(--surface);
+  --table-hover: rgb(28 24 25 / 0.6);
 }
 
 /* The light theme (chosen in the account menu, see lib/theme.ts): the same team colours on a
@@ -62,6 +70,13 @@
   --ok: #15803d;
   --violet: #7e22ce;
   --bronze: #9a5a1c;
+
+  /* Stats tables: white rows under a grey head, so they stand out from the page */
+  --table-head: var(--surface-raised);
+  --table-row: var(--surface);
+  --table-cell: var(--surface);
+  --table-rule: var(--border);
+  --table-hover: #f8f6f2;
 }
 
 /* For the few things that differ by more than a colour: light:hidden, light:block, ... */
@@ -95,6 +110,12 @@
   --color-ok: var(--ok);
   --color-violet: var(--violet);
   --color-bronze: var(--bronze);
+
+  --color-table-head: var(--table-head);
+  --color-table-row: var(--table-row);
+  --color-table-cell: var(--table-cell);
+  --color-table-rule: var(--table-rule);
+  --color-table-hover: var(--table-hover);
 }
 
 body {

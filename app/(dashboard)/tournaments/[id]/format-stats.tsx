@@ -73,10 +73,10 @@ export function FormatStatsTable({ agg, isGuest, isTrial, lineupName, profilePat
         </span>
       </div>
       <div className="overflow-x-auto rounded-lg border border-line">
-        <table className="w-full text-xs">
+        <table className="w-full text-xs bg-table-row">
           <thead>
-            <tr className="border-b border-line bg-surface">
-              {th("name", "Player", "sticky left-0 z-[1] bg-surface text-left pl-3 pr-4")}
+            <tr className="border-b border-line bg-table-head">
+              {th("name", "Player", "sticky left-0 z-[1] bg-table-head text-left pl-3 pr-4")}
               {lineupName && th("lineup", "Lineup", "text-left px-3")}
               {th("played", "Played", "text-right px-3")}
               {th("placementSum", "Place sum", "text-right px-3")}
@@ -89,8 +89,8 @@ export function FormatStatsTable({ agg, isGuest, isTrial, lineupName, profilePat
           </thead>
           <tbody>
             {players.map((p) => (
-              <tr key={p.tmId} className="border-b border-surface hover:bg-surface/60">
-                <td className="sticky left-0 z-[1] bg-canvas py-1.5 pl-3 pr-4 text-fg font-medium whitespace-nowrap max-md:shadow-[1px_0_0_#2d2829]">
+              <tr key={p.tmId} className="border-b border-table-rule hover:bg-table-hover">
+                <td className="sticky left-0 z-[1] bg-table-cell py-1.5 pl-3 pr-4 text-fg font-medium whitespace-nowrap max-md:shadow-[1px_0_0_var(--border)]">
                   {profilePath?.(p.tmId) ? (
                     <Link href={profilePath(p.tmId)!} className="hover:text-brand-ink">
                       <PlayerName name={p.name} currentName={p.currentName} />

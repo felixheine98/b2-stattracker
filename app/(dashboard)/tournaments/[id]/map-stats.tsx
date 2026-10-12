@@ -77,10 +77,10 @@ export function MapStatsTable({ agg, isGuest, isTrial, lineupName, profilePath, 
         </span>
       </div>
       <div className="overflow-x-auto rounded-lg border border-line">
-        <table className="w-full text-xs">
+        <table className="w-full text-xs bg-table-row">
           <thead>
-            <tr className="border-b border-line bg-surface">
-              {th("name", "Player", "sticky left-0 z-[1] bg-surface text-left pl-3 pr-4")}
+            <tr className="border-b border-line bg-table-head">
+              {th("name", "Player", "sticky left-0 z-[1] bg-table-head text-left pl-3 pr-4")}
               {lineupName && th("lineup", "Lineup", "text-left px-3")}
               {th("rounds", "Rounds", "text-right px-3")}
               {th("best", "Best time", "text-right px-3")}
@@ -93,8 +93,8 @@ export function MapStatsTable({ agg, isGuest, isTrial, lineupName, profilePath, 
           </thead>
           <tbody>
             {players.map((p) => (
-              <tr key={p.tmId} className="border-b border-surface hover:bg-surface/60">
-                <td className="sticky left-0 z-[1] bg-canvas py-1.5 pl-3 pr-4 text-fg font-medium whitespace-nowrap max-md:shadow-[1px_0_0_#2d2829]">
+              <tr key={p.tmId} className="border-b border-table-rule hover:bg-table-hover">
+                <td className="sticky left-0 z-[1] bg-table-cell py-1.5 pl-3 pr-4 text-fg font-medium whitespace-nowrap max-md:shadow-[1px_0_0_var(--border)]">
                   {profilePath?.(p.tmId) ? (
                     <Link href={profilePath(p.tmId)!} className="hover:text-brand-ink">
                       <PlayerName name={p.name} currentName={p.currentName} />
@@ -132,10 +132,10 @@ export function MapOverviewTable({ maps }: { maps: MapAggregate[] }) {
   const td = "px-3 py-1.5 text-right whitespace-nowrap text-fg-soft"
   return (
     <div className="overflow-x-auto rounded-lg border border-line">
-      <table className="w-full text-xs">
+      <table className="w-full text-xs bg-table-row">
         <thead>
-          <tr className="border-b border-line bg-surface">
-            <th className="sticky left-0 z-[1] bg-surface py-2 pl-3 pr-4 text-left font-medium text-fg-muted">Map</th>
+          <tr className="border-b border-line bg-table-head">
+            <th className="sticky left-0 z-[1] bg-table-head py-2 pl-3 pr-4 text-left font-medium text-fg-muted">Map</th>
             <th className={cn(th, "text-left")}>Formats</th>
             <th className={th} title="Sub-matches won, drawn and lost on this map">Maps W–D–L</th>
             <th className={th}>Rounds W–L</th>
@@ -149,8 +149,8 @@ export function MapOverviewTable({ maps }: { maps: MapAggregate[] }) {
             const decided = agg.teamRoundsWon + agg.teamRoundsLost
             const avg = teamAvgMs(agg)
             return (
-              <tr key={agg.track ?? ""} className="border-b border-surface last:border-0">
-                <td className="sticky left-0 z-[1] bg-canvas py-1.5 pl-3 pr-4 font-medium whitespace-nowrap text-fg max-md:shadow-[1px_0_0_#2d2829]">{agg.track ?? "No map"}</td>
+              <tr key={agg.track ?? ""} className="border-b border-table-rule last:border-0">
+                <td className="sticky left-0 z-[1] bg-table-cell py-1.5 pl-3 pr-4 font-medium whitespace-nowrap text-fg max-md:shadow-[1px_0_0_var(--border)]">{agg.track ?? "No map"}</td>
                 <td className={cn(td, "text-left")}>{agg.formats.map((f) => formatLabel(f)).join(", ")}</td>
                 <td className={cn(td, "font-mono text-fg")}>{agg.mapWon}–{agg.mapDrawn}–{agg.mapLost}</td>
                 <td className={cn(td, "font-mono")}>{agg.teamRoundsWon}–{agg.teamRoundsLost}</td>
