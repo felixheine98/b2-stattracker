@@ -53,8 +53,8 @@ describe("rankTfhDrivers", () => {
 })
 
 describe("rankTfhTotals", () => {
-  const result = (playerId: string, raceId: string, values: { checkpoints?: number | null; playTimeSeconds?: number | null; finishes?: number } = {}) =>
-    ({ playerId, raceId, checkpoints: null, playTimeSeconds: null, finishes: 0, ...values })
+  const result = (playerId: string, raceId: string, values: { checkpoints?: number | null; playTimeSeconds?: number | null; finishes?: number; cpm?: number | null } = {}) =>
+    ({ playerId, raceId, checkpoints: null, playTimeSeconds: null, finishes: 0, cpm: null, ...values })
 
   it("adds up what a driver did over all editions and ranks by the longest play time", () => {
     const results = [
@@ -70,22 +70,36 @@ describe("rankTfhTotals", () => {
     ])
   })
 
-  it("ranks by the pace over all editions: all checkpoints by all minutes driven, from races that supplied both", () => {
+  it("shows the CPM of every edition next to each other, each with the rank among the B2 drivers of that edition", () => {
     const results = [
-      result("anna", "24h-3", { checkpoints: 600, playTimeSeconds: 3600 }),
-      result("anna", "24h-4", { checkpoints: 300, playTimeSeconds: 1800 }),
-      result("ben", "24h-4", { checkpoints: 440, playTimeSeconds: 2400 }),
-      result("cara", "24h-3", { checkpoints: 500 }),
-      result("cara", "24h-4", { checkpoints: 120, playTimeSeconds: 600 }),
-      result("dave", "24h-4", { checkpoints: 700 }),
+      result("anna", "24h-3", { cpm: 8 }),
+      result("anna", "24h-4", { cpm: 9 }),
+      result("ben", "24h-4", { cpm: 9.5 }),
+      result("cara", "24h-3", { cpm: 8.4 }),
+      result("cara", "24h-4"),
+      result("dave", "24h-4", { cpm: 9 }),
     ]
-    expect(rankTfhTotals(results, "cpm").map(t => [t.rank, t.playerId, t.cpm, t.incomplete])).toEqual([
-      [1, "cara", 12, true],
-      [2, "ben", 11, false],
-      [3, "anna", 10, false],
-      [null, "dave", null, true],
-    ])
-    expect(rankTfhTotals(results, "cpm", "worst").map(t => t.playerId)).toEqual(["anna", "ben", "cara", "dave"])
+    const editions = Object.fromEntries(rankTfhTotals(results, "races").map(t => [t.playerId, t.editions]))
+    expect(editions).toEqual({
+      anna: { "24h-3": { cpm: 8, rank: 2 }, "24h-4": { cpm: 9, rank: 2 } },
+      ben: { "24h-4": { cpm: 9.5, rank: 1 } },
+      cara: { "24h-3": { cpm: 8.4, rank: 1 }, "24h-4": { cpm: null, rank: null } },
+      dave: { "24h-4": { cpm: 9, rank: 2 } },
+    })
+  })
+
+  it("ranks by the CPM of one edition, with the drivers who have no value there last", () => {
+    const results = [
+      result("anna", "24h-3", { cpm: 8 }),
+      result("anna", "24h-4", { cpm: 9 }),
+      result("ben", "24h-4", { cpm: 9.5 }),
+      result("cara", "24h-3", { cpm: 8.4 }),
+      result("cara", "24h-4"),
+      result("eli", "24h-3", { cpm: 7 }),
+    ]
+    expect(rankTfhTotals(results, "cpm:24h-4").map(t => [t.rank, t.playerId])).toEqual([[1, "ben"], [2, "anna"], [null, "cara"], [null, "eli"]])
+    expect(rankTfhTotals(results, "cpm:24h-4", "worst").map(t => [t.rank, t.playerId])).toEqual([[2, "anna"], [1, "ben"], [null, "cara"], [null, "eli"]])
+    expect(rankTfhTotals(results, "cpm:24h-3").map(t => [t.rank, t.playerId])).toEqual([[1, "cara"], [2, "anna"], [3, "eli"], [null, "ben"]])
   })
 
   it("adds up the finishes of all editions", () => {

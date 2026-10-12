@@ -146,7 +146,7 @@ export async function getTfhB2Results(database: PrismaClient = db) {
   return database.tfhDriver.findMany({
     where: { team: { isB2: true } },
     select: {
-      playerId: true, checkpoints: true, playTimeSeconds: true, _count: { select: { finishes: true } },
+      playerId: true, checkpoints: true, playTimeSeconds: true, cpm: true, _count: { select: { finishes: true } },
       player: { select: { id: true, slug: true, name: true } },
       team: { select: { isB2: true, race: { select: { id: true, tournamentId: true, kind: true } } } },
     },

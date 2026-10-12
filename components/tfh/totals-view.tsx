@@ -8,9 +8,10 @@ import { formatTfhDuration } from "@/lib/tfh-profile"
 import { rankTfhTotals, splitTfhByKind, type TfhTotalMetric } from "@/lib/tfh-ranking"
 import { SortHeader } from "./sort-header"
 
-interface Result { playerId: string; raceId: string; kind: string; checkpoints: number | null; playTimeSeconds: number | null; finishes: number }
+interface Result { playerId: string; raceId: string; kind: string; checkpoints: number | null; playTimeSeconds: number | null; finishes: number; cpm: number | null }
 interface Player { id: string; slug: string | null; name: string }
-interface Race { id: string; name: string; slug: string | null; kind: string }
+// Newest first, as the page loads them
+interface Race { id: string; name: string; kind: string; tournament: { id: string; slug: string | null } }
 
 interface Props {
   results: Result[]
@@ -23,19 +24,20 @@ const cell = "whitespace-nowrap px-3 py-2 text-right"
 const kindLabel = (kind: string) => (kind === "24h" ? "24h endurance" : kind === "12h" ? "12h RPG" : kind)
 
 const COLUMNS: Array<{ metric: TfhTotalMetric; label: string }> = [
-  { metric: "cpm", label: "CPM" },
   { metric: "races", label: "Editions" },
   { metric: "playTimeSeconds", label: "Play time" },
   { metric: "checkpoints", label: "Checkpoints" },
   { metric: "finishes", label: "Finishes" },
 ]
 
-// The drivers of the given results ranked by their pace over those editions, with the editions the totals come from
+// The drivers of the given results: the CPM of every edition in its own column with the rank among the
+// B2 drivers of that edition, then what adds up over the editions. Ranked by the newest edition at first.
 function Totals({ results, players, races }: Props) {
-  const [metric, setMetric] = useState<TfhTotalMetric>("cpm")
+  const [metric, setMetric] = useState<TfhTotalMetric>(races[0] ? `cpm:${races[0].id}` : "playTimeSeconds")
   const [order, setOrder] = useState<"best" | "worst">("best")
   const playerById = new Map(players.map(p => [p.id, p]))
   const rows = rankTfhTotals(results, metric, order)
+  const editions = [...races].reverse()
 
   function sortBy(next: TfhTotalMetric) {
     if (next === metric) setOrder(o => (o === "best" ? "worst" : "best"))
@@ -45,13 +47,14 @@ function Totals({ results, players, races }: Props) {
   return (
     <div className="space-y-3">
       <div className="flex flex-wrap gap-2">
-        {races.map(r => <Link key={r.id} href={tournamentPath(r)} className="rounded-full border border-line-strong px-3 py-1 text-xs text-fg-soft hover:border-fg-subtle hover:text-fg">{r.name}</Link>)}
+        {races.map(r => <Link key={r.id} href={tournamentPath(r.tournament)} className="rounded-full border border-line-strong px-3 py-1 text-xs text-fg-soft hover:border-fg-subtle hover:text-fg">{r.name}</Link>)}
       </div>
       <div className="overflow-x-auto rounded-lg border border-line">
         <table className="w-full bg-table-row text-sm">
           <thead className="bg-table-head text-fg-muted">
             <tr>
               <th className={first}>Driver</th>
+              {editions.map(r => <SortHeader key={r.id} label={`CPM ${r.name.replace(/^TFH\s+/, "")}`} active={metric === `cpm:${r.id}`} order={order} onClick={() => sortBy(`cpm:${r.id}`)} className={cell} />)}
               {COLUMNS.map(c => <SortHeader key={c.metric} label={c.label} active={metric === c.metric} order={order} onClick={() => sortBy(c.metric)} className={cell} />)}
             </tr>
           </thead>
@@ -66,7 +69,19 @@ function Totals({ results, players, races }: Props) {
                       {player ? <Link href={playerPath(player)} className="block max-w-40 truncate text-brand-ink hover:underline sm:max-w-64">{player.name}</Link> : "—"}
                     </span>
                   </td>
-                  <td className={cell}>{row.cpm?.toFixed(3) ?? "—"}</td>
+                  {editions.map(r => {
+                    const edition = row.editions[r.id]
+                    return (
+                      <td key={r.id} className={cell}>
+                        {!edition ? null : edition.cpm === null ? "—" : (
+                          <>
+                            {edition.cpm.toFixed(3)}
+                            <span className={edition.rank === 1 ? "ml-1.5 inline-block w-7 text-left text-xs text-brand-ink" : "ml-1.5 inline-block w-7 text-left text-xs text-fg-subtle"}>#{edition.rank}</span>
+                          </>
+                        )}
+                      </td>
+                    )
+                  })}
                   <td className={cell}>{row.races}</td>
                   <td className={cell}>{formatTfhDuration(row.playTimeSeconds)}{row.incomplete && <span title="At least one value was not supplied by TFH"> *</span>}</td>
                   <td className={cell}>{row.checkpoints}{row.incomplete && <span title="At least one value was not supplied by TFH"> *</span>}</td>
@@ -77,7 +92,7 @@ function Totals({ results, players, races }: Props) {
           </tbody>
         </table>
       </div>
-      {rows.some(r => r.incomplete) && <p className="text-xs text-fg-muted">* TFH supplied no play time or checkpoints for at least one race of this driver; the totals only hold what is known, and the CPM only counts races with both values.</p>}
+      {rows.some(r => r.incomplete) && <p className="text-xs text-fg-muted">* TFH supplied no play time or checkpoints for at least one race of this driver; the totals only hold what is known.</p>}
     </div>
   )
 }
@@ -90,7 +105,7 @@ export function TfhTotalsView({ results, players, races }: Props) {
   const drivers = new Set(results.map(r => r.playerId)).size
 
   return (
-    <div className="min-w-0 max-w-5xl space-y-6">
+    <div className="min-w-0 max-w-6xl space-y-6">
       <Link href="/tournaments" className="inline-flex items-center gap-2 text-sm text-fg-muted"><ArrowLeft size={14} />Tournaments</Link>
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
@@ -105,7 +120,7 @@ export function TfhTotalsView({ results, players, races }: Props) {
         )}
       </div>
       <p className="text-xs text-fg-muted">
-        CPM here is all checkpoints by all minutes a driver drove in these editions. The maps differ from edition to edition, so it is a rough comparison; the ranking on the page of each race is the exact one. Lap times are only compared there.
+        Every edition has its own CPM column with the rank among the B2 drivers of that edition (#1 is the fastest), because the maps differ from edition to edition. An empty cell means the driver did not take part. Click a column to rank by it.
       </p>
       {results.length === 0 ? (
         <p className="text-sm text-fg-muted">No TFH race is archived yet.</p>
@@ -113,13 +128,13 @@ export function TfhTotalsView({ results, players, races }: Props) {
         groups.map(g => (
           <section key={g.kind} className="space-y-3">
             <h2 className="text-lg font-semibold">{kindLabel(g.kind)}</h2>
-            <Totals results={g.results} players={players} races={races.filter(r => r.kind === g.kind)} />
+            <Totals key={g.kind} results={g.results} players={players} races={races.filter(r => r.kind === g.kind)} />
           </section>
         ))
       ) : (
         <section className="space-y-3">
           <h2 className="text-lg font-semibold">All editions</h2>
-          <Totals results={results} players={players} races={races} />
+          <Totals key="all" results={results} players={players} races={races} />
         </section>
       )}
     </div>

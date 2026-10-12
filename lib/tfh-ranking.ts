@@ -38,7 +38,8 @@ export function rankTfhDrivers<T extends RankedTeam>(teams: T[], metric: TfhMetr
   return [...(order === "worst" ? ranked.reverse() : ranked), ...missing]
 }
 
-export type TfhTotalMetric = "cpm" | "races" | "playTimeSeconds" | "checkpoints" | "finishes"
+// Sorting by `cpm:<raceId>` ranks by the CPM of that one edition
+export type TfhTotalMetric = "races" | "playTimeSeconds" | "checkpoints" | "finishes" | `cpm:${string}`
 
 interface TfhResult {
   playerId: string
@@ -46,37 +47,42 @@ interface TfhResult {
   checkpoints: number | null
   playTimeSeconds: number | null
   finishes: number
+  cpm: number | null
 }
 
 // What every B2 driver did over the given TFH editions together: editions driven, play time,
-// checkpoints and finishes added up. The pace (CPM) is all checkpoints by all minutes driven,
-// taken from the races that supplied both; it mixes the maps of those races, which is why 24h
-// and 12h races are compared apart (splitTfhByKind). A missing source value counts as nothing
-// and marks the totals as incomplete. Drivers without a pace are not ranked by it and come last.
+// checkpoints and finishes added up. The pace is not merged over editions, because their maps
+// differ: every edition keeps its own CPM, with the driver's rank among the B2 drivers of that
+// edition (drivers with the same CPM share a rank). A missing source value counts as nothing in
+// the sums and marks them as incomplete. Drivers without a value for the sorted column are not
+// ranked and come last.
 export function rankTfhTotals(results: TfhResult[], metric: TfhTotalMetric, order: "best" | "worst" = "best") {
-  const byPlayer = new Map<string, { playerId: string; raceIds: Set<string>; checkpoints: number; playTimeSeconds: number; finishes: number; incomplete: boolean; pacedCheckpoints: number; pacedSeconds: number }>()
+  const byPlayer = new Map<string, { playerId: string; checkpoints: number; playTimeSeconds: number; finishes: number; incomplete: boolean; editions: Record<string, { cpm: number | null; rank: number | null }> }>()
   for (const r of results) {
-    const total = byPlayer.get(r.playerId) ?? { playerId: r.playerId, raceIds: new Set<string>(), checkpoints: 0, playTimeSeconds: 0, finishes: 0, incomplete: false, pacedCheckpoints: 0, pacedSeconds: 0 }
-    total.raceIds.add(r.raceId)
+    const total = byPlayer.get(r.playerId) ?? { playerId: r.playerId, checkpoints: 0, playTimeSeconds: 0, finishes: 0, incomplete: false, editions: {} }
     total.checkpoints += r.checkpoints ?? 0
     total.playTimeSeconds += r.playTimeSeconds ?? 0
     total.finishes += r.finishes
     total.incomplete ||= r.checkpoints === null || r.playTimeSeconds === null
-    if (r.checkpoints !== null && r.playTimeSeconds !== null) {
-      total.pacedCheckpoints += r.checkpoints
-      total.pacedSeconds += r.playTimeSeconds
-    }
+    // Someone who drove for two B2 teams in one edition is listed with the better of the two
+    const known = total.editions[r.raceId]?.cpm ?? null
+    total.editions[r.raceId] = { cpm: r.cpm === null ? known : Math.max(r.cpm, known ?? r.cpm), rank: null }
     byPlayer.set(r.playerId, total)
   }
-  const totals = [...byPlayer.values()].map(({ raceIds, pacedCheckpoints, pacedSeconds, ...total }) => ({
-    ...total,
-    races: raceIds.size,
-    cpm: pacedSeconds > 0 ? pacedCheckpoints / (pacedSeconds / 60) : null,
-  }))
+  const totals = [...byPlayer.values()].map(total => ({ ...total, races: Object.keys(total.editions).length }))
+  for (const raceId of new Set(results.map(r => r.raceId))) {
+    const paces = totals.map(t => t.editions[raceId]?.cpm ?? null).filter((cpm): cpm is number => cpm !== null)
+    for (const t of totals) {
+      const edition = t.editions[raceId]
+      if (edition && edition.cpm !== null) edition.rank = 1 + paces.filter(cpm => cpm > edition.cpm!).length
+    }
+  }
+  const valueOf = (t: (typeof totals)[number]): number | null =>
+    metric === "races" || metric === "playTimeSeconds" || metric === "checkpoints" || metric === "finishes" ? t[metric] : t.editions[metric.slice(4)]?.cpm ?? null
   const byId = (a: { playerId: string }, b: { playerId: string }) => a.playerId.localeCompare(b.playerId)
-  const valued = totals.filter(t => t[metric] !== null).sort((a, b) => b[metric]! - a[metric]! || byId(a, b))
-  const ranked = valued.map(t => ({ rank: 1 + valued.findIndex(other => other[metric] === t[metric]) as number | null, ...t }))
-  const missing = totals.filter(t => t[metric] === null).sort(byId).map(t => ({ rank: null as number | null, ...t }))
+  const valued = totals.filter(t => valueOf(t) !== null).sort((a, b) => valueOf(b)! - valueOf(a)! || byId(a, b))
+  const ranked = valued.map(t => ({ rank: 1 + valued.findIndex(other => valueOf(other) === valueOf(t)) as number | null, ...t }))
+  const missing = totals.filter(t => valueOf(t) === null).sort(byId).map(t => ({ rank: null as number | null, ...t }))
   return [...(order === "worst" ? ranked.reverse() : ranked), ...missing]
 }
 

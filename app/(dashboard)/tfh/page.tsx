@@ -12,9 +12,9 @@ export default async function TfhTotalsPage() {
 
   return (
     <TfhTotalsView
-      results={results.map(r => ({ playerId: r.playerId, raceId: r.team.race.id, kind: r.team.race.kind, checkpoints: r.checkpoints, playTimeSeconds: r.playTimeSeconds, finishes: r._count.finishes }))}
+      results={results.map(r => ({ playerId: r.playerId, raceId: r.team.race.id, kind: r.team.race.kind, checkpoints: r.checkpoints, playTimeSeconds: r.playTimeSeconds, finishes: r._count.finishes, cpm: r.cpm }))}
       players={players}
-      races={races.map(r => ({ id: r.tournament.id, name: r.tournament.name, slug: r.tournament.slug, kind: r.kind }))}
+      races={races.map(r => ({ id: r.id, name: r.tournament.name, kind: r.kind, tournament: { id: r.tournament.id, slug: r.tournament.slug } }))}
     />
   )
 }
