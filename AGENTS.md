@@ -30,6 +30,14 @@ Two setups run side by side:
 
 Every change goes to dev first. Production is only rebuilt after Felix has looked at the change in dev and confirmed it, each time anew: an earlier go-ahead does not cover the next change. The same holds for changes to the production data.
 
+## Dev-only logo and favicon
+
+Felix explicitly requires the orange logo and favicon to remain exclusive to the dev environment. This is a permanent environment marker, not a branding change to promote to production. Production must retain the original B2 artwork and colors, including after future deployments.
+
+- `components/brand-logo.tsx` and the icon metadata in `app/layout.tsx` select the orange assets only when `NODE_ENV === "development"` (`next dev`). Preserve this condition.
+- The orange assets are `public/b2-logo-dev.svg`, `public/icon-dev.svg` and `public/favicon-dev.ico`; never select them in production or overwrite the original assets with them.
+- This applies to the sidebar, mobile header, login screen and browser favicon. A general approval to deploy other changes does not authorize orange production branding.
+
 # Mobile
 
 Every change to the interface has to work on phones as well as on desktop. Below 768px (`md`) the app uses its phone layout: bottom bar instead of the sidebar, full-screen dialogs, wide tables that scroll sideways or turn into cards.
