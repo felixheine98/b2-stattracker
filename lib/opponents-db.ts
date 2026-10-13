@@ -34,6 +34,9 @@ export async function resolveMatchOpponent(tx: Prisma.TransactionClient, tournam
   const id = resolveOpponentName(name, entries)
   if (id) return entries.find(e => e.id === id)!
   if (entries.some(e => [e.name, ...e.aliases].some(n => opponentNameKey(n) === opponentNameKey(name)))) throw new OpponentError("The opponent name is ambiguous. Please pick a specific lineup.")
+  // A name or alias of a fixed team belongs to that team, in every competition.
+  const teamId = resolveOpponentName(name, await tx.opponentTeam.findMany({ where: { archived: false }, select: { id: true, name: true, aliases: true } }))
+  if (teamId) return resolveMatchOpponent(tx, tournamentId, { teamId })
   return tx.opponentLineup.create({ data: { tournamentId, name, nameKey: opponentNameKey(name) } })
 }
 

@@ -19,6 +19,13 @@ describe("match opponent resolution", () => {
     const db = tx({ opponentLineup: { findMany: vi.fn().mockResolvedValue([{ id: "a", name: "A", aliases: ["Same"] }, { id: "b", name: "B", aliases: ["Same"] }]) } })
     await expect(resolveMatchOpponent(db, "c", { name: "Same" })).rejects.toThrow("ambiguous")
   })
+  it("puts a typed name that is a fixed team's alias into that team, also in a new competition", async () => {
+    const team = { id: "t", name: "ÆTERNA", aliases: ["Aeterna"], slots: [{ playerId: "p" }] }
+    const create = vi.fn().mockResolvedValue({ id: "new", name: "ÆTERNA" })
+    const db = tx({ opponentTeam: { findMany: vi.fn().mockResolvedValue([team]), findUnique: vi.fn().mockResolvedValue(team) }, opponentLineup: { findMany: vi.fn().mockResolvedValue([]), create } })
+    await resolveMatchOpponent(db, "comp", { name: "aeterna" })
+    expect(create).toHaveBeenCalledWith({ data: expect.objectContaining({ tournamentId: "comp", teamId: "t", name: "ÆTERNA", slots: { create: [{ playerId: "p" }] } }) })
+  })
 })
 describe("actual opponent identities", () => {
   it("keeps anonymous placements out of player profiles", async () => {

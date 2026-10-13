@@ -5,6 +5,7 @@ Unter **Gegner** können feste Teams und Competition-Lineups gepflegt werden. Ei
 ## Bedienung
 
 - **Bestehende Lineups zuordnen** verbindet bereits erfasste Competition-Teilnahmen mit einem festen Team. Die bisherigen Begegnungen erscheinen dadurch im Teamprofil; der damalige Kader und alle Rundenergebnisse bleiben erhalten.
+- Ein als Text eingegebener Gegnername, der Name oder Alias genau eines festen Teams ist, landet in jeder Competition bei diesem Team, sofern die Competition kein gleichnamiges Lineup hat. Beim Zusammenführen wird der Name des aufgelösten Teams zum Alias.
 - Ein festes Team liefert den Anfangskader für neue Competition-Lineups. Bestehende Lineups übernehmen spätere Teamänderungen erst über **Gegner bearbeiten → Teamkader abgleichen**.
 - **In neuer Comp übernehmen** verbindet Teilnahmen und kopiert auf Wunsch den geplanten Kader. Die Historie kann verbundene Teilnahmen einbeziehen; Notizen bleiben bei ihrer jeweiligen Teilnahme.
 - CSV-IDs bestätigen einen Account direkt. Namen aus eCM und dem Spreadsheet bleiben zunächst unbestätigt. **TM.io zuordnen** erlaubt die ausdrückliche Auswahl einzelner Einsätze über Competitions hinweg und optionaler Kadereinträge. Anonyme Gegner werden nicht als Personen erfasst. Gegner allein erscheinen nicht im eigenen Spielerpool.
