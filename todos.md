@@ -4,6 +4,7 @@ Ideen, die noch kein Todo sind: [ideen.md](ideen.md)
 
 ## Offen
 
+- [ ] konfiguration pro comp, wie matches ablaufen (hilfreich für validierung): submatches pro match, rounds to win, punkte für sieg/unentschieden/niederlage, weitere formatregeln
 - [ ] seeding formate für import/anlegen prüfen
 - [ ] Design/UI/UX Verbesserungen
 
