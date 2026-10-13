@@ -92,7 +92,7 @@ export async function saveTfhImport(input: { draftId: string; assignments: TfhAs
       }
     }
     for (const team of data.teams) if (new Set(team.drivers.map(d => players.get(d.accountId))).size !== team.drivers.length) throw new Error("Duplicate players in a B2 team. Check the assignments.")
-    const tournamentData = { name: data.name, formats: [], startDate: new Date(data.startDate), endDate: new Date(data.endDate) }
+    const tournamentData = { name: data.name, formats: [], style: "ENDURANCE" as const, startDate: new Date(data.startDate), endDate: new Date(data.endDate) }
     const tournament = existing ? await tx.tournament.update({ where: { id: existing.tournamentId }, data: tournamentData }) : await tx.tournament.create({ data: tournamentData })
     const raceData = { sourceUrl: data.sourceUrl, kind: data.kind, mapName: data.mapName, importedAt: new Date() }
     const race = existing ? await tx.tfhRace.update({ where: { id: existing.id }, data: { ...raceData, revision: { increment: 1 } } }) : await tx.tfhRace.create({ data: { ...raceData, sourceEventId: data.sourceEventId, tournamentId: tournament.id } })

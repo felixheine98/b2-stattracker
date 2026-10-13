@@ -46,7 +46,7 @@ export default async function DashboardPage() {
     db.tournament.findMany({
       where: { tfhRace: { is: null } },
       select: {
-        id: true, slug: true, name: true, startDate: true, endDate: true, createdAt: true,
+        id: true, slug: true, name: true, style: true, startDate: true, endDate: true, createdAt: true,
         stages: { select: { id: true, type: true, number: true } },
         tournamentLineups: { orderBy: { createdAt: "asc" }, select: { id: true, slug: true, name: true, slots: { select: { playerId: true } } } },
       },
@@ -141,7 +141,7 @@ export default async function DashboardPage() {
 
         // The signed-in player's own numbers in this tournament, as on their profile
         const comp = self?.playerId
-          ? buildProfile(self.playerId, [{ id: tournament.id, lineups: lineups.map((l) => ({ id: l.id, playerIds: l.slots.map((s) => s.playerId) })) }], own).comps[0]
+          ? buildProfile(self.playerId, [{ id: tournament.id, style: tournament.style, lineups: lineups.map((l) => ({ id: l.id, playerIds: l.slots.map((s) => s.playerId) })) }], own).comps[0]
           : undefined
         const mine = comp && comp.total.roundsPlayed > 0 ? comp : null
         const bestMap = mine?.maps.filter((m) => m.avgGapMs !== null).sort((a, b) => a.avgGapMs! - b.avgGapMs!)[0]

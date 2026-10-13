@@ -25,7 +25,9 @@ import {
   Plus, ArrowLeft, Calendar, ChevronRight, ClipboardList, Swords, Trash2, Pencil, X, User, Users, BarChart2,
 } from "lucide-react"
 import { cn, formatLabel } from "@/lib/utils"
-import type { Format } from "@prisma/client"
+import { STYLE_ORDER, styleLabel, styleParam } from "@/lib/comp-styles"
+import { Select } from "@/components/ui/select"
+import type { CompStyle, Format } from "@prisma/client"
 import { buildAggregates, matchesOfFormats, matchesOfLineups, matchesOfStages, type StatsMatch } from "@/lib/format-stats"
 import { buildMapAggregates } from "@/lib/map-stats"
 import { matchTag, sortMatches } from "@/lib/match-order"
@@ -96,6 +98,7 @@ interface Tournament {
   slug?: string | null
   name: string
   formats: Format[]
+  style: CompStyle
   description?: string | null
   startDate?: Date | null
   endDate?: Date | null
@@ -167,6 +170,7 @@ export function TournamentDetailView({ tournament: initial, players, statsMatche
   const [showEdit, setShowEdit] = useState(false)
   const [editName, setEditName] = useState(tournament.name)
   const [editFormats, setEditFormats] = useState<Format[]>(tournament.formats)
+  const [editStyle, setEditStyle] = useState<CompStyle>(tournament.style)
   const [editDescription, setEditDescription] = useState(tournament.description ?? "")
   const [editStartDate, setEditStartDate] = useState(
     tournament.startDate ? new Date(tournament.startDate).toISOString().split("T")[0] : ""
@@ -217,6 +221,7 @@ export function TournamentDetailView({ tournament: initial, players, statsMatche
       body: JSON.stringify({
         name: editName.trim(),
         formats: editFormats,
+        style: editStyle,
         description: editDescription || null,
         startDate: editStartDate,
         endDate: editEndDate || null,
@@ -234,6 +239,8 @@ export function TournamentDetailView({ tournament: initial, players, statsMatche
     setShowEdit(false)
     // A new name means a new address
     if (data.slug !== tournament.slug) router.replace(tournamentPath(data))
+    // A changed style changes the styles listed in the sidebar
+    if (data.style !== tournament.style) router.refresh()
   }
 
   async function handleDeleteTournament() {
@@ -320,6 +327,7 @@ export function TournamentDetailView({ tournament: initial, players, statsMatche
   function openEdit() {
     setEditName(tournament.name)
     setEditFormats(tournament.formats)
+    setEditStyle(tournament.style)
     setEditDescription(tournament.description ?? "")
     setEditStartDate(tournament.startDate ? new Date(tournament.startDate).toISOString().split("T")[0] : "")
     setEditEndDate(tournament.endDate ? new Date(tournament.endDate).toISOString().split("T")[0] : "")
@@ -345,6 +353,9 @@ export function TournamentDetailView({ tournament: initial, players, statsMatche
           <div className="min-w-0">
             <h1 className="text-2xl font-bold text-fg mb-1">{tournament.name}</h1>
             <div className="flex flex-wrap gap-1 mb-1">
+              <Link href={`/tournaments?style=${styleParam(tournament.style)}`}>
+                <Badge variant="purple">{styleLabel(tournament.style)}</Badge>
+              </Link>
               {tournament.formats.map((f, i) => (
                 <Badge key={i} variant={formatBadgeVariant(f)}>
                   {formatLabel(f)}
@@ -649,6 +660,12 @@ export function TournamentDetailView({ tournament: initial, players, statsMatche
               onChange={(e) => setEditName(e.target.value)}
               placeholder="Tournament name"
             />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="edit-style">Style</Label>
+            <Select id="edit-style" value={editStyle} onChange={(e) => setEditStyle(e.target.value as CompStyle)}>
+              {STYLE_ORDER.map((s) => <option key={s} value={s}>{styleLabel(s)}</option>)}
+            </Select>
           </div>
           <div className="space-y-1.5">
             <Label>Formats</Label>

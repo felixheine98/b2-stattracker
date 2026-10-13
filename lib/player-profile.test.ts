@@ -27,7 +27,7 @@ function match(rounds: ReturnType<typeof round>[], extra: Partial<ProfileMatch> 
   }
 }
 
-const t1: ProfileTournament = { id: "t1", lineups: [{ id: "alpha", playerIds: ["anna", "ben"] }, { id: "bravo", playerIds: ["cleo"] }] }
+const t1: ProfileTournament = { id: "t1", style: "TECH", lineups: [{ id: "alpha", playerIds: ["anna", "ben"] }, { id: "bravo", playerIds: ["cleo"] }] }
 
 describe("buildProfile: comps", () => {
   it("lists a comp for a player in the roster who never drove, as not deployed", () => {
@@ -47,8 +47,8 @@ describe("buildProfile: comps", () => {
   })
 
   it("leaves out comps the player has nothing to do with and keeps the given order", () => {
-    const t2: ProfileTournament = { id: "t2", lineups: [{ id: "x", playerIds: ["anna"] }] }
-    const t3: ProfileTournament = { id: "t3", lineups: [{ id: "y", playerIds: ["ben"] }] }
+    const t2: ProfileTournament = { id: "t2", style: "MIXED", lineups: [{ id: "x", playerIds: ["anna"] }] }
+    const t3: ProfileTournament = { id: "t3", style: "MIXED", lineups: [{ id: "y", playerIds: ["ben"] }] }
     expect(buildProfile("anna", [t2, t3, t1], []).comps.map((c) => c.tournamentId)).toEqual(["t2", "t1"])
   })
 })
@@ -136,11 +136,45 @@ describe("buildProfile: maps", () => {
   })
 
   it("keeps maps of different comps apart", () => {
-    const t2: ProfileTournament = { id: "t2", lineups: [] }
+    const t2: ProfileTournament = { id: "t2", style: "MIXED", lineups: [] }
     const profile = buildProfile("anna", [t1, t2], [
       match([round("A", "anna:60", "opp1:61")]),
       match([round("A", "anna:50", "opp1:51")], { tournamentId: "t2" }),
     ])
     expect(profile.comps.map((c) => c.maps[0].pbMs)).toEqual([60000, 50000])
+  })
+})
+
+describe("buildProfile: styles", () => {
+  const ice: ProfileTournament = { id: "ice1", style: "ICE", lineups: [{ id: "i", playerIds: ["anna", "ben"] }] }
+  const tech2: ProfileTournament = { id: "tech2", style: "TECH", lineups: [{ id: "k", playerIds: ["anna"] }] }
+
+  it("sums up the rounds of all comps of a style, in the fixed order of the styles", () => {
+    const profile = buildProfile("anna", [ice, t1, tech2], [
+      match([round("A", "opp1:60", "anna:61")], { tournamentId: "ice1", tournamentLineupId: "i" }),
+      match([round("A", "anna:60", "opp1:61"), round("A", "opp1:60", "anna:!")]),
+      match([round("B", "anna:60", "opp1:61")], { tournamentId: "tech2", tournamentLineupId: "k" }),
+    ])
+    expect(profile.styles.map((s) => s.style)).toEqual(["TECH", "ICE"])
+    expect(profile.styles[0]).toMatchObject({ roundsPlayed: 3, placementSum: 4, dnfs: 1, roundsWon: 2, roundsLost: 1 })
+    expect(profile.styles[1]).toMatchObject({ roundsPlayed: 1, placementSum: 2, dnfs: 0, roundsWon: 0, roundsLost: 1 })
+  })
+
+  it("leaves out styles the player drove no round in, and seeding rounds", () => {
+    const profile = buildProfile("anna", [ice, t1], [
+      match([round("A", "anna:60", "opp1:61")], { tournamentId: "ice1", tournamentLineupId: "i", stage: { type: "SEEDING" } }),
+      match([round("A", "anna:60", "opp1:61")]),
+    ])
+    expect(profile.styles.map((s) => s.style)).toEqual(["TECH"])
+  })
+
+  it("ranks the pace among the team within the style only", () => {
+    const profile = buildProfile("anna", [ice, t1], [
+      match([round("A", "ben:60", "anna:66", "opp1:70")], { tournamentId: "ice1", tournamentLineupId: "i" }),
+      match([round("A", "anna:60", "ben:63", "opp1:70")]),
+    ])
+    const [tech, onIce] = profile.styles
+    expect(tech.pace).toMatchObject({ value: 0, rank: 1, of: 2 })
+    expect(onIce.pace).toMatchObject({ value: 10, rank: 2, of: 2 })
   })
 })

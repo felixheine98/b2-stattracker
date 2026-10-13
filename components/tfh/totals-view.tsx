@@ -106,7 +106,7 @@ export function TfhTotalsView({ results, players, races }: Props) {
 
   return (
     <div className="min-w-0 max-w-6xl space-y-6">
-      <Link href="/tournaments" className="inline-flex items-center gap-2 text-sm text-fg-muted"><ArrowLeft size={14} />Tournaments</Link>
+      <Link href="/tournaments?style=endurance" className="inline-flex items-center gap-2 text-sm text-fg-muted"><ArrowLeft size={14} />Endurance tournaments</Link>
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
           <h1 className="break-words text-2xl font-bold">TFH endurance: B2 drivers</h1>

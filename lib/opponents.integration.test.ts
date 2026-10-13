@@ -26,7 +26,7 @@ describe.skipIf(process.env.OPPONENT_DB_TESTS !== "1")("opponents with PostgreSQ
   async function fixture() {
     const own = await client.player.create({ data: { tmId: crypto.randomUUID(), name: "Own", initialName: "Own" } })
     const target = await client.player.create({ data: { tmId: crypto.randomUUID(), name: "Account", initialName: "Account", isOpponentOnly: true } })
-    const comp = await client.tournament.create({ data: { name: "Comp", formats: ["ROUND_1V1"], stages: { create: { type: "GROUP", number: 1 } } }, include: { stages: true } })
+    const comp = await client.tournament.create({ data: { name: "Comp", formats: ["ROUND_1V1"], style: "MIXED", stages: { create: { type: "GROUP", number: 1 } } }, include: { stages: true } })
     const lineup = await client.opponentLineup.create({ data: { tournamentId: comp.id, name: "Mix", nameKey: "mix" } })
     const person = await client.$transaction(tx => resolveOpponentPlayer(tx, lineup.id, "ecm-Speedy", "Speedy"))
     const match = await client.match.create({ data: { tournamentId: comp.id, stageId: comp.stages[0].id, opponentLineupId: lineup.id, opponent: "Mix", subMatches: { create: { format: "ROUND_1V1", order: 0, rounds: { create: [0, 1].map(number => ({ number, track: "Map", results: { create: [{ tmId: own.tmId, playerId: own.id, playerName: own.name, isOurTeam: true, position: 1 }, { tmId: person!.tmId, playerId: person!.id, playerName: "Speedy", isOurTeam: false, position: 2 }] } })) } } } }, include: { subMatches: { include: { rounds: { orderBy: { number: "asc" }, include: { results: true } } } } } })

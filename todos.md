@@ -3,7 +3,6 @@
 ## Offen
 
 - [ ] als member -> in tourney übersicht der eigenen stats, danach kann man sich durch die stats durchklicken
-- [ ] kategorisierung der comps nach style (tech, fullspeed, dirt, ice, rpg, endurance, mixed): [entscheidung](docs/adr/002-comp-styles.md), [glossar](docs/comp-styles-glossar.md)
 - [ ] validierung von importierten daten zu eingegebenen daten (match) -> passt das gegner team etc
 - [ ] tournaments seite bei mehreren comps: bleibt eine einfache liste der turniere, anordnung prüfen wenn es mehr werden
 - [ ] lineup einteilung für einzelne matches bzw match days
@@ -44,3 +43,4 @@
 - [x] passkeys (WebAuthn): login ohne passwort, mehrere pro account, zählen für admins als zweiter faktor (TOTP oder passkey)
 - [x] TFH: B2-Fahrerranking pro Rennen (alle B2-Teams in einer Tabelle, standardmäßig nach CPM) und Übersicht über alle Ausgaben mit addierbaren Werten (`/tfh`)
 - [x] lineup-planung: status „Inactive" (violett) für mitglieder, die standardmäßig keine comps fahren – ohne eigene antwort nicht mehr offen; schalter im spielerprofil; extra-stufen sind jetzt bronze
+- [x] kategorisierung der comps nach style (tech, fullspeed, dirt, ice, rpg, endurance, mixed): ein style pro turnier, filter in sidebar und turnierliste, tfh driver totals unter endurance, stats pro style im profil; [entscheidung](docs/adr/002-comp-styles.md), [glossar](docs/comp-styles-glossar.md)

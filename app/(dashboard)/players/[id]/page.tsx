@@ -40,7 +40,7 @@ export default async function PlayerProfilePage({ params }: Props) {
     db.tournament.findMany({
       where: { tfhRace: { is: null } },
       select: {
-        id: true, slug: true, name: true, startDate: true, createdAt: true,
+        id: true, slug: true, name: true, style: true, startDate: true, createdAt: true,
         stages: { select: { id: true, type: true, number: true } },
         tournamentLineups: { select: { id: true, slug: true, name: true, slots: { select: { playerId: true } } } },
       },
@@ -78,7 +78,7 @@ export default async function PlayerProfilePage({ params }: Props) {
   const ordered = [...tournaments].sort((a, b) => dayKey(tournamentReferenceDate(b)).localeCompare(dayKey(tournamentReferenceDate(a))))
   const profile = buildProfile(
     id,
-    ordered.map((t) => ({ id: t.id, lineups: t.tournamentLineups.map((l) => ({ id: l.id, playerIds: l.slots.map((s) => s.playerId) })) })),
+    ordered.map((t) => ({ id: t.id, style: t.style, lineups: t.tournamentLineups.map((l) => ({ id: l.id, playerIds: l.slots.map((s) => s.playerId) })) })),
     matches
   )
 
@@ -129,6 +129,7 @@ export default async function PlayerProfilePage({ params }: Props) {
       player={player}
       total={profile.total}
       formats={profile.formats}
+      styles={profile.styles}
       comps={comps}
       hasOpponentProfile={opponentResults > 0}
       canManage={canManage((session?.user as { role?: string })?.role)}

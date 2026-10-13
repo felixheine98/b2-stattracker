@@ -4,7 +4,7 @@ import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
 import { NextResponse } from "next/server"
 import { z } from "zod"
-import { Format } from "@prisma/client"
+import { CompStyle, Format } from "@prisma/client"
 import { canManage } from "@/lib/roles"
 import { isValidDay } from "@/lib/player-status"
 import { planStageChanges, sortStages, stageName } from "@/lib/stages"
@@ -37,6 +37,8 @@ export async function GET(_req: Request, { params }: Params) {
 const patchSchema = z.object({
   name: z.string().min(1).optional(),
   formats: z.array(z.nativeEnum(Format)).min(1).optional(),
+  // The style can be changed but not removed
+  style: z.nativeEnum(CompStyle, { message: "Select a style" }).optional(),
   description: z.string().nullable().optional(),
   // The start date can be changed but not removed
   startDate: z.string().refine(isValidDay, "A valid start date is required").optional(),
@@ -64,7 +66,7 @@ export async function PATCH(req: Request, { params }: Params) {
     return NextResponse.json({ error: parsed.error.issues[0].message }, { status: 400 })
   }
 
-  const { name, formats, description, startDate, endDate, stages } = parsed.data
+  const { name, formats, style, description, startDate, endDate, stages } = parsed.data
 
   const existing = await db.stage.findMany({ where: { tournamentId: id }, include: { _count: { select: { matches: true } } } })
   const changes = stages
@@ -82,6 +84,7 @@ export async function PATCH(req: Request, { params }: Params) {
       data: {
         ...(name !== undefined && { name }),
         ...(formats !== undefined && { formats }),
+        ...(style !== undefined && { style }),
         ...(description !== undefined && { description }),
         ...(startDate !== undefined && { startDate: new Date(startDate) }),
         ...(endDate !== undefined && { endDate: endDate ? new Date(endDate) : null }),

@@ -15,7 +15,8 @@ import { useSyncedState } from "@/lib/use-synced-state"
 import { BASE_PATH } from "@/lib/base-path"
 import { INACTIVE_LABEL } from "@/lib/planning"
 import { cn, formatLabel, formatTime } from "@/lib/utils"
-import type { Format } from "@prisma/client"
+import { styleLabel } from "@/lib/comp-styles"
+import type { CompStyle, Format } from "@prisma/client"
 import { ArrowLeft, ArrowLeftRight, ChevronDown, ChevronUp, ExternalLink, History, Moon, Pencil, Swords, Trophy } from "lucide-react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
@@ -33,6 +34,7 @@ interface Player extends StatusPlayer {
 }
 
 type FormatLine = StatLine & { format: Format }
+type StyleLine = StatLine & { style: CompStyle }
 
 // A tournament of the profile with everything needed to show and link it
 export interface CompView extends Omit<CompProfile, "maps" | "matches"> {
@@ -59,6 +61,7 @@ interface Props {
   player: Player
   total: StatLine
   formats: FormatLine[]
+  styles: StyleLine[]
   comps: CompView[]
   // The player also drove against us; those rounds are on the opponent profile
   hasOpponentProfile: boolean
@@ -98,21 +101,23 @@ function Table({ children }: { children: React.ReactNode }) {
   )
 }
 
-// One row per format: the placement only means something within a format
-function FormatTable({ formats }: { formats: FormatLine[] }) {
-  if (formats.length === 0) return <p className="text-xs text-fg-subtle">No rounds counted yet.</p>
+const formatRows = (formats: FormatLine[]) => formats.map((f) => ({ ...f, label: formatLabel(f.format) }))
+
+// One row per format (the placement only means something within a format) or per style
+function StatTable({ heading, rows }: { heading: string; rows: Array<StatLine & { label: string }> }) {
+  if (rows.length === 0) return <p className="text-xs text-fg-subtle">No rounds counted yet.</p>
   return (
     <Table>
       <thead>
         <tr className="border-b border-line bg-table-head">
-          <th className={FIRST_TH}>Format</th>
+          <th className={FIRST_TH}>{heading}</th>
           {["Played", "Avg place", "Pace", "Team", "Rank", "DNF", "Round W", "Round L"].map((h) => <th key={h} className={TH}>{h}</th>)}
         </tr>
       </thead>
       <tbody>
-        {formats.map((f) => (
-          <tr key={f.format} className="border-b border-table-rule last:border-0">
-            <td className={FIRST_TD}>{formatLabel(f.format)}</td>
+        {rows.map((f) => (
+          <tr key={f.label} className="border-b border-table-rule last:border-0">
+            <td className={FIRST_TD}>{f.label}</td>
             <td className={TD}>{f.roundsPlayed}</td>
             <td className={cn(TD, "font-mono")}>{avgPlace(f)}</td>
             <td className={cn(TD, "font-mono text-fg")}>{formatPacePct(f.pace.value)}</td>
@@ -236,7 +241,7 @@ function CompCard({ comp, initiallyOpen }: { comp: CompView; initiallyOpen: bool
               <p className="text-xs text-fg-subtle">
                 Pace {formatPacePct(comp.total.pace.value)} · {paceHint(comp.total.pace)}
               </p>
-              <FormatTable formats={comp.formats} />
+              <StatTable heading="Format" rows={formatRows(comp.formats)} />
             </section>
           )}
           {comp.maps.length > 0 && (
@@ -260,7 +265,7 @@ function CompCard({ comp, initiallyOpen }: { comp: CompView; initiallyOpen: bool
   )
 }
 
-export function PlayerProfileView({ player: initial, total, formats, comps, hasOpponentProfile, canManage, endurance, hasEndurance }: Props) {
+export function PlayerProfileView({ player: initial, total, formats, styles, comps, hasOpponentProfile, canManage, endurance, hasEndurance }: Props) {
   const router = useRouter()
   const [player, setPlayer] = useSyncedState(initial)
   const [dialog, setDialog] = useState<"name" | "move" | "history" | null>(null)
@@ -368,8 +373,16 @@ export function PlayerProfileView({ player: initial, total, formats, comps, hasO
             <p className="text-xs text-fg-subtle">
               Pace: average gap to the fastest time of the round (both teams), without DNFs. Seeding does not count.
             </p>
-            <FormatTable formats={formats} />
+            <StatTable heading="Format" rows={formatRows(formats)} />
           </section>
+
+          {styles.length > 0 && (
+            <section className="space-y-3">
+              <h2 className="text-lg font-semibold text-fg">By style</h2>
+              <p className="text-xs text-fg-subtle">The same over all tournaments of a style.{hasEndurance ? " Endurance races are listed on their own below." : ""}</p>
+              <StatTable heading="Style" rows={styles.map((s) => ({ ...s, label: styleLabel(s.style) }))} />
+            </section>
+          )}
 
           <section className="space-y-3">
             <h2 className="text-lg font-semibold text-fg">Tournaments</h2>

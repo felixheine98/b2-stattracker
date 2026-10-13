@@ -3,7 +3,7 @@ import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
 import { NextResponse } from "next/server"
 import { z } from "zod"
-import { Format } from "@prisma/client"
+import { CompStyle, Format } from "@prisma/client"
 import { canManage } from "@/lib/roles"
 import { isValidDay } from "@/lib/player-status"
 import { DEFAULT_STAGE_PLAN, planStageChanges } from "@/lib/stages"
@@ -31,6 +31,8 @@ const stagesSchema = z.object({
 const createSchema = z.object({
   name: z.string().min(1),
   formats: z.array(z.nativeEnum(Format)).min(1, "Select at least one format"),
+  // Required: every tournament has exactly one style
+  style: z.nativeEnum(CompStyle, { message: "Select a style" }),
   description: z.string().nullable().optional(),
   // Required: the start day decides who counts as member or guest in this tournament
   startDate: z.string().refine(isValidDay, "A valid start date is required"),
@@ -53,6 +55,7 @@ export async function POST(req: Request) {
     data: {
       name: parsed.data.name,
       formats: parsed.data.formats,
+      style: parsed.data.style,
       description: parsed.data.description ?? null,
       startDate: new Date(parsed.data.startDate),
       endDate: parsed.data.endDate ? new Date(parsed.data.endDate) : null,

@@ -17,15 +17,18 @@ import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Dialog, DialogTitle } from "@/components/ui/dialog"
 import { Badge } from "@/components/ui/badge"
-import { Plus, Trophy, ChevronRight } from "lucide-react"
-import { formatLabel } from "@/lib/utils"
-import type { Format } from "@prisma/client"
+import { Select } from "@/components/ui/select"
+import { Plus, Timer, Trophy, ChevronRight } from "lucide-react"
+import { cn, formatLabel } from "@/lib/utils"
+import { STYLE_ORDER, filterByStyle, styleLabel, styleParam, stylesInUse } from "@/lib/comp-styles"
+import type { CompStyle, Format } from "@prisma/client"
 
 interface Tournament {
   id: string
   slug?: string | null
   name: string
   formats: Format[]
+  style: CompStyle
   description?: string | null
   startDate?: Date | null
   endDate?: Date | null
@@ -38,7 +41,8 @@ function formatBadgeVariant(format: Format): "primary" | "secondary" {
   return format === "TIME_ATTACK_10" ? "primary" : "secondary"
 }
 
-export function TournamentsView({ tournaments: initial, canManage, isAdmin }: { tournaments: Tournament[]; canManage: boolean; isAdmin: boolean }) {
+// style: the style the list is narrowed to (?style=…), null for all tournaments
+export function TournamentsView({ tournaments: initial, style, canManage, isAdmin }: { tournaments: Tournament[]; style: CompStyle | null; canManage: boolean; isAdmin: boolean }) {
   const router = useRouter()
   const [tournaments, setTournaments] = useSyncedState(initial)
   const [showForm, setShowForm] = useState(false)
@@ -46,6 +50,8 @@ export function TournamentsView({ tournaments: initial, canManage, isAdmin }: { 
   const [loading, setLoading] = useState(false)
   const [formats, setFormats] = useState<Format[]>([])
   const [stagePlan, setStagePlan] = useState(DEFAULT_STAGE_PLAN)
+  const shown = filterByStyle(tournaments, style)
+  const styles = stylesInUse(tournaments)
 
   function openForm() {
     setFormats([])
@@ -69,6 +75,7 @@ export function TournamentsView({ tournaments: initial, canManage, isAdmin }: { 
       body: JSON.stringify({
         name: form.get("name"),
         formats,
+        style: form.get("style"),
         description: form.get("description") || null,
         startDate: form.get("startDate") || null,
         endDate: form.get("endDate") || null,
@@ -85,6 +92,8 @@ export function TournamentsView({ tournaments: initial, canManage, isAdmin }: { 
     setTournaments((t) => [{ ...data, _count: { matches: 0 } }, ...t])
     setShowForm(false)
     router.push(tournamentPath(data))
+    // A first tournament of a style adds it to the sidebar
+    router.refresh()
   }
 
   return (
@@ -92,10 +101,9 @@ export function TournamentsView({ tournaments: initial, canManage, isAdmin }: { 
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold text-fg">Tournaments</h1>
-          <p className="text-fg-muted text-sm mt-0.5">{tournaments.length} tournaments</p>
+          <p className="text-fg-muted text-sm mt-0.5">{shown.length} tournament{shown.length !== 1 ? "s" : ""}{style ? ` · ${styleLabel(style)}` : ""}</p>
         </div>
         <div className="flex flex-wrap gap-2">
-        {tournaments.some((t) => t.tfhRace) && <Link href="/tfh"><Button variant="outline">TFH driver totals</Button></Link>}
         {isAdmin && <Link href="/tfh-import"><Button variant="outline">Import TFH race</Button></Link>}
         {canManage && (
           <Button onClick={openForm}>
@@ -106,23 +114,59 @@ export function TournamentsView({ tournaments: initial, canManage, isAdmin }: { 
         </div>
       </div>
 
-      {tournaments.length === 0 ? (
+      {styles.length > 0 && (
+        <nav aria-label="Style" className="flex flex-wrap gap-2">
+          {[null, ...styles].map((s) => (
+            <Link
+              key={s ?? "all"}
+              href={s ? `/tournaments?style=${styleParam(s)}` : "/tournaments"}
+              aria-current={s === style ? "page" : undefined}
+              className={cn(
+                "rounded-full border px-3 py-1 text-sm font-medium transition-colors",
+                s === style ? "border-brand/30 bg-brand/15 text-brand-ink" : "border-line-strong text-fg-muted hover:bg-raised hover:text-fg"
+              )}
+            >
+              {s ? styleLabel(s) : "All"}
+            </Link>
+          ))}
+        </nav>
+      )}
+
+      {style === "ENDURANCE" && shown.some((t) => t.tfhRace) && (
+        <Link href="/tfh" className="block">
+          <Card className="border-brand/30 bg-brand/5 hover:border-brand/60 transition-colors cursor-pointer">
+            <CardContent className="flex items-center justify-between gap-3 py-4">
+              <div className="flex min-w-0 items-center gap-3">
+                <Timer size={22} className="shrink-0 text-brand-ink" />
+                <div className="min-w-0">
+                  <p className="font-semibold text-fg">TFH driver totals</p>
+                  <p className="text-sm text-fg-muted">All B2 drivers compared over {shown.filter((t) => t.tfhRace).length} TFH races: CPM per edition, drive time and checkpoints</p>
+                </div>
+              </div>
+              <ChevronRight size={18} className="shrink-0 text-fg-subtle" />
+            </CardContent>
+          </Card>
+        </Link>
+      )}
+
+      {shown.length === 0 ? (
         <Card>
           <CardContent className="py-12 text-center">
             <Trophy size={32} className="mx-auto text-fg-subtle mb-3" />
-            <p className="text-fg-muted text-sm">No tournaments yet. Create your first one.</p>
+            <p className="text-fg-muted text-sm">{tournaments.length === 0 ? "No tournaments yet. Create your first one." : "No tournaments of this style."}</p>
           </CardContent>
         </Card>
       ) : (
         <div className="grid gap-3 sm:grid-cols-2">
-          {tournaments.map((t) => (
+          {shown.map((t) => (
             <Link key={t.id} href={tournamentPath(t)}>
               <Card className="h-full hover:border-line-strong transition-colors cursor-pointer">
                 <CardHeader>
                   <div className="flex items-start justify-between gap-2">
                     <CardTitle className="text-base">{t.name}</CardTitle>
                     <div className="flex flex-wrap gap-1 justify-end shrink-0">
-                      {t.tfhRace && <Badge variant="primary">{t.tfhRace.kind === "24h" ? "24h endurance" : "12h RPG"}</Badge>}
+                      <Badge variant="purple">{styleLabel(t.style)}</Badge>
+                      {t.tfhRace && <Badge variant="primary">{t.tfhRace.kind === "24h" ? "24h" : "12h RPG"}</Badge>}
                       {t.formats.slice(0, 3).map((f, i) => (
                         <Badge key={i} variant={formatBadgeVariant(f)}>
                           {formatLabel(f)}
@@ -157,6 +201,13 @@ export function TournamentsView({ tournaments: initial, canManage, isAdmin }: { 
           <div className="space-y-1.5">
             <Label htmlFor="name">Name</Label>
             <Input id="name" name="name" placeholder="Spring Cup 2025" required />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="style">Style</Label>
+            <Select id="style" name="style" defaultValue={style ?? ""} required>
+              <option value="" disabled>Select a style</option>
+              {STYLE_ORDER.map((s) => <option key={s} value={s}>{styleLabel(s)}</option>)}
+            </Select>
           </div>
           <div className="space-y-1.5">
             <Label>Format sequence</Label>

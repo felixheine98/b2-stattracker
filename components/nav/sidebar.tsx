@@ -2,9 +2,9 @@
 
 import { BASE_PATH } from "@/lib/base-path"
 import Link from "next/link"
-import { usePathname } from "next/navigation"
+import { usePathname, useSearchParams } from "next/navigation"
 import { cn } from "@/lib/utils"
-import { KeyRound, LogOut, Moon, Search, ShieldCheck, Smartphone, Sun, PanelLeftClose, PanelLeftOpen } from "lucide-react"
+import { ChevronDown, KeyRound, LogOut, Moon, Search, ShieldCheck, Smartphone, Sun, PanelLeftClose, PanelLeftOpen } from "lucide-react"
 import { openSearch } from "@/components/search/search-dialog"
 import { isActiveItem, navItems, profileItem } from "./nav-items"
 import { useState, useSyncExternalStore } from "react"
@@ -12,6 +12,8 @@ import { ChangePasswordDialog } from "./change-password-dialog"
 import { TwoFactorDialog } from "./two-factor-dialog"
 import { toggleTheme } from "./theme-toggle"
 import { signOut } from "next-auth/react"
+import { parseStyle, styleLabel, styleParam } from "@/lib/comp-styles"
+import type { CompStyle } from "@prisma/client"
 
 // Whether the sidebar is collapsed to its icons, remembered per browser
 const COLLAPSED_KEY = "sidebar-collapsed"
@@ -31,10 +33,16 @@ interface SidebarProps {
   role: string
   // Address of the signed-in player's own profile; null for an account without a player
   profileHref: string | null
+  // The styles that have tournaments, listed below "Tournaments" to narrow the list
+  styles: CompStyle[]
 }
 
-export function Sidebar({ userName, role, profileHref }: SidebarProps) {
+export function Sidebar({ userName, role, profileHref, styles }: SidebarProps) {
   const pathname = usePathname()
+  const shownStyle = parseStyle(useSearchParams().get("style") ?? undefined)
+  // The styles are open while a tournament page is shown, unless opened or closed by hand
+  const [stylesOpen, setStylesOpen] = useState<boolean | null>(null)
+  const showStyles = stylesOpen ?? pathname.startsWith("/tournaments")
   const canSeeAccounts = role === "ADMIN" || role === "MANAGER"
   const collapsed = useSyncExternalStore(subscribeCollapsed, () => localStorage.getItem(COLLAPSED_KEY) === "1", () => false)
 
@@ -85,23 +93,61 @@ export function Sidebar({ userName, role, profileHref }: SidebarProps) {
             </>
           )}
         </button>
-        {[...navItems, ...(profileHref ? [{ href: profileHref, ...profileItem }] : [])].map(({ href, label, icon: Icon }) => (
-          <Link
-            key={href}
-            href={href}
-            title={collapsed ? label : undefined}
-            className={cn(
-              "flex items-center gap-3 rounded-md py-2 text-sm font-medium transition-colors",
-              collapsed ? "justify-center px-0" : "px-3",
-              isActiveItem(pathname, href, profileHref)
-                ? "bg-brand/10 text-brand-ink"
-                : "text-fg-muted hover:bg-raised hover:text-fg"
-            )}
-          >
-            <Icon size={16} className="shrink-0" />
-            {!collapsed && label}
-          </Link>
-        ))}
+        {[...navItems, ...(profileHref ? [{ href: profileHref, ...profileItem }] : [])].map(({ href, label, icon: Icon }) => {
+          const hasStyles = href === "/tournaments" && !collapsed && styles.length > 0
+          return (
+            <div key={href}>
+              <div className="relative">
+                <Link
+                  href={href}
+                  title={collapsed ? label : undefined}
+                  className={cn(
+                    "flex items-center gap-3 rounded-md py-2 text-sm font-medium transition-colors",
+                    collapsed ? "justify-center px-0" : "px-3",
+                    hasStyles && "pr-9",
+                    isActiveItem(pathname, href, profileHref)
+                      ? "bg-brand/10 text-brand-ink"
+                      : "text-fg-muted hover:bg-raised hover:text-fg"
+                  )}
+                >
+                  <Icon size={16} className="shrink-0" />
+                  {!collapsed && label}
+                </Link>
+                {hasStyles && (
+                  <button
+                    type="button"
+                    onClick={() => setStylesOpen(!showStyles)}
+                    aria-expanded={showStyles}
+                    aria-label={showStyles ? "Hide styles" : "Show styles"}
+                    className="absolute right-1 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-md text-fg-muted hover:bg-raised hover:text-fg"
+                  >
+                    <ChevronDown size={14} className={cn("transition-transform", showStyles && "rotate-180")} />
+                  </button>
+                )}
+              </div>
+              {hasStyles && showStyles && (
+                <div className="ml-5 mt-0.5 space-y-0.5 border-l border-line pl-2">
+                  {[null, ...styles].map((style) => {
+                    const active = pathname === "/tournaments" && style === shownStyle
+                    return (
+                      <Link
+                        key={style ?? "all"}
+                        href={style ? `/tournaments?style=${styleParam(style)}` : "/tournaments"}
+                        aria-current={active ? "page" : undefined}
+                        className={cn(
+                          "block rounded-md px-3 py-1.5 text-sm transition-colors",
+                          active ? "font-medium text-brand-ink" : "text-fg-muted hover:bg-raised hover:text-fg"
+                        )}
+                      >
+                        {style ? styleLabel(style) : "All"}
+                      </Link>
+                    )
+                  })}
+                </div>
+              )}
+            </div>
+          )
+        })}
 
         {canSeeAccounts && (
           <>

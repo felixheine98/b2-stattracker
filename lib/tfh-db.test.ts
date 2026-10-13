@@ -38,6 +38,13 @@ describe.skipIf(process.env.TFH_DB_TESTS !== "1")("TFH archive with PostgreSQL",
     expect(await getTfhPlayerResults("no-participation", client)).toEqual([])
     expect(await isTfhTournament(saved.tournamentId, client)).toBe(true)
   })
+  it("archives every race as an endurance tournament", async () => {
+    const f = await fixture()
+    const preview = await previewTfhImport({ url: f.url }, "admin", client, f.fetcher)
+    const saved = await saveTfhImport({ draftId: preview.draftId, assignments: preview.assignments.map(a => ({ accountId: a.accountId, playerId: a.playerId! })) }, "admin", client)
+    expect((await getTfhRace(saved.tournamentId, client))?.tournament.style).toBe("ENDURANCE")
+  })
+
   it("lists the results of the B2 drivers of every archived edition for the comparison over all editions", async () => {
     const saved: Array<{ player: { id: string }; tournamentId: string }> = []
     for (const event of [20, 21]) {

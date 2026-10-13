@@ -1,7 +1,8 @@
 // Everything a player's profile page shows about their rounds for our team: lifetime stats,
 // and per tournament the stats, the maps and the matches. Seeding matches are left out of the
 // stats like everywhere else; only their times count for the personal bests.
-import type { Format } from "@prisma/client"
+import type { CompStyle, Format } from "@prisma/client"
+import { STYLE_ORDER } from "./comp-styles"
 import { FORMAT_ORDER } from "./format-stats"
 import { addGap, emptyPace, finishTime, paceMs, pacePct, roundBest, type PaceSum } from "./pace"
 import { roundPlacements, roundScore } from "./round-score"
@@ -24,6 +25,7 @@ export interface ProfileMatch {
 
 export interface ProfileTournament {
   id: string
+  style: CompStyle
   lineups: Array<{ id: string; playerIds: string[] }>
 }
 
@@ -78,6 +80,8 @@ export interface CompProfile {
 export interface Profile {
   total: StatLine
   formats: Array<StatLine & { format: Format }>
+  // Over all comps of a style, only the styles with rounds of the player
+  styles: Array<StatLine & { style: CompStyle }>
   // In the order of the given tournaments
   comps: CompProfile[]
 }
@@ -112,18 +116,22 @@ function rankOf(value: number | null, values: number[]): number | null {
 const present = (value: number | null): value is number => value !== null
 
 export function buildProfile(playerId: string, tournaments: ProfileTournament[], matches: ProfileMatch[]): Profile {
-  // Sums of every player of ours, per scope: everything, a format, a tournament, a match
+  // Sums of every player of ours, per scope: everything, a format, a style, a tournament, a match
   const scopes = new Map<string, Map<string, Acc>>()
   // Likewise per map of a tournament
   const maps = new Map<string, Map<string, MapAcc>>()
   const drivenLineups = new Map<string, string[]>()
   const drivenMatches = new Map<string, string[]>()
 
+  const styleOf = new Map(tournaments.map((t) => [t.id, t.style]))
+
   for (const match of matches) {
     const tid = match.tournamentId
     const seeding = match.stage.type === "SEEDING"
+    const style = styleOf.get(tid)
     for (const sm of match.subMatches) {
       const keys = seeding ? [] : ["all", `f:${sm.format}`, `c:${tid}`, `c:${tid}|f:${sm.format}`, `m:${match.id}`]
+      if (!seeding && style) keys.push(`s:${style}`)
       for (const round of sm.rounds) {
         const outcome = roundScore(round.results)?.outcome
         const placements = roundPlacements(round.results)
@@ -215,5 +223,7 @@ export function buildProfile(playerId: string, tournaments: ProfileTournament[],
     })
   }
 
-  return { total: line("all"), formats: formatLines(""), comps }
+  const styles = STYLE_ORDER.map((style) => ({ style, ...line(`s:${style}`) })).filter((s) => s.roundsPlayed > 0)
+
+  return { total: line("all"), formats: formatLines(""), styles, comps }
 }

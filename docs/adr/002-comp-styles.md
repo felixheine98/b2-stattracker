@@ -1,6 +1,6 @@
 # Kategorisierung der Comps nach Style
 
-Status: Akzeptiert – gemeinsames Verständnis vom Nutzer bestätigt, Umsetzung läuft.
+Status: Akzeptiert – gemeinsames Verständnis vom Nutzer bestätigt, umgesetzt auf dem Branch `feat/comp-styles` und in Dev angewendet. Die Oberfläche ist noch nicht im Browser geprüft, Production noch nicht ausgerollt.
 
 ## Kontext
 
@@ -53,7 +53,8 @@ Keine.
 
 ## Konsequenzen
 
-- `Tournament` bekommt ein Style-Feld (Enum, Pflicht) samt Migration, die TFH-Rennen auf Endurance und die neun Runden-Comps über ihren Namen setzt. Sie läuft zuerst in Dev, in Production erst beim Rebuild. Trifft sie dort ein Turnier nicht, etwa ein neues oder umbenanntes, bricht sie ab und blockiert den Rollout, bis sie angepasst ist; vor dem Rebuild ist die Turnierliste der Production deshalb zu prüfen.
+- `Tournament` hat ein Pflichtfeld `style` (Enum `CompStyle`). Dev und Production gleichen ihr Schema beim Start per `prisma db push` ab, und das kann einer Tabelle mit Zeilen keine Pflichtspalte hinzufügen. Beide Start-Skripte führen deshalb vorher `prisma/migrations/20261013020000_add_comp_style/migration.sql` aus. Die Datei ist wiederholbar: Sie tut nichts, sobald die Spalte steht.
+- Die Datei setzt die TFH-Rennen auf Endurance und die neun Runden-Comps über ihren Namen, außerdem das von Hand angelegte „TFH 24h #5“ auf Endurance. Trifft sie ein Turnier nicht, bricht sie ab und ändert nichts. In Production heißt das: Der neu gebaute Container startet nicht, die Seite ist bis zur Korrektur nicht erreichbar. Vor dem Rebuild ist die Turnierliste der Production deshalb gegen die Datei zu prüfen.
 - „Tournaments“ ist der erste Navigationseintrag mit Unterpunkten; bei eingeklappter Sidebar und in der Bottom Bar gibt es sie nicht, dort filtert die Buttonreihe.
 - Die Profilberechnung (`lib/player-profile.ts`) bekommt eine Gruppierung nach Style neben der nach Format.
 - Die Trennung von 24h und 12h in den TFH-Fahrersummen bleibt unberührt, obwohl beide Endurance sind.

@@ -2,6 +2,7 @@ import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
 import { playerPath } from "@/lib/paths"
 import { resolvePlayer } from "@/lib/slugs-db"
+import { stylesInUse } from "@/lib/comp-styles"
 import { redirect } from "next/navigation"
 import { MobileTabBar, MobileTopBar } from "@/components/nav/mobile-nav"
 import { Sidebar } from "@/components/nav/sidebar"
@@ -20,10 +21,13 @@ export default async function DashboardLayout({ children }: { children: React.Re
   const ownPlayer = self?.playerId ? await resolvePlayer(self.playerId) : null
   const profileHref = ownPlayer ? playerPath(ownPlayer) : null
 
+  // The styles that have tournaments: the entries below "Tournaments" in the sidebar
+  const styles = stylesInUse(await db.tournament.findMany({ distinct: ["style"], select: { style: true } }))
+
   // From 768px on the sidebar; on phones a top bar and a bottom bar around the page
   return (
     <div className="flex h-dvh overflow-hidden">
-      <Sidebar userName={userName} role={role} profileHref={profileHref} />
+      <Sidebar userName={userName} role={role} profileHref={profileHref} styles={styles} />
       <div className="flex min-w-0 flex-1 flex-col">
         <MobileTopBar userName={userName} role={role} profileHref={profileHref} />
         {/* Extra room on the left for the sidebar toggle */}

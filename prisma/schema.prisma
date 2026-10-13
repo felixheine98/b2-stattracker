@@ -156,12 +156,27 @@ model PlayerNameChange {
   @@unique([playerId, effectiveFrom])
 }
 
+// The driving style that marks a tournament as a whole; every tournament has exactly one
+// (see lib/comp-styles.ts and docs/adr/002-comp-styles.md)
+enum CompStyle {
+  TECH
+  FULLSPEED
+  DIRT
+  ICE
+  RPG
+  // Every TFH race, the 12h RPG ones too
+  ENDURANCE
+  // No style stands out in the map pool
+  MIXED
+}
+
 model Tournament {
   id          String    @id @default(cuid())
   name        String
   // Readable address part, derived from the name (see lib/slugs.ts); null until first computed
   slug        String?   @unique
   formats     Format[]
+  style       CompStyle
   description String?
   startDate   DateTime?
   endDate     DateTime?
