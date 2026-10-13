@@ -1,11 +1,12 @@
 # TODOS
 
+Ideen, die noch kein Todo sind: [ideen.md](ideen.md)
+
 ## Offen
 
 - [ ] als member -> in tourney übersicht der eigenen stats, danach kann man sich durch die stats durchklicken
 - [ ] validierung von importierten daten zu eingegebenen daten (match) -> passt das gegner team etc
 - [ ] tournaments seite bei mehreren comps: bleibt eine einfache liste der turniere, anordnung prüfen wenn es mehr werden
-- [ ] lineup einteilung für einzelne matches bzw match days
 
 ## Teilweise erledigt
 
@@ -17,18 +18,23 @@
   - [x] pro tourney und pro abschnitt (week) auf dem dashboard, nach Ø platz
   - [ ] pro match
 
-- [ ] spieler-profile: eigene seite pro spieler (idee boris; gibt dem spielertab mehr zweck als nur spieler/gäste anlegen)
-  - [x] gespielte turniere (mit lineup, als member/gast)
-  - [x] kumulierte stats über alle comps (lifetime): pace, durchschnittsplatz pro format, pbs auf comp-maps; pro comp aufklappbar mit stats, maps und matches
-  - [x] erreichbar für alle über klick auf den namen (player page, stats-tabellen, lineup-kader)
-  - [x] eigener menüpunkt für eingeloggte user, der direkt zum eigenen profil führt
-  - [ ] seeding-bereich im profil (erst entscheiden, wie seeding-daten ins system kommen)
+## Unter Beobachtung
+
 - [ ] Lineup Builder
   - [x] gemeinsames erstellen für lineups, welches direkt in eine comp reingespeichert wird (Planung pro Comp: Verfügbarkeit, Varianten, Live-Session, Übernehmen)
   - [x] danach werden in dieser comp nur noch diese 4 lineups gezeigt bzw nur die spieler
 
+## Low Prio
+
+- [ ] spieler-profil: seeding-bereich mit seeding-stats (erst entscheiden, wie seeding-daten ins system kommen)
+
 ## Erledigt
 
+- [x] spieler-profile: eigene seite pro spieler (idee boris; gibt dem spielertab mehr zweck als nur spieler/gäste anlegen); der seeding-bereich steht unter Low Prio
+  - [x] gespielte turniere (mit lineup, als member/gast)
+  - [x] kumulierte stats über alle comps (lifetime): pace, durchschnittsplatz pro format, pbs auf comp-maps; pro comp aufklappbar mit stats, maps und matches
+  - [x] erreichbar für alle über klick auf den namen (player page, stats-tabellen, lineup-kader)
+  - [x] eigener menüpunkt für eingeloggte user, der direkt zum eigenen profil führt
 - [x] Dev-Umgebung durch orangefarbenes Favicon und Logo auf Desktop, Handy und Login-Seite erkennbar machen.
 
 - [x] TFH-Langstreckenarchiv: Admin-Import mit Vorschau für abgeschlossene 24h-/12h-RPG-Ausgaben, Gesamtwertung, historische B2-Lineups, Fahrerstatistiken und separater Profilabschnitt; [Bedienung](docs/tfh-import.md) und [Entscheidung](docs/adr/001-tfh-import.md)

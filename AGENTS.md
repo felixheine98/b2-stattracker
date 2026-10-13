@@ -54,4 +54,4 @@ On a computer a page is as wide as one of two classes from `globals.css` allows:
 
 # Todos
 
-`todos.md` is kept in three sections, in this order: `Offen` (open) at the top, `Teilweise erledigt` (partly done) below it, `Erledigt` (done) at the bottom. Whenever you add an item or change its status, move it to the matching section instead of leaving it in place. A partly done item lists its finished and open parts as sub-checkboxes.
+`todos.md` is kept in five sections, in this order: `Offen` (open) at the top, `Teilweise erledigt` (partly done) below it, `Unter Beobachtung` (built, being watched in use), `Low Prio`, and `Erledigt` (done) at the bottom. Its second line links to `ideen.md`, which collects ideas that are not todos yet. Whenever you add an item or change its status, move it to the matching section instead of leaving it in place. A partly done item lists its finished and open parts as sub-checkboxes.
