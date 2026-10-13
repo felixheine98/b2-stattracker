@@ -35,3 +35,7 @@ export function stylesInUse(tournaments: Array<{ style: CompStyle }>): CompStyle
 export function filterByStyle<T extends { style: CompStyle }>(tournaments: T[], style: CompStyle | null): T[] {
   return style ? tournaments.filter((t) => t.style === style) : tournaments
 }
+
+// An endurance race is not driven in rounds, so it has no formats; every other tournament
+// needs at least one to enter matches
+export const needsFormats = (style: CompStyle): boolean => style !== "ENDURANCE"

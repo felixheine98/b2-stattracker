@@ -6,6 +6,7 @@ import { NextResponse } from "next/server"
 import { z } from "zod"
 import { CompStyle, Format } from "@prisma/client"
 import { canManage } from "@/lib/roles"
+import { needsFormats } from "@/lib/comp-styles"
 import { isValidDay } from "@/lib/player-status"
 import { planStageChanges, sortStages, stageName } from "@/lib/stages"
 
@@ -36,7 +37,8 @@ export async function GET(_req: Request, { params }: Params) {
 
 const patchSchema = z.object({
   name: z.string().min(1).optional(),
-  formats: z.array(z.nativeEnum(Format)).min(1).optional(),
+  // May be empty for an endurance race only, see needsFormats
+  formats: z.array(z.nativeEnum(Format)).optional(),
   // The style can be changed but not removed
   style: z.nativeEnum(CompStyle, { message: "Select a style" }).optional(),
   description: z.string().nullable().optional(),
@@ -67,6 +69,13 @@ export async function PATCH(req: Request, { params }: Params) {
   }
 
   const { name, formats, style, description, startDate, endDate, stages } = parsed.data
+
+  if (formats !== undefined || style !== undefined) {
+    const current = await db.tournament.findUnique({ where: { id }, select: { style: true, formats: true } })
+    if (current && needsFormats(style ?? current.style) && (formats ?? current.formats).length === 0) {
+      return NextResponse.json({ error: "Select at least one format" }, { status: 400 })
+    }
+  }
 
   const existing = await db.stage.findMany({ where: { tournamentId: id }, include: { _count: { select: { matches: true } } } })
   const changes = stages

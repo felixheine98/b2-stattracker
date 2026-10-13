@@ -5,6 +5,7 @@ import { NextResponse } from "next/server"
 import { z } from "zod"
 import { CompStyle, Format } from "@prisma/client"
 import { canManage } from "@/lib/roles"
+import { needsFormats } from "@/lib/comp-styles"
 import { isValidDay } from "@/lib/player-status"
 import { DEFAULT_STAGE_PLAN, planStageChanges } from "@/lib/stages"
 
@@ -30,7 +31,8 @@ const stagesSchema = z.object({
 
 const createSchema = z.object({
   name: z.string().min(1),
-  formats: z.array(z.nativeEnum(Format)).min(1, "Select at least one format"),
+  // May be empty for an endurance race only, see needsFormats
+  formats: z.array(z.nativeEnum(Format)),
   // Required: every tournament has exactly one style
   style: z.nativeEnum(CompStyle, { message: "Select a style" }),
   description: z.string().nullable().optional(),
@@ -49,6 +51,9 @@ export async function POST(req: Request) {
   const parsed = createSchema.safeParse(body)
   if (!parsed.success) {
     return NextResponse.json({ error: parsed.error.issues[0].message }, { status: 400 })
+  }
+  if (needsFormats(parsed.data.style) && parsed.data.formats.length === 0) {
+    return NextResponse.json({ error: "Select at least one format" }, { status: 400 })
   }
 
   const tournament = await db.tournament.create({

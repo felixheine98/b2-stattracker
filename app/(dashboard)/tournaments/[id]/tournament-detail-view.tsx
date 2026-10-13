@@ -25,7 +25,7 @@ import {
   Plus, ArrowLeft, Calendar, ChevronRight, ClipboardList, Swords, Trash2, Pencil, X, User, Users, BarChart2,
 } from "lucide-react"
 import { cn, formatLabel } from "@/lib/utils"
-import { STYLE_ORDER, styleLabel, styleParam } from "@/lib/comp-styles"
+import { STYLE_ORDER, needsFormats, styleLabel, styleParam } from "@/lib/comp-styles"
 import { Select } from "@/components/ui/select"
 import type { CompStyle, Format } from "@prisma/client"
 import { buildAggregates, matchesOfFormats, matchesOfLineups, matchesOfStages, type StatsMatch } from "@/lib/format-stats"
@@ -209,8 +209,8 @@ export function TournamentDetailView({ tournament: initial, players, statsMatche
   // --- Handlers ---
 
   async function handleEditSave() {
-    if (!editName.trim() || editFormats.length === 0 || !editStartDate) {
-      setEditError("Name, start date and at least one format are required.")
+    if (!editName.trim() || !editStartDate || (editFormats.length === 0 && needsFormats(editStyle))) {
+      setEditError(needsFormats(editStyle) ? "Name, start date and at least one format are required." : "Name and start date are required.")
       return
     }
     setEditError("")
@@ -668,7 +668,7 @@ export function TournamentDetailView({ tournament: initial, players, statsMatche
             </Select>
           </div>
           <div className="space-y-1.5">
-            <Label>Formats</Label>
+            <Label>Formats{!needsFormats(editStyle) && <span className="text-fg-subtle"> (optional for endurance)</span>}</Label>
             <FormatBuilder value={editFormats} onChange={setEditFormats} />
           </div>
           <div className="space-y-1.5">

@@ -20,7 +20,7 @@ import { Badge } from "@/components/ui/badge"
 import { Select } from "@/components/ui/select"
 import { Plus, Timer, Trophy, ChevronRight } from "lucide-react"
 import { cn, formatLabel } from "@/lib/utils"
-import { STYLE_ORDER, filterByStyle, styleLabel, styleParam, stylesInUse } from "@/lib/comp-styles"
+import { STYLE_ORDER, filterByStyle, needsFormats, styleLabel, styleParam, stylesInUse } from "@/lib/comp-styles"
 import type { CompStyle, Format } from "@prisma/client"
 
 interface Tournament {
@@ -50,11 +50,13 @@ export function TournamentsView({ tournaments: initial, style, canManage, isAdmi
   const [loading, setLoading] = useState(false)
   const [formats, setFormats] = useState<Format[]>([])
   const [stagePlan, setStagePlan] = useState(DEFAULT_STAGE_PLAN)
+  const [formStyle, setFormStyle] = useState<CompStyle | "">("")
   const shown = filterByStyle(tournaments, style)
   const styles = stylesInUse(tournaments)
 
   function openForm() {
     setFormats([])
+    setFormStyle(style ?? "")
     setStagePlan(DEFAULT_STAGE_PLAN)
     setError("")
     setShowForm(true)
@@ -62,7 +64,7 @@ export function TournamentsView({ tournaments: initial, style, canManage, isAdmi
 
   async function handleCreate(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
-    if (formats.length === 0) {
+    if (formats.length === 0 && (!formStyle || needsFormats(formStyle))) {
       setError("Add at least one format to the sequence")
       return
     }
@@ -75,7 +77,7 @@ export function TournamentsView({ tournaments: initial, style, canManage, isAdmi
       body: JSON.stringify({
         name: form.get("name"),
         formats,
-        style: form.get("style"),
+        style: formStyle,
         description: form.get("description") || null,
         startDate: form.get("startDate") || null,
         endDate: form.get("endDate") || null,
@@ -203,13 +205,13 @@ export function TournamentsView({ tournaments: initial, style, canManage, isAdmi
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="style">Style</Label>
-            <Select id="style" name="style" defaultValue={style ?? ""} required>
+            <Select id="style" name="style" value={formStyle} onChange={(e) => setFormStyle(e.target.value as CompStyle)} required>
               <option value="" disabled>Select a style</option>
               {STYLE_ORDER.map((s) => <option key={s} value={s}>{styleLabel(s)}</option>)}
             </Select>
           </div>
           <div className="space-y-1.5">
-            <Label>Format sequence</Label>
+            <Label>Format sequence{formStyle && !needsFormats(formStyle) && <span className="text-fg-subtle"> (optional for endurance)</span>}</Label>
             <FormatBuilder value={formats} onChange={setFormats} />
           </div>
           <div className="space-y-1.5">

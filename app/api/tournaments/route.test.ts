@@ -55,6 +55,31 @@ describe.skipIf(process.env.DB_TESTS !== "1")("style of a tournament with Postgr
     expect(await stored(id)).toBe("MIXED")
   })
 
+  it("creates an endurance tournament without formats, which only the others need", async () => {
+    const res = await post({ ...comp({ style: "ENDURANCE" }), formats: [] })
+    expect(res.status).toBe(201)
+    expect((await client.tournament.findUniqueOrThrow({ where: { id: (await res.json()).id } })).formats).toEqual([])
+    const refused = await post({ ...comp({ style: "TECH" }), formats: [] })
+    expect(refused.status).toBe(400)
+    expect((await refused.json()).error).toBe("Select at least one format")
+  })
+
+  it("lets only an endurance tournament drop its formats on a change", async () => {
+    const formats = async (id: string) => (await client.tournament.findUniqueOrThrow({ where: { id } })).formats
+    const endurance = (await (await post(comp({ style: "ENDURANCE" }))).json()).id
+    expect((await patch(endurance, { formats: [] })).status).toBe(200)
+    expect(await formats(endurance)).toEqual([])
+    // Without formats it cannot become a tournament of another style
+    expect((await patch(endurance, { style: "TECH" })).status).toBe(400)
+    expect(await stored(endurance)).toBe("ENDURANCE")
+    expect((await patch(endurance, { style: "TECH", formats: ["ROUND_1V1"] })).status).toBe(200)
+
+    const tech = (await (await post(comp({ style: "TECH" }))).json()).id
+    expect((await patch(tech, { formats: [] })).status).toBe(400)
+    expect(await formats(tech)).toEqual(["ROUND_3V3"])
+    expect((await patch(tech, { style: "ENDURANCE", formats: [] })).status).toBe(200)
+  })
+
   it("refuses an unknown style or none on a change", async () => {
     const { id } = await (await post(comp({ style: "TECH" }))).json()
     expect((await patch(id, { style: "SNOW" })).status).toBe(400)

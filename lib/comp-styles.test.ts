@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { filterByStyle, parseStyle, styleLabel, styleParam, stylesInUse } from "./comp-styles"
+import { filterByStyle, needsFormats, parseStyle, styleLabel, styleParam, stylesInUse } from "./comp-styles"
 
 describe("parseStyle", () => {
   it("reads the style from the address, whatever its case", () => {
@@ -44,5 +44,13 @@ describe("styleLabel and styleParam", () => {
     expect(styleLabel("FULLSPEED")).toBe("Fullspeed")
     expect(styleParam("FULLSPEED")).toBe("fullspeed")
     expect(parseStyle(styleParam("ENDURANCE"))).toBe("ENDURANCE")
+  })
+})
+
+describe("needsFormats", () => {
+  it("asks every tournament for formats but an endurance race", () => {
+    expect(needsFormats("ENDURANCE")).toBe(false)
+    expect(needsFormats("RPG")).toBe(true)
+    expect(needsFormats("MIXED")).toBe(true)
   })
 })
