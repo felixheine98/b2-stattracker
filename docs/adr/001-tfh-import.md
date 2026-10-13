@@ -30,6 +30,8 @@ Bestätigt: Für B2-Fahrer werden neben Gesamtwerten die verfügbaren einzelnen 
 
 Bestätigt: Ein erneuter Import derselben TFH-Ausgabe aktualisiert das vorhandene Rennen statt eine Kopie anzulegen. Die Vorschau zeigt Änderungen, die vor dem Speichern bestätigt werden. Bestätigte Spielerzuordnungen und B2-Auswahl werden übernommen und bleiben korrigierbar. Ein wiederholter Import darf keine doppelten Rennen oder Leistungen erzeugen.
 
+Bestätigt (13.10.2026): Gibt es für eine noch nicht importierte Ausgabe bereits ein von Hand angelegtes Turnier, legt der erste Import das Rennen in diesem Turnier ab statt ein zweites anzulegen. Erkannt wird es am Namen des Rennens (Groß- und Kleinschreibung egal) und daran, dass es noch kein TFH-Rennen trägt; tragen mehrere Turniere den Namen, wird keines übernommen und ein neues angelegt. Name, Zeitraum und Style kommen danach von TFH, Beschreibung und vorhandene Lineups bleiben. Die Vorschau nennt das Turnier vor dem Speichern.
+
 Bestätigt: Jedes B2-Team erhält pro TFH-Ausgabe ein eigenes Turnier-Lineup mit damaligem Teamnamen und damaliger Besetzung, verknüpft mit den bestehenden Spielerprofilen. Gleichnamige Teams verschiedener Ausgaben werden nicht zu einem dauerhaften Lineup zusammengeführt.
 
 Bestätigt: Spielerprofile fassen die Anzahl der TFH-Teilnahmen und die gesamte Fahrzeit zusammen. CPM und Rundenzeiten werden je Rennen angezeigt und verglichen; es gibt keine gemeinsame Leistungsrangliste über unterschiedliche TFH-Ausgaben. Die bisherigen Rundenstatistiken bleiben davon getrennt.

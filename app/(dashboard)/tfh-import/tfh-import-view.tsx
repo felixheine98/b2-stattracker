@@ -105,6 +105,7 @@ export function TfhImportView({ players, initialUrl }: { players: Array<{ id: st
           </div>
         })}
       </CardContent></Card>}
+      {preview.adoptedTournament && <p className="rounded-lg border border-line bg-surface p-3 text-sm text-fg-muted">The tournament <span className="font-medium text-fg">{preview.adoptedTournament.name}</span> already exists. The race is stored in it instead of a second tournament; its lineups stay as they are.</p>}
       {preview.existingTournamentId && <Card><CardHeader><CardTitle>Changes to the archive ({preview.changes.length})</CardTitle></CardHeader><CardContent>
         {preview.changes.length ? <ul className="max-h-72 space-y-2 overflow-y-auto text-sm">{preview.changes.map((c, i) => <li key={i} className="break-words"><span className="font-medium">{c.label}</span><span className="block text-fg-muted">{c.before} → {c.after}</span></li>)}</ul> : <p className="text-sm text-fg-muted">No source-result changes. You can still correct the driver assignments.</p>}
       </CardContent></Card>}

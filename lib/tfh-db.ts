@@ -18,8 +18,17 @@ export interface TfhAssignment {
 }
 export interface TfhPreview {
   draftId: string; race: TfhRaceData; existingTournamentId: string | null
+  // A tournament created by hand for this race, which a first import fills instead of adding a second one
+  adoptedTournament: { id: string; name: string } | null
   assignments: Array<{ accountId: string; sourceName: string; playerId: string | null }>
   changes: Array<{ label: string; before: string; after: string }>
+}
+
+// The tournament somebody created by hand for a race that is not archived yet: the only one
+// without a TFH race that carries the name of the race. With several candidates none is taken.
+async function tournamentByHand(race: { name: string }, database: Pick<PrismaClient, "tournament">) {
+  const candidates = await database.tournament.findMany({ where: { tfhRace: null, name: { equals: race.name.trim(), mode: "insensitive" } }, select: { id: true, name: true } })
+  return candidates.length === 1 ? candidates[0] : null
 }
 
 export async function previewTfhImport(input: { url: string; selectedTeamIds?: number[] }, ownerId: string, database: PrismaClient = db, fetcher: typeof fetch = fetch): Promise<TfhPreview> {
@@ -61,7 +70,7 @@ export async function previewTfhImport(input: { url: string; selectedTeamIds?: n
   }
   await database.tfhImportDraft.deleteMany({ where: { expiresAt: { lt: new Date() } } })
   const draft = await database.tfhImportDraft.create({ data: { ownerId, sourceEventId: race.sourceEventId, baseRevision: existing?.revision ?? 0, payload: race as unknown as Prisma.InputJsonValue, expiresAt: new Date(Date.now() + 30 * 60000) } })
-  return { draftId: draft.id, race, existingTournamentId: existing?.tournamentId ?? null, assignments, changes }
+  return { draftId: draft.id, race, existingTournamentId: existing?.tournamentId ?? null, adoptedTournament: existing ? null : await tournamentByHand(race, database), assignments, changes }
 }
 
 export async function saveTfhImport(input: { draftId: string; assignments: TfhAssignment[] }, ownerId: string, database: PrismaClient = db) {
@@ -93,7 +102,8 @@ export async function saveTfhImport(input: { draftId: string; assignments: TfhAs
     }
     for (const team of data.teams) if (new Set(team.drivers.map(d => players.get(d.accountId))).size !== team.drivers.length) throw new Error("Duplicate players in a B2 team. Check the assignments.")
     const tournamentData = { name: data.name, formats: [], style: "ENDURANCE" as const, startDate: new Date(data.startDate), endDate: new Date(data.endDate) }
-    const tournament = existing ? await tx.tournament.update({ where: { id: existing.tournamentId }, data: tournamentData }) : await tx.tournament.create({ data: tournamentData })
+    const tournamentId = existing?.tournamentId ?? (await tournamentByHand(data, tx))?.id
+    const tournament = tournamentId ? await tx.tournament.update({ where: { id: tournamentId }, data: tournamentData }) : await tx.tournament.create({ data: tournamentData })
     const raceData = { sourceUrl: data.sourceUrl, kind: data.kind, mapName: data.mapName, importedAt: new Date() }
     const race = existing ? await tx.tfhRace.update({ where: { id: existing.id }, data: { ...raceData, revision: { increment: 1 } } }) : await tx.tfhRace.create({ data: { ...raceData, sourceEventId: data.sourceEventId, tournamentId: tournament.id } })
     for (const [accountId, playerId] of players) await tx.tfhIdentity.upsert({ where: { raceId_accountId: { raceId: race.id, accountId } }, create: { raceId: race.id, accountId, playerId }, update: { playerId } })

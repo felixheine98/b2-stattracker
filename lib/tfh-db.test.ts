@@ -63,6 +63,23 @@ describe.skipIf(process.env.TFH_DB_TESTS !== "1")("TFH archive with PostgreSQL",
       }))
     }
   })
+  it("stores a race in the tournament that was created by hand for it instead of a second one", async () => {
+    const f = await fixture(30)
+    const byHand = await client.tournament.create({ data: { name: "tfh 24h #4", formats: [], style: "ENDURANCE", description: "Planned ahead" } })
+    const preview = await previewTfhImport({ url: f.url }, "admin", client, f.fetcher)
+    expect(preview.adoptedTournament).toEqual({ id: byHand.id, name: "tfh 24h #4" })
+    const saved = await saveTfhImport({ draftId: preview.draftId, assignments: preview.assignments.map(a => ({ accountId: a.accountId, playerId: a.playerId! })) }, "admin", client)
+    expect(saved.tournamentId).toBe(byHand.id)
+    expect((await getTfhRace(byHand.id, client))?.tournament).toMatchObject({ name: "TFH 24h #4", description: "Planned ahead" })
+  })
+  it("adds a tournament of its own when several created by hand carry the name of the race", async () => {
+    const f = await fixture(31)
+    const byHand = [await client.tournament.create({ data: { name: "TFH 24h #4", formats: [], style: "ENDURANCE" } }), await client.tournament.create({ data: { name: "TFH 24h #4", formats: [], style: "ENDURANCE" } })]
+    const preview = await previewTfhImport({ url: f.url }, "admin", client, f.fetcher)
+    expect(preview.adoptedTournament).toBeNull()
+    const saved = await saveTfhImport({ draftId: preview.draftId, assignments: preview.assignments.map(a => ({ accountId: a.accountId, playerId: a.playerId! })) }, "admin", client)
+    expect(byHand.map(t => t.id)).not.toContain(saved.tournamentId)
+  })
   it("requires the preview owner and all distinct driver assignments before storing anything", async () => {
     const f = await fixture(10)
     const preview = await previewTfhImport({ url: f.url }, "admin", client, f.fetcher)

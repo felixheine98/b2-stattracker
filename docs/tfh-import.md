@@ -6,6 +6,7 @@ Ein Admin öffnet in **Tournaments → Import TFH race** den Import. Die erste V
 2. Die B2-Auswahl kontrollieren. Alle Teams werden mit Platzierung und Checkpoints archiviert, ausgewählte Teams zusätzlich mit Fahrerstatistiken. Nach einer geänderten Auswahl **Load details for selected teams** drücken.
 3. Alle Fahrerzuordnungen prüfen. Bekannte Account-IDs sind vorausgewählt. Unbekannte Fahrer einem bestehenden Profil zuordnen oder mit Namen und bewusst gewähltem Status neu anlegen. Der Status gilt zunächst von Anfang an; spätere Änderungen können auf dem Profil datiert werden.
 4. Bei einem bereits importierten Rennen die Änderungen prüfen. **Confirm and import race** bzw. **Confirm and update race** speichert den geprüften Vorschau-Stand gemeinsam.
+5. Gibt es das Rennen schon als von Hand angelegtes Turnier mit demselben Namen (etwa für die Planung), nennt die Vorschau dieses Turnier und der Import legt das Rennen dort ab, statt ein zweites Turnier anzulegen. Heißt das Turnier anders, vorher umbenennen.
 
 Die Vorschau gilt 30 Minuten. Bei Ladefehlern oder zwischenzeitlichen Änderungen erneut laden; vorhandene Ergebnisse bleiben unverändert. Importierte Ergebniswerte lassen sich ausschließlich über einen erneuten Import ändern.
 
