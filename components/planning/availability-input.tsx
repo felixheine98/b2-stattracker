@@ -35,6 +35,8 @@ interface Props {
   answer: Answer
   // The player does not drive competitions as a rule: taking an answer back leads to "Inactive", not to open
   inactive?: boolean
+  // The caller shows "Inactive" next to the player's name, so the answers stay in one line-up
+  inactiveNextToName?: boolean
   // undefined: the note is not shown to this viewer
   note?: string | null
   levels: LevelRef[]
@@ -49,7 +51,7 @@ interface Props {
 const FIXED: Availability[] = ["FIX", "MAYBE"]
 
 // The availability of one player: the levels as buttons, and the note next to them
-export function AvailabilityInput({ tournamentId, playerId, answer, inactive, note, levels, editable, onSaved, mutate, className }: Props) {
+export function AvailabilityInput({ tournamentId, playerId, answer, inactive, inactiveNextToName, note, levels, editable, onSaved, mutate, className }: Props) {
   // What the user chose here; shown at once and kept, the page is not reloaded for it
   const [pending, setPending] = useState<Answer | null>(null)
   const [noteText, setNoteText] = useState(note ?? "")
@@ -111,11 +113,6 @@ export function AvailabilityInput({ tournamentId, playerId, answer, inactive, no
   return (
     <div className={cn("flex min-w-0 flex-col gap-2 md:flex-row md:items-center", className)}>
       <div className="flex flex-wrap gap-1.5">
-        {editable && shown === "INACTIVE" && (
-          <span title="Does not drive competitions as a rule. An answer for this tournament still counts." className={cn("whitespace-nowrap rounded-full border px-3 py-1 text-xs font-medium", answerColor("INACTIVE"))}>
-            {INACTIVE_LABEL}
-          </span>
-        )}
         {editable ? (
           options.map((o) => (
             <button
@@ -132,9 +129,12 @@ export function AvailabilityInput({ tournamentId, playerId, answer, inactive, no
             </button>
           ))
         ) : (
-          <span className={cn("whitespace-nowrap rounded-full border px-3 py-1 text-xs font-medium", answerColor(shown))}>
-            {answerLabel(shown, levels)}
-          </span>
+          // "Inactive" is not repeated here where the list already says it next to the name
+          !(inactiveNextToName && shown === "INACTIVE") && (
+            <span className={cn("whitespace-nowrap rounded-full border px-3 py-1 text-xs font-medium", answerColor(shown))}>
+              {answerLabel(shown, levels)}
+            </span>
+          )
         )}
       </div>
       {note !== undefined &&

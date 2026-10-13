@@ -74,6 +74,11 @@ export function PlanningView({ initial, ownPlayerId, userId, canManage }: Props)
       <PlayerAvatar player={row.player} />
       <span className="truncate text-sm font-medium text-fg">{row.player.name}</span>
       {row.guest && <GuestBadge />}
+      {row.answer === "INACTIVE" && (
+        <span title="Does not drive competitions as a rule. An answer for this tournament still counts." className="shrink-0 rounded-full border border-violet/40 bg-violet/15 px-1.5 py-px text-[10px] font-medium leading-4 text-violet">
+          {INACTIVE_LABEL}
+        </span>
+      )}
       {row.player.id === ownPlayerId && <span className="text-xs text-brand-ink">you</span>}
       {layout === "list" && canManage && !archived && row.guest && (
         <button
@@ -96,6 +101,7 @@ export function PlanningView({ initial, ownPlayerId, userId, canManage }: Props)
       playerId={row.player.id}
       answer={row.answer}
       inactive={row.inactive}
+      inactiveNextToName
       note={row.note}
       levels={levels}
       editable={!archived && (canManage || row.player.id === ownPlayerId)}
