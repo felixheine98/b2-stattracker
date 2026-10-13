@@ -1,5 +1,6 @@
 "use client"
 
+import { BrandLogo } from "@/components/brand-logo"
 import { BASE_PATH } from "@/lib/base-path"
 import { cn } from "@/lib/utils"
 import { ChevronDown, KeyRound, LogOut, Moon, Search, Smartphone, Sun } from "lucide-react"
@@ -29,8 +30,7 @@ export function MobileTopBar({ userName, role, profileHref }: Props) {
 
   return (
     <header className="relative z-20 flex items-center gap-2.5 border-b border-line bg-surface px-4 py-2 md:hidden">
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src={`${BASE_PATH}/b2-logo.svg?v=lion-20261011`} alt="" className="h-8 w-8 object-contain" />
+      <BrandLogo className="h-8 w-8 object-contain" />
       <span className="flex-1 text-base font-bold tracking-tight text-fg">B2 Stats</span>
       <button
         type="button"

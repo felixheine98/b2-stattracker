@@ -1,5 +1,6 @@
 "use client"
 
+import { BrandLogo } from "@/components/brand-logo"
 import { BASE_PATH } from "@/lib/base-path"
 import Link from "next/link"
 import { usePathname, useSearchParams } from "next/navigation"
@@ -69,8 +70,7 @@ export function Sidebar({ userName, role, profileHref, styles }: SidebarProps) {
         {collapsed ? <PanelLeftOpen size={16} /> : <PanelLeftClose size={16} />}
       </button>
       <div className={cn("flex items-center gap-3 py-4 border-b border-line", collapsed ? "justify-center px-2" : "px-5")}>
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={`${BASE_PATH}/b2-logo.svg?v=lion-20261011`} alt="" className={cn("object-contain", collapsed ? "h-9 w-9" : "h-11 w-11")} />
+        <BrandLogo className={cn("object-contain", collapsed ? "h-9 w-9" : "h-11 w-11")} />
         {!collapsed && <span className="font-bold text-fg text-xl tracking-tight">B2 Stats</span>}
       </div>
 

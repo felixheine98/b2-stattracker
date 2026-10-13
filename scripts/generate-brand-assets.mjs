@@ -13,7 +13,7 @@ async function main() {
   const png = (svg, width, height) => sharp(Buffer.from(svg), { density: 288 }).resize(width, height).png().toBuffer()
   const write = (name, buffer) => fs.writeFile(path.join(root, name), buffer)
 
-  await write("app/icon.svg", icon)
+  await write("public/icon.svg", icon)
   await write("public/b2-logo.png", await png(logo, 649, 1024))
   await write("public/icon-192.png", await png(icon, 192, 192))
   await write("public/icon-512.png", await png(icon, 512, 512))
@@ -21,25 +21,32 @@ async function main() {
   await write("app/apple-icon.png", await png(square(64, "#0C0B0A"), 180, 180))
 
   // ICO entries contain lossless PNG images at each browser favicon size.
-  const sizes = [16, 32, 48, 64]
-  const images = await Promise.all(sizes.map(size => png(icon, size, size)))
-  const header = Buffer.alloc(6 + sizes.length * 16)
-  header.writeUInt16LE(1, 2)
-  header.writeUInt16LE(sizes.length, 4)
-  let offset = header.length
-  sizes.forEach((size, index) => {
-    const entry = 6 + index * 16
-    header[entry] = size
-    header[entry + 1] = size
-    header.writeUInt16LE(1, entry + 4)
-    header.writeUInt16LE(32, entry + 6)
-    header.writeUInt32LE(images[index].length, entry + 8)
-    header.writeUInt32LE(offset, entry + 12)
-    offset += images[index].length
-  })
-  await write("app/favicon.ico", Buffer.concat([header, ...images]))
+  async function writeIco(svg, name) {
+    const sizes = [16, 32, 48, 64]
+    const images = await Promise.all(sizes.map(size => png(svg, size, size)))
+    const header = Buffer.alloc(6 + sizes.length * 16)
+    header.writeUInt16LE(1, 2)
+    header.writeUInt16LE(sizes.length, 4)
+    let offset = header.length
+    sizes.forEach((size, index) => {
+      const entry = 6 + index * 16
+      header[entry] = size
+      header[entry + 1] = size
+      header.writeUInt16LE(1, entry + 4)
+      header.writeUInt16LE(32, entry + 6)
+      header.writeUInt32LE(images[index].length, entry + 8)
+      header.writeUInt32LE(offset, entry + 12)
+      offset += images[index].length
+    })
+    await write(name, Buffer.concat([header, ...images]))
+    return images
+  }
+
+  const images = await writeIco(icon, "public/favicon.ico")
   await write("public/favicon-16.png", images[0])
   await write("public/favicon-32.png", images[1])
+  const devIcon = await fs.readFile(path.join(root, "public/icon-dev.svg"), "utf8")
+  await writeIco(devIcon, "public/favicon-dev.ico")
   console.log("Generated logo, SVG/ICO favicons, Apple icon and PWA icons.")
 }
 
