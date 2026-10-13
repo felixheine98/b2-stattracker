@@ -459,14 +459,6 @@ export function MatchDetailView({ match: initialMatch, allPlayers, guestTmIds, t
                 })}
               </p>
             )}
-            {performer && (
-              <p className="mt-1 flex flex-wrap items-center gap-x-1.5 text-sm text-fg-muted">
-                <Trophy size={13} className="shrink-0 text-brand-ink" />
-                Best performer:
-                <span className="font-medium text-fg"><PlayerName name={performer.name} currentName={performer.currentName} /></span>
-                <span className="text-xs text-fg-subtle">avg place {performer.avgPlace.toFixed(2)} · {performer.rounds} rounds</span>
-              </p>
-            )}
             {initialMatch.notes && <p className="text-fg-subtle text-sm mt-1 whitespace-pre-line break-words">{initialMatch.notes}</p>}
             {ecmUrl && (
               <a
@@ -513,6 +505,14 @@ export function MatchDetailView({ match: initialMatch, allPlayers, guestTmIds, t
                   Import whole match (CSV)
                 </Button>
               </div>
+            )}
+            {performer && (
+              <p className="mt-3 flex flex-wrap items-center gap-x-1.5 text-sm text-fg-muted">
+                <Trophy size={13} className="shrink-0 text-brand-ink" />
+                Best performer:
+                <span className="font-medium text-fg"><PlayerName name={performer.name} currentName={performer.currentName} /></span>
+                <span className="text-xs text-fg-subtle">avg place {performer.avgPlace.toFixed(2)} · {performer.rounds} rounds</span>
+              </p>
             )}
           </div>
           <div className="flex w-full flex-wrap items-center justify-end gap-3 sm:ml-auto sm:w-auto">
