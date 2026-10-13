@@ -28,6 +28,8 @@ Two setups run side by side:
 - Production (`docker-compose.yml`, served under `BASE_PATH`): a built image. Code changes only show up after `docker compose up -d --build`.
 - Dev (`docker-compose.dev.yml`, served under `DEV_BASE_PATH`, default `/stats-dev`): `next dev` on the mounted source with hot reload, and its own database, a copy of the production data. Schema changes are applied there on restart (`docker compose -f docker-compose.dev.yml restart app`), never to production.
 
+Every change goes to dev first. Production is only rebuilt after Felix has looked at the change in dev and confirmed it, each time anew: an earlier go-ahead does not cover the next change. The same holds for changes to the production data.
+
 # Mobile
 
 Every change to the interface has to work on phones as well as on desktop. Below 768px (`md`) the app uses its phone layout: bottom bar instead of the sidebar, full-screen dialogs, wide tables that scroll sideways or turn into cards.
