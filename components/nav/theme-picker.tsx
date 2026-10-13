@@ -10,6 +10,8 @@ import { currentThemeChoice, selectTheme, THEME_CHANGE_EVENT } from "./theme-tog
 const options: { value: ThemeChoice; label: string; description: string; bg: string; surface: string; fg: string }[] = [
   { value: "dark", label: "B2 Dark", description: "Classic dark with B2 yellow", bg: "#0e0b0b", surface: "#251f20", fg: "#f5f0f0" },
   { value: "light", label: "B2 Light", description: "Warm white with B2 colours", bg: "#f4f2ee", surface: "#ffffff", fg: "#1a1718" },
+  { value: "warm-light", label: "Warm Light", description: "Soft cream with warm surfaces and B2 blue", bg: "#f6efdf", surface: "#ede2ce", fg: "#33291f" },
+  { value: "b2-blue", label: "B2 Blue", description: "Bold team blue with yellow highlights", bg: "#00164f", surface: "#103da0", fg: "#f3f6ff" },
   { value: "midnight", label: "Midnight", description: "Deep navy with cool blue surfaces", bg: "#0b1224", surface: "#1b2942", fg: "#eef3fc" },
   { value: "oled", label: "OLED Black", description: "Pure black with subtle grey surfaces", bg: "#000000", surface: "#171717", fg: "#f5f5f5" },
   { value: "system", label: "Follow system", description: "B2 Light or Dark to match your device", bg: "#0e0b0b", surface: "#f4f2ee", fg: "#f5f0f0" },

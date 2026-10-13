@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest"
 import { resolveTheme, themeFromCookie } from "./theme"
 
 describe("themeFromCookie", () => {
-  it.each(["midnight", "oled", "system"])("remembers the %s choice", (choice) => {
+  it.each(["midnight", "oled", "warm-light", "b2-blue", "system"])("remembers the %s choice", (choice) => {
     expect(themeFromCookie(choice)).toBe(choice)
   })
   it("is the light theme only when it was chosen", () => {

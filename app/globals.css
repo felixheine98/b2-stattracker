@@ -74,10 +74,27 @@
   --table-hover: rgb(23 23 23 / 0.7);
 }
 
-/* The light theme (chosen in the account menu, see lib/theme.ts): the same team colours on a
+:root[data-theme="b2-blue"] {
+  --bg: #00164f;
+  --surface: #002484;
+  --surface-raised: #103da0;
+  --border: #2852ac;
+  --border-strong: #4b71c4;
+
+  --fg: #f3f6ff;
+  --fg-soft: #d6e2ff;
+  --fg-muted: #b0c4ef;
+  --fg-subtle: #88a4d9;
+
+  --info: #a8c4ff;
+  --table-hover: rgb(16 61 160 / 0.6);
+}
+
+/* The light themes (chosen in the account menu, see lib/theme.ts): the same team colours on a
    warm white. Yellow stays for buttons and highlights; as text it would not read, so text in
    the team colour is the navy instead. */
-:root[data-theme="light"] {
+:root[data-theme="light"],
+:root[data-theme="warm-light"] {
   color-scheme: light;
 
   --bg: #f4f2ee;
@@ -110,10 +127,27 @@
   --table-hover: #f8f6f2;
 }
 
+/* A softer, distinctly cream alternative, with the same readable light-theme accents. */
+:root[data-theme="warm-light"] {
+  --bg: #f6efdf;
+  --surface: #fffaf0;
+  --surface-raised: #ede2ce;
+  --border: #ddcfb7;
+  --border-strong: #c5b293;
+
+  --fg: #33291f;
+  --fg-soft: #514337;
+  --fg-muted: #756452;
+  --fg-subtle: #8b7965;
+
+  --table-hover: #f4ead8;
+}
+
 /* Tints of the team yellow (selected tabs, the active page, badges, highlighted rows) are
    made for a dark page: 10 % yellow on white is hardly there. On the light theme they are
    drawn several times stronger, so the yellow carries as it does on the buttons. */
-:root[data-theme="light"] {
+:root[data-theme="light"],
+:root[data-theme="warm-light"] {
   .bg-brand\/5 { background-color: color-mix(in oklab, var(--primary) 30%, transparent); }
   .bg-brand\/10 { background-color: color-mix(in oklab, var(--primary) 55%, transparent); }
   .bg-brand\/15 { background-color: color-mix(in oklab, var(--primary) 75%, transparent); }
@@ -126,7 +160,7 @@
 }
 
 /* For the few things that differ by more than a colour: light:hidden, light:block, ... */
-@custom-variant light (&:where([data-theme="light"], [data-theme="light"] *));
+@custom-variant light (&:where([data-theme="light"], [data-theme="light"] *, [data-theme="warm-light"], [data-theme="warm-light"] *));
 
 /* The colours as Tailwind names: bg-surface, text-fg-muted, border-line, ... */
 @theme inline {
