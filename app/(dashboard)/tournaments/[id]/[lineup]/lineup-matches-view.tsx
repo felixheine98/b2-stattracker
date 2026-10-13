@@ -29,7 +29,7 @@ import { StageHeading } from "@/components/stage-heading"
 import { Select } from "@/components/ui/select"
 import { FormatStatsTable } from "../format-stats"
 import { MapOverviewTable, MapStatsTable, StatsViewToggle } from "../map-stats"
-import { ArrowLeft, Swords, Users, ChevronRight, Calendar, BarChart2, Plus, Trash2, ShieldCheck } from "lucide-react"
+import { ArrowLeft, Swords, Users, ChevronDown, ChevronRight, Calendar, BarChart2, Plus, Trash2, ShieldCheck } from "lucide-react"
 import { cn, formatLabel } from "@/lib/utils"
 import type { Format } from "@prisma/client"
 
@@ -118,6 +118,8 @@ export function LineupMatchesView({ lineup, guestTmIds, trialTmIds, profilePaths
   // Stages the stats are limited to; nothing selected means all
   const [statsStageIds, selectStatsStages] = useIdListParam("stages", statsStages.map((st) => st.id))
   const hasStats = buildAggregates(matches).length > 0
+  // The list of matches is long and mostly looked up, so it starts folded
+  const [showMatches, setShowMatches] = useState(false)
   const nonSeedingFormats = tournament.formats.filter((f) => f !== "TIME_ATTACK_10")
   const statsFormats = [...new Set(nonSeedingFormats)]
   const [statsFormatIds, selectStatsFormats] = useIdListParam("formats", statsFormats)
@@ -221,7 +223,7 @@ export function LineupMatchesView({ lineup, guestTmIds, trialTmIds, profilePaths
         </div>
       </div>
 
-      {/* From 1536px on the stats stand on the left, players and matches on the right */}
+      {/* From 1536px on stats and matches stand on the left, the players on the right */}
       <div className="page-columns">
       {/* Players */}
       <div>
@@ -272,9 +274,10 @@ export function LineupMatchesView({ lineup, guestTmIds, trialTmIds, profilePaths
         )}
       </div>
 
+      <div className={cn("space-y-6", hasStats && "page-main")}>
       {/* Aggregate stats */}
       {hasStats && (
-        <div className="page-main">
+        <div>
           <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
             <h2 className="text-sm font-semibold text-fg-muted uppercase tracking-wider flex items-center gap-2">
               <BarChart2 size={14} />
@@ -321,12 +324,25 @@ export function LineupMatchesView({ lineup, guestTmIds, trialTmIds, profilePaths
 
       {/* Matches */}
       <div>
-        <div className="flex items-center justify-between mb-3">
-          <h2 className="text-sm font-semibold text-fg-muted uppercase tracking-wider flex items-center gap-2">
+        {matches.length === 0 ? (
+          <h2 className="mb-3 text-sm font-semibold text-fg-muted uppercase tracking-wider flex items-center gap-2">
             <Swords size={14} />
-            Matches ({matches.length})
+            Matches (0)
           </h2>
-        </div>
+        ) : (
+          <button
+            type="button"
+            onClick={() => setShowMatches((o) => !o)}
+            aria-expanded={showMatches}
+            className="flex w-full items-center justify-between gap-3 rounded-xl border border-line bg-surface px-4 py-3 text-left hover:bg-raised/50"
+          >
+            <h2 className="text-sm font-semibold text-fg-muted uppercase tracking-wider flex items-center gap-2">
+              <Swords size={14} />
+              Matches ({matches.length})
+            </h2>
+            <ChevronDown size={16} className={cn("shrink-0 text-fg-muted transition-transform", showMatches && "rotate-180")} />
+          </button>
+        )}
 
         {matches.length === 0 ? (
           <Card>
@@ -335,8 +351,8 @@ export function LineupMatchesView({ lineup, guestTmIds, trialTmIds, profilePaths
               <p className="text-fg-muted text-sm">No matches with this lineup yet.</p>
             </CardContent>
           </Card>
-        ) : (
-          <div className="space-y-5">
+        ) : showMatches && (
+          <div className="mt-4 space-y-5">
             {stages.map((stage) => {
               const stageMatches = sortMatches(matches.filter((m) => m.stage.id === stage.id))
               return (
@@ -395,6 +411,7 @@ export function LineupMatchesView({ lineup, guestTmIds, trialTmIds, profilePaths
             })}
           </div>
         )}
+      </div>
       </div>
       </div>
 
