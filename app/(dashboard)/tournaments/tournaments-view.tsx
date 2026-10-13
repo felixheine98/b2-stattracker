@@ -3,7 +3,11 @@
 import { BASE_PATH } from "@/lib/base-path"
 import { tournamentPath } from "@/lib/paths"
 import { FormatBuilder } from "@/components/format-builder"
+import { MatchRulesFields } from "@/components/match-rules-fields"
+import { RuleTemplateSelect, SaveAsTemplateButton } from "@/components/rule-template-controls"
 import { StagePlanFields } from "@/components/stage-plan-fields"
+import { ruledFormats } from "@/lib/match-rules"
+import { draftOf, playoffBodyOf, playoffDraftOf, rulesBodyOf, type PlayoffRulesDraft, type RulesDraft } from "@/lib/match-rules-form"
 import { DEFAULT_STAGE_PLAN } from "@/lib/stages"
 import { useState } from "react"
 import { useRouter } from "next/navigation"
@@ -52,6 +56,9 @@ export function TournamentsView({ tournaments: initial, style, canManage, isAdmi
   const [formats, setFormats] = useState<Format[]>([])
   const [stagePlan, setStagePlan] = useState(DEFAULT_STAGE_PLAN)
   const [formStyle, setFormStyle] = useState<CompStyle | "">("")
+  // A new tournament with formats always gets rules; nothing is filled in for the user
+  const [rules, setRules] = useState<RulesDraft>(() => draftOf(null))
+  const [playoffRules, setPlayoffRules] = useState<PlayoffRulesDraft | null>(null)
   const shown = filterByStyle(tournaments, style)
   const styles = stylesInUse(tournaments)
 
@@ -59,6 +66,8 @@ export function TournamentsView({ tournaments: initial, style, canManage, isAdmi
     setFormats([])
     setFormStyle(style ?? "")
     setStagePlan(DEFAULT_STAGE_PLAN)
+    setRules(draftOf(null))
+    setPlayoffRules(null)
     setError("")
     setShowForm(true)
   }
@@ -83,6 +92,7 @@ export function TournamentsView({ tournaments: initial, style, canManage, isAdmi
         startDate: form.get("startDate") || null,
         endDate: form.get("endDate") || null,
         stages: stagePlan,
+        ...(ruledFormats(formats).length > 0 && { rules: rulesBodyOf(rules), playoffRules: playoffRules && playoffBodyOf(playoffRules) }),
       }),
     })
     setLoading(false)
@@ -108,6 +118,7 @@ export function TournamentsView({ tournaments: initial, style, canManage, isAdmi
         </div>
         <div className="flex flex-wrap gap-2">
         {isAdmin && <Link href="/tfh-import"><Button variant="outline">Import TFH race</Button></Link>}
+        {canManage && <Link href="/rule-templates"><Button variant="outline">Rule templates</Button></Link>}
         {canManage && (
           <Button onClick={openForm}>
             <Plus size={16} />
@@ -221,10 +232,15 @@ export function TournamentsView({ tournaments: initial, style, canManage, isAdmi
               {STYLE_ORDER.map((s) => <option key={s} value={s}>{styleLabel(s)}</option>)}
             </Select>
           </div>
+          <RuleTemplateSelect onPick={(t) => { setFormats(t.formats as Format[]); setRules(draftOf(t.rules)); setPlayoffRules(playoffDraftOf(t.playoffRules)) }} />
           <div className="space-y-1.5">
             <Label>Format sequence{formStyle && !needsFormats(formStyle) && <span className="text-fg-subtle"> (optional for endurance)</span>}</Label>
             <FormatBuilder value={formats} onChange={setFormats} />
           </div>
+          <MatchRulesFields formats={formats} value={rules} onChange={(r) => r && setRules(r)} playoff={playoffRules} onPlayoffChange={setPlayoffRules} />
+          {ruledFormats(formats).length > 0 && (
+            <SaveAsTemplateButton content={() => ({ formats, rules: rulesBodyOf(rules), playoffRules: playoffRules && playoffBodyOf(playoffRules) })} />
+          )}
           <div className="space-y-1.5">
             <Label htmlFor="description">Description <span className="text-fg-subtle">(optional)</span></Label>
             <Textarea id="description" name="description" rows={2} />

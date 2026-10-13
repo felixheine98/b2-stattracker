@@ -32,6 +32,7 @@ import { MapOverviewTable, MapStatsTable, StatsViewToggle } from "../map-stats"
 import { ArrowLeft, Swords, Users, ChevronDown, ChevronRight, Calendar, BarChart2, Plus, Trash2, ShieldCheck } from "lucide-react"
 import { cn, formatLabel } from "@/lib/utils"
 import type { Format } from "@prisma/client"
+import { lineupPoints, type CompRules } from "@/lib/match-rules"
 
 interface RoundResult {
   id: string
@@ -66,6 +67,8 @@ interface Match {
   number?: number | null
   label?: string | null
   createdAt: Date
+  closedAt?: Date | null
+  confirmedOutcome?: string | null
   _count: { subMatches: number }
   subMatches: SubMatch[]
 }
@@ -89,6 +92,8 @@ interface Props {
     managers: Array<{ user: { id: string; name: string; role: string; playerId: string | null } }>
     matches: Match[]
   }
+  // Format rules of the tournament, for the points of the lineup
+  rules: CompRules
   // Lower-cased TM IDs of players who are guests in this tournament
   guestTmIds: string[]
   // Likewise for players on trial
@@ -102,7 +107,7 @@ interface Props {
   editExpired?: boolean
 }
 
-export function LineupMatchesView({ lineup, guestTmIds, trialTmIds, profilePaths, canManage, canEdit, editExpired }: Props) {
+export function LineupMatchesView({ lineup, rules, guestTmIds, trialTmIds, profilePaths, canManage, canEdit, editExpired }: Props) {
   const profilePath = (tmId: string) => profilePaths[tmId.toLowerCase()]
   const responsiblePlayerIds = new Set(lineup.managers.map((m) => m.user.playerId))
   const guests = new Set(guestTmIds)
@@ -111,6 +116,7 @@ export function LineupMatchesView({ lineup, guestTmIds, trialTmIds, profilePaths
   const router = useRouter()
   const { tournament } = lineup
   const [matches, setMatches] = useSyncedState(lineup.matches)
+  const points = lineupPoints(matches.map((m) => ({ ...m, stageType: m.stage.type })), rules)
   // In playing order
   const stages = sortStages(tournament.stages)
   const statsStages = stages.filter((st) => st.type !== "SEEDING")
@@ -212,7 +218,10 @@ export function LineupMatchesView({ lineup, guestTmIds, trialTmIds, profilePaths
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="min-w-0">
             <h1 className="text-2xl font-bold text-fg mb-1">{lineup.name}</h1>
-            <p className="text-xs text-fg-subtle">Lineup · {tournament.name}</p>
+            <p className="text-xs text-fg-subtle">
+              Lineup · {tournament.name}
+              {points !== null && <span title="Points from the group stage"> · {points} pts</span>}
+            </p>
           </div>
           {canEdit && (
             <Button onClick={openAddMatch} className="shrink-0">

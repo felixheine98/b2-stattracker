@@ -4,11 +4,16 @@ Ideen, die noch kein Todo sind: [ideen.md](ideen.md)
 
 ## Offen
 
-- [ ] konfiguration pro comp, wie matches ablaufen (hilfreich für validierung): submatches pro match, rounds to win, punkte für sieg/unentschieden/niederlage, weitere formatregeln
 - [ ] seeding formate für import/anlegen prüfen
 - [ ] Design/UI/UX Verbesserungen
 
 ## Teilweise erledigt
+
+- [ ] konfiguration pro comp, wie matches ablaufen (hilfreich für validierung): submatches pro match, rounds to win, punkte für sieg/unentschieden/niederlage, weitere formatregeln; [entscheidung](docs/adr/005-comp-formatregeln.md), [glossar](docs/comp-formatregeln-glossar.md)
+  - [x] schritt 1: regelsatz pro comp und playoff (ablauf, rounds to win, max rounds, punkte) im anlegen- und bearbeiten-dialog, hinweise auf der match-seite und beim schließen
+  - [x] schritt 2: hinweise in den import-vorschauen (csv, ecm), punkte am match und als summe pro lineup
+  - [x] schritt 3: vorlagen (auswahl, save as template, verwaltungsseite)
+  - [ ] die acht bestehenden comps von hand eintragen
 
 ## Unter Beobachtung
 

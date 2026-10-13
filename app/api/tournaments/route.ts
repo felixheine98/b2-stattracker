@@ -8,6 +8,8 @@ import { canManage } from "@/lib/roles"
 import { needsFormats } from "@/lib/comp-styles"
 import { isValidDay } from "@/lib/player-status"
 import { DEFAULT_STAGE_PLAN, planStageChanges } from "@/lib/stages"
+import { ruledFormats, type RuleSet } from "@/lib/match-rules"
+import { compRulesOf, playoffRulesSchema, readRuleSet, rulesBodies, rulesInclude, rulesSchema, rulesWrites } from "@/lib/match-rules-db"
 
 export async function GET() {
   const session = await auth()
@@ -40,6 +42,9 @@ const createSchema = z.object({
   startDate: z.string().refine(isValidDay, "A valid start date is required"),
   endDate: z.string().nullable().optional(),
   stages: stagesSchema.default(DEFAULT_STAGE_PLAN),
+  // Required as soon as the tournament has formats that matches are played in
+  rules: rulesSchema.optional(),
+  playoffRules: playoffRulesSchema.nullable().optional(),
 })
 
 export async function POST(req: Request) {
@@ -56,6 +61,19 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Select at least one format" }, { status: 400 })
   }
 
+  let ruleSet: RuleSet | null = null, playoffRuleSet: RuleSet | null = null
+  if (ruledFormats(parsed.data.formats).length > 0) {
+    if (!parsed.data.rules) return NextResponse.json({ error: "Enter the match rules" }, { status: 400 })
+    const read = readRuleSet(parsed.data.formats, parsed.data.rules, "comp")
+    if ("error" in read) return NextResponse.json({ error: read.error }, { status: 400 })
+    ruleSet = read.ruleSet
+    if (parsed.data.playoffRules) {
+      const playoff = readRuleSet(parsed.data.playoffRules.formats, parsed.data.playoffRules, "playoff")
+      if ("error" in playoff) return NextResponse.json({ error: `Playoffs: ${playoff.error}` }, { status: 400 })
+      playoffRuleSet = playoff.ruleSet
+    }
+  }
+
   const tournament = await db.tournament.create({
     data: {
       name: parsed.data.name,
@@ -68,8 +86,13 @@ export async function POST(req: Request) {
     },
   })
 
-  await syncTournamentSlugs(tournament.id)
-  const { slug } = await db.tournament.findUniqueOrThrow({ where: { id: tournament.id }, select: { slug: true } })
+  await db.$transaction([
+    ...(ruleSet ? rulesWrites(db, tournament.id, false, ruleSet) : []),
+    ...(playoffRuleSet ? rulesWrites(db, tournament.id, true, playoffRuleSet) : []),
+  ])
 
-  return NextResponse.json({ ...tournament, slug }, { status: 201 })
+  await syncTournamentSlugs(tournament.id)
+  const saved = await db.tournament.findUniqueOrThrow({ where: { id: tournament.id }, include: rulesInclude })
+
+  return NextResponse.json({ ...tournament, slug: saved.slug, ...rulesBodies(compRulesOf(saved)) }, { status: 201 })
 }

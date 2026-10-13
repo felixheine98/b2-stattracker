@@ -6,6 +6,10 @@ import { lineupPath, matchPath, playerPath, tournamentPath } from "@/lib/paths"
 import { PlayerName } from "@/components/player-name"
 import { PlayerSearch } from "@/components/player-search"
 import { FormatBuilder } from "@/components/format-builder"
+import { MatchRulesFields } from "@/components/match-rules-fields"
+import { RuleTemplateSelect, SaveAsTemplateButton } from "@/components/rule-template-controls"
+import { ruledFormats } from "@/lib/match-rules"
+import { draftOf, playoffBodyOf, playoffDraftOf, rulesBodyOf, type PlayoffRulesBody, type PlayoffRulesDraft, type RulesBody, type RulesDraft } from "@/lib/match-rules-form"
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { useSyncedState } from "@/lib/use-synced-state"
@@ -106,6 +110,9 @@ interface Tournament {
   stages: StageRef[]
   matches: Match[]
   tournamentLineups: TournamentLineup[]
+  // Format rules; a tournament from before the rules has none until they are entered
+  rules: RulesBody | null
+  playoffRules: PlayoffRulesBody | null
 }
 
 interface Props {
@@ -120,13 +127,15 @@ interface Props {
   hasPlanning: boolean
   planningCard: React.ComponentProps<typeof AvailabilityCard> | null
   canManage: boolean
+  // Points scored in the group stage, by lineup; empty for a tournament without format rules
+  lineupPoints: Record<string, number>
 }
 
 function formatBadgeVariant(format: Format): "primary" | "secondary" {
   return format === "TIME_ATTACK_10" ? "primary" : "secondary"
 }
 
-export function TournamentDetailView({ tournament: initial, players, statsMatches, users, ownLineupId, hasPlanning, planningCard, canManage }: Props) {
+export function TournamentDetailView({ tournament: initial, players, statsMatches, users, ownLineupId, hasPlanning, planningCard, canManage, lineupPoints }: Props) {
   const [planningStarting, setPlanningStarting] = useState(false)
 
   async function startPlanning() {
@@ -183,6 +192,8 @@ export function TournamentDetailView({ tournament: initial, players, statsMatche
     tournament.endDate ? new Date(tournament.endDate).toISOString().split("T")[0] : ""
   )
   const [editStagePlan, setEditStagePlan] = useState(() => stagePlanOf(tournament.stages))
+  const [editRules, setEditRules] = useState<RulesDraft | null>(null)
+  const [editPlayoffRules, setEditPlayoffRules] = useState<PlayoffRulesDraft | null>(null)
   const [editError, setEditError] = useState("")
   const [editLoading, setEditLoading] = useState(false)
 
@@ -218,7 +229,29 @@ export function TournamentDetailView({ tournament: initial, players, statsMatche
       return
     }
     setEditError("")
+    const ruled = editRules !== null && ruledFormats(editFormats).length > 0
+    const rules = ruled ? rulesBodyOf(editRules) : null
+    const playoffRules = ruled && editPlayoffRules ? playoffBodyOf(editPlayoffRules) : null
     setEditLoading(true)
+    // Changed rules change the hints and points of matches that are already closed: ask first
+    const sent = JSON.stringify([editFormats, rules, playoffRules])
+    if (rules && sent !== JSON.stringify([tournament.formats, tournament.rules, tournament.playoffRules])) {
+      const check = await fetch(`${BASE_PATH}/api/tournaments/${tournament.id}/rules/impact`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ formats: editFormats, rules, playoffRules }),
+      })
+      const impact = await check.json()
+      if (!check.ok) {
+        setEditLoading(false)
+        setEditError(impact.error ?? "Failed to check the rules")
+        return
+      }
+      if (impact.closed > 0 && !confirm(`${impact.closed} closed ${impact.closed === 1 ? "match follows" : "matches follow"} the changed rules. ${impact.newHints} of them would show new hints. Their results stay as confirmed.\n\nSave the rules?`)) {
+        setEditLoading(false)
+        return
+      }
+    }
     const res = await fetch(`${BASE_PATH}/api/tournaments/${tournament.id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
@@ -230,6 +263,7 @@ export function TournamentDetailView({ tournament: initial, players, statsMatche
         startDate: editStartDate,
         endDate: editEndDate || null,
         stages: editStagePlan,
+        ...(rules && { rules, playoffRules }),
       }),
     })
     setEditLoading(false)
@@ -336,6 +370,8 @@ export function TournamentDetailView({ tournament: initial, players, statsMatche
     setEditStartDate(tournament.startDate ? new Date(tournament.startDate).toISOString().split("T")[0] : "")
     setEditEndDate(tournament.endDate ? new Date(tournament.endDate).toISOString().split("T")[0] : "")
     setEditStagePlan(stagePlanOf(tournament.stages))
+    setEditRules(tournament.rules && draftOf(tournament.rules))
+    setEditPlayoffRules(playoffDraftOf(tournament.playoffRules))
     setEditError("")
     setShowEdit(true)
   }
@@ -459,6 +495,11 @@ export function TournamentDetailView({ tournament: initial, players, statsMatche
                             {lineup.slots.length}
                             <User size={12} />
                           </span>
+                          {lineupPoints[lineup.id] !== undefined && (
+                            <span className="ml-2 align-middle text-xs font-normal text-fg-muted" title="Points from the group stage">
+                              {lineupPoints[lineup.id]} pts
+                            </span>
+                          )}
                         </p>
                         {canManage && (
                           <div className="flex items-center gap-1 shrink-0" onClick={(e) => e.preventDefault()}>
@@ -684,10 +725,15 @@ export function TournamentDetailView({ tournament: initial, players, statsMatche
               {STYLE_ORDER.map((s) => <option key={s} value={s}>{styleLabel(s)}</option>)}
             </Select>
           </div>
+          <RuleTemplateSelect onPick={(t) => { setEditFormats(t.formats as Format[]); setEditRules(draftOf(t.rules)); setEditPlayoffRules(playoffDraftOf(t.playoffRules)) }} />
           <div className="space-y-1.5">
             <Label>Formats{!needsFormats(editStyle) && <span className="text-fg-subtle"> (optional for endurance)</span>}</Label>
             <FormatBuilder value={editFormats} onChange={setEditFormats} />
           </div>
+          <MatchRulesFields formats={editFormats} value={editRules} onChange={setEditRules} playoff={editPlayoffRules} onPlayoffChange={setEditPlayoffRules} />
+          {editRules && ruledFormats(editFormats).length > 0 && (
+            <SaveAsTemplateButton content={() => ({ formats: editFormats, rules: rulesBodyOf(editRules), playoffRules: editPlayoffRules && playoffBodyOf(editPlayoffRules) })} />
+          )}
           <div className="space-y-1.5">
             <Label htmlFor="edit-desc">Description <span className="text-fg-subtle">(optional)</span></Label>
             <Textarea

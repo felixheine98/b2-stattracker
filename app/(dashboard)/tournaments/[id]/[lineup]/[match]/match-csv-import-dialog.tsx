@@ -6,6 +6,7 @@ import { Dialog, DialogTitle } from "@/components/ui/dialog"
 import { BASE_PATH } from "@/lib/base-path"
 import { useImportCheck } from "@/lib/use-import-check"
 import { blockDrivers, parseMatchCsv, planBlock, suspiciousRounds, type CsvBlock } from "@/lib/match-csv"
+import { subMatchState, type RuleRound, type RuleSet } from "@/lib/match-rules"
 import { cn, formatLabel, formatTime, teamSize } from "@/lib/utils"
 import type { Format } from "@prisma/client"
 import { ArrowLeftRight, TriangleAlert, Upload } from "lucide-react"
@@ -16,6 +17,8 @@ interface Props {
   matchId: string
   // In playing order
   subMatches: Array<{ id: string; format: Format; rounds: unknown[] }>
+  // Format rules of this match: what would be saved is checked against them, as a warning only
+  ruleSet: RuleSet | null
   // Our players, to tell the sides apart by their Trackmania account
   ownPlayers: Array<{ tmId: string; name: string }>
   // Admin or manager: may put an unknown driver on our side, which adds them as a guest
@@ -29,7 +32,7 @@ const selectClass = "h-9 rounded-md border border-line-strong bg-raised px-2 tex
 // Import of a whole match from the CSV of a match dumper. Nothing is saved before the user
 // has seen what the file was turned into: which rounds go to which sub-match, who drives
 // for whom, which rounds are left out and who is counted as not finished.
-export function MatchCsvImportDialog({ tournamentId, matchId, subMatches, ownPlayers, canManage, onClose, onImported }: Props) {
+export function MatchCsvImportDialog({ tournamentId, matchId, subMatches, ruleSet, ownPlayers, canManage, onClose, onImported }: Props) {
   const [blocks, setBlocks] = useState<CsvBlock[]>([])
   const [fileNames, setFileNames] = useState<string[]>([])
   // Sub-match of every block, "" for a block that is left out
@@ -92,6 +95,8 @@ export function MatchCsvImportDialog({ tournamentId, matchId, subMatches, ownPla
 
   const ourTmIds = new Set(blocks.flatMap((b) => blockDrivers(b).map((d) => d.tmId)).filter(isOurs))
   const plans = blocks.map((block, i) => planBlock(block, selected, ourTmIds, sizeOf(i)))
+  // Follows the selection of rounds: what the sub-match would stand at does not fit its rule
+  const ruleHint = (rounds: RuleRound[], format: Format) => subMatchState(rounds, ruleSet?.formatRules[format] ?? null).hint
   // Drivers on our side the system does not know yet
   const drivers = new Map(blocks.flatMap((b) => blockDrivers(b)).map((d) => [d.tmId, d.name]))
   const guests = [...ourTmIds].filter((tmId) => !knownTmIds.has(tmId)).map((tmId) => ({ tmId, name: drivers.get(tmId) ?? tmId }))
@@ -189,6 +194,12 @@ export function MatchCsvImportDialog({ tournamentId, matchId, subMatches, ownPla
 
                   {target && target.rounds.length > 0 && (
                     <p className="text-xs text-bronze">Replaces the {target.rounds.length} rounds this sub-match already has.</p>
+                  )}
+                  {target && ruleHint(plan.rounds, target.format) && (
+                    <p className="flex items-start gap-1.5 text-xs text-bronze">
+                      <TriangleAlert size={13} className="mt-0.5 shrink-0" />
+                      {ruleHint(plan.rounds, target.format)} ({formatLabel(target.format)}). Check the selected rounds.
+                    </p>
                   )}
                   {targets[i] && plan.warnings.map((w) => (
                     <p key={w} className="flex items-start gap-1.5 text-xs text-bronze">

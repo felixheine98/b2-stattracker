@@ -9,6 +9,8 @@ import { canManage } from "@/lib/roles"
 import { needsFormats } from "@/lib/comp-styles"
 import { isValidDay } from "@/lib/player-status"
 import { planStageChanges, sortStages, stageName } from "@/lib/stages"
+import { ruledFormats, type RuleSet } from "@/lib/match-rules"
+import { compRulesOf, playoffRulesSchema, readRuleSet, rulesBodies, rulesInclude, rulesSchema, rulesWrites } from "@/lib/match-rules-db"
 
 interface Params {
   params: Promise<{ id: string }>
@@ -53,6 +55,10 @@ const patchSchema = z.object({
       playoffDays: z.number().int().min(0).max(10),
     })
     .optional(),
+  // Left out: unchanged. A tournament from before the rules stays without until they are sent.
+  rules: rulesSchema.optional(),
+  // Null removes the playoffs' own rule set
+  playoffRules: playoffRulesSchema.nullable().optional(),
 })
 
 export async function PATCH(req: Request, { params }: Params) {
@@ -68,12 +74,34 @@ export async function PATCH(req: Request, { params }: Params) {
     return NextResponse.json({ error: parsed.error.issues[0].message }, { status: 400 })
   }
 
-  const { name, formats, style, description, startDate, endDate, stages } = parsed.data
+  const { name, formats, style, description, startDate, endDate, stages, rules, playoffRules } = parsed.data
 
   if (formats !== undefined || style !== undefined) {
     const current = await db.tournament.findUnique({ where: { id }, select: { style: true, formats: true } })
     if (current && needsFormats(style ?? current.style) && (formats ?? current.formats).length === 0) {
       return NextResponse.json({ error: "Select at least one format" }, { status: 400 })
+    }
+  }
+
+  // The rules always cover the format sequence: checked again whenever either of them changes
+  let ruleWrites: ReturnType<typeof rulesWrites> = []
+  if (formats !== undefined || rules !== undefined || playoffRules !== undefined) {
+    const current = await db.tournament.findUnique({ where: { id }, include: rulesInclude })
+    if (!current) return NextResponse.json({ error: "Not found" }, { status: 404 })
+    const sequence = formats ?? current.formats
+    const body = rules ?? rulesBodies(compRulesOf(current)).rules
+    let ruleSet: RuleSet | null = null
+    if (body && ruledFormats(sequence).length > 0) {
+      const read = readRuleSet(sequence, body, "comp")
+      if ("error" in read) return NextResponse.json({ error: read.error }, { status: 400 })
+      ruleSet = read.ruleSet
+    }
+    if (body) ruleWrites = rulesWrites(db, id, false, ruleSet)
+    if (playoffRules === null) ruleWrites.push(...rulesWrites(db, id, true, null))
+    else if (playoffRules) {
+      const read = readRuleSet(playoffRules.formats, playoffRules, "playoff")
+      if ("error" in read) return NextResponse.json({ error: `Playoffs: ${read.error}` }, { status: 400 })
+      ruleWrites.push(...rulesWrites(db, id, true, read.ruleSet))
     }
   }
 
@@ -101,13 +129,14 @@ export async function PATCH(req: Request, { params }: Params) {
     }),
     db.stage.deleteMany({ where: { id: { in: changes.remove } } }),
     db.stage.createMany({ data: changes.create.map((s) => ({ ...s, tournamentId: id })) }),
+    ...ruleWrites,
   ])
   const saved = await db.stage.findMany({ where: { tournamentId: id } })
   // Name and stages are part of the addresses
   await syncTournamentSlugs(id)
-  const { slug } = await db.tournament.findUniqueOrThrow({ where: { id }, select: { slug: true } })
+  const after = await db.tournament.findUniqueOrThrow({ where: { id }, include: rulesInclude })
 
-  return NextResponse.json({ ...tournament, slug, stages: saved })
+  return NextResponse.json({ ...tournament, slug: after.slug, stages: saved, ...rulesBodies(compRulesOf(after)) })
 }
 
 export async function DELETE(_req: Request, { params }: Params) {

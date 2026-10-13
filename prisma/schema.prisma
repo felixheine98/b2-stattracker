@@ -189,6 +189,7 @@ model Tournament {
   planning        Planning?
   opponentLineups OpponentLineup[]
   tfhRace         TfhRace?
+  matchRules      MatchRules[]
 }
 
 // Planning a tournament before it has lineups: who is available and which lineups to build
@@ -207,6 +208,63 @@ model Planning {
   levels   PlanningLevel[]
   entries  PlanningEntry[]
   variants PlanningVariant[]
+}
+
+// How a match is decided (docs/adr/005-comp-formatregeln.md): all sub-matches of the sequence
+// are played, the match ends once a side has the majority, or the last sub-match is a decider
+// that is only played when the others end level
+enum MatchFlow {
+  ALL
+  UNTIL_DECIDED
+  DECIDER
+}
+
+// The format rules of a tournament: one set for the competition and, optionally, one of their
+// own for the playoffs. A tournament without a set shows neither hints nor points.
+model MatchRules {
+  id           String     @id @default(cuid())
+  tournamentId String
+  tournament   Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  // The playoffs' own set; without one they follow the set of the competition
+  playoff      Boolean    @default(false)
+  // Format sequence of the playoffs. The competition's own is Tournament.formats.
+  formats      Format[]
+  flow         MatchFlow
+  // Points for the result of a group match; null for the playoffs, which score none
+  pointsWin    Int?
+  pointsDraw   Int?
+  pointsLoss   Int?
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  formatRules FormatRule[]
+
+  @@unique([tournamentId, playoff])
+}
+
+// How a sub-match of one format is decided within a rule set
+model FormatRule {
+  id           String     @id @default(cuid())
+  matchRulesId String
+  matchRules   MatchRules @relation(fields: [matchRulesId], references: [id], onDelete: Cascade)
+  format       Format
+  roundsToWin  Int
+  // Null: no limit
+  maxRounds    Int?
+
+  @@unique([matchRulesId, format])
+}
+
+// A named set of format rules to start a tournament from: its format sequence, rule set and,
+// if it has one, playoff rule set, stored the way the tournament routes take them. Its values
+// are copied into a tournament; the two are independent afterwards.
+model RuleTemplate {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  // { formats, rules, playoffRules }, see lib/rule-templates.ts
+  content   Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 enum Availability {

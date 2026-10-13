@@ -1,3 +1,4 @@
+import { matchReport } from "./match-rules"
 import { roundPlacements, roundScore } from "./round-score"
 
 export const opponentNameKey = (name: string) => name.normalize("NFKC").trim().replace(/\s+/g, " ").toLocaleLowerCase("en")
@@ -39,22 +40,7 @@ export interface OpponentStatsMatch {
 }
 // Match outcome is always from our team's perspective, just like roundScore.
 export function suggestMatchOutcome(subMatches: StatsSubMatch[]): "W" | "L" | "D" | null {
-  let won = 0, lost = 0, scored = 0
-  for (const sm of subMatches) {
-    let w = 0, l = 0, valid = false
-    for (const r of sm.rounds) {
-      const score = roundScore(r.results)
-      if (!score) continue
-      valid = true
-      if (score.outcome === "W") w++
-      if (score.outcome === "L") l++
-    }
-    if (!valid) continue
-    scored++
-    if (w > l) won++
-    if (l > w) lost++
-  }
-  return !scored ? null : won > lost ? "W" : won < lost ? "L" : "D"
+  return matchReport(subMatches.map((sm) => ({ format: sm.format ?? "", rounds: sm.rounds })), null).outcome
 }
 interface PlayerStats {
   playerId: string | null; tmId: string; name: string; format: string; played: number; won: number; drawn: number; lost: number

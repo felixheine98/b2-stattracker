@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { cn, formatLabel, formatLabelLong, formatTime, teamSize } from "@/lib/utils"
 import type { Format } from "@prisma/client"
-import { ArrowLeft, BarChart2, ChevronDown, ChevronUp, Clock, Download, ExternalLink, Grid3x3, ListChecks, Trash2, Trophy, Upload, Users } from "lucide-react"
+import { ArrowLeft, BarChart2, ChevronDown, ChevronUp, Clock, Download, ExternalLink, Grid3x3, ListChecks, Trash2, TriangleAlert, Trophy, Upload, Users } from "lucide-react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useSyncedState } from "@/lib/use-synced-state"
@@ -18,6 +18,7 @@ import { GuestBadge } from "@/components/guest-badge"
 import { TrialBadge } from "@/components/trial-badge"
 import { Wdl } from "@/components/wdl"
 import { roundPlacements, roundScore } from "@/lib/round-score"
+import { closingHints, matchPoints, matchReport, resultOf, subMatchState, type RuleSet } from "@/lib/match-rules"
 import { bestPerformer } from "@/lib/dashboard"
 import { dayKey, formatDay } from "@/lib/player-status"
 import { sortStages, stageDate, stageName, type StageRef } from "@/lib/stages"
@@ -88,6 +89,8 @@ interface Match {
   number?: number | null
   label?: string | null
   ecmUrl?: string | null
+  closedAt?: Date | null
+  confirmedOutcome?: string | null
   tournamentLineup?: TournamentLineup | null
   tournament: {
     id: string
@@ -261,6 +264,8 @@ function SubMatchStatsTable({ sm, number, isGuest, isTrial }: { sm: SubMatch; nu
 
 interface Props {
   match: Match
+  // The format rules this match is played by; null for a seeding match or a tournament without rules
+  ruleSet: RuleSet | null
   allPlayers: Player[]
   // Lower-cased TM IDs of players who are guests in this tournament
   guestTmIds: string[]
@@ -274,7 +279,7 @@ interface Props {
   autoEcmImport?: boolean
 }
 
-export function MatchDetailView({ match: initialMatch, allPlayers, guestTmIds, trialTmIds, canEdit, canManage, autoEcmImport = false }: Props) {
+export function MatchDetailView({ match: initialMatch, ruleSet, allPlayers, guestTmIds, trialTmIds, canEdit, canManage, autoEcmImport = false }: Props) {
   const router = useRouter()
   const guests = new Set(guestTmIds)
   const isGuest = (tmId: string) => guests.has(tmId.toLowerCase())
@@ -390,7 +395,12 @@ export function MatchDetailView({ match: initialMatch, allPlayers, guestTmIds, t
     })
   }
 
-  const matchStats = computeMatchStats(subMatches)
+  // Results and hints by the format rules of the tournament (docs/adr/005-comp-formatregeln.md)
+  const report = useMemo(() => matchReport(subMatches, ruleSet), [subMatches, ruleSet])
+  const closed = !!initialMatch.closedAt
+  const hintClass = closed ? "text-fg-subtle" : "text-bronze"
+  // What the match scores in the group stage, by the confirmed result once it is closed
+  const points = matchPoints(resultOf({ ...initialMatch, stageType: stage.type, subMatches }), ruleSet, stage.type)
 
   const matchTitle = isSeeding
     ? "Seeding"
@@ -506,6 +516,13 @@ export function MatchDetailView({ match: initialMatch, allPlayers, guestTmIds, t
                 </Button>
               </div>
             )}
+            {/* Whether the match as a whole fits its flow only says something once it is closed */}
+            {closed && report.hints.map((hint) => (
+              <p key={hint} className="mt-3 flex items-center gap-1.5 text-xs text-fg-subtle">
+                <TriangleAlert size={12} className="shrink-0" />
+                {hint}
+              </p>
+            ))}
             {performer && (
               <p className="mt-3 flex flex-wrap items-center gap-x-1.5 text-sm text-fg-muted">
                 <Trophy size={13} className="shrink-0 text-brand-ink" />
@@ -516,19 +533,19 @@ export function MatchDetailView({ match: initialMatch, allPlayers, guestTmIds, t
             )}
           </div>
           <div className="flex w-full flex-wrap items-center justify-end gap-3 sm:ml-auto sm:w-auto">
-            {matchStats.subMatchesPlayed > 0 && (
+            {report.outcome && (
               <Card className="shrink-0">
                 <CardContent className="py-2 px-4">
                   <div className="text-center">
                     <p className="text-2xl font-bold text-fg">
-                      <Wdl won={matchStats.subMatchesWon} drawn={matchStats.subMatchesDrawn} lost={matchStats.subMatchesLost} unit="Sub-Matches" />
+                      <Wdl won={report.won} drawn={report.drawn} lost={report.lost} unit="Sub-Matches" />
                     </p>
-                    <p className="text-xs text-fg-subtle">sub-match score</p>
+                    <p className="text-xs text-fg-subtle">sub-match score{points !== null && ` · ${points} ${points === 1 ? "pt" : "pts"}`}</p>
                   </div>
                 </CardContent>
               </Card>
             )}
-            {!isSeeding && <MatchOpponentPanel competitionId={initialMatch.tournament.id} matchId={initialMatch.id} canEdit={canEdit} results={subMatches} />}
+            {!isSeeding && <MatchOpponentPanel competitionId={initialMatch.tournament.id} matchId={initialMatch.id} canEdit={canEdit} results={subMatches} hints={closingHints(subMatches, report)} />}
           </div>
         </div>
       </div>
@@ -554,6 +571,7 @@ export function MatchDetailView({ match: initialMatch, allPlayers, guestTmIds, t
           const isOpen = expanded.has(sm.id)
           const stats = computeStats(sm.rounds)
           const totalRounds = sm.rounds.length
+          const hint = report.subMatches[idx]?.hint
 
           return (
             <div key={sm.id} className="rounded-xl border border-line overflow-hidden">
@@ -577,6 +595,12 @@ export function MatchDetailView({ match: initialMatch, allPlayers, guestTmIds, t
                     <Badge variant={stats.ourRoundsWon > stats.ourRoundsLost ? "primary" : stats.ourRoundsWon < stats.ourRoundsLost ? "red" : "default"}>
                       <Wdl won={stats.ourRoundsWon} drawn={stats.ourRoundsDrawn} lost={stats.ourRoundsLost} unit="Rounds" />
                     </Badge>
+                  )}
+                  {hint && (
+                    <span className={cn("flex items-center gap-1 text-xs", hintClass)}>
+                      <TriangleAlert size={12} className="shrink-0" />
+                      {hint}
+                    </span>
                   )}
                 </div>
                 {isOpen ? <ChevronUp size={16} className="text-fg-subtle" /> : <ChevronDown size={16} className="text-fg-subtle" />}
@@ -784,6 +808,7 @@ export function MatchDetailView({ match: initialMatch, allPlayers, guestTmIds, t
           tournamentId={initialMatch.tournament.id}
           matchId={initialMatch.id}
           subMatches={subMatches}
+          ruleSet={ruleSet}
           allPlayers={allPlayers}
           startDay={dayKey(initialMatch.tournament.startDate ?? initialMatch.tournament.createdAt)}
           canManage={canManage}
@@ -818,6 +843,7 @@ export function MatchDetailView({ match: initialMatch, allPlayers, guestTmIds, t
           tournamentId={initialMatch.tournament.id}
           matchId={initialMatch.id}
           subMatches={[...subMatches].sort((a, b) => a.order - b.order)}
+          ruleSet={ruleSet}
           ownPlayers={allPlayers}
           canManage={canManage}
           onClose={() => setShowCsvImport(false)}
@@ -837,18 +863,11 @@ function rankColor(rank: number): string {
 }
 
 function computeStats(rounds: Round[]) {
-  let ourRoundsWon = 0
-  let ourRoundsLost = 0
-  let ourRoundsDrawn = 0
+  const { won: ourRoundsWon, lost: ourRoundsLost, drawn: ourRoundsDrawn } = subMatchState(rounds, null)
   let bestOurTime: number | undefined
   let bestOpponentTime: number | undefined
 
   for (const round of rounds) {
-    const outcome = roundScore(round.results)?.outcome
-    if (outcome === "W") ourRoundsWon++
-    else if (outcome === "L") ourRoundsLost++
-    else if (outcome === "D") ourRoundsDrawn++
-
     const ourBest = round.results.filter((r) => r.isOurTeam)[0]?.timeMs ?? undefined
     const oppBest = round.results.filter((r) => !r.isOurTeam)[0]?.timeMs ?? undefined
     if (ourBest !== undefined && (bestOurTime === undefined || ourBest < bestOurTime)) bestOurTime = ourBest
@@ -856,23 +875,4 @@ function computeStats(rounds: Round[]) {
   }
 
   return { ourRoundsWon, ourRoundsLost, ourRoundsDrawn, bestOurTime, bestOpponentTime }
-}
-
-function computeMatchStats(subMatches: SubMatch[]) {
-  let subMatchesWon = 0
-  let subMatchesLost = 0
-  let subMatchesDrawn = 0
-  let subMatchesPlayed = 0
-
-  for (const sm of subMatches) {
-    if (sm.rounds.length === 0) continue
-    const stats = computeStats(sm.rounds)
-    if (stats.ourRoundsWon + stats.ourRoundsLost + stats.ourRoundsDrawn === 0) continue
-    subMatchesPlayed++
-    if (stats.ourRoundsWon > stats.ourRoundsLost) subMatchesWon++
-    else if (stats.ourRoundsLost > stats.ourRoundsWon) subMatchesLost++
-    else subMatchesDrawn++
-  }
-
-  return { subMatchesWon, subMatchesLost, subMatchesDrawn, subMatchesPlayed }
 }

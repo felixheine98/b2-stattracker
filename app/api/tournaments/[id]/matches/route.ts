@@ -5,6 +5,8 @@ import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
 import { NextResponse } from "next/server"
 import { z } from "zod"
+import type { Format } from "@prisma/client"
+import { compRulesOf, rulesInclude } from "@/lib/match-rules-db"
 import { nextMatchNumber } from "@/lib/match-order"
 import { mayEditLineupById, type SessionUser } from "@/lib/lineup-access-db"
 
@@ -48,7 +50,7 @@ export async function POST(req: Request, { params }: Params) {
 
   const { id } = await params
   if (await isTfhTournament(id)) return NextResponse.json({ error: "TFH races and lineups are maintained through the TFH import preview." }, { status: 409 })
-  const tournament = await db.tournament.findUnique({ where: { id } })
+  const tournament = await db.tournament.findUnique({ where: { id }, include: rulesInclude })
   if (!tournament) return NextResponse.json({ error: "Tournament not found" }, { status: 404 })
 
   const body = await req.json()
@@ -71,7 +73,8 @@ export async function POST(req: Request, { params }: Params) {
 
   const subMatchFormats = stage.type === "SEEDING"
     ? [{ format: "TIME_ATTACK_10" as const, order: 0 }]
-    : tournament.formats
+    // The playoffs may have a format sequence of their own
+    : ((stage.type === "PLAYOFF" && compRulesOf(tournament).playoff?.formats as Format[] | undefined) || tournament.formats)
         .filter((f) => f !== "TIME_ATTACK_10")
         .map((f, i) => ({ format: f, order: i }))
 

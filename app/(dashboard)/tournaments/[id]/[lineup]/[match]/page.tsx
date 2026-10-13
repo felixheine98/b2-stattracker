@@ -7,6 +7,8 @@ import { notFound, redirect } from "next/navigation"
 import { matchPath } from "@/lib/paths"
 import { resolveLineup, resolveMatch, resolveTournament } from "@/lib/slugs-db"
 import { withCompNames } from "@/lib/player-names-db"
+import { ruleSetFor } from "@/lib/match-rules"
+import { compRulesOf, rulesInclude } from "@/lib/match-rules-db"
 import { MatchDetailView } from "./match-detail-view"
 
 interface Props {
@@ -38,6 +40,7 @@ export default async function MatchDetailPage({ params, searchParams }: Props) {
         tournament: {
           include: {
             stages: { select: { id: true, type: true, number: true } },
+            ...rulesInclude,
             tournamentLineups: {
               orderBy: { createdAt: "asc" },
               include: { slots: { include: { player: true } } },
@@ -80,5 +83,5 @@ export default async function MatchDetailPage({ params, searchParams }: Props) {
   // Former players are still needed to recognise imported results, but are not offered for picking
   const named = await withCompNames({ match, allPlayers: allPlayers.map((p) => ({ ...p, former: !selectable(p) })) }, match.tournament)
 
-  return <MatchDetailView match={named.match} allPlayers={named.allPlayers} guestTmIds={guestTmIds} trialTmIds={trialTmIds} autoEcmImport={autoEcmImport} canEdit={canEdit} canManage={canManage(user?.role)} />
+  return <MatchDetailView match={named.match} ruleSet={ruleSetFor(compRulesOf(match.tournament), match.stage.type)} allPlayers={named.allPlayers} guestTmIds={guestTmIds} trialTmIds={trialTmIds} autoEcmImport={autoEcmImport} canEdit={canEdit} canManage={canManage(user?.role)} />
 }

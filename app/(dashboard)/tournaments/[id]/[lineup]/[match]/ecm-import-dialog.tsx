@@ -10,6 +10,7 @@ import { Dialog, DialogTitle } from "@/components/ui/dialog"
 import { Textarea } from "@/components/ui/textarea"
 import { repairEcmSet, ECM_PENDING_KEY, normalizeName, parseEcmPayload, type EcmPayload, type EcmSet } from "@/lib/ecm"
 import { useImportCheck } from "@/lib/use-import-check"
+import { subMatchState, type RuleSet } from "@/lib/match-rules"
 import { formatLabel, parseTime, teamSize } from "@/lib/utils"
 import { useMemo, useState } from "react"
 import type { Player, Round, SubMatch } from "./match-detail-view"
@@ -23,6 +24,8 @@ interface Props {
   tournamentId: string
   matchId: string
   subMatches: SubMatch[]
+  // Format rules of this match: what would be saved is checked against them, as a warning only
+  ruleSet: RuleSet | null
   allPlayers: Player[]
   // Start day of the tournament (YYYY-MM-DD): the day a name taken over from eCM counts from
   startDay: string
@@ -66,7 +69,7 @@ function loadSavedMapping(): Record<string, string> {
   }
 }
 
-export function EcmImportDialog({ tournamentId, matchId, subMatches, allPlayers, startDay, canManage, isGuest, onClose: close, onImported }: Props) {
+export function EcmImportDialog({ tournamentId, matchId, subMatches, ruleSet, allPlayers, startDay, canManage, isGuest, onClose: close, onImported }: Props) {
   const router = useRouter()
   const onClose = () => {
     sessionStorage.removeItem(ECM_PENDING_KEY)
@@ -287,8 +290,13 @@ export function EcmImportDialog({ tournamentId, matchId, subMatches, allPlayers,
             <p className="text-xs font-semibold uppercase tracking-wider text-fg-muted">Sets</p>
             {payload.sets.map((set, i) => {
               const a = analyses[i]
+              const targetFormat = selected[i] ? subMatches.find((sm) => sm.id === targets[i])?.format : undefined
+              const ruleHint = targetFormat
+                ? subMatchState(set.rounds.map((round) => ({ results: round.map((e) => ({ isOurTeam: isOurs(e.p), dnf: isDnf(e.t) })) })), ruleSet?.formatRules[targetFormat] ?? null).hint
+                : null
               return (
                 <div key={i} className="flex flex-wrap items-center gap-x-3 rounded-lg border border-line px-3 py-2 text-sm">
+                  {ruleHint && <p className="order-last w-full pt-1 text-xs text-bronze">{ruleHint}. Check the rounds on eCM.</p>}
                   {repairs[i].dropped.length > 0 && (
                     <p className="order-last w-full pt-1 text-xs text-bronze">
                       Ignored, as surplus and never finished:{" "}

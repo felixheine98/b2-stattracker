@@ -2,8 +2,9 @@
 // and who drove best. Seeding matches are left out, as in all stats.
 import type { StatsMatch } from "./format-stats"
 import { suggestMatchOutcome } from "./opponents"
+import { subMatchState } from "./match-rules"
 import { dayKey } from "./player-status"
-import { roundPlacements, roundScore } from "./round-score"
+import { roundPlacements } from "./round-score"
 
 export interface DashMatch extends Omit<StatsMatch, "tournamentLineupId"> {
   tournamentLineupId: string | null
@@ -49,20 +50,13 @@ interface Tally {
 function tally(match: DashMatch): Tally {
   const t: Tally = { mapsWon: 0, mapsDrawn: 0, mapsLost: 0, roundsWon: 0, roundsLost: 0, played: false }
   for (const sm of match.subMatches) {
-    let won = 0, lost = 0, scored = false
-    for (const round of sm.rounds) {
-      const outcome = roundScore(round.results)?.outcome
-      if (!outcome) continue
-      scored = true
-      if (outcome === "W") won++
-      else if (outcome === "L") lost++
-    }
-    if (!scored) continue
+    const { won, lost, outcome } = subMatchState(sm.rounds, null)
+    if (!outcome) continue
     t.played = true
     t.roundsWon += won
     t.roundsLost += lost
-    if (won > lost) t.mapsWon++
-    else if (lost > won) t.mapsLost++
+    if (outcome === "W") t.mapsWon++
+    else if (outcome === "L") t.mapsLost++
     else t.mapsDrawn++
   }
   return t

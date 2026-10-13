@@ -10,6 +10,8 @@ import { withCompNames } from "@/lib/player-names-db"
 import { TournamentDetailView } from "./tournament-detail-view"
 import { getTfhRace } from "@/lib/tfh-db"
 import { TfhRaceView } from "@/components/tfh/race-view"
+import { lineupPoints } from "@/lib/match-rules"
+import { compRulesOf, rulesBodies, rulesInclude } from "@/lib/match-rules-db"
 
 interface Props {
   params: Promise<{ id: string }>
@@ -42,6 +44,7 @@ export default async function TournamentDetailPage({ params }: Props) {
           },
         },
         stages: { select: { id: true, type: true, number: true } },
+        ...rulesInclude,
         tournamentLineups: {
           orderBy: { createdAt: "asc" },
           include: { slots: { include: { player: true } }, ...LINEUP_MANAGERS_INCLUDE },
@@ -86,5 +89,14 @@ export default async function TournamentDetailPage({ params }: Props) {
   // Everyone is shown under the name they had when the tournament started
   const named = await withCompNames({ tournament, players, statsMatches }, tournament)
 
-  return <TournamentDetailView tournament={named.tournament} players={named.players} statsMatches={named.statsMatches} users={users} ownLineupId={ownLineupId} hasPlanning={hasPlanning} planningCard={planningCard} canManage={mayManage} />
+  // Points of each lineup from the group stage, where the format rules give any
+  const rules = compRulesOf(tournament)
+  const points = Object.fromEntries(
+    tournament.tournamentLineups.flatMap((l) => {
+      const sum = lineupPoints(statsMatches.filter((m) => m.tournamentLineupId === l.id).map((m) => ({ ...m, stageType: m.stage.type })), rules)
+      return sum === null ? [] : [[l.id, sum]]
+    }),
+  )
+
+  return <TournamentDetailView lineupPoints={points} tournament={{ ...named.tournament, ...rulesBodies(rules) }} players={named.players} statsMatches={named.statsMatches} users={users} ownLineupId={ownLineupId} hasPlanning={hasPlanning} planningCard={planningCard} canManage={mayManage} />
 }
