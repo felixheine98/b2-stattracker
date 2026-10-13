@@ -9,5 +9,5 @@ interface Props {
 export default async function OldPlanningPage({ params, searchParams }: Props) {
   const { id } = await params
   const { tab } = await searchParams
-  permanentRedirect(`/tournaments/${id}/planning${tab === "varianten" ? "?tab=variants" : ""}`)
+  permanentRedirect(`/tournaments/${id}/planning${tab === "varianten" ? "?tab=lineups" : ""}`)
 }

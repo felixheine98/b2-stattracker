@@ -27,6 +27,17 @@ describe("variantBoard", () => {
     ])
   })
 
+  it("offers an inactive player only once they answered that they are in or may be", () => {
+    const withInactive = [...rows, row("finn", "INACTIVE"), row("gus", "MAYBE"), row("hal", "FIX")]
+    expect(variantBoard(variant, withInactive).pool.map((r) => r.player.id)).toEqual(["ben", "cleo", "eve", "gus", "hal"])
+  })
+
+  it("keeps an inactive player who is already placed in the lineup", () => {
+    const board = variantBoard({ ...variant, lineups: [{ id: "l1", name: "B2 eSports", note: null, playerIds: ["finn"] }] }, [...rows, row("finn", "INACTIVE")])
+    expect(board.lineups[0].players.map((p) => [p.player.id, p.out])).toEqual([["finn", false]])
+    expect(board.outCount).toBe(0)
+  })
+
   it("lists the players of each lineup and flags those who are no longer in", () => {
     const board = variantBoard(variant, rows)
     expect(board.lineups[0].players.map((p) => [p.player.id, p.out, p.note])).toEqual([
@@ -44,8 +55,8 @@ describe("variantBoard", () => {
 
 describe("nextVariantName", () => {
   it("numbers new variants", () => {
-    expect(nextVariantName([])).toBe("Variant 1")
-    expect(nextVariantName(["Variant 1", "Bodiis-Idee"])).toBe("Variant 3")
+    expect(nextVariantName([])).toBe("Option 1")
+    expect(nextVariantName(["Option 1", "Bodiis-Idee"])).toBe("Option 3")
   })
 
   it("marks a copy and keeps the name unique", () => {

@@ -29,10 +29,10 @@ export async function POST(req: Request, { params }: Params) {
   if (!state) return NextResponse.json({ error: "There is no planning for this tournament" }, { status: 404 })
   if (state.archived) return NextResponse.json({ error: "The tournament already has lineups." }, { status: 409 })
   const variant = state.variants?.find((v) => v.id === parsed.data.variantId)
-  if (!variant) return NextResponse.json({ error: "This variant no longer exists – please reload the page." }, { status: 404 })
+  if (!variant) return NextResponse.json({ error: "This option no longer exists – please reload the page." }, { status: 404 })
 
   const plan = adoptionPlan(variant, state.rows)
-  if (plan.lineups.length === 0) return NextResponse.json({ error: "Nobody is placed in this variant yet." }, { status: 400 })
+  if (plan.lineups.length === 0) return NextResponse.json({ error: "Nobody is placed in this option yet." }, { status: 400 })
 
   const planning = await db.planning.findUniqueOrThrow({ where: { tournamentId: id }, select: { id: true } })
   await db.$transaction(async (tx) => {

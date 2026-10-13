@@ -167,7 +167,7 @@ export function VariantsBoard({ tournamentId, tournamentHref, rows, levels, vari
       ) : (
         <Button size="sm" variant={variants.length === 0 ? "default" : "outline"} onClick={() => setAsking(true)}>
           <Plus size={14} />
-          {variants.length === 0 ? "Add the first variant" : "New variant"}
+          {variants.length === 0 ? "Add the first option" : "New option"}
         </Button>
       )}
     </div>
@@ -175,7 +175,7 @@ export function VariantsBoard({ tournamentId, tournamentHref, rows, levels, vari
 
   return (
     <div className="space-y-4">
-      {variants.length === 0 && <p className="text-sm text-fg-muted">No variant yet.</p>}
+      {variants.length === 0 && <p className="text-sm text-fg-muted">No option yet.</p>}
       {error && <p className="text-sm text-danger">{error}</p>}
 
       {ordered.map((variant) => {
@@ -259,7 +259,7 @@ export function VariantsBoard({ tournamentId, tournamentHref, rows, levels, vari
                 <SavingInput
                   value={variant.name}
                   onSave={(name) => { if (name) run({ type: "updateVariant", variantId: variant.id, name }) }}
-                  aria-label="Name of the variant"
+                  aria-label="Name of the option"
                   maxLength={60}
                   className="h-8 w-48 max-w-full px-1.5 text-base font-semibold text-fg hover:border-line"
                 />
@@ -297,17 +297,17 @@ export function VariantsBoard({ tournamentId, tournamentHref, rows, levels, vari
               )}
               {!archived && (
                 <span className="ml-auto flex items-center gap-1">
-                  <Button size="sm" variant="outline" disabled={adopting} onClick={() => adopt(variant)} title="Create the lineups of this variant in the tournament" className="mr-1">
+                  <Button size="sm" variant="outline" disabled={adopting} onClick={() => adopt(variant)} title="Create the lineups of this option in the tournament" className="mr-1">
                     <Check size={14} />
                     Take over
                   </Button>
-                  <button type="button" onClick={() => run({ type: "createVariant", copyFrom: variant.id })} title="Copy variant" className="p-1.5 text-fg-subtle hover:text-fg">
+                  <button type="button" onClick={() => run({ type: "createVariant", copyFrom: variant.id })} title="Copy option" className="p-1.5 text-fg-subtle hover:text-fg">
                     <Copy size={14} />
                   </button>
                   <button
                     type="button"
-                    onClick={() => { if (confirm(`Delete the variant “${variant.name}”?`)) run({ type: "deleteVariant", variantId: variant.id }) }}
-                    title="Delete variant"
+                    onClick={() => { if (confirm(`Delete the option “${variant.name}”?`)) run({ type: "deleteVariant", variantId: variant.id }) }}
+                    title="Delete option"
                     className="p-1.5 text-fg-subtle hover:text-danger"
                   >
                     <Trash2 size={14} />
@@ -381,7 +381,7 @@ export function VariantsBoard({ tournamentId, tournamentHref, rows, levels, vari
                 onSave={(note) => run({ type: "updateVariant", variantId: variant.id, note: note || null })}
                 onFocus={() => setTyping(`variant:${variant.id}`)}
                 onLeave={() => setTyping(null)}
-                placeholder="Notes on the variant"
+                placeholder="Notes on the option"
                 maxLength={1000}
                 className="h-8 w-full border-dashed border-line px-2 text-xs text-fg-soft placeholder:text-fg-subtle"
               />

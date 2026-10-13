@@ -27,7 +27,8 @@ interface Row<P> {
 
 // What a variant looks like on the board: the pool of players still to place, and the lineups.
 // Whoever answered "not in" is not offered in the pool; if such a player is already placed,
-// they stay where they are and are flagged, so the gap is visible.
+// they stay where they are and are flagged, so the gap is visible. An inactive player is only
+// offered once they gave an answer of their own (see answerOf); placed, they simply stay.
 export function variantBoard<P extends { id: string }, R extends Row<P>>(variant: VariantData, rows: R[]) {
   const byId = new Map(rows.map((r) => [r.player.id, r]))
   const placed = new Set(variant.lineups.flatMap((l) => l.playerIds))
@@ -40,7 +41,7 @@ export function variantBoard<P extends { id: string }, R extends Row<P>>(variant
     }),
   }))
   return {
-    pool: rows.filter((r) => r.answer !== "OUT" && !placed.has(r.player.id)).map((r) => ({ ...r, note: noteOf(r.player.id) })),
+    pool: rows.filter((r) => r.answer !== "OUT" && r.answer !== "INACTIVE" && !placed.has(r.player.id)).map((r) => ({ ...r, note: noteOf(r.player.id) })),
     lineups,
     outCount: lineups.reduce((sum, l) => sum + l.players.filter((p) => p.out).length, 0),
   }
@@ -61,7 +62,7 @@ export function adoptionPlan<P extends { id: string }, R extends Row<P>>(variant
 
 // Name for a new variant, or for a copy of the one called copyOf
 export function nextVariantName(existing: string[], copyOf?: string): string {
-  if (!copyOf) return `Variant ${existing.length + 1}`
+  if (!copyOf) return `Option ${existing.length + 1}`
   let name = `${copyOf} (copy)`
   for (let n = 2; existing.includes(name); n++) name = `${copyOf} (copy ${n})`
   return name

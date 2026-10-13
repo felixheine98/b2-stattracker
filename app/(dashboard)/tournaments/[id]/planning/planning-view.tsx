@@ -35,9 +35,10 @@ export function PlanningView({ initial, ownPlayerId, userId, canManage }: Props)
   const { tournament, levels, rows, addable, variants, archived, adoptedVariantId } = state
   // The tab lives in the address, so a reload or shared link opens the same one
   const tabParam = useSearchParams().get("tab")
-  const tab = variants && (tabParam === "variants" || tabParam === "varianten") ? "variants" : "availability"
+  // The tab is called "Lineups"; its former names still lead to it
+  const tab = variants && ["lineups", "variants", "varianten"].includes(tabParam ?? "") ? "variants" : "availability"
   const selectTab = (next: "variants" | "availability") =>
-    window.history.replaceState(null, "", next === "variants" ? "?tab=variants" : window.location.pathname)
+    window.history.replaceState(null, "", next === "variants" ? "?tab=lineups" : window.location.pathname)
   const [levelName, setLevelName] = useState("")
   const [error, setError] = useState("")
   const api = `${BASE_PATH}/api/tournaments/${tournament.id}/planning`
@@ -151,7 +152,7 @@ export function PlanningView({ initial, ownPlayerId, userId, canManage }: Props)
         <div className="inline-flex rounded-lg border border-line p-1" role="tablist">
           {([
             ["availability", "Availability"],
-            ["variants", `Variants (${variants.length})`],
+            ["variants", `Lineups (${variants.length})`],
           ] as const).map(([value, label]) => (
             <button
               key={value}
