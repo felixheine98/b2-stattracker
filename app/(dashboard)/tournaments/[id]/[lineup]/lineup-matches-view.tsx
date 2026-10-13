@@ -118,8 +118,8 @@ export function LineupMatchesView({ lineup, guestTmIds, trialTmIds, profilePaths
   // Stages the stats are limited to; nothing selected means all
   const [statsStageIds, selectStatsStages] = useIdListParam("stages", statsStages.map((st) => st.id))
   const hasStats = buildAggregates(matches).length > 0
-  // The list of matches is long and mostly looked up, so it starts folded
-  const [showMatches, setShowMatches] = useState(false)
+  // On the page of a lineup its matches are what one comes for, so the list starts open
+  const [showMatches, setShowMatches] = useState(true)
   const nonSeedingFormats = tournament.formats.filter((f) => f !== "TIME_ATTACK_10")
   const statsFormats = [...new Set(nonSeedingFormats)]
   const [statsFormatIds, selectStatsFormats] = useIdListParam("formats", statsFormats)
