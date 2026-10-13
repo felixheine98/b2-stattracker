@@ -3,7 +3,7 @@
 import { PillSelect } from "@/components/pill-select"
 import { cn } from "@/lib/utils"
 import { SlidersHorizontal, X } from "lucide-react"
-import { useState } from "react"
+import { Fragment, useState } from "react"
 
 interface Group {
   label: string
@@ -11,6 +11,8 @@ interface Group {
   // Nothing selected means all
   selected: string[]
   onChange: (ids: string[]) => void
+  // From 768px on this group has a row to itself, the next ones start below it
+  ownRow?: boolean
 }
 
 // The filters above a stats section. From 768px one bar per group; on phones a single
@@ -29,7 +31,10 @@ export function StatsFilter({ groups, className }: { groups: Group[]; className?
     <div className={className}>
       <div className="hidden flex-wrap gap-2 md:flex">
         {groups.map((g) => (
-          <PillSelect key={g.label} options={g.options} selected={g.selected} onChange={g.onChange} />
+          <Fragment key={g.label}>
+            <PillSelect options={g.options} selected={g.selected} onChange={g.onChange} />
+            {g.ownRow && <div className="basis-full" />}
+          </Fragment>
         ))}
       </div>
 

@@ -22,7 +22,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Dialog, DialogTitle } from "@/components/ui/dialog"
 import { Badge } from "@/components/ui/badge"
 import {
-  Plus, ArrowLeft, Calendar, ChevronRight, ClipboardList, Swords, Trash2, Pencil, X, User, Users, BarChart2,
+  Plus, ArrowLeft, Calendar, ChevronDown, ChevronRight, ClipboardList, Swords, Trash2, Pencil, X, User, Users, BarChart2,
 } from "lucide-react"
 import { cn, formatLabel } from "@/lib/utils"
 import { STYLE_ORDER, needsFormats, styleLabel, styleParam } from "@/lib/comp-styles"
@@ -157,6 +157,10 @@ export function TournamentDetailView({ tournament: initial, players, statsMatche
   // Tables per format, or per map
   const [statsView, selectStatsView] = useIdListParam("view", ["map"])
   const statsByMap = statsView.includes("map")
+  // Only matches that still exist locally count, so deleting the last one takes the stats away
+  const hasStats = buildAggregates(statsMatches.filter((sm) => matches.some((m) => m.id === sm.id))).length > 0
+  // The list of matches is long and mostly looked up, so it starts folded
+  const [showMatches, setShowMatches] = useState(false)
 
   // Within a tournament everyone is member or guest as of its start day
   const guestTmIds = new Set(guestTmIdsAt(players, tournamentReferenceDate(tournament)))
@@ -402,7 +406,7 @@ export function TournamentDetailView({ tournament: initial, players, statsMatche
         </Link>
       )}
 
-      {/* From 1536px on the stats stand on the left, lineups and matches on the right */}
+      {/* From 1536px on stats and matches stand on the left, the lineups on the right */}
       <div className="page-columns">
       {/* Lineups section */}
       <div>
@@ -518,6 +522,7 @@ export function TournamentDetailView({ tournament: initial, players, statsMatche
       </div>
 
       {/* Overall stats */}
+      <div className={cn("space-y-6", hasStats && "page-main")}>
       {(() => {
         // Only matches that still exist locally, so deleting a match updates the stats at once
         const existing = statsMatches.filter((sm) => matches.some((m) => m.id === sm.id))
@@ -528,7 +533,7 @@ export function TournamentDetailView({ tournament: initial, players, statsMatche
         const lineupName = (tmId: string) =>
           lineups.find((l) => l.slots.some((s) => s.player.tmId.toLowerCase() === tmId.toLowerCase()))?.name
         return (
-          <div className="page-main">
+          <div>
             <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
               <h2 className="text-sm font-semibold text-fg-muted uppercase tracking-wider flex items-center gap-2">
                 <BarChart2 size={14} />
@@ -540,7 +545,7 @@ export function TournamentDetailView({ tournament: initial, players, statsMatche
               className="mb-4"
               groups={[
                 ...(lineups.length > 0
-                  ? [{ label: "Lineup", options: lineups.map((l) => ({ id: l.id, label: l.name })), selected: statsLineupIds, onChange: selectStatsLineups }]
+                  ? [{ label: "Lineup", options: lineups.map((l) => ({ id: l.id, label: l.name })), selected: statsLineupIds, onChange: selectStatsLineups, ownRow: true }]
                   : []),
                 ...(statsStages.length > 1
                   ? [{ label: "Stage", options: statsStages.map((st) => ({ id: st.id, label: stageName(st, stages) })), selected: statsStageIds, onChange: selectStatsStages }]
@@ -572,11 +577,19 @@ export function TournamentDetailView({ tournament: initial, players, statsMatche
 
       {/* Matches section */}
       <div>
-        <div className="flex items-center justify-between mb-3">
-          <h2 className="text-sm font-semibold text-fg-muted uppercase tracking-wider">
-            Matches ({matches.length})
-          </h2>
-        </div>
+        {matches.length === 0 ? (
+          <h2 className="mb-3 text-sm font-semibold text-fg-muted uppercase tracking-wider">Matches (0)</h2>
+        ) : (
+          <button
+            type="button"
+            onClick={() => setShowMatches((o) => !o)}
+            aria-expanded={showMatches}
+            className="flex w-full items-center justify-between gap-3 rounded-xl border border-line bg-surface px-4 py-3 text-left hover:bg-raised/50"
+          >
+            <h2 className="text-sm font-semibold text-fg-muted uppercase tracking-wider">Matches ({matches.length})</h2>
+            <ChevronDown size={16} className={cn("shrink-0 text-fg-muted transition-transform", showMatches && "rotate-180")} />
+          </button>
+        )}
         {matches.length === 0 ? (
           <Card>
             <CardContent className="py-10 text-center">
@@ -584,8 +597,8 @@ export function TournamentDetailView({ tournament: initial, players, statsMatche
               <p className="text-fg-muted text-sm">No matches yet. Open a lineup to add the first match.</p>
             </CardContent>
           </Card>
-        ) : (
-          <div className="space-y-5">
+        ) : showMatches && (
+          <div className="mt-4 space-y-5">
             {stages.map((stage) => {
               // Lineup by lineup, each in the order of its match numbers
               const lineupIndex = (m: Match) => {
@@ -648,6 +661,7 @@ export function TournamentDetailView({ tournament: initial, players, statsMatche
             })}
           </div>
         )}
+      </div>
       </div>
       </div>
 
