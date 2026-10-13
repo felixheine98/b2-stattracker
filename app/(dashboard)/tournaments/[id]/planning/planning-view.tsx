@@ -106,6 +106,8 @@ export function PlanningView({ initial, ownPlayerId, userId, canManage }: Props)
       levels={levels}
       editable={!archived && (canManage || row.player.id === ownPlayerId)}
       mutate={mutate}
+      // In the groups the answer is chosen in a menu below the name: once the player has moved, it closes
+      onSaved={(change) => { if (change.answer !== undefined) setEditing((open) => (open === row.player.id ? null : open)) }}
       className={className}
     />
   )
