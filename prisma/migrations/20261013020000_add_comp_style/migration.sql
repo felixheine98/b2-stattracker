@@ -16,8 +16,11 @@ BEGIN
   END IF;
   ALTER TABLE "Tournament" ADD COLUMN IF NOT EXISTS "style" "CompStyle";
 
-  -- Every TFH race is endurance, the 12h RPG ones too
-  UPDATE "Tournament" SET "style" = 'ENDURANCE' WHERE "style" IS NULL AND "id" IN (SELECT "tournamentId" FROM "TfhRace");
+  -- Every TFH race is endurance, the 12h RPG ones too. An installation that never had the TFH
+  -- archive gets its table only from the db push that follows.
+  IF to_regclass('"TfhRace"') IS NOT NULL THEN
+    UPDATE "Tournament" SET "style" = 'ENDURANCE' WHERE "style" IS NULL AND "id" IN (SELECT "tournamentId" FROM "TfhRace");
+  END IF;
   -- A TFH race entered by hand, before its results are imported
   UPDATE "Tournament" SET "style" = 'ENDURANCE' WHERE "style" IS NULL AND "name" = 'TFH 24h #5';
 
