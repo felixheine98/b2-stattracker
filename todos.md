@@ -7,7 +7,6 @@ Ideen, die noch kein Todo sind: [ideen.md](ideen.md)
 - [ ] Design/UI/UX Verbesserungen
 - [ ] als member -> in tourney übersicht der eigenen stats, danach kann man sich durch die stats durchklicken
 - [ ] validierung von importierten daten zu eingegebenen daten (match) -> passt das gegner team etc
-- [ ] tournaments seite bei mehreren comps: bleibt eine einfache liste der turniere, anordnung prüfen wenn es mehr werden
 
 ## Teilweise erledigt
 
@@ -26,6 +25,8 @@ Ideen, die noch kein Todo sind: [ideen.md](ideen.md)
 - [ ] spieler-profil: seeding-bereich mit seeding-stats (erst entscheiden, wie seeding-daten ins system kommen)
 
 ## Erledigt
+
+- [x] tournaments seite bei mehreren comps: bleibt eine einfache liste der turniere, anordnung geprüft
 
 - [x] Themes und Theme-Auswahl
   - [x] light theme in den b2 farben (dark bleibt default); farben als theme-variablen
