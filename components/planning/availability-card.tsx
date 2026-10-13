@@ -14,6 +14,8 @@ interface Props {
   tournament: { id: string; slug?: string | null; name: string }
   playerId: string
   answer: Answer
+  // The player does not drive competitions as a rule and is not asked to answer
+  inactive?: boolean
   note: string | null
   levels: LevelRef[]
 }
@@ -21,7 +23,7 @@ interface Props {
 // Asks the signed-in player whether they take part in a tournament that is being planned.
 // While the answer is open it is a card that stands out; once answered it shrinks to a slim
 // bar that says the answer in its colour and opens again to change it.
-export function AvailabilityCard({ tournament, playerId, answer, note, levels }: Props) {
+export function AvailabilityCard({ tournament, playerId, answer, inactive, note, levels }: Props) {
   // Follow the input without reloading the page
   const [current, setCurrent] = useState(answer)
   const [currentNote, setCurrentNote] = useState(note)
@@ -35,7 +37,8 @@ export function AvailabilityCard({ tournament, playerId, answer, note, levels }:
       current === "FIX" ? { stripe: "bg-green-500", icon: "text-ok", Icon: CircleCheck, text: "You're available" }
       : current === "MAYBE" ? { stripe: "bg-info", icon: "text-info", Icon: CircleHelp, text: "You're a maybe" }
       : current === "OUT" ? { stripe: "bg-danger", icon: "text-danger", Icon: CircleX, text: "You're not available" }
-      : { stripe: "bg-violet", icon: "text-violet", Icon: CircleDot, text: `Your answer: ${answerLabel(current, levels)}` }
+      : current === "INACTIVE" ? { stripe: "bg-violet", icon: "text-violet", Icon: CircleDot, text: "You're set as inactive – answer if you want to play" }
+      : { stripe: "bg-bronze", icon: "text-bronze", Icon: CircleDot, text: `Your answer: ${answerLabel(current, levels)}` }
     return (
       <div className="relative flex flex-wrap items-center gap-x-3 gap-y-2 overflow-hidden rounded-xl border border-line bg-surface py-2.5 pl-5 pr-3">
         <span className={cn("absolute inset-y-0 left-0 w-1.5", tone.stripe)} />
@@ -81,6 +84,7 @@ export function AvailabilityCard({ tournament, playerId, answer, note, levels }:
           tournamentId={tournament.id}
           playerId={playerId}
           answer={current}
+          inactive={inactive}
           note={currentNote}
           levels={levels}
           editable

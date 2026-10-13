@@ -3,7 +3,7 @@
 import { VariantsBoard } from "./variants-board"
 import { GuestBadge } from "@/components/guest-badge"
 import { AvailabilityInput, answerColor } from "@/components/planning/availability-input"
-import { AVAILABILITY_LABEL, type Answer } from "@/lib/planning"
+import { AVAILABILITY_LABEL, INACTIVE_LABEL, type Answer } from "@/lib/planning"
 import { PlayerAvatar } from "@/components/player-avatar"
 import { PlayerSearch } from "@/components/player-search"
 import { Button } from "@/components/ui/button"
@@ -65,6 +65,7 @@ export function PlanningView({ initial, ownPlayerId, userId, canManage }: Props)
     { answer: "MAYBE" as Answer, label: AVAILABILITY_LABEL.MAYBE },
     ...levels.map((l) => ({ answer: `level:${l.id}` as Answer, label: l.name })),
     { answer: "OUT" as Answer, label: AVAILABILITY_LABEL.OUT },
+    { answer: "INACTIVE" as Answer, label: INACTIVE_LABEL },
     { answer: "OPEN" as Answer, label: "No answer yet" },
   ].map((g) => ({ ...g, rows: rows.filter((r) => r.answer === g.answer) }))
 
@@ -94,6 +95,7 @@ export function PlanningView({ initial, ownPlayerId, userId, canManage }: Props)
       tournamentId={tournament.id}
       playerId={row.player.id}
       answer={row.answer}
+      inactive={row.inactive}
       note={row.note}
       levels={levels}
       editable={!archived && (canManage || row.player.id === ownPlayerId)}
@@ -184,7 +186,7 @@ export function PlanningView({ initial, ownPlayerId, userId, canManage }: Props)
           </p>
           <div className="flex flex-wrap items-center gap-2">
             {levels.map((l) => (
-              <span key={l.id} className="inline-flex items-center gap-1.5 rounded-full border border-violet/40 bg-violet/15 py-1 pl-3 pr-2 text-xs text-violet">
+              <span key={l.id} className="inline-flex items-center gap-1.5 rounded-full border border-bronze/40 bg-bronze/15 py-1 pl-3 pr-2 text-xs text-bronze">
                 {l.name}
                 <button
                   type="button"

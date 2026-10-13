@@ -41,7 +41,8 @@ export async function openPlanningsFor(playerId: string, tournamentId?: string) 
       tournament: p.tournament,
       playerId,
       levels: p.levels.map((l) => ({ id: l.id, name: l.name })),
-      answer: answerOf(p.entries[0]),
+      answer: answerOf(p.entries[0], player.inactive),
+      inactive: player.inactive,
       note: p.entries[0]?.note ?? null,
     }))
 }
@@ -96,7 +97,7 @@ export async function buildPlanningState(tournamentId: string, viewer: PlanningV
         planning: { include: { levels: { orderBy: { createdAt: "asc" } }, entries: true } },
       },
     }),
-    db.player.findMany({ where: { isOpponentOnly: false }, select: { id: true, tmId: true, name: true, country: true, initialStatus: true, statusChanges: true } }),
+    db.player.findMany({ where: { isOpponentOnly: false }, select: { id: true, tmId: true, name: true, country: true, inactive: true, initialStatus: true, statusChanges: true } }),
   ])
   if (!tournament?.planning) return null
 
@@ -104,6 +105,8 @@ export async function buildPlanningState(tournamentId: string, viewer: PlanningV
   const rows = planningRows(named, tournament.planning.entries, tournamentReferenceDate(tournament)).map((row) => ({
     player: { id: row.player.id, tmId: row.player.tmId, name: row.player.name, country: row.player.country },
     answer: row.answer,
+    // Without an own answer the player counts as inactive, not as open
+    inactive: row.player.inactive,
     guest: row.guest,
     // Notes are private: only admins and managers read those of others. undefined hides the field.
     note: viewer.canManage || row.player.id === viewer.playerId ? row.entry?.note ?? null : undefined,

@@ -12,9 +12,11 @@ import { allNames, type NameChange } from "@/lib/player-names"
 import type { CompProfile, MapLine, RankedPace, StatLine } from "@/lib/player-profile"
 import { currentStatus, formatDay, type PlayerStatus, type StatusChange } from "@/lib/player-status"
 import { useSyncedState } from "@/lib/use-synced-state"
+import { BASE_PATH } from "@/lib/base-path"
+import { INACTIVE_LABEL } from "@/lib/planning"
 import { cn, formatLabel, formatTime } from "@/lib/utils"
 import type { Format } from "@prisma/client"
-import { ArrowLeft, ArrowLeftRight, ChevronDown, ChevronUp, ExternalLink, History, Pencil, Swords, Trophy } from "lucide-react"
+import { ArrowLeft, ArrowLeftRight, ChevronDown, ChevronUp, ExternalLink, History, Moon, Pencil, Swords, Trophy } from "lucide-react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useState } from "react"
@@ -22,6 +24,8 @@ import { NameHistoryDialog } from "../name-history-dialog"
 import { StatusHistoryDialog, StatusMoveDialog, type StatusPlayer } from "../status-dialogs"
 
 interface Player extends StatusPlayer {
+  // Does not drive competitions as a rule; counts as "Inactive" in the lineup planning
+  inactive: boolean
   tmId: string
   country: string | null
   initialName: string
@@ -267,6 +271,19 @@ export function PlayerProfileView({ player: initial, total, formats, comps, hasO
   const dnfRate = total.roundsPlayed > 0 ? (total.dnfs / total.roundsPlayed) * 100 : null
   const decided = total.roundsWon + total.roundsLost
 
+  // Inactive: a member who is not asked for an answer in the lineup planning
+  async function toggleInactive() {
+    const inactive = !player.inactive
+    const res = await fetch(`${BASE_PATH}/api/players/${player.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ inactive }),
+    }).catch(() => null)
+    if (!res?.ok) return
+    setPlayer((p) => ({ ...p, inactive }))
+    router.refresh()
+  }
+
   function setStatusChanges(statusChanges: StatusChange[], loginDeleted?: boolean) {
     setPlayer((p) => ({ ...p, statusChanges, ...(loginDeleted && { user: null }) }))
     router.refresh()
@@ -285,6 +302,7 @@ export function PlayerProfileView({ player: initial, total, formats, comps, hasO
             <PlayerAvatar player={player} className="h-8 w-8 text-base" />
             <h1 className="break-words text-2xl font-bold text-fg">{player.name}</h1>
             <Badge variant={status === "MEMBER" ? "primary" : status === "TRIAL" ? "secondary" : "default"}>{STATUS_TEXT[status]}</Badge>
+            {player.inactive && <Badge variant="purple" title="Does not drive competitions as a rule">{INACTIVE_LABEL}</Badge>}
           </div>
           <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-sm text-fg-muted">
             {player.country && <span>{countryName(player.country)}</span>}
@@ -312,6 +330,12 @@ export function PlayerProfileView({ player: initial, total, formats, comps, hasO
             <History size={13} />
             Status history
           </Button>
+          {canManage && (
+            <Button variant="outline" size="sm" onClick={toggleInactive} title="Inactive members are not asked for an answer in the lineup planning">
+              <Moon size={13} />
+              {player.inactive ? "Set active" : "Set inactive"}
+            </Button>
+          )}
           {canManage && (
             <Button variant="outline" size="sm" onClick={() => setDialog("move")}>
               <ArrowLeftRight size={13} />

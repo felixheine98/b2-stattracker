@@ -44,7 +44,8 @@ function dotColor(answer: Answer): string {
   if (answer === "MAYBE") return "bg-info"
   if (answer === "OUT") return "bg-danger"
   if (answer === "OPEN") return "bg-fg-subtle"
-  return "bg-violet"
+  if (answer === "INACTIVE") return "bg-violet"
+  return "bg-bronze"
 }
 
 // A text field that saves when left or on Enter, not on every key

@@ -25,6 +25,29 @@ describe("answerOf", () => {
   })
 })
 
+describe("inactive members", () => {
+  const tra = { ...member("tra", "TraTM"), inactive: true }
+
+  it("count as inactive instead of open while they have not answered", () => {
+    expect(answerOf(undefined, true)).toBe("INACTIVE")
+    expect(answerOf(entry("tra"), true)).toBe("INACTIVE")
+    const rows = planningRows([...players, tra], [], "2026-06-07")
+    expect(rows.map((r) => [r.player.name, r.answer])).toEqual([
+      ["LPNSebi", "OPEN"],
+      ["TraTM", "INACTIVE"],
+      ["UsoTM", "OPEN"],
+    ])
+    expect(rows.filter((r) => r.answer === "OPEN")).toHaveLength(2)
+  })
+
+  it("are listed with their own answer once they give one for a tournament", () => {
+    expect(answerOf(entry("tra", { status: "FIX" }), true)).toBe("FIX")
+    expect(answerOf(entry("tra", { levelId: "sub" }), true)).toBe("level:sub")
+    const rows = planningRows([tra], [entry("tra", { status: "MAYBE" })], "2026-06-07")
+    expect(rows.map((r) => r.answer)).toEqual(["MAYBE"])
+  })
+})
+
 describe("planningRows", () => {
   it("lists every member, answered or not, in alphabetical order", () => {
     const rows = planningRows(players, [entry("uso", { status: "FIX" })], "2026-06-07")

@@ -43,3 +43,4 @@
 - [x] two-factor sign-in mit authenticator-app (TOTP): pflicht für admins, freiwillig für alle anderen; recovery-codes, sperre nach 5 falschen codes, reset durch admin/manager
 - [x] passkeys (WebAuthn): login ohne passwort, mehrere pro account, zählen für admins als zweiter faktor (TOTP oder passkey)
 - [x] TFH: B2-Fahrerranking pro Rennen (alle B2-Teams in einer Tabelle, standardmäßig nach CPM) und Übersicht über alle Ausgaben mit addierbaren Werten (`/tfh`)
+- [x] lineup-planung: status „Inactive" (violett) für mitglieder, die standardmäßig keine comps fahren – ohne eigene antwort nicht mehr offen; schalter im spielerprofil; extra-stufen sind jetzt bronze

@@ -9,7 +9,8 @@ interface Params {
   params: Promise<{ id: string }>
 }
 
-// Link or unlink a user account to this player profile, or set the player's country
+// Link or unlink a user account to this player profile, set the player's country, or mark the
+// player as inactive (does not drive competitions as a rule, see lib/planning.ts)
 export async function PATCH(req: Request, { params }: Params) {
   const session = await auth()
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
@@ -17,8 +18,8 @@ export async function PATCH(req: Request, { params }: Params) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 })
 
   const { id } = await params
-  const body = await req.json() as { userId?: string | null; country?: string | null }
-  const { userId, country } = body
+  const body = await req.json() as { userId?: string | null; country?: string | null; inactive?: unknown }
+  const { userId, country, inactive } = body
 
   // Validate everything before writing, so a rejected request changes nothing
   const target = await db.player.findUnique({ where: { id }, include: { statusChanges: true, user: { select: { id: true } } } })
@@ -26,6 +27,9 @@ export async function PATCH(req: Request, { params }: Params) {
 
   if (country !== undefined && country !== null && !isCountryCode(country))
     return NextResponse.json({ error: "Unknown country" }, { status: 400 })
+
+  if (inactive !== undefined && typeof inactive !== "boolean")
+    return NextResponse.json({ error: "Inactive is either on or off" }, { status: 400 })
 
   if (userId) {
     // Only members get a login; one that exists is kept, but no new one is linked
@@ -41,6 +45,7 @@ export async function PATCH(req: Request, { params }: Params) {
 
   await db.$transaction([
     ...(country !== undefined ? [db.player.update({ where: { id }, data: { country } })] : []),
+    ...(inactive !== undefined ? [db.player.update({ where: { id }, data: { inactive } })] : []),
     // Clear any existing link to this player first
     ...(userId !== undefined ? [db.user.updateMany({ where: { playerId: id }, data: { playerId: null } })] : []),
     ...(userId ? [db.user.update({ where: { id: userId }, data: { playerId: id } })] : []),

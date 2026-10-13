@@ -19,6 +19,8 @@ docker compose -f docker-compose.dev.yml exec app npm test
 docker compose -f docker-compose.dev.yml exec app npx tsc --noEmit -p .
 ```
 
+Tests that need PostgreSQL create a temporary schema in the dev database and remove it again. They are skipped unless asked for: `env DB_TESTS=1 npm test` for route tests (`app/api/**/route.test.ts`), `env TFH_DB_TESTS=1 npm test` for the TFH archive.
+
 # Production and dev
 
 Two setups run side by side:
