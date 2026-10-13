@@ -4,6 +4,7 @@ Ideen, die noch kein Todo sind: [ideen.md](ideen.md)
 
 ## Offen
 
+- [ ] Design/UI/UX Verbesserungen
 - [ ] als member -> in tourney übersicht der eigenen stats, danach kann man sich durch die stats durchklicken
 - [ ] validierung von importierten daten zu eingegebenen daten (match) -> passt das gegner team etc
 - [ ] tournaments seite bei mehreren comps: bleibt eine einfache liste der turniere, anordnung prüfen wenn es mehr werden
@@ -16,12 +17,6 @@ Ideen, die noch kein Todo sind: [ideen.md](ideen.md)
 
 ## Unter Beobachtung
 
-- [ ] Design/UI/UX Verbesserungen: Themes
-  - [x] light theme in den b2 farben (dark bleibt default); farben als theme-variablen
-  - [x] Midnight und OLED Black; kompakte Auswahl mit runden Farbvorschauen unter „Appearance“ (Kacheln auf Desktop, schmale Zeilen auf Handy)
-  - [x] Warm Light mit Cremefarben und B2 Blue mit sattem Teamblau und gelben Highlights
-  - [x] „Follow system“: B2 Light/Dark nach Geräteeinstellung, auch bei Änderungen und beim Neuladen
-
 - [ ] Lineup Builder
   - [x] gemeinsames erstellen für lineups, welches direkt in eine comp reingespeichert wird (Planung pro Comp: Verfügbarkeit, Varianten, Live-Session, Übernehmen)
   - [x] danach werden in dieser comp nur noch diese 4 lineups gezeigt bzw nur die spieler
@@ -31,6 +26,12 @@ Ideen, die noch kein Todo sind: [ideen.md](ideen.md)
 - [ ] spieler-profil: seeding-bereich mit seeding-stats (erst entscheiden, wie seeding-daten ins system kommen)
 
 ## Erledigt
+
+- [x] Themes und Theme-Auswahl
+  - [x] light theme in den b2 farben (dark bleibt default); farben als theme-variablen
+  - [x] Midnight und OLED Black; kompakte Auswahl mit runden Farbvorschauen unter „Appearance“ (Kacheln auf Desktop, schmale Zeilen auf Handy)
+  - [x] Warm Light mit Cremefarben und B2 Blue mit sattem Teamblau und gelben Highlights
+  - [x] „Follow system“: B2 Light/Dark nach Geräteeinstellung, auch bei Änderungen und beim Neuladen
 
 - [x] spieler-profile: eigene seite pro spieler (idee boris; gibt dem spielertab mehr zweck als nur spieler/gäste anlegen); der seeding-bereich steht unter Low Prio
   - [x] gespielte turniere (mit lineup, als member/gast)
