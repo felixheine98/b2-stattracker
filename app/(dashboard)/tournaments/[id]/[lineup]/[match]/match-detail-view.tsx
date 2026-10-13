@@ -452,7 +452,7 @@ export function MatchDetailView({ match: initialMatch, allPlayers, guestTmIds, t
                 })}
               </p>
             )}
-            {initialMatch.notes && <p className="text-fg-subtle text-sm mt-1">{initialMatch.notes}</p>}
+            {initialMatch.notes && <p className="text-fg-subtle text-sm mt-1 whitespace-pre-line break-words">{initialMatch.notes}</p>}
             {ecmUrl && (
               <a
                 href={ecmUrl}
@@ -766,6 +766,8 @@ export function MatchDetailView({ match: initialMatch, allPlayers, guestTmIds, t
       {/* eCircuitMania import dialog */}
       {showEcmImport && (
         <EcmImportDialog
+          tournamentId={initialMatch.tournament.id}
+          matchId={initialMatch.id}
           subMatches={subMatches}
           allPlayers={allPlayers}
           startDay={dayKey(initialMatch.tournament.startDate ?? initialMatch.tournament.createdAt)}

@@ -1,6 +1,7 @@
 "use client"
 
 import { EcmBookmarkletSetup } from "@/components/ecm-bookmarklet-setup"
+import { ImportCheckPanel } from "@/components/import-check-panel"
 import { BASE_PATH } from "@/lib/base-path"
 import { localTodayKey } from "@/lib/player-status"
 import { useRouter } from "next/navigation"
@@ -8,6 +9,7 @@ import { Button } from "@/components/ui/button"
 import { Dialog, DialogTitle } from "@/components/ui/dialog"
 import { Textarea } from "@/components/ui/textarea"
 import { repairEcmSet, ECM_PENDING_KEY, normalizeName, parseEcmPayload, type EcmPayload, type EcmSet } from "@/lib/ecm"
+import { useImportCheck } from "@/lib/use-import-check"
 import { formatLabel, parseTime, teamSize } from "@/lib/utils"
 import { useMemo, useState } from "react"
 import type { Player, Round, SubMatch } from "./match-detail-view"
@@ -18,6 +20,8 @@ const isDnf = (time: string | undefined) => time?.trim().toUpperCase() === "DNF"
 const isEcmUrl = (url: string | undefined) => !!url && /^https:\/\/([a-z0-9-]+\.)*ecircuitmania\.com\//i.test(url)
 
 interface Props {
+  tournamentId: string
+  matchId: string
   subMatches: SubMatch[]
   allPlayers: Player[]
   // Start day of the tournament (YYYY-MM-DD): the day a name taken over from eCM counts from
@@ -62,7 +66,7 @@ function loadSavedMapping(): Record<string, string> {
   }
 }
 
-export function EcmImportDialog({ subMatches, allPlayers, startDay, canManage, isGuest, onClose: close, onImported }: Props) {
+export function EcmImportDialog({ tournamentId, matchId, subMatches, allPlayers, startDay, canManage, isGuest, onClose: close, onImported }: Props) {
   const router = useRouter()
   const onClose = () => {
     sessionStorage.removeItem(ECM_PENDING_KEY)
@@ -158,7 +162,22 @@ export function EcmImportDialog({ subMatches, allPlayers, startDay, canManage, i
     router.refresh()
   }
 
-  const canImport = selected.some(Boolean) && problems.length === 0 && !saving
+  // What would be saved, compared with what is entered for the match. eCM knows the opponent's
+  // drivers by name only, so of the other team just those count whose name is one of ours.
+  const otherTeam = payload?.teams.length === 2 ? payload.teams[1 - ourTeam] : null
+  const profileOf = (name: string) => allPlayers.find((p) => p.id === playerIdFor(name))
+  const selectedSets = payload?.sets.filter((_, i) => selected[i]) ?? []
+  const foreignNames = [...new Set(selectedSets.flatMap((set) => set.rounds.flatMap((round) => round.filter((e) => !isOurs(e.p)).map((e) => e.p))))]
+  const check = useImportCheck(tournamentId, matchId, payload && selected.some(Boolean) && problems.length === 0
+    ? {
+        ours: neededNames.flatMap((n) => { const p = profileOf(n); return p ? [{ tmId: p.tmId, name: p.name }] : [] }),
+        foreign: foreignNames.flatMap((n) => { const p = autoMatch(n); return p ? [{ tmId: p.tmId, name: p.name }] : [] }),
+        firstRoundTime: null,
+        ...(otherTeam && { teams: { own: payload.teams[ourTeam].name, opponent: otherTeam.name } }),
+      }
+    : null)
+
+  const canImport = selected.some(Boolean) && problems.length === 0 && !saving && check.ready
 
   async function handleImport() {
     if (!payload) return
@@ -202,6 +221,13 @@ export function EcmImportDialog({ subMatches, allPlayers, startDay, canManage, i
       const data = await res.json()
       onImported(targets[i], data.rounds, ecmUrl)
     }
+    // The line about the hints the import was confirmed despite, or none any more
+    await fetch(`${BASE_PATH}/api/tournaments/${tournamentId}/matches/${matchId}/import/note`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ warnings: check.warnings }),
+    }).catch(() => null)
+    router.refresh()
     setSaving(false)
     onClose()
   }
@@ -364,6 +390,7 @@ export function EcmImportDialog({ subMatches, allPlayers, startDay, canManage, i
           {problems.map((problem) => (
             <p key={problem} className="text-xs text-danger">{problem}</p>
           ))}
+          <ImportCheckPanel check={check} />
           {error && <p className="text-sm text-danger">{error}</p>}
 
           <div className="dialog-footer flex gap-2 justify-end">

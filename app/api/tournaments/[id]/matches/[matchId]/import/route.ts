@@ -2,7 +2,9 @@ import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
 import { mayEditLineupById, type SessionUser } from "@/lib/lineup-access-db"
 import { confirmedTmId } from "@/lib/opponents"
+import { applyImportNote } from "@/lib/import-check-db"
 import { saveMatchImport } from "@/lib/match-import-db"
+import { isValidDay } from "@/lib/player-status"
 import { canManage } from "@/lib/roles"
 import { syncPlayerSlugs } from "@/lib/slugs-db"
 import { NextResponse } from "next/server"
@@ -14,7 +16,9 @@ interface Params {
 
 // What the import dialog worked out from the dumper's CSV (see lib/match-csv.ts): per sub-match
 // the rounds to save, every result in finishing order and on its side. guests are drivers of
-// ours who are not in the system yet.
+// ours who are not in the system yet. warnings are the hints of the preview the import was
+// confirmed despite, date the day of the rounds if the match is to take it over (see
+// lib/import-check.ts).
 const schema = z.object({
   blocks: z
     .array(
@@ -45,6 +49,8 @@ const schema = z.object({
     )
     .min(1),
   guests: z.array(z.object({ tmId: z.string(), name: z.string().trim().min(1).max(100) })).default([]),
+  warnings: z.array(z.string().trim().min(1).max(200)).max(50).default([]),
+  date: z.string().refine(isValidDay).optional(),
 })
 
 // Fill the sub-matches of a match from an import of the whole match. Rounds a sub-match
@@ -65,7 +71,7 @@ export async function POST(req: Request, { params }: Params) {
 
   const parsed = schema.safeParse(await req.json())
   if (!parsed.success) return NextResponse.json({ error: "Invalid import data" }, { status: 400 })
-  const { blocks, guests } = parsed.data
+  const { blocks, guests, warnings, date } = parsed.data
 
   const subMatchIds = blocks.map((b) => b.subMatchId)
   if (new Set(subMatchIds).size !== subMatchIds.length || subMatchIds.some((s) => !match.subMatches.some((sm) => sm.id === s))) {
@@ -91,7 +97,10 @@ export async function POST(req: Request, { params }: Params) {
   }
 
   await db.$transaction(
-    (tx) => saveMatchImport(tx, match, blocks, known, newGuests.map((g) => g!)),
+    async (tx) => {
+      await saveMatchImport(tx, match, blocks, known, newGuests.map((g) => g!))
+      await applyImportNote(tx, match.id, session.user?.name ?? "unknown", warnings, date)
+    },
     { timeout: 60000 }
   )
 

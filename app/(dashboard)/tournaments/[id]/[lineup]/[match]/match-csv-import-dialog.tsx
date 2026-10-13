@@ -1,8 +1,10 @@
 "use client"
 
+import { ImportCheckPanel } from "@/components/import-check-panel"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogTitle } from "@/components/ui/dialog"
 import { BASE_PATH } from "@/lib/base-path"
+import { useImportCheck } from "@/lib/use-import-check"
 import { blockDrivers, parseMatchCsv, planBlock, suspiciousRounds, type CsvBlock } from "@/lib/match-csv"
 import { cn, formatLabel, formatTime, teamSize } from "@/lib/utils"
 import type { Format } from "@prisma/client"
@@ -99,6 +101,12 @@ export function MatchCsvImportDialog({ tournamentId, matchId, subMatches, ownPla
   const replaced = importing.reduce((sum, i) => sum + (subMatches.find((sm) => sm.id === targets[i])?.rounds.length ?? 0), 0)
   const doubled = targets.some((t, i) => t && targets.indexOf(t) !== i)
 
+  // What would be saved, compared with what is entered for the match
+  const imported = importing.flatMap((i) => plans[i].rounds)
+  const side = (ours: boolean) => [...new Map(imported.flatMap((r) => r.results.filter((x) => x.isOurTeam === ours).map((x) => [x.tmId, { tmId: x.tmId, name: x.name }] as const))).values()]
+  const times = imported.map((r) => r.time).filter((t) => t > 0)
+  const check = useImportCheck(tournamentId, matchId, roundCount > 0 ? { ours: side(true), foreign: side(false), firstRoundTime: times.length > 0 ? Math.min(...times) : null } : null)
+
   async function handleSave() {
     setError("")
     setSaving(true)
@@ -112,6 +120,8 @@ export function MatchCsvImportDialog({ tournamentId, matchId, subMatches, ownPla
           rounds: plans[i].rounds.map((r) => ({ time: r.time, results: r.results })),
         })),
         guests,
+        warnings: check.warnings,
+        date: check.date,
       }),
     }).catch(() => null)
     setSaving(false)
@@ -243,11 +253,12 @@ export function MatchCsvImportDialog({ tournamentId, matchId, subMatches, ownPla
           </>
         )}
 
+        <ImportCheckPanel check={check} />
         {doubled && <p className="text-sm text-danger">Two blocks point to the same sub-match. Every block needs its own.</p>}
         {error && <p className="text-sm text-danger">{error}</p>}
         <div className="dialog-footer flex justify-end gap-2">
           <Button variant="ghost" onClick={onClose}>Cancel</Button>
-          <Button onClick={handleSave} disabled={saving || roundCount === 0 || doubled}>
+          <Button onClick={handleSave} disabled={saving || roundCount === 0 || doubled || !check.ready}>
             {saving ? "Importing…" : `Import ${roundCount} rounds${replaced > 0 ? ` (replaces ${replaced})` : ""}`}
           </Button>
         </div>

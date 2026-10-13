@@ -11,5 +11,5 @@ Begriffe aus [ADR 004](adr/004-import-validierung.md).
 - **Angebot**: ein Vorschlag der Vorschau, eine Angabe des Matches aus dem Import zu übernehmen; bisher nur das Datum. Ein angenommenes Angebot behebt die Abweichung und braucht kein Bestätigen.
 - **Eigener Fahrer / fremder Fahrer**: Fahrer im Import, die als unser Team markiert sind, und alle übrigen.
 - **Kader**: die eingetragenen Spieler eines Lineups, beim eigenen Lineup wie beim Gegner-Lineup oder festen Team.
-- **Bekannter Fahrer (eines Gegners)**: wer im Kader des Gegner-Lineups oder seines festen Teams steht oder in einem früheren Match gegen dieses Gegner-Lineup gefahren ist. Gilt nur innerhalb eines Turniers.
+- **Bekannter Fahrer (eines Gegners)**: wer im Kader des Gegner-Lineups oder seines festen Teams steht oder in einem früheren Match gegen dieses Gegner-Lineup gefahren ist. Gilt nur innerhalb eines Turniers und nur für Fahrer mit echtem Trackmania-Account; Platzhalter aus Importen ohne Account zählen nicht.
 - **Notizzeile**: die Zeile, die ein Import trotz Hinweisen an die Notizen des Matches hängt und die der nächste Import ersetzt.

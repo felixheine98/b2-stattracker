@@ -1,6 +1,6 @@
 # Importierte Matchdaten gegen das eingetragene Match prüfen
 
-Status: Akzeptiert – gemeinsames Verständnis vom Nutzer am 13.10.2026 bestätigt; Umsetzung läuft. Begriffe: [Glossar](../import-validierung-glossar.md).
+Status: Akzeptiert – gemeinsames Verständnis vom Nutzer am 13.10.2026 bestätigt; umgesetzt, in Dev. Die Oberfläche ist noch nicht im Browser geprüft. Begriffe: [Glossar](../import-validierung-glossar.md).
 
 ## Kontext
 
@@ -16,12 +16,14 @@ Bestätigt: Geprüft werden drei Angaben des Matches. Gegner: die fremden Fahrer
 
 Bestätigt: Eine Abweichung sperrt den Import nicht. Die Vorschau zeigt sie als Hinweis, und gespeichert wird erst nach ausdrücklichem Bestätigen. Abweichungen können legitim sein (Ersatzfahrer außerhalb des Kaders, Gast beim Gegner, Match über Mitternacht).
 
-Bestätigt: Ob ein fremder Fahrer zum eingetragenen Gegner gehört, wird an den bekannten Fahrern gemessen, weil kaum ein Gegner-Lineup einen eingetragenen Kader hat (Production am 13.10.2026: 52 von 53 ohne Kader, 2 mit festem Team, alle 147 gegnerischen Fahrer mit echter Account-ID). Bekannt bei einem Gegner ist, wer im Kader des Gegner-Lineups oder seines festen Teams steht oder in einem früheren Match gegen dieses Gegner-Lineup gefahren ist. Daraus entstehen zwei Hinweise:
+Bestätigt: Ob ein fremder Fahrer zum eingetragenen Gegner gehört, wird an den bekannten Fahrern gemessen, weil kaum ein Gegner-Lineup einen eingetragenen Kader hat (Production am 13.10.2026: 52 von 53 ohne Kader, 2 mit festem Team). Bekannt bei einem Gegner ist, wer im Kader des Gegner-Lineups oder seines festen Teams steht oder in einem früheren Match gegen dieses Gegner-Lineup gefahren ist. Daraus entstehen zwei Hinweise:
 
 - Der Gegner hat bekannte Fahrer, aber keiner der fremden Fahrer im Import ist darunter.
 - Ein fremder Fahrer ist bei einem anderen Gegner desselben Turniers bekannt; der Hinweis nennt diesen Gegner.
 
 Ist über den Gegner nichts bekannt und kein Fahrer woanders bekannt, gibt es keinen Hinweis. Einzelne neue Fahrer bei einem bekannten Gegner lösen nichts aus.
+
+Bei der Umsetzung festgestellt: Als bekannt zählen nur Fahrer mit echtem Trackmania-Account. Ergebnisse aus eCM-Importen und anonyme Platzierungen tragen Platzhalter statt Accounts (Production am 13.10.2026: 127 Namen aus eCM, 10 anonyme Plätze, nur 10 echte Accounts) und sagen nichts darüber, zu wem ein Account gehört. Die im Interview genannte Zahl „147 Fahrer mit echter Account-ID“ war falsch. Die Hinweise zum Gegner greifen deshalb erst bei Gegnern, gegen die schon per CSV importiert wurde oder deren Kader mit Accounts gepflegt ist.
 
 Bestätigt: Beim eigenen Lineup gibt es drei Hinweise, jeweils pro Fahrer mit Namen:
 
@@ -84,3 +86,4 @@ Keine. Aus dem Bestehenden abgeleitet und mit dem Vorhaben bestätigt:
 - Der Import ändert erstmals Stammdaten des Matches: das Datum (nur auf Angebot) und die Notizen.
 - Die Hinweise zum Gegner werden besser, je mehr Matches gegen einen Gegner gespeichert und je mehr Kader gepflegt sind; beim ersten Match gegen einen neuen Gegner bleiben sie still.
 - Das Datenmodell bleibt unverändert.
+- Regeln: `lib/import-check.ts`; Daten des Matches und Notizzeile: `lib/import-check-db.ts`; Prüfaufruf: `POST …/matches/[matchId]/import/check`; Anzeige: `components/import-check-panel.tsx` in beiden Import-Dialogen. Der eCM-Import speichert seine Runden je Sub-Match und schreibt die Notizzeile danach über `POST …/import/note`.
