@@ -45,35 +45,39 @@ export function ThemePicker({ collapsed = false }: { collapsed?: boolean }) {
       <Dialog open={open} onClose={() => setOpen(false)}>
         <div role="dialog" aria-modal="true" aria-labelledby={titleId}>
           <DialogTitle id={titleId}>Appearance</DialogTitle>
-          <p className="mb-4 text-sm text-fg-muted">Choose a theme. Your choice is saved in this browser.</p>
-          <div className="space-y-2">
+          <p className="mb-4 text-sm text-fg-muted">Your choice is saved in this browser.</p>
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 md:grid-cols-3">
             {options.map((option) => (
               <button
                 key={option.value}
                 type="button"
+                aria-label={option.label}
+                aria-describedby={`${titleId}-${option.value}`}
                 aria-pressed={choice === option.value}
+                title={option.description}
                 onClick={() => selectTheme(option.value)}
                 className={cn(
-                  "flex min-h-16 w-full items-center gap-3 rounded-lg border p-3 text-left transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand",
+                  "flex min-h-14 min-w-0 items-center gap-3 rounded-xl border px-3 py-2.5 text-left transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand sm:min-h-26 sm:flex-col sm:items-stretch sm:gap-2",
                   choice === option.value ? "border-brand/60 bg-brand/10" : "border-line hover:bg-raised"
                 )}
               >
-                <span aria-hidden="true" className="flex h-10 w-14 shrink-0 items-center gap-1 rounded-md border border-white/20 p-1.5" style={{ background: option.bg }}>
-                  {option.value === "system" ? <Monitor size={24} style={{ color: option.fg }} /> : (
-                    <>
-                      <span className="h-full w-2 rounded-sm bg-[#FBD00D]" />
-                      <span className="flex flex-1 flex-col gap-1 rounded-sm p-1" style={{ background: option.surface }}>
-                        <span className="h-0.5 rounded" style={{ background: option.fg }} />
-                        <span className="h-0.5 w-2/3 rounded bg-[#FBD00D]" />
-                      </span>
-                    </>
+                <span
+                  aria-hidden="true"
+                  className={cn(
+                    "my-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-black/10 shadow-[inset_0_-5px_10px_rgb(0_0_0/0.2),0_2px_5px_rgb(0_0_0/0.15)] sm:mx-auto sm:h-12 sm:w-12",
+                    choice === option.value && "ring-2 ring-brand ring-offset-2 ring-offset-surface"
                   )}
+                  style={{ background: option.value === "system"
+                    ? "linear-gradient(135deg, #f4f2ee 0%, #f4f2ee 48%, #251f20 52%, #0e0b0b 100%)"
+                    : `radial-gradient(circle at 30% 25%, color-mix(in srgb, ${option.surface} 65%, ${option.fg}) 0%, ${option.surface} 40%, ${option.bg} 85%)` }}
+                >
+                  {option.value === "system" && <Monitor size={18} className="rounded bg-black/50 p-0.5 text-white" />}
                 </span>
-                <span className="min-w-0 flex-1">
-                  <span className="block text-sm font-medium text-fg">{option.label}</span>
-                  <span className="block text-xs text-fg-muted">{option.description}</span>
+                <span className="flex w-full items-center justify-between gap-1 sm:mt-auto">
+                  <span className="text-xs font-medium text-fg">{option.label}</span>
+                  {choice === option.value && <Check size={14} aria-hidden="true" className="shrink-0 text-brand-ink" />}
                 </span>
-                {choice === option.value && <Check size={18} aria-hidden="true" className="shrink-0 text-brand-ink" />}
+                <span id={`${titleId}-${option.value}`} className="sr-only">{option.description}</span>
               </button>
             ))}
           </div>

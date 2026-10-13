@@ -18,7 +18,7 @@ Ideen, die noch kein Todo sind: [ideen.md](ideen.md)
 
 - [ ] Design/UI/UX Verbesserungen: Themes
   - [x] light theme in den b2 farben (dark bleibt default); farben als theme-variablen
-  - [x] Midnight und OLED Black; Auswahl mit Farbvorschau unter „Appearance“ auf Desktop und Handy
+  - [x] Midnight und OLED Black; kompakte Auswahl mit runden Farbvorschauen unter „Appearance“ (Kacheln auf Desktop, schmale Zeilen auf Handy)
   - [x] Warm Light mit Cremefarben und B2 Blue mit sattem Teamblau und gelben Highlights
   - [x] „Follow system“: B2 Light/Dark nach Geräteeinstellung, auch bei Änderungen und beim Neuladen
 
