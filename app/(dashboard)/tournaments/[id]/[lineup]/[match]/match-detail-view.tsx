@@ -18,6 +18,7 @@ import { GuestBadge } from "@/components/guest-badge"
 import { TrialBadge } from "@/components/trial-badge"
 import { Wdl } from "@/components/wdl"
 import { roundPlacements, roundScore } from "@/lib/round-score"
+import { bestPerformer } from "@/lib/dashboard"
 import { dayKey, formatDay } from "@/lib/player-status"
 import { sortStages, stageDate, stageName, type StageRef } from "@/lib/stages"
 import { useMemo, useState } from "react"
@@ -285,6 +286,12 @@ export function MatchDetailView({ match: initialMatch, allPlayers, guestTmIds, t
   const stages = sortStages(initialMatch.tournament.stages)
   const [stageId, setStageId] = useState(initialMatch.stage.id)
   const stage = stages.find((st) => st.id === stageId) ?? initialMatch.stage
+  // Whoever of ours placed best in this match, among those who drove at least half as many
+  // rounds as the busiest player; nobody in a seeding match
+  const performer = bestPerformer(
+    [{ id: initialMatch.id, stage, tournamentLineupId: null, createdAt: "", subMatches }],
+    { minRoundShare: 0.5 }
+  )
   const isSeeding = stage.type === "SEEDING"
   const [stageError, setStageError] = useState("")
 
@@ -450,6 +457,14 @@ export function MatchDetailView({ match: initialMatch, allPlayers, guestTmIds, t
                   month: "long",
                   day: "numeric",
                 })}
+              </p>
+            )}
+            {performer && (
+              <p className="mt-1 flex flex-wrap items-center gap-x-1.5 text-sm text-fg-muted">
+                <Trophy size={13} className="shrink-0 text-brand-ink" />
+                Best performer:
+                <span className="font-medium text-fg"><PlayerName name={performer.name} currentName={performer.currentName} /></span>
+                <span className="text-xs text-fg-subtle">avg place {performer.avgPlace.toFixed(2)} · {performer.rounds} rounds</span>
               </p>
             )}
             {initialMatch.notes && <p className="text-fg-subtle text-sm mt-1 whitespace-pre-line break-words">{initialMatch.notes}</p>}

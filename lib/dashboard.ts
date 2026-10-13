@@ -136,7 +136,10 @@ export interface Performer {
 // Whoever of ours placed best on average over the given matches; nobody without a round.
 // Formats differ in the size of the field (second place is last in a 1v1 and nearly the best
 // in a 4v4), so players are compared by where in the field they finished: 0 for first, 1 for last.
-export function bestPerformer(matches: DashMatch[]): Performer | null {
+// Of two who placed equally well the one with more rounds wins. minRoundShare leaves out whoever
+// drove less than that share of the rounds of the busiest player: within a single match a
+// 1v1 of three rounds would otherwise beat a whole evening of 4v4.
+export function bestPerformer(matches: DashMatch[], { minRoundShare = 0 }: { minRoundShare?: number } = {}): Performer | null {
   const players = new Map<string, { name: string; currentName?: string; placeSum: number; shareSum: number; rounds: number; lineups: Map<string, number> }>()
   for (const match of matches) {
     if (!counted(match)) continue
@@ -156,10 +159,12 @@ export function bestPerformer(matches: DashMatch[]): Performer | null {
       }
     }
   }
+  const mostRounds = Math.max(0, ...[...players.values()].map((p) => p.rounds))
   let top: (Performer & { share: number }) | null = null
   for (const [tmId, player] of players) {
+    if (player.rounds < mostRounds * minRoundShare) continue
     const share = player.shareSum / player.rounds
-    if (top && share >= top.share) continue
+    if (top && (share > top.share || (share === top.share && player.rounds <= top.rounds))) continue
     const lineupId = [...player.lineups.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] ?? null
     top = { tmId, name: player.name, currentName: player.currentName, lineupId, avgPlace: player.placeSum / player.rounds, rounds: player.rounds, share }
   }

@@ -136,6 +136,22 @@ describe("bestPerformer", () => {
   it("is nobody without a round", () => {
     expect(bestPerformer([match([[]])])).toBeNull()
   })
+
+  it("can leave out whoever drove less than a share of the rounds of the busiest player", () => {
+    const m = match([
+      // ben: one 1v1 round, won
+      [round("ben:50", "opp1:51")],
+      // anna: four rounds of 2v2, second each time
+      Array.from({ length: 4 }, () => round("opp1:50", "anna:51", "opp2:52", "cara:53")),
+    ])
+    expect(bestPerformer([m])?.tmId).toBe("ben")
+    expect(bestPerformer([m], { minRoundShare: 0.5 })).toMatchObject({ tmId: "anna", rounds: 4 })
+  })
+
+  it("prefers the player with more rounds when two placed equally well", () => {
+    const best = bestPerformer([match([[round("ben:50", "opp1:51")], [round("anna:50", "opp1:51"), round("anna:50", "opp1:51")]])])
+    expect(best).toMatchObject({ tmId: "anna", rounds: 2 })
+  })
 })
 
 describe("latestStageId", () => {

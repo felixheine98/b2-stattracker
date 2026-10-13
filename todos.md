@@ -6,16 +6,14 @@ Ideen, die noch kein Todo sind: [ideen.md](ideen.md)
 
 - [ ] seeding formate für import/anlegen prüfen
 - [ ] Design/UI/UX Verbesserungen
-- [ ] als member -> in tourney übersicht der eigenen stats, danach kann man sich durch die stats durchklicken
 
 ## Teilweise erledigt
 
-- [ ] best performer pro match/week/tourney
-  - [x] pro tourney und pro abschnitt (week) auf dem dashboard, nach Ø platz
-  - [ ] pro match
-
 ## Unter Beobachtung
 
+- [ ] best performer pro match/week/tourney
+  - [x] pro tourney und pro abschnitt (week) auf dem dashboard, nach Ø platz
+  - [x] pro match: zeile im kopf der match-seite; zählt nur, wer mindestens halb so viele runden wie der fahrer mit den meisten gefahren ist, bei gleichstand entscheidet die rundenzahl
 - [ ] validierung von importierten daten zu eingegebenen daten (match): csv- und ecm-import prüfen gegner, eigenes lineup und datum gegen das eingetragene match, hinweise in der vorschau mit bestätigen, notizzeile am match; [entscheidung](docs/adr/004-import-validierung.md), [glossar](docs/import-validierung-glossar.md)
 - [ ] Lineup Builder
   - [x] gemeinsames erstellen für lineups, welches direkt in eine comp reingespeichert wird (Planung pro Comp: Verfügbarkeit, Varianten, Live-Session, Übernehmen)
