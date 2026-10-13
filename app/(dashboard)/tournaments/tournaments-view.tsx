@@ -166,7 +166,6 @@ export function TournamentsView({ tournaments: initial, style, canManage, isAdmi
                     <CardTitle className="text-base">{t.name}</CardTitle>
                     <div className="flex flex-wrap gap-1 justify-end shrink-0">
                       <Badge variant="purple">{styleLabel(t.style)}</Badge>
-                      {t.tfhRace && <Badge variant="primary">{t.tfhRace.kind === "24h" ? "24h" : "12h RPG"}</Badge>}
                       {t.formats.slice(0, 3).map((f, i) => (
                         <Badge key={i} variant={formatBadgeVariant(f)}>
                           {formatLabel(f)}
