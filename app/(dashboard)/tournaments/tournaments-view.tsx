@@ -20,6 +20,7 @@ import { Badge } from "@/components/ui/badge"
 import { Select } from "@/components/ui/select"
 import { Plus, Timer, Trophy, ChevronRight } from "lucide-react"
 import { cn, formatLabel } from "@/lib/utils"
+import { groupByYear } from "@/lib/tournament-list"
 import { STYLE_ORDER, filterByStyle, needsFormats, styleLabel, styleParam, stylesInUse } from "@/lib/comp-styles"
 import type { CompStyle, Format } from "@prisma/client"
 
@@ -159,8 +160,15 @@ export function TournamentsView({ tournaments: initial, style, canManage, isAdmi
           </CardContent>
         </Card>
       ) : (
+        <div className="space-y-6">
+        {groupByYear(shown).map((group) => (
+        <section key={group.year}>
+        <h2 className="mb-3 flex items-center gap-3 text-sm font-semibold text-fg-muted">
+          {group.year}
+          <span className="h-px flex-1 bg-line" />
+        </h2>
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-          {shown.map((t) => (
+          {group.tournaments.map((t) => (
             <Link key={t.id} href={tournamentPath(t)}>
               <Card className="h-full hover:border-line-strong transition-colors cursor-pointer">
                 <CardHeader>
@@ -193,6 +201,9 @@ export function TournamentsView({ tournaments: initial, style, canManage, isAdmi
               </Card>
             </Link>
           ))}
+        </div>
+        </section>
+        ))}
         </div>
       )}
 

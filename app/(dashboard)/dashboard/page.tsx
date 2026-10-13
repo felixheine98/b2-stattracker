@@ -1,7 +1,9 @@
 import { AvailabilityCard } from "@/components/planning/availability-card"
+import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
 import { auth } from "@/lib/auth"
 import { bestPerformer, dashboardTournaments, latestStageId, lineupRecords, overallRecord, type LineupRecord, type Performer } from "@/lib/dashboard"
+import { styleLabel } from "@/lib/comp-styles"
 import { db } from "@/lib/db"
 import { matchTag } from "@/lib/match-order"
 import { formatGapSeconds, formatPacePct } from "@/lib/pace"
@@ -40,7 +42,7 @@ export default async function DashboardPage() {
   const session = await auth()
   const userId = (session?.user as { id?: string })?.id
 
-  const [self, players, tournaments, matches] = await Promise.all([
+  const [self, players, tournaments, recent, matches] = await Promise.all([
     userId ? db.user.findUnique({ where: { id: userId }, select: { playerId: true } }) : null,
     db.player.findMany({ where: { isOpponentOnly: false }, select: { id: true, slug: true, tmId: true, name: true, initialStatus: true, statusChanges: true } }),
     db.tournament.findMany({
@@ -50,6 +52,12 @@ export default async function DashboardPage() {
         stages: { select: { id: true, type: true, number: true } },
         tournamentLineups: { orderBy: { createdAt: "asc" }, select: { id: true, slug: true, name: true, slots: { select: { playerId: true } } } },
       },
+    }),
+    // The top of the list of all tournaments, whatever their kind
+    db.tournament.findMany({
+      orderBy: [{ startDate: { sort: "desc", nulls: "last" } }, { createdAt: "desc" }],
+      take: 3,
+      select: { id: true, slug: true, name: true, style: true, startDate: true },
     }),
     // Every match with its rounds: the records count them all, pace and ranks need every driver
     db.match.findMany({
@@ -298,10 +306,28 @@ export default async function DashboardPage() {
         )
       })}
 
-      <Link href="/tournaments" className="inline-flex items-center gap-1 text-sm text-brand-ink hover:underline">
-        All tournaments
-        <ChevronRight size={14} />
-      </Link>
+      {recent.length > 0 && (
+        <section>
+          <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+            <h2 className="text-sm font-semibold text-fg-muted uppercase tracking-wider">Recent Tournaments</h2>
+            <Link href="/tournaments" className="inline-flex items-center gap-1 text-sm text-brand-ink hover:underline">
+              All tournaments
+              <ChevronRight size={14} />
+            </Link>
+          </div>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+            {recent.map((t) => (
+              <Link key={t.id} href={tournamentPath(t)} className="block rounded-xl border border-line bg-surface p-4 transition-colors hover:border-line-strong">
+                <span className="block break-words font-semibold text-fg">{t.name}</span>
+                <span className="mt-2 flex flex-wrap items-center justify-between gap-2 text-sm text-fg-subtle">
+                  <Badge variant="purple">{styleLabel(t.style)}</Badge>
+                  {t.startDate && <span>{formatDay(t.startDate)}</span>}
+                </span>
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
       </div>
       </div>
     </div>
