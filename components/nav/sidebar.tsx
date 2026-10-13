@@ -5,13 +5,13 @@ import { BASE_PATH } from "@/lib/base-path"
 import Link from "next/link"
 import { usePathname, useSearchParams } from "next/navigation"
 import { cn } from "@/lib/utils"
-import { ChevronDown, KeyRound, LogOut, Moon, Search, ShieldCheck, Smartphone, Sun, PanelLeftClose, PanelLeftOpen } from "lucide-react"
+import { ChevronDown, KeyRound, LogOut, Search, ShieldCheck, Smartphone, PanelLeftClose, PanelLeftOpen } from "lucide-react"
 import { openSearch } from "@/components/search/search-dialog"
 import { isActiveItem, navItems, profileItem } from "./nav-items"
 import { useState, useSyncExternalStore } from "react"
 import { ChangePasswordDialog } from "./change-password-dialog"
 import { TwoFactorDialog } from "./two-factor-dialog"
-import { toggleTheme } from "./theme-toggle"
+import { ThemePicker } from "./theme-picker"
 import { signOut } from "next-auth/react"
 import { parseStyle, styleLabel, styleParam } from "@/lib/comp-styles"
 import type { CompStyle } from "@prisma/client"
@@ -199,23 +199,7 @@ export function Sidebar({ userName, role, profileHref, styles }: SidebarProps) {
           <Smartphone size={16} className="shrink-0" />
           {!collapsed && "Sign-in security"}
         </button>
-        <button
-          onClick={toggleTheme}
-          title={collapsed ? "Switch theme" : undefined}
-          className={cn(
-            "flex w-full items-center gap-3 rounded-md py-2 text-sm font-medium text-fg-muted hover:bg-raised hover:text-fg transition-colors",
-            collapsed ? "justify-center px-0" : "px-3"
-          )}
-        >
-          <Sun size={16} className="shrink-0 light:hidden" />
-          <Moon size={16} className="hidden shrink-0 light:block" />
-          {!collapsed && (
-            <>
-              <span className="light:hidden">Light theme</span>
-              <span className="hidden light:inline">Dark theme</span>
-            </>
-          )}
-        </button>
+        <ThemePicker collapsed={collapsed} />
         <button
           onClick={() => signOut({ callbackUrl: `${BASE_PATH}/login` })}
           title={collapsed ? `Sign out (${userName})` : undefined}

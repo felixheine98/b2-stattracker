@@ -3,7 +3,7 @@
 import { BrandLogo } from "@/components/brand-logo"
 import { BASE_PATH } from "@/lib/base-path"
 import { cn } from "@/lib/utils"
-import { ChevronDown, KeyRound, LogOut, Moon, Search, Smartphone, Sun } from "lucide-react"
+import { ChevronDown, KeyRound, LogOut, Search, Smartphone } from "lucide-react"
 import { openSearch } from "@/components/search/search-dialog"
 import { signOut } from "next-auth/react"
 import Link from "next/link"
@@ -11,7 +11,7 @@ import { usePathname } from "next/navigation"
 import { useState } from "react"
 import { ChangePasswordDialog } from "./change-password-dialog"
 import { TwoFactorDialog } from "./two-factor-dialog"
-import { toggleTheme } from "./theme-toggle"
+import { ThemePicker } from "./theme-picker"
 import { accountsItem, canSeeAccounts, isActiveItem, navItems, profileItem } from "./nav-items"
 
 interface Props {
@@ -87,16 +87,7 @@ export function MobileTopBar({ userName, role, profileHref }: Props) {
               <Smartphone size={16} />
               Sign-in security
             </button>
-            <button
-              type="button"
-              onClick={toggleTheme}
-              className="flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-sm text-fg-soft hover:bg-raised"
-            >
-              <Sun size={16} className="light:hidden" />
-              <Moon size={16} className="hidden light:block" />
-              <span className="light:hidden">Light theme</span>
-              <span className="hidden light:inline">Dark theme</span>
-            </button>
+            <ThemePicker />
             <button
               type="button"
               onClick={() => signOut({ callbackUrl: `${BASE_PATH}/login` })}

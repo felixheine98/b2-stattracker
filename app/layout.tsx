@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next"
 import { cookies } from "next/headers"
-import { THEME_COLOR, THEME_COOKIE, themeFromCookie } from "@/lib/theme"
+import { resolveTheme, THEME_COLOR, THEME_COOKIE, themeFromCookie } from "@/lib/theme"
+import { ThemeController } from "@/components/nav/theme-controller"
 import { Inter, Space_Grotesk } from "next/font/google"
 import "./globals.css"
 import { Providers } from "./providers"
@@ -32,13 +33,25 @@ async function chosenTheme() {
 }
 
 export async function generateViewport(): Promise<Viewport> {
-  return { themeColor: THEME_COLOR[await chosenTheme()] }
+  const choice = await chosenTheme()
+  return {
+    themeColor: choice === "system"
+      ? [
+          { media: "(prefers-color-scheme: light)", color: THEME_COLOR.light },
+          { media: "(prefers-color-scheme: dark)", color: THEME_COLOR.dark },
+        ]
+      : THEME_COLOR[choice],
+  }
 }
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  const choice = await chosenTheme()
   return (
-    <html lang="en" data-theme={await chosenTheme()} className={`h-full ${inter.variable} ${spaceGrotesk.variable}`}>
+    <html lang="en" data-theme={resolveTheme(choice, true)} data-theme-choice={choice} suppressHydrationWarning className={`h-full ${inter.variable} ${spaceGrotesk.variable}`}>
       <body className="min-h-full antialiased">
+        {/* Resolve the device preference before first paint, as in Next's preventing-flash guide. */}
+        <script dangerouslySetInnerHTML={{ __html: `if(document.documentElement.dataset.themeChoice==="system"){document.documentElement.dataset.theme=window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light"}` }} />
+        <ThemeController />
         <Providers>{children}</Providers>
       </body>
     </html>

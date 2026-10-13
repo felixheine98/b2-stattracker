@@ -1,7 +1,10 @@
 import { describe, expect, it } from "vitest"
-import { otherTheme, themeFromCookie } from "./theme"
+import { resolveTheme, themeFromCookie } from "./theme"
 
 describe("themeFromCookie", () => {
+  it.each(["midnight", "oled", "system"])("remembers the %s choice", (choice) => {
+    expect(themeFromCookie(choice)).toBe(choice)
+  })
   it("is the light theme only when it was chosen", () => {
     expect(themeFromCookie("light")).toBe("light")
   })
@@ -14,9 +17,13 @@ describe("themeFromCookie", () => {
   })
 })
 
-describe("otherTheme", () => {
-  it("switches between the two", () => {
-    expect(otherTheme("dark")).toBe("light")
-    expect(otherTheme("light")).toBe("dark")
+describe("resolveTheme", () => {
+  it("follows the device only for the system choice", () => {
+    expect(resolveTheme("system", true)).toBe("dark")
+    expect(resolveTheme("system", false)).toBe("light")
+    expect(resolveTheme("midnight", false)).toBe("midnight")
+    expect(resolveTheme("oled", false)).toBe("oled")
+    expect(resolveTheme("dark", false)).toBe("dark")
+    expect(resolveTheme("light", true)).toBe("light")
   })
 })

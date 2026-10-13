@@ -10,15 +10,16 @@ Ideen, die noch kein Todo sind: [ideen.md](ideen.md)
 
 ## Teilweise erledigt
 
-- [ ] Design/UI/UX Verbesserungen
-  - [x] light theme in den b2 farben, umschalter im account-menü (dark bleibt default); farben sind jetzt theme-variablen statt fester hex-werte
-  - [ ] weitere themes
-
 - [ ] best performer pro match/week/tourney
   - [x] pro tourney und pro abschnitt (week) auf dem dashboard, nach Ø platz
   - [ ] pro match
 
 ## Unter Beobachtung
+
+- [ ] Design/UI/UX Verbesserungen: Themes
+  - [x] light theme in den b2 farben (dark bleibt default); farben als theme-variablen
+  - [x] Midnight und OLED Black; Auswahl mit Farbvorschau unter „Appearance“ auf Desktop und Handy
+  - [x] „Follow system“: B2 Light/Dark nach Geräteeinstellung, auch bei Änderungen und beim Neuladen
 
 - [ ] Lineup Builder
   - [x] gemeinsames erstellen für lineups, welches direkt in eine comp reingespeichert wird (Planung pro Comp: Verfügbarkeit, Varianten, Live-Session, Übernehmen)
