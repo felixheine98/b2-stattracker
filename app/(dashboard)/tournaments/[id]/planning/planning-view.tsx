@@ -116,7 +116,7 @@ export function PlanningView({ initial, ownPlayerId, userId, canManage }: Props)
   }
 
   return (
-    <div className={cn("space-y-6", tab === "variants" ? "max-w-7xl" : "max-w-4xl")}>
+    <div className="space-y-6 page-wide">
       <div>
         <Link href={tournamentPath(tournament)} className="mb-4 inline-flex items-center gap-1 text-sm text-fg-muted hover:text-fg">
           <ArrowLeft size={14} />
@@ -183,7 +183,8 @@ export function PlanningView({ initial, ownPlayerId, userId, canManage }: Props)
           onActivity={setActivity}
         />
       ) : (
-        <>
+        // From 1536px on the list stands on the left, what only managers need on the right
+        <div className="page-columns">
       {canManage && !archived && (
         <div className="space-y-2 rounded-xl border border-line p-4">
           <h2 className="text-xs font-semibold uppercase tracking-wider text-fg-muted">Extra levels</h2>
@@ -217,7 +218,7 @@ export function PlanningView({ initial, ownPlayerId, userId, canManage }: Props)
 
       {error && <p className="text-sm text-danger">{error}</p>}
 
-      <div>
+      <div className="page-main">
         <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
           <h2 className="text-xs font-semibold uppercase tracking-wider text-fg-muted">Availability</h2>
           <div className="inline-flex rounded-lg border border-line p-0.5" role="tablist" aria-label="Layout of the list">
@@ -269,7 +270,7 @@ export function PlanningView({ initial, ownPlayerId, userId, canManage }: Props)
               </div>
             )}
             {/* Everyone sorted into their answer: who is in, who is not, who has yet to say */}
-            <div className="grid grid-cols-1 items-start gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="grid grid-cols-1 items-start gap-3 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 min-[1800px]:grid-cols-5">
               {groups.map((group) => (
                 <section key={group.answer} className="overflow-hidden rounded-xl border border-line bg-surface">
                   <h3 className={cn("flex items-center justify-between border-b px-3 py-2 text-xs font-semibold uppercase tracking-wider", answerColor(group.answer))}>
@@ -331,7 +332,7 @@ export function PlanningView({ initial, ownPlayerId, userId, canManage }: Props)
           />
         </div>
       )}
-        </>
+        </div>
       )}
     </div>
   )

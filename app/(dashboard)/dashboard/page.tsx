@@ -93,12 +93,14 @@ export default async function DashboardPage() {
   ]
 
   return (
-    <div className="space-y-6 max-w-5xl">
+    <div className="space-y-6 page-wide">
       <div>
         <h1 className="text-2xl font-bold text-fg">Welcome back, {session?.user?.name}</h1>
         <p className="text-fg-muted text-sm mt-0.5">Here is how the team is doing.</p>
       </div>
 
+      {/* From 1536px on the tournaments stand on the left, the rest on the right */}
+      <div className="page-columns">
       {planningCards.length > 0 && (
         <div>
           <h2 className={HEADING}>Next Tournament{planningCards.length > 1 ? "s" : ""}</h2>
@@ -112,7 +114,7 @@ export default async function DashboardPage() {
 
       <div>
         <h2 className={HEADING}>Overall</h2>
-        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4 2xl:grid-cols-2">
           <Tile label="Members" value={memberCount} icon={<Users size={15} className="text-brand-ink" />} />
           <Tile label="Round tournaments" value={tournaments.length} icon={<Trophy size={15} className="text-brand-ink" />} />
           <Tile
@@ -125,6 +127,7 @@ export default async function DashboardPage() {
         </div>
       </div>
 
+      <div className="page-main space-y-6">
       {blocks.map(({ tournament, heading }) => {
         const own = matches.filter((m) => m.tournamentId === tournament.id)
         const stages = sortStages(tournament.stages)
@@ -299,6 +302,8 @@ export default async function DashboardPage() {
         All tournaments
         <ChevronRight size={14} />
       </Link>
+      </div>
+      </div>
     </div>
   )
 }

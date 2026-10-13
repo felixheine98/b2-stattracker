@@ -115,7 +115,7 @@ export function EcmImportView({ tournaments }: { tournaments: Tournament[] }) {
 
   if (!payload) {
     return (
-      <div className="max-w-2xl space-y-5">
+      <div className="page-narrow space-y-5">
         <div>
           <h1 className="text-2xl font-bold text-fg">eCM import</h1>
           <p className="mt-0.5 text-sm text-fg-muted">

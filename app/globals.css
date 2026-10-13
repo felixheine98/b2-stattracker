@@ -166,6 +166,68 @@ optgroup {
 ::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 3px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--fg-subtle); }
 
+/* How wide a page gets on a computer; every page takes one of the two instead of a width of
+   its own (docs/adr/003-seitenbreite.md). Wide is for pages with data, narrow for forms. */
+.page-wide {
+  max-width: 96rem;
+}
+.page-narrow {
+  max-width: 48rem;
+}
+
+/* Sections of a page that stand side by side from 1536px on and below one another, in the
+   order of the code, on anything narrower. The section marked page-main takes one column over
+   the full height, the others share the second column. Without a page-main (a page without
+   stats yet) the sections stay below one another. */
+.page-columns,
+.page-columns-even {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+.page-columns > *,
+.page-columns-even > * {
+  min-width: 0;
+}
+@media (min-width: 96rem) {
+  .page-columns:has(> .page-main),
+  .page-columns-even:has(> .page-main) {
+    display: grid;
+    grid-template-rows: auto 1fr;
+    align-items: start;
+  }
+  /* 2:1, the main section on the left */
+  .page-columns:has(> .page-main) {
+    grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+  }
+  .page-columns:has(> .page-main) > * {
+    grid-column: 2;
+  }
+  .page-columns > .page-main {
+    grid-column: 1;
+    grid-row: 1 / span 2;
+  }
+  /* Nothing for the second column: the main section takes the whole width */
+  .page-columns > .page-main:only-child {
+    grid-column: 1 / -1;
+  }
+  /* 1:1, the main section on the right */
+  .page-columns-even:has(> .page-main) {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+  .page-columns-even:has(> .page-main) > * {
+    grid-column: 1;
+  }
+  .page-columns-even > .page-main {
+    grid-column: 2;
+    grid-row: 1 / span 2;
+  }
+  /* A grid of cards inside the narrow column has room for one card per row only */
+  .page-columns:has(> .page-main) > :not(.page-main) .page-stack {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
 /* Button row of a dialog. On phones, where dialogs fill the screen, it stays visible at the bottom. */
 @media (max-width: 767px) {
   .dialog-footer {

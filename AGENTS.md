@@ -38,6 +38,10 @@ Every change to the interface has to work on phones as well as on desktop. Below
 - Fields that open a keyboard keep at least 16px font size on phones (handled in `globals.css`), otherwise iPhones zoom in.
 - Tables: stats keep all columns and scroll with a sticky first column; lists that are edited per row become cards (`max-md:` classes on the same table).
 
+# Page width
+
+On a computer a page is as wide as one of two classes from `globals.css` allows: `page-wide` for pages with data, `page-narrow` for pages that are a form. A page never sets a maximum width of its own. Sections that stand side by side on wide screens use `page-columns` (2:1) or `page-columns-even` (1:1) with one section marked `page-main`; below 1536px they stand below one another in the order of the code (see `docs/adr/003-seitenbreite.md`).
+
 # Todos
 
 `todos.md` is kept in three sections, in this order: `Offen` (open) at the top, `Teilweise erledigt` (partly done) below it, `Erledigt` (done) at the bottom. Whenever you add an item or change its status, move it to the matching section instead of leaving it in place. A partly done item lists its finished and open parts as sub-checkboxes.

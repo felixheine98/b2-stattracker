@@ -510,7 +510,7 @@ export function PlayersView({ players: initial, users, canManage }: Props) {
   const count = (status: PlayerStatus) => players.filter((p) => currentStatus(p) === status).length
 
   return (
-    <div className="space-y-6 max-w-5xl">
+    <div className="space-y-6 page-wide">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold text-fg">Players</h1>

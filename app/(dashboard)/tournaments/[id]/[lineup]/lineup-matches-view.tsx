@@ -197,7 +197,7 @@ export function LineupMatchesView({ lineup, guestTmIds, trialTmIds, profilePaths
   }
 
   return (
-    <div className="space-y-6 max-w-4xl">
+    <div className="space-y-6 page-wide">
       {/* Breadcrumb */}
       <div>
         <Link
@@ -221,6 +221,8 @@ export function LineupMatchesView({ lineup, guestTmIds, trialTmIds, profilePaths
         </div>
       </div>
 
+      {/* From 1536px on the stats stand on the left, players and matches on the right */}
+      <div className="page-columns">
       {/* Players */}
       <div>
         <h2 className="text-sm font-semibold text-fg-muted uppercase tracking-wider mb-3 flex items-center gap-2">
@@ -272,7 +274,7 @@ export function LineupMatchesView({ lineup, guestTmIds, trialTmIds, profilePaths
 
       {/* Aggregate stats */}
       {hasStats && (
-        <div>
+        <div className="page-main">
           <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
             <h2 className="text-sm font-semibold text-fg-muted uppercase tracking-wider flex items-center gap-2">
               <BarChart2 size={14} />
@@ -393,6 +395,7 @@ export function LineupMatchesView({ lineup, guestTmIds, trialTmIds, profilePaths
             })}
           </div>
         )}
+      </div>
       </div>
 
       {/* Add Match Dialog */}

@@ -48,7 +48,7 @@ export function TfhRaceView({ race, isAdmin, initialLineupId }: { race: Race; is
   const [search, setSearch] = useState("")
   const [b2Only, setB2Only] = useState(false)
   const ourTeams = race.teams.filter(t => t.isB2 && (!initialLineupId || t.lineupId === initialLineupId))
-  return <div className="min-w-0 max-w-6xl space-y-6">
+  return <div className="min-w-0 page-wide space-y-6">
     <Link href={initialLineupId ? tournamentPath(race.tournament) : "/tournaments"} className="inline-flex items-center gap-2 text-sm text-fg-muted"><ArrowLeft size={14} />{initialLineupId ? race.tournament.name : "Tournaments"}</Link>
     <div className="flex flex-wrap items-start justify-between gap-3">
       <div className="min-w-0"><div className="flex flex-wrap items-center gap-2"><h1 className="break-words text-2xl font-bold">{race.tournament.name}</h1><Link href={`/tournaments?style=${styleParam(race.tournament.style)}`}><Badge variant="purple">{styleLabel(race.tournament.style)}</Badge></Link></div>

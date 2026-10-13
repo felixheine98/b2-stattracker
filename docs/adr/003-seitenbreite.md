@@ -1,6 +1,6 @@
 # Seitenbreite am Desktop
 
-Status: Akzeptiert – gemeinsames Verständnis vom Nutzer bestätigt, Umsetzung läuft.
+Status: Akzeptiert – gemeinsames Verständnis vom Nutzer bestätigt, umgesetzt auf dem Branch `feat/page-width`. Die Oberfläche ist noch nicht im Browser geprüft.
 
 ## Kontext
 

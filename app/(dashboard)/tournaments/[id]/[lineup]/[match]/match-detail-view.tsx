@@ -390,7 +390,7 @@ export function MatchDetailView({ match: initialMatch, allPlayers, guestTmIds, t
     : [matchLineup?.name, initialMatch.opponent].filter(Boolean).join(" vs ") || "Unknown opponent"
 
   return (
-    <div className="space-y-6 max-w-5xl">
+    <div className="space-y-6 page-wide">
       {/* Header */}
       <div>
         {/* Back to the lineup, which in turn leads back to the tournament */}

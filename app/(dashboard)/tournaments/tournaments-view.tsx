@@ -99,7 +99,7 @@ export function TournamentsView({ tournaments: initial, style, canManage, isAdmi
   }
 
   return (
-    <div className="space-y-6 max-w-4xl">
+    <div className="space-y-6 page-wide">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold text-fg">Tournaments</h1>
@@ -159,7 +159,7 @@ export function TournamentsView({ tournaments: initial, style, canManage, isAdmi
           </CardContent>
         </Card>
       ) : (
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
           {shown.map((t) => (
             <Link key={t.id} href={tournamentPath(t)}>
               <Card className="h-full hover:border-line-strong transition-colors cursor-pointer">

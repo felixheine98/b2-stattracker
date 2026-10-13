@@ -338,7 +338,7 @@ export function TournamentDetailView({ tournament: initial, players, statsMatche
 
 
   return (
-    <div className="space-y-6 max-w-4xl">
+    <div className="space-y-6 page-wide">
 
       {/* Header */}
       <div>
@@ -402,6 +402,8 @@ export function TournamentDetailView({ tournament: initial, players, statsMatche
         </Link>
       )}
 
+      {/* From 1536px on the stats stand on the left, lineups and matches on the right */}
+      <div className="page-columns">
       {/* Lineups section */}
       <div>
         <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
@@ -438,7 +440,7 @@ export function TournamentDetailView({ tournament: initial, players, statsMatche
             </CardContent>
           </Card>
         ) : (
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="page-stack grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
             {lineups.map((lineup) => {
               const matchCount = matches.filter((m) => m.tournamentLineupId === lineup.id).length
               return (
@@ -526,7 +528,7 @@ export function TournamentDetailView({ tournament: initial, players, statsMatche
         const lineupName = (tmId: string) =>
           lineups.find((l) => l.slots.some((s) => s.player.tmId.toLowerCase() === tmId.toLowerCase()))?.name
         return (
-          <div>
+          <div className="page-main">
             <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
               <h2 className="text-sm font-semibold text-fg-muted uppercase tracking-wider flex items-center gap-2">
                 <BarChart2 size={14} />
@@ -646,6 +648,7 @@ export function TournamentDetailView({ tournament: initial, players, statsMatche
             })}
           </div>
         )}
+      </div>
       </div>
 
       {/* Edit Tournament Dialog */}

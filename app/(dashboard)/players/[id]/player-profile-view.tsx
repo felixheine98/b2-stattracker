@@ -295,7 +295,7 @@ export function PlayerProfileView({ player: initial, total, formats, styles, com
   }
 
   return (
-    <div className="max-w-5xl space-y-6">
+    <div className="page-wide space-y-6">
       <Link href="/players" className="inline-flex items-center gap-1.5 text-sm text-fg-muted hover:text-fg">
         <ArrowLeft size={14} />
         Players
@@ -350,6 +350,8 @@ export function PlayerProfileView({ player: initial, total, formats, styles, com
         </div>
       </div>
 
+      {/* From 1536px on the tournaments stand on the right, everything over the whole career on the left */}
+      <div className="page-columns-even">
       {comps.length === 0 ? (
         !hasEndurance &&
         <p className="rounded-xl border border-line bg-surface p-5 text-sm text-fg-muted">
@@ -357,9 +359,10 @@ export function PlayerProfileView({ player: initial, total, formats, styles, com
         </p>
       ) : (
         <>
+          <div className="space-y-6">
           <section className="space-y-3">
             <h2 className="text-lg font-semibold text-fg">Overall</h2>
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5 2xl:grid-cols-3 min-[1800px]:grid-cols-5">
               <Tile label="Comps" value={comps.length} />
               <Tile label="Rounds" value={total.roundsPlayed} />
               <Tile label="Pace" value={formatPacePct(total.pace.value)} hint={paceHint(total.pace)} />
@@ -383,8 +386,9 @@ export function PlayerProfileView({ player: initial, total, formats, styles, com
               <StatTable heading="Style" rows={styles.map((s) => ({ ...s, label: styleLabel(s.style) }))} />
             </section>
           )}
+          </div>
 
-          <section className="space-y-3">
+          <section className="page-main space-y-3">
             <h2 className="text-lg font-semibold text-fg">Tournaments</h2>
             {comps.map((comp, i) => <CompCard key={comp.tournamentId} comp={comp} initiallyOpen={i === 0} />)}
           </section>
@@ -392,6 +396,7 @@ export function PlayerProfileView({ player: initial, total, formats, styles, com
       )}
 
       {endurance}
+      </div>
 
       {dialog === "name" && (
         <NameHistoryDialog

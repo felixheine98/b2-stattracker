@@ -338,7 +338,7 @@ export function VariantsBoard({ tournamentId, tournamentHref, rows, levels, vari
               {board.pool.map((row) => chip(row))}
             </div>
 
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4 2xl:grid-cols-5 min-[1800px]:grid-cols-6">
               {board.lineups.map((lineup) => (
                 <div key={lineup.id} className={cn(area(lineup.id), "space-y-2")} {...dropProps(lineup.id)}>
                   <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
