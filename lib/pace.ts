@@ -47,6 +47,11 @@ export function formatPacePct(pct: number | null): string {
   return pct === null ? "—" : `+${pct.toFixed(2)} %`
 }
 
+// What a pace in percent comes to in seconds, as the text of its tooltip
+export function paceTooltip(ms: number | null): string | undefined {
+  return ms === null ? undefined : `Avg gap ${formatGapSeconds(ms)} per round`
+}
+
 // "+1.234 s"
 export function formatGapSeconds(ms: number | null): string {
   return ms === null ? "—" : `+${(ms / 1000).toFixed(3)} s`

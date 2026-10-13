@@ -95,6 +95,15 @@ describe("buildProfile: stats", () => {
     expect(profile.total.pace.team).toBeCloseTo(7 / 3)
   })
 
+  it("gives the pace in milliseconds as well, for the player, the team and each match", () => {
+    const m = match([round("A", "opp1:50", "anna:51", "ben:52"), round("A", "anna:60", "opp1:61", "ben:61.5")])
+    const profile = buildProfile("anna", [t1], [m])
+    // anna +1 s and +0 s; team (1 + 2 + 0 + 1.5) s / 4 results
+    expect(profile.total.pace.valueMs).toBeCloseTo(500)
+    expect(profile.total.pace.teamMs).toBeCloseTo(1125)
+    expect(profile.comps[0].matches[0].paceMs).toBeCloseTo(500)
+  })
+
   it("has no rank without a timed round", () => {
     const profile = buildProfile("cleo", [t1], [match([round("A", "opp1:50", "anna:51", "cleo:!")])])
     expect(profile.total.pace).toMatchObject({ value: null, rank: null, of: 1 })

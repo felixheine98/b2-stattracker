@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { addGap, emptyPace, paceMs, pacePct, roundBest } from "./pace"
+import { addGap, emptyPace, paceMs, pacePct, paceTooltip, roundBest } from "./pace"
 
 describe("roundBest", () => {
   it("is the fastest time of the round over both teams", () => {
@@ -28,5 +28,15 @@ describe("pace", () => {
   it("is null without a timed round", () => {
     expect(pacePct(emptyPace())).toBeNull()
     expect(paceMs(emptyPace())).toBeNull()
+  })
+})
+
+describe("paceTooltip", () => {
+  it("gives the pace as the average gap in seconds", () => {
+    expect(paceTooltip(1234.4)).toBe("Avg gap +1.234 s per round")
+  })
+
+  it("is missing without a timed round", () => {
+    expect(paceTooltip(null)).toBeUndefined()
   })
 })

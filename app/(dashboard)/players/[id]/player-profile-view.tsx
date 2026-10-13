@@ -7,7 +7,8 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { countryName } from "@/lib/countries"
 import { confirmedTmId } from "@/lib/opponents"
-import { formatGapSeconds, formatPacePct } from "@/lib/pace"
+import { formatGapSeconds } from "@/lib/pace"
+import { PacePct } from "@/components/pace-pct"
 import { allNames, type NameChange } from "@/lib/player-names"
 import type { CompProfile, MapLine, RankedPace, StatLine } from "@/lib/player-profile"
 import { currentStatus, formatDay, type PlayerStatus, type StatusChange } from "@/lib/player-status"
@@ -49,6 +50,7 @@ export interface CompView extends Omit<CompProfile, "maps" | "matches"> {
     matchId: string
     roundsPlayed: number
     pace: number | null
+    paceMs: number | null
     path: string
     day: string | null
     stage: string
@@ -86,7 +88,7 @@ function Tile({ label, value, hint }: { label: string; value: React.ReactNode; h
 }
 
 const paceHint = (pace: RankedPace) =>
-  pace.value === null ? "no timed round" : `Team ${formatPacePct(pace.team)} · ${rankLabel(pace.rank, pace.of)}`
+  pace.value === null ? "no timed round" : <>Team <PacePct pct={pace.team} ms={pace.teamMs} /> · {rankLabel(pace.rank, pace.of)}</>
 
 const TH = "px-3 py-2 text-right font-medium whitespace-nowrap text-fg-muted"
 const TD = "px-3 py-1.5 text-right whitespace-nowrap text-fg-soft"
@@ -120,8 +122,8 @@ function StatTable({ heading, rows }: { heading: string; rows: Array<StatLine & 
             <td className={FIRST_TD}>{f.label}</td>
             <td className={TD}>{f.roundsPlayed}</td>
             <td className={cn(TD, "font-mono")}>{avgPlace(f)}</td>
-            <td className={cn(TD, "font-mono text-fg")}>{formatPacePct(f.pace.value)}</td>
-            <td className={cn(TD, "font-mono")}>{formatPacePct(f.pace.team)}</td>
+            <td className={cn(TD, "font-mono text-fg")}><PacePct pct={f.pace.value} ms={f.pace.valueMs} /></td>
+            <td className={cn(TD, "font-mono")}><PacePct pct={f.pace.team} ms={f.pace.teamMs} /></td>
             <td className={TD}>{rankLabel(f.pace.rank, f.pace.of)}</td>
             <td className={TD}>{f.dnfs}</td>
             <td className={cn(TD, "text-fg")}>{f.roundsWon}</td>
@@ -186,7 +188,7 @@ function MatchTable({ matches }: { matches: CompView["matches"] }) {
             <td className={cn(TD, "text-left")}>{m.lineupName}</td>
             <td className={cn(TD, "text-left")}>{m.day ? formatDay(m.day) : "—"}</td>
             <td className={TD}>{m.roundsPlayed}</td>
-            <td className={cn(TD, "font-mono text-fg")}>{formatPacePct(m.pace)}</td>
+            <td className={cn(TD, "font-mono text-fg")}><PacePct pct={m.pace} ms={m.paceMs} /></td>
           </tr>
         ))}
       </tbody>
@@ -216,7 +218,7 @@ function CompCard({ comp, initiallyOpen }: { comp: CompView; initiallyOpen: bool
             {comp.deployed ? (
               <>
                 <span>{comp.total.roundsPlayed} rounds</span>
-                <span className="font-mono text-fg-soft">Pace {formatPacePct(comp.total.pace.value)}</span>
+                <span className="font-mono text-fg-soft">Pace <PacePct pct={comp.total.pace.value} ms={comp.total.pace.valueMs} /></span>
               </>
             ) : (
               <span className="text-bronze">not fielded</span>
@@ -239,7 +241,7 @@ function CompCard({ comp, initiallyOpen }: { comp: CompView; initiallyOpen: bool
             <section className="space-y-2">
               <h3 className="text-sm font-semibold text-fg">Stats</h3>
               <p className="text-xs text-fg-subtle">
-                Pace {formatPacePct(comp.total.pace.value)} · {paceHint(comp.total.pace)}
+                Pace <PacePct pct={comp.total.pace.value} ms={comp.total.pace.valueMs} /> · {paceHint(comp.total.pace)}
               </p>
               <StatTable heading="Format" rows={formatRows(comp.formats)} />
             </section>
@@ -365,7 +367,7 @@ export function PlayerProfileView({ player: initial, total, formats, styles, com
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5 2xl:grid-cols-3 min-[1800px]:grid-cols-5">
               <Tile label="Comps" value={comps.length} />
               <Tile label="Rounds" value={total.roundsPlayed} />
-              <Tile label="Pace" value={formatPacePct(total.pace.value)} hint={paceHint(total.pace)} />
+              <Tile label="Pace" value={<PacePct pct={total.pace.value} ms={total.pace.valueMs} />} hint={paceHint(total.pace)} />
               <Tile label="DNF rate" value={dnfRate === null ? "—" : `${dnfRate.toFixed(1)} %`} hint={`${total.dnfs} DNF`} />
               <Tile
                 label="Round W/L"

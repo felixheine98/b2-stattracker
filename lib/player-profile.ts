@@ -34,6 +34,9 @@ export interface ProfileTournament {
 export interface RankedPace {
   value: number | null
   team: number | null
+  // The same averages as a gap in milliseconds
+  valueMs: number | null
+  teamMs: number | null
   rank: number | null
   of: number
 }
@@ -74,7 +77,7 @@ export interface CompProfile {
   total: StatLine
   formats: Array<StatLine & { format: Format }>
   maps: MapLine[]
-  matches: Array<{ matchId: string; roundsPlayed: number; pace: number | null }>
+  matches: Array<{ matchId: string; roundsPlayed: number; pace: number | null; paceMs: number | null }>
 }
 
 export interface Profile {
@@ -171,9 +174,9 @@ export function buildProfile(playerId: string, tournaments: ProfileTournament[],
     const everyone = [...(scopes.get(key)?.values() ?? [])]
     const { pace, ...acc } = scopes.get(key)?.get(playerId) ?? emptyAcc()
     const paces = everyone.map((a) => pacePct(a.pace)).filter(present)
-    const team = everyone.reduce((sum, a) => ({ rounds: sum.rounds + a.pace.rounds, pctSum: sum.pctSum + a.pace.pctSum, msSum: 0 }), emptyPace())
+    const team = everyone.reduce((sum, a) => ({ rounds: sum.rounds + a.pace.rounds, pctSum: sum.pctSum + a.pace.pctSum, msSum: sum.msSum + a.pace.msSum }), emptyPace())
     const value = pacePct(pace)
-    return { ...acc, pace: { value, team: pacePct(team), rank: rankOf(value, paces), of: paces.length } }
+    return { ...acc, pace: { value, team: pacePct(team), valueMs: paceMs(pace), teamMs: paceMs(team), rank: rankOf(value, paces), of: paces.length } }
   }
 
   const formatLines = (prefix: string) =>
@@ -218,7 +221,7 @@ export function buildProfile(playerId: string, tournaments: ProfileTournament[],
       maps: mapLines(tournament.id),
       matches: (drivenMatches.get(tournament.id) ?? []).map((matchId) => {
         const stats = line(`m:${matchId}`)
-        return { matchId, roundsPlayed: stats.roundsPlayed, pace: stats.pace.value }
+        return { matchId, roundsPlayed: stats.roundsPlayed, pace: stats.pace.value, paceMs: stats.pace.valueMs }
       }),
     })
   }

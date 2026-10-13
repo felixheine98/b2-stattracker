@@ -6,7 +6,8 @@ import { bestPerformer, dashboardTournaments, latestStageId, lineupRecords, over
 import { styleLabel } from "@/lib/comp-styles"
 import { db } from "@/lib/db"
 import { matchTag } from "@/lib/match-order"
-import { formatGapSeconds, formatPacePct } from "@/lib/pace"
+import { formatGapSeconds } from "@/lib/pace"
+import { PacePct } from "@/components/pace-pct"
 import { lineupPath, matchPath, playerPath, tournamentPath } from "@/lib/paths"
 import { openPlanningsFor } from "@/lib/planning-db"
 import { buildProfile } from "@/lib/player-profile"
@@ -287,8 +288,8 @@ export default async function DashboardPage() {
                       />
                       <Tile
                         label="Pace"
-                        value={formatPacePct(mine.total.pace.value)}
-                        hint={mine.total.pace.value === null ? "no timed round" : `Team ${formatPacePct(mine.total.pace.team)} · ${mine.total.pace.rank} of ${mine.total.pace.of}`}
+                        value={<PacePct pct={mine.total.pace.value} ms={mine.total.pace.valueMs} />}
+                        hint={mine.total.pace.value === null ? "no timed round" : <>Team <PacePct pct={mine.total.pace.team} ms={mine.total.pace.teamMs} /> · {mine.total.pace.rank} of {mine.total.pace.of}</>}
                       />
                       <Tile label="Round W/L" value={`${mine.total.roundsWon}–${mine.total.roundsLost}`} hint={`${winRate(mine.total.roundsWon, mine.total.roundsLost)} won`} />
                     </div>

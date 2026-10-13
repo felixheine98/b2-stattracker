@@ -5,7 +5,8 @@ import { GuestBadge } from "@/components/guest-badge"
 import { TrialBadge } from "@/components/trial-badge"
 import { Badge } from "@/components/ui/badge"
 import { cn, formatLabel } from "@/lib/utils"
-import { formatPacePct, pacePct } from "@/lib/pace"
+import { paceMs, pacePct } from "@/lib/pace"
+import { PacePct } from "@/components/pace-pct"
 import Link from "next/link"
 import { useState } from "react"
 import type { FormatAggregate } from "@/lib/format-stats"
@@ -108,8 +109,8 @@ export function FormatStatsTable({ agg, isGuest, isTrial, lineupName, profilePat
                 <td className="py-1.5 px-3 text-right text-fg-soft font-mono">
                   {p.roundsPlayed > 0 ? (p.placementSum / p.roundsPlayed).toFixed(3) : "—"}
                 </td>
-                <td className="py-1.5 px-3 text-right text-fg-soft font-mono" title="Average gap to the fastest time of the round, without DNFs">
-                  {formatPacePct(pacePct(p.pace))}
+                <td className="py-1.5 px-3 text-right text-fg-soft font-mono">
+                  <PacePct pct={pacePct(p.pace)} ms={paceMs(p.pace)} />
                 </td>
                 <td className="py-1.5 px-3 text-right text-fg-soft">{p.dnfs}</td>
                 <td className="py-1.5 px-3 text-right text-fg">{p.roundsWon}</td>
