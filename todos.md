@@ -7,7 +7,7 @@ Ideen, die noch kein Todo sind: [ideen.md](ideen.md)
 - [ ] seeding formate für import/anlegen prüfen
 - [ ] Design/UI/UX Verbesserungen
 - [ ] als member -> in tourney übersicht der eigenen stats, danach kann man sich durch die stats durchklicken
-- [ ] validierung von importierten daten zu eingegebenen daten (match) -> passt das gegner team etc
+- [ ] validierung von importierten daten zu eingegebenen daten (match) -> passt das gegner team etc; [entscheidung](docs/adr/004-import-validierung.md), [glossar](docs/import-validierung-glossar.md)
 
 ## Teilweise erledigt
 
