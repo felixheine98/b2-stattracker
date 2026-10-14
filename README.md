@@ -13,7 +13,7 @@ Die Oberfläche ist auf Englisch und unterstützt Desktop und Handy. Die App lä
 - **Gegnerverwaltung:** feste Teams, Competition-Lineups und Mixes, Logos, Fahrerzuordnungen und gemeinsame Matchhistorie.
 - **Importe:** CSV-Matchdaten, eCircuitMania-Ergebnisse und abgeschlossene TFH-Rennen. CSV- und eCM-Vorschauen prüfen Angaben gegen das eingetragene Match und lassen Abweichungen bestätigen.
 - **TFH-Archiv:** historische 24h-/12h-RPG-Rennen, Teamwertungen, B2-Fahrerrankings und Fahrerstatistiken je Ausgabe.
-- **Accounts:** Rollen `ADMIN`, `MANAGER` und `PLAYER`, Passwortanmeldung, TOTP mit Recovery-Codes und Passkeys. Admins müssen TOTP oder einen Passkey einrichten.
+- **Accounts:** Rollen `ADMIN`, `MANAGER` und `PLAYER`, Passwortanmeldung, TOTP mit Recovery-Codes und Passkeys. Member und Trials können mit einem Login verknüpft werden. Statusänderungen entziehen den Zugang nicht automatisch; Accounts werden separat verwaltet. Admins müssen TOTP oder einen Passkey einrichten.
 - **Oberfläche:** globale Suche, mobile Navigation, scrollbare Statistiktabellen und sechs Themes mit zusätzlicher Systemauswahl.
 
 ## Tech-Stack

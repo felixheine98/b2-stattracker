@@ -14,9 +14,10 @@ export function inTeam(status: PlayerStatus): boolean {
   return status === "MEMBER" || status === "TRIAL"
 }
 
-// Only members get a login; one that exists is kept through a trial or as a guest
+// Members and trials may get a login. Status changes keep existing accounts;
+// withdrawing access after a trial is a separate account-management decision.
 export function mayGetLogin(status: PlayerStatus): boolean {
-  return status === "MEMBER"
+  return inTeam(status)
 }
 
 // The status a player most likely switches to next

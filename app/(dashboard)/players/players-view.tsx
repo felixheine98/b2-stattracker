@@ -12,7 +12,7 @@ import { useSyncedState } from "@/lib/use-synced-state"
 import { PlayerAvatar } from "@/components/player-avatar"
 import { CountryFlagPicker } from "@/components/country-flag-picker"
 import { countryName } from "@/lib/countries"
-import { currentStatus, localTodayKey, type PlayerStatus, type StatusChange } from "@/lib/player-status"
+import { currentStatus, localTodayKey, mayGetLogin, type PlayerStatus, type StatusChange } from "@/lib/player-status"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -622,7 +622,7 @@ export function PlayersView({ players: initial, users, canManage }: Props) {
               <tr className="border-b border-line bg-raised">
                 <th className="text-left px-3 py-3 @7xl:px-4 text-fg-muted font-medium">Name</th>
                 <th className="text-left px-3 py-3 @7xl:px-4 text-fg-muted font-medium">TM ID</th>
-                {tab !== "former" && <th className="text-left px-3 py-3 @7xl:px-4 text-fg-muted font-medium">{tab === "members" ? "Linked account" : "Login"}</th>}
+                {tab !== "former" && <th className="text-left px-3 py-3 @7xl:px-4 text-fg-muted font-medium">{mayGetLogin(TAB_STATUS[tab]) ? "Linked account" : "Login"}</th>}
                 <th className="text-left px-3 py-3 @7xl:px-4 text-fg-muted font-medium">Status</th>
                 <th className="text-right px-3 py-3 @7xl:px-4 text-fg-muted font-medium whitespace-nowrap">Tournaments played</th>
                 <th className="px-3 py-3 @7xl:px-4" />
@@ -685,9 +685,9 @@ export function PlayersView({ players: initial, users, canManage }: Props) {
                     <span className="block w-[9ch] truncate @7xl:w-auto max-md:ml-auto max-md:w-[14ch]" title={player.tmId}>{player.tmId}</span>
                   </td>
                   {tab !== "former" && <td className="px-3 py-3 @7xl:px-4 max-md:order-5 max-md:col-span-2 max-md:block max-md:min-w-0 max-md:p-0">
-                    <span className="mb-1 block text-[10px] uppercase tracking-wider text-fg-subtle md:hidden">{tab === "members" ? "Account" : "Login"}</span>
-                    {tab !== "members" ? (
-                      // Only members get a login; one from earlier is kept, a new one cannot be linked
+                    <span className="mb-1 block text-[10px] uppercase tracking-wider text-fg-subtle md:hidden">{mayGetLogin(TAB_STATUS[tab]) ? "Account" : "Login"}</span>
+                    {!mayGetLogin(currentStatus(player)) ? (
+                      // Guests keep existing links; members and trials can link new accounts.
                       player.user ? (
                         <div className="flex items-center gap-2">
                           <span className="inline-flex items-center gap-1.5 text-xs text-bronze">

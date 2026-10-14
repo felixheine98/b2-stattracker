@@ -69,9 +69,9 @@ describe("former players", () => {
 })
 
 describe("mayGetLogin", () => {
-  it("allows a new login for members only", () => {
+  it("allows a new login for members and trials, but not guests or former players", () => {
     expect(mayGetLogin("MEMBER")).toBe(true)
-    expect(mayGetLogin("TRIAL")).toBe(false)
+    expect(mayGetLogin("TRIAL")).toBe(true)
     expect(mayGetLogin("GUEST")).toBe(false)
     expect(mayGetLogin("FORMER")).toBe(false)
   })
