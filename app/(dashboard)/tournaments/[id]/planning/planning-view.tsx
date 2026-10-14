@@ -17,7 +17,7 @@ import { useSearchParams } from "next/navigation"
 import type { PlanningState } from "@/lib/planning-db"
 import type { Activity } from "@/lib/planning-presence"
 import { usePlanningLive } from "@/lib/use-planning-live"
-import { useState } from "react"
+import { useLayoutEffect, useRef, useState } from "react"
 
 interface Props {
   initial: PlanningState
@@ -59,6 +59,13 @@ export function PlanningView({ initial, ownPlayerId, userId, canManage }: Props)
   const [layout, setLayout] = useState<"groups" | "list">("groups")
   // Player whose answer is being changed inside a group
   const [editing, setEditing] = useState<string | null>(null)
+  const answerMenuRef = useRef<HTMLDivElement>(null)
+
+  // Expanding the last row adds content below the viewport. Reveal it in the
+  // nearest scroll container, without moving a menu that is already visible.
+  useLayoutEffect(() => {
+    answerMenuRef.current?.scrollIntoView({ block: "nearest", inline: "nearest", behavior: "instant" })
+  }, [editing, layout])
   type Row = (typeof rows)[number]
   const ownRow = rows.find((r) => r.player.id === ownPlayerId)
   const groups = [
@@ -302,7 +309,7 @@ export function PlanningView({ initial, ownPlayerId, userId, canManage }: Props)
                             {row.note && <span className="ml-auto min-w-0 max-w-[55%] truncate text-xs text-fg-muted" title={row.note}>{row.note}</span>}
                           </button>
                           {editable && editing === row.player.id && (
-                            <div className="space-y-2 border-t border-line/60 bg-canvas px-3 py-2.5">
+                            <div ref={answerMenuRef} className="scroll-m-3 space-y-2 border-t border-line/60 bg-canvas px-3 py-2.5">
                               {/* Stacked: a group is too narrow for buttons and note side by side */}
                               {rowInput(row, "md:flex-col md:items-stretch")}
                               {canManage && row.guest && (
