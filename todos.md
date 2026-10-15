@@ -10,6 +10,10 @@ Ideen, die noch kein Todo sind: [ideen.md](ideen.md)
 
 ## Teilweise erledigt
 
+- [ ] Discord-Reaktionen in die Comp-Planung übernehmen ([Anbindung und Bedienung](docs/discord-planning.md))
+  - [x] Bot-Leseschnittstelle, Emoji-Zuordnung mit mehreren Emojis pro Status, gespeicherte Spielerzuordnung, Vorschau und kontrollierte Übernahme
+  - [ ] Dev-Bot anbinden und echten Abruf samt Übernahme sowie Desktop-/Telefonansicht prüfen
+
 ## Unter Beobachtung
 
 - [ ] best performer pro match/week/tourney

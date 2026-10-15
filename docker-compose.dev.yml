@@ -64,6 +64,9 @@ services:
       AUTH_TRUST_HOST: "true"
       BASE_PATH: ${DEV_BASE_PATH:-/stats-dev}
       TMIO_USER_AGENT: ${TMIO_USER_AGENT:-}
+      # Optional read-only connection to the B2 member bot (see docs/discord-planning.md).
+      DISCORD_BOT_URL: ${DISCORD_BOT_URL:-}
+      DISCORD_BOT_API_TOKEN: ${DISCORD_BOT_API_TOKEN:-}
 
     volumes:
       - .:/app
