@@ -36,10 +36,24 @@ beim nächsten manuellen Abruf berücksichtigt; es gibt keine Hintergrund-Synchr
 
 ## Dev-Anbindung
 
-Noch nicht am laufenden Bot aktiviert. Vor einem echten Durchlauf braucht es einen
-separaten Dev-Bot-Prozess aus dem Bot-Worktree und eine für die Webapp erreichbare
-interne Adresse. Den bestehenden Bot nicht ungeprüft ersetzen. Produktion erst nach
-ausdrücklicher Freigabe des jeweiligen Deployments ändern.
+Am 16.10.2026 in der laufenden Dev-App (`/stats-dev`) aktiviert. Die Dev-Arbeitskopie
+auf `feat/comp-match-rules` enthält zusätzlich den Discord-Import; der eigenständige
+Feature-Branch bleibt `feat/discord-planning`. Die Formatregeln wurden nicht in
+`main` übernommen.
+
+`docker-compose.dev.yml` startet einen eigenen Service `discord-bot` aus
+`../b2-member-discord/Dockerfile.reactions`. Er verwendet die vorhandene Discord-App,
+registriert keine Commands und hat keine Handler für Mitglieder- oder
+Nachrichtenänderungen. Der bisherige Member-Bot läuft unverändert weiter. Die API
+ist ausschließlich im privaten Docker-Netz erreichbar und veröffentlicht keinen Port.
+Die Member-Konfiguration ist nur lesend eingebunden.
+
+Der zufällige gemeinsame `DISCORD_BOT_API_TOKEN` liegt ausschließlich in der lokalen,
+nicht versionierten `.env` der Webapp. `DISCORD_BOT_ENV_FILE` (Standard:
+`../b2-member/.env`) liefert die Discord-Zugangsdaten; `DISCORD_BOT_SOURCE` erlaubt
+einen abweichenden Bot-Checkout. Start: `docker compose -f docker-compose.dev.yml
+up -d --build app discord-bot`. Produktion erst nach ausdrücklicher Freigabe des
+jeweiligen Deployments ändern.
 
 Bot-Umgebung:
 
@@ -59,10 +73,10 @@ Die Schnittstelle nicht öffentlich ohne TLS veröffentlichen. Für den Abruf be
 der Bot Zugriff auf den Channel und dessen Nachrichtenhistorie; zusätzliche Rechte
 zur Rollen- oder Channel-Verwaltung sind für diese Funktion nicht nötig.
 
-Webapp-Dev-Umgebung (`docker-compose.dev.yml` reicht diese Werte durch):
+Webapp-Dev-Umgebung (URL in Compose gesetzt, Schlüssel aus der lokalen `.env`):
 
 ```dotenv
-DISCORD_BOT_URL=http://<interne-erreichbare-bot-adresse>:3080
+DISCORD_BOT_URL=http://discord-bot:3080
 DISCORD_BOT_API_TOKEN=<derselbe Schlüssel wie beim Bot>
 ```
 
@@ -97,5 +111,12 @@ atomar. Geschlossene Planungen lehnen beide Aktionen ab.
 Unit-Tests decken die Emoji-Zuordnung, Konflikte, unveränderte Nichtantworten,
 Account-Zuordnungen, signierte Vorschauen und Zugriffsrechte ab. Bot-Tests decken
 Authentifizierung, Serverbeschränkung, eigene Emojis, Pagination und Super-Reaktionen ab.
-Ein Durchlauf gegen eine echte Discord-Nachricht und die visuelle Prüfung auf
-Desktop/Telefon stehen vor der Aktivierung noch aus.
+Aktivierung geprüft: 419 Webapp-Tests und 14 Bot-Tests bestanden, Typecheck und
+Lint der betroffenen Dateien bestanden. Der vollständige Lint meldet bestehende
+Fehler in `components/ui/dialog.tsx` und `prisma/seed.js`.
+Ein echter lesender Abruf der bestehenden Member-Verzeichnisnachricht lieferte HTTP
+200 (ohne Reaktionen); die Verbindung aus der Webapp zum Bot und die Beschränkung
+auf den erlaubten Server sind geprüft. Login und Dev-App sind erreichbar.
+Die Browserprüfung erreicht die Login-Seite; eine angemeldete visuelle Prüfung auf
+Desktop/Telefon sowie ein vollständiger Import eines Comp-Announcements mit
+Reaktionen und Übernahme stehen noch aus. Es wurden keine Planungsantworten geändert.
