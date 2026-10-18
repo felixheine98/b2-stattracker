@@ -1,6 +1,6 @@
 # Discord-Reaktionen in die Comp-Planung übernehmen
 
-Stand: Am 18.10.2026 hat Felix Merge, Push und Deployment aller lokalen Arbeiten freigegeben. Webapp und Bot werden auf `main` zusammengeführt. Die Formatregeln bleiben in Produktion ausgeschaltet.
+Stand: Am 18.10.2026 hat Felix Merge, Push und Deployment aller lokalen Arbeiten freigegeben. Webapp und Bot sind auf `main` zusammengeführt, gepusht und in Produktion gestartet. Die Formatregeln bleiben in Produktion ausgeschaltet.
 
 ## Bedienung
 
@@ -121,11 +121,19 @@ Unit-Tests decken die Emoji-Zuordnung, Konflikte, unveränderte Nichtantworten,
 Account-Zuordnungen, signierte Vorschauen und Zugriffsrechte ab. Bot-Tests decken
 Authentifizierung, Serverbeschränkung, eigene Emojis, Pagination und Super-Reaktionen ab.
 Aktivierung geprüft: 419 Webapp-Tests und 14 Bot-Tests bestanden, Typecheck und
-Lint der betroffenen Dateien bestanden. Der vollständige Lint meldet bestehende
-Fehler in `components/ui/dialog.tsx` und `prisma/seed.js`.
+Lint der betroffenen Dateien bestanden. Am 18.10. wurden auch die bestehenden
+Lint-Meldungen für den Hydration-Mount des Dialog-Portals und den CommonJS-Seed
+gezielt konfiguriert; vollständiger Lint, Typecheck, 419 Webapp-Tests, 14 Bot-Tests
+und Produktionsbuild sind grün.
 Ein echter lesender Abruf der bestehenden Member-Verzeichnisnachricht lieferte HTTP
 200 (ohne Reaktionen); die Verbindung aus der Webapp zum Bot und die Beschränkung
 auf den erlaubten Server sind geprüft. Login und Dev-App sind erreichbar.
 Die Browserprüfung erreicht die Login-Seite; eine angemeldete visuelle Prüfung auf
 Desktop/Telefon sowie ein vollständiger Import eines Comp-Announcements mit
 Reaktionen und Übernahme stehen noch aus. Es wurden keine Planungsantworten geändert.
+
+Produktionsprüfung am 18.10.2026: App und Datenbank healthy, separater Reaktionsbot
+läuft, nativer Member-Bot neu gestartet und angemeldet. Echter Discord-Leseabruf
+aus dem Produktions-App-Container über die neue API: HTTP 200. Öffentliche
+Login-Seite erreichbar, ursprüngliches B2-Logo und Favicon aktiv. Datenbanksicherung
+und vorheriges Produktionsimage wurden vor dem Austausch aufbewahrt.
