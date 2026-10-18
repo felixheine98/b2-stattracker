@@ -20,13 +20,19 @@ describe.skipIf(process.env.DB_TESTS !== "1")("rule templates with PostgreSQL", 
     await client.$transaction(async tx => { for (const statement of ddl.replace(/^\s*--.*$/gm, "").split(";").map(s => s.trim()).filter(Boolean)) await tx.$executeRawUnsafe(statement) }, { timeout: 30000 })
     state.client = client
     state.session = { user: { id: "user", role: "MANAGER" } }
+    // The format rules are switched on, except where a test switches them off
+    process.env.MATCH_RULES = "on"
   }, 30000)
-  afterAll(async () => { await client?.$disconnect(); await root.$executeRawUnsafe(`DROP SCHEMA IF EXISTS "${schema}" CASCADE`); await root.$disconnect() })
+  afterAll(async () => { delete process.env.MATCH_RULES; await client?.$disconnect(); await root.$executeRawUnsafe(`DROP SCHEMA IF EXISTS "${schema}" CASCADE`); await root.$disconnect() })
 
   const mts = {
     formats: ["ROUND_1V1", "ROUND_3V3", "ROUND_3V3"],
     rules: { flow: "DECIDER", formatRules: { ROUND_1V1: { roundsToWin: 7, maxRounds: null }, ROUND_3V3: { roundsToWin: 7, maxRounds: 13 } }, points: { win: 3, draw: 1, loss: 0 } },
     playoffRules: { formats: ["ROUND_3V3", "ROUND_3V3", "ROUND_3V3"], flow: "UNTIL_DECIDED", formatRules: { ROUND_3V3: { roundsToWin: 5, maxRounds: null } } },
+  }
+  const switchedOff = async (test: () => Promise<void>) => {
+    process.env.MATCH_RULES = "off"
+    try { await test() } finally { process.env.MATCH_RULES = "on" }
   }
   const post = (body: unknown) => POST(new Request("http://test/api/rule-templates", { method: "POST", body: JSON.stringify(body) }))
   const patch = (id: string, body: unknown) => PATCH(new Request("http://test", { method: "PATCH", body: JSON.stringify(body) }), { params: Promise.resolve({ id }) })
@@ -101,5 +107,16 @@ describe.skipIf(process.env.DB_TESTS !== "1")("rule templates with PostgreSQL", 
       expect((await GET()).status).toBe(403)
       expect((await post({ name: unique(), ...mts })).status).toBe(403)
     } finally { state.session = { user: { id: "user", role: "MANAGER" } } }
+  })
+
+  it("is not there while the format rules are switched off", async () => {
+    const { id } = await (await post({ name: unique(), ...mts })).json()
+    await switchedOff(async () => {
+      expect((await GET()).status).toBe(404)
+      expect((await post({ name: unique(), ...mts })).status).toBe(404)
+      expect((await patch(id, { name: unique() })).status).toBe(404)
+      expect((await DELETE(new Request("http://test"), { params: Promise.resolve({ id }) })).status).toBe(404)
+    })
+    expect((await list()).some((t) => t.id === id)).toBe(true)
   })
 })

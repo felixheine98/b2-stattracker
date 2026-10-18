@@ -3,6 +3,7 @@ import { db } from "@/lib/db"
 import { auth } from "@/lib/auth"
 import { canManage } from "@/lib/roles"
 import { parseStyle } from "@/lib/comp-styles"
+import { matchRulesEnabled } from "@/lib/features"
 import { TournamentsView } from "./tournaments-view"
 
 export default async function TournamentsPage({ searchParams }: { searchParams: Promise<{ style?: string | string[] }> }) {
@@ -18,5 +19,5 @@ export default async function TournamentsPage({ searchParams }: { searchParams: 
   ])
 
   const role = (session?.user as { role?: string })?.role
-  return <TournamentsView tournaments={tournaments} style={parseStyle(style)} canManage={canManage(role)} isAdmin={role === "ADMIN"} />
+  return <TournamentsView tournaments={tournaments} style={parseStyle(style)} canManage={canManage(role)} isAdmin={role === "ADMIN"} matchRules={matchRulesEnabled()} />
 }

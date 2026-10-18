@@ -90,6 +90,8 @@ model PasskeyChallenge {
 
 model Player {
   id        String   @id @default(cuid())
+  // Explicitly assigned by a manager during a Discord reaction import; never matched by name.
+  discordUserId String? @unique
   tmId      String   @unique
   // Opponent identities share the person table, but are excluded from our pool.
   // Unconfirmed names get a scoped unknown-* key until a TM.io assignment is confirmed.
@@ -196,6 +198,8 @@ model Tournament {
 // (see lib/planning.ts). Once the tournament has lineups the planning is a read-only archive.
 model Planning {
   id           String     @id @default(cuid())
+  // Message link and emoji-to-answer choices, visible only to managers.
+  discordSettings Json?
   tournamentId String     @unique
   tournament   Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
   // Counts every change to the planning; open pages ask for news with the number they last saw

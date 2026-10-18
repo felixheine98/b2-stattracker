@@ -129,13 +129,15 @@ interface Props {
   canManage: boolean
   // Points scored in the group stage, by lineup; empty for a tournament without format rules
   lineupPoints: Record<string, number>
+  // Whether the format rules are switched on (lib/features.ts)
+  matchRules: boolean
 }
 
 function formatBadgeVariant(format: Format): "primary" | "secondary" {
   return format === "TIME_ATTACK_10" ? "primary" : "secondary"
 }
 
-export function TournamentDetailView({ tournament: initial, players, statsMatches, users, ownLineupId, hasPlanning, planningCard, canManage, lineupPoints }: Props) {
+export function TournamentDetailView({ tournament: initial, players, statsMatches, users, ownLineupId, hasPlanning, planningCard, canManage, lineupPoints, matchRules }: Props) {
   const [planningStarting, setPlanningStarting] = useState(false)
 
   async function startPlanning() {
@@ -725,13 +727,13 @@ export function TournamentDetailView({ tournament: initial, players, statsMatche
               {STYLE_ORDER.map((s) => <option key={s} value={s}>{styleLabel(s)}</option>)}
             </Select>
           </div>
-          <RuleTemplateSelect onPick={(t) => { setEditFormats(t.formats as Format[]); setEditRules(draftOf(t.rules)); setEditPlayoffRules(playoffDraftOf(t.playoffRules)) }} />
+          {matchRules && <RuleTemplateSelect onPick={(t) => { setEditFormats(t.formats as Format[]); setEditRules(draftOf(t.rules)); setEditPlayoffRules(playoffDraftOf(t.playoffRules)) }} />}
           <div className="space-y-1.5">
             <Label>Formats{!needsFormats(editStyle) && <span className="text-fg-subtle"> (optional for endurance)</span>}</Label>
             <FormatBuilder value={editFormats} onChange={setEditFormats} />
           </div>
-          <MatchRulesFields formats={editFormats} value={editRules} onChange={setEditRules} playoff={editPlayoffRules} onPlayoffChange={setEditPlayoffRules} />
-          {editRules && ruledFormats(editFormats).length > 0 && (
+          {matchRules && <MatchRulesFields formats={editFormats} value={editRules} onChange={setEditRules} playoff={editPlayoffRules} onPlayoffChange={setEditPlayoffRules} />}
+          {matchRules && editRules && ruledFormats(editFormats).length > 0 && (
             <SaveAsTemplateButton content={() => ({ formats: editFormats, rules: rulesBodyOf(editRules), playoffRules: editPlayoffRules && playoffBodyOf(editPlayoffRules) })} />
           )}
           <div className="space-y-1.5">

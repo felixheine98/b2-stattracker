@@ -1,6 +1,7 @@
 // Reading and writing the format rules of a tournament (docs/adr/005-comp-formatregeln.md);
 // what they mean is in lib/match-rules.ts
 import { z } from "zod"
+import { matchRulesEnabled } from "./features"
 import { Format, type MatchFlow, type Prisma, type PrismaClient } from "@prisma/client"
 import { checkRuleSet, ruledFormats, type CompRules, type RuleSet } from "./match-rules"
 import type { PlayoffRulesBody, RulesBody } from "./match-rules-form"
@@ -35,7 +36,9 @@ function toRuleSet(row: RulesRow, formats: Format[]): RuleSet {
   }
 }
 
+// Switched off, no tournament has rules, whatever is stored
 export function compRulesOf(tournament: WithRules): CompRules {
+  if (!matchRulesEnabled()) return { comp: null, playoff: null }
   const comp = tournament.matchRules.find((r) => !r.playoff)
   const playoff = tournament.matchRules.find((r) => r.playoff)
   return { comp: comp ? toRuleSet(comp, tournament.formats) : null, playoff: playoff ? toRuleSet(playoff, playoff.formats) : null }

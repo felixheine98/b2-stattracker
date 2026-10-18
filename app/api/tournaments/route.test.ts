@@ -21,11 +21,17 @@ describe.skipIf(process.env.DB_TESTS !== "1")("tournament routes with PostgreSQL
     await client.$transaction(async tx => { for (const statement of ddl.replace(/^\s*--.*$/gm, "").split(";").map(s => s.trim()).filter(Boolean)) await tx.$executeRawUnsafe(statement) }, { timeout: 30000 })
     state.client = client
     state.session = { user: { id: "user", role: "MANAGER" } }
+    // The format rules are switched on, except where a test switches them off
+    process.env.MATCH_RULES = "on"
   }, 30000)
-  afterAll(async () => { await client?.$disconnect(); await root.$executeRawUnsafe(`DROP SCHEMA IF EXISTS "${schema}" CASCADE`); await root.$disconnect() })
+  afterAll(async () => { delete process.env.MATCH_RULES; await client?.$disconnect(); await root.$executeRawUnsafe(`DROP SCHEMA IF EXISTS "${schema}" CASCADE`); await root.$disconnect() })
 
   const rules = { flow: "ALL", formatRules: { ROUND_3V3: { roundsToWin: 7, maxRounds: null } }, points: { win: 3, draw: 1, loss: 0 } }
   const comp = (extra: object) => ({ name: `Comp ${crypto.randomUUID()}`, formats: ["ROUND_3V3"], startDate: "2026-10-01", rules, ...extra })
+  const switchedOff = async (test: () => Promise<void>) => {
+    process.env.MATCH_RULES = "off"
+    try { await test() } finally { process.env.MATCH_RULES = "on" }
+  }
   const post = (body: unknown) => POST(new Request("http://test/api/tournaments", { method: "POST", body: JSON.stringify(body) }))
   const patch = (id: string, body: unknown) => PATCH(new Request("http://test/api/tournaments/x", { method: "PATCH", body: JSON.stringify(body) }), { params: Promise.resolve({ id }) })
   const stored = async (id: string) => (await client.tournament.findUniqueOrThrow({ where: { id } })).style
@@ -181,5 +187,20 @@ describe.skipIf(process.env.DB_TESTS !== "1")("tournament routes with PostgreSQL
       expect(await create("GROUP")).toEqual(mts.formats)
       expect(await create("PLAYOFF")).toEqual(playoffRules.formats)
     })
+  })
+
+  describe("format rules switched off", () => {
+    it("creates a tournament with formats but no rules, and keeps none that are sent", () => switchedOff(async () => {
+      const bare = await post({ ...comp({ style: "TECH" }), rules: undefined })
+      expect(bare.status).toBe(201)
+      const sent = await post(comp({ style: "TECH" }))
+      expect(sent.status).toBe(201)
+      expect(await client.matchRules.count({ where: { tournamentId: (await sent.json()).id } })).toBe(0)
+    }))
+
+    it("changes the formats of a tournament without asking for rules", () => switchedOff(async () => {
+      const { id } = await (await post({ ...comp({ style: "TECH" }), rules: undefined })).json()
+      expect((await patch(id, { formats: ["ROUND_1V1", "ROUND_3V3"] })).status).toBe(200)
+    }))
   })
 })

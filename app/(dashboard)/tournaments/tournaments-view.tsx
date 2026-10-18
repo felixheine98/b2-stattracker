@@ -47,7 +47,7 @@ function formatBadgeVariant(format: Format): "primary" | "secondary" {
 }
 
 // style: the style the list is narrowed to (?style=…), null for all tournaments
-export function TournamentsView({ tournaments: initial, style, canManage, isAdmin }: { tournaments: Tournament[]; style: CompStyle | null; canManage: boolean; isAdmin: boolean }) {
+export function TournamentsView({ tournaments: initial, style, canManage, isAdmin, matchRules }: { tournaments: Tournament[]; style: CompStyle | null; canManage: boolean; isAdmin: boolean; matchRules: boolean }) {
   const router = useRouter()
   const [tournaments, setTournaments] = useSyncedState(initial)
   const [showForm, setShowForm] = useState(false)
@@ -92,7 +92,7 @@ export function TournamentsView({ tournaments: initial, style, canManage, isAdmi
         startDate: form.get("startDate") || null,
         endDate: form.get("endDate") || null,
         stages: stagePlan,
-        ...(ruledFormats(formats).length > 0 && { rules: rulesBodyOf(rules), playoffRules: playoffRules && playoffBodyOf(playoffRules) }),
+        ...(matchRules && ruledFormats(formats).length > 0 && { rules: rulesBodyOf(rules), playoffRules: playoffRules && playoffBodyOf(playoffRules) }),
       }),
     })
     setLoading(false)
@@ -118,7 +118,7 @@ export function TournamentsView({ tournaments: initial, style, canManage, isAdmi
         </div>
         <div className="flex flex-wrap gap-2">
         {isAdmin && <Link href="/tfh-import"><Button variant="outline">Import TFH race</Button></Link>}
-        {canManage && <Link href="/rule-templates"><Button variant="outline">Rule templates</Button></Link>}
+        {canManage && matchRules && <Link href="/rule-templates"><Button variant="outline">Rule templates</Button></Link>}
         {canManage && (
           <Button onClick={openForm}>
             <Plus size={16} />
@@ -232,13 +232,13 @@ export function TournamentsView({ tournaments: initial, style, canManage, isAdmi
               {STYLE_ORDER.map((s) => <option key={s} value={s}>{styleLabel(s)}</option>)}
             </Select>
           </div>
-          <RuleTemplateSelect onPick={(t) => { setFormats(t.formats as Format[]); setRules(draftOf(t.rules)); setPlayoffRules(playoffDraftOf(t.playoffRules)) }} />
+          {matchRules && <RuleTemplateSelect onPick={(t) => { setFormats(t.formats as Format[]); setRules(draftOf(t.rules)); setPlayoffRules(playoffDraftOf(t.playoffRules)) }} />}
           <div className="space-y-1.5">
             <Label>Format sequence{formStyle && !needsFormats(formStyle) && <span className="text-fg-subtle"> (optional for endurance)</span>}</Label>
             <FormatBuilder value={formats} onChange={setFormats} />
           </div>
-          <MatchRulesFields formats={formats} value={rules} onChange={(r) => r && setRules(r)} playoff={playoffRules} onPlayoffChange={setPlayoffRules} />
-          {ruledFormats(formats).length > 0 && (
+          {matchRules && <MatchRulesFields formats={formats} value={rules} onChange={(r) => r && setRules(r)} playoff={playoffRules} onPlayoffChange={setPlayoffRules} />}
+          {matchRules && ruledFormats(formats).length > 0 && (
             <SaveAsTemplateButton content={() => ({ formats, rules: rulesBodyOf(rules), playoffRules: playoffRules && playoffBodyOf(playoffRules) })} />
           )}
           <div className="space-y-1.5">

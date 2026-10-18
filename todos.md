@@ -9,11 +9,18 @@ Ideen, die noch kein Todo sind: [ideen.md](ideen.md)
 
 ## Teilweise erledigt
 
+- [ ] Discord-Reaktionen in der Comp-Planung ([Anbindung](docs/discord-planning.md))
+  - [x] Abruf, Emoji-Zuordnung, Account-Verknüpfung und Übernahme mit Vorschau
+  - [x] In der laufenden Dev-App eingebunden, separater lesender Discord-Prozess
+  - [ ] Mit einem Comp-Announcement im Alltag prüfen
+
 - [ ] konfiguration pro comp, wie matches ablaufen (hilfreich für validierung): submatches pro match, rounds to win, punkte für sieg/unentschieden/niederlage, weitere formatregeln; [entscheidung](docs/adr/005-comp-formatregeln.md), [glossar](docs/comp-formatregeln-glossar.md)
   - [x] schritt 1: regelsatz pro comp und playoff (ablauf, rounds to win, max rounds, punkte) im anlegen- und bearbeiten-dialog, hinweise auf der match-seite und beim schließen
   - [x] schritt 2: hinweise in den import-vorschauen (csv, ecm), punkte am match und als summe pro lineup
   - [x] schritt 3: vorlagen (auswahl, save as template, verwaltungsseite)
   - [ ] die acht bestehenden comps von hand eintragen
+  - [x] schalter `MATCH_RULES` in dev, in production immer aus
+  - [ ] entscheiden, ob das feature überhaupt nach production soll (bis dahin nur dev, branch nicht mergen)
 
 ## Unter Beobachtung
 

@@ -3,9 +3,12 @@ import { db } from "@/lib/db"
 import { NextResponse } from "next/server"
 import { z } from "zod"
 import { canManage } from "@/lib/roles"
+import { matchRulesEnabled } from "@/lib/features"
 import { readTemplate, templateContentSchema, toTemplate } from "@/lib/rule-templates"
 
+// Not there while the format rules are switched off
 async function forbidden() {
+  if (!matchRulesEnabled()) return NextResponse.json({ error: "Not found" }, { status: 404 })
   const session = await auth()
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   if (!canManage((session.user as { role?: string }).role)) return NextResponse.json({ error: "Forbidden" }, { status: 403 })

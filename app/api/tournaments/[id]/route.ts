@@ -10,6 +10,7 @@ import { needsFormats } from "@/lib/comp-styles"
 import { isValidDay } from "@/lib/player-status"
 import { planStageChanges, sortStages, stageName } from "@/lib/stages"
 import { ruledFormats, type RuleSet } from "@/lib/match-rules"
+import { matchRulesEnabled } from "@/lib/features"
 import { compRulesOf, playoffRulesSchema, readRuleSet, rulesBodies, rulesInclude, rulesSchema, rulesWrites } from "@/lib/match-rules-db"
 
 interface Params {
@@ -83,9 +84,10 @@ export async function PATCH(req: Request, { params }: Params) {
     }
   }
 
-  // The rules always cover the format sequence: checked again whenever either of them changes
+  // The rules always cover the format sequence: checked again whenever either of them changes.
+  // Switched off, they are left as they are.
   let ruleWrites: ReturnType<typeof rulesWrites> = []
-  if (formats !== undefined || rules !== undefined || playoffRules !== undefined) {
+  if (matchRulesEnabled() && (formats !== undefined || rules !== undefined || playoffRules !== undefined)) {
     const current = await db.tournament.findUnique({ where: { id }, include: rulesInclude })
     if (!current) return NextResponse.json({ error: "Not found" }, { status: 404 })
     const sequence = formats ?? current.formats

@@ -3,6 +3,7 @@ import { answerOf, planningRows } from "@/lib/planning"
 import { withCompNames } from "@/lib/player-names-db"
 import type { VariantData } from "@/lib/planning-variants"
 import { inTeam, selectable, statusAt, tournamentReferenceDate } from "@/lib/player-status"
+import type { ImportAnswer } from "@/lib/discord-planning"
 
 // The planning of a tournament, and whether it can still be changed: once the tournament
 // has lineups it is a read-only archive.
@@ -116,6 +117,7 @@ export async function buildPlanningState(tournamentId: string, viewer: PlanningV
   return {
     tournament: { id: tournament.id, slug: tournament.slug, name: tournament.name },
     revision: tournament.planning.revision,
+    discordSettings: viewer.canManage ? tournament.planning.discordSettings as { messageUrl: string; emojiMapping: Record<string, ImportAnswer | ""> } | null : null,
     // Once the tournament has lineups nothing can be changed any more
     archived: tournament._count.tournamentLineups > 0,
     // The variant the lineups were taken from; only meaningful while the tournament has them

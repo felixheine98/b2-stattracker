@@ -7,6 +7,7 @@ import { notFound, redirect } from "next/navigation"
 import { tournamentPath } from "@/lib/paths"
 import { resolveTournament } from "@/lib/slugs-db"
 import { withCompNames } from "@/lib/player-names-db"
+import { matchRulesEnabled } from "@/lib/features"
 import { TournamentDetailView } from "./tournament-detail-view"
 import { getTfhRace } from "@/lib/tfh-db"
 import { TfhRaceView } from "@/components/tfh/race-view"
@@ -98,5 +99,5 @@ export default async function TournamentDetailPage({ params }: Props) {
     }),
   )
 
-  return <TournamentDetailView lineupPoints={points} tournament={{ ...named.tournament, ...rulesBodies(rules) }} players={named.players} statsMatches={named.statsMatches} users={users} ownLineupId={ownLineupId} hasPlanning={hasPlanning} planningCard={planningCard} canManage={mayManage} />
+  return <TournamentDetailView lineupPoints={points} tournament={{ ...named.tournament, ...rulesBodies(rules) }} players={named.players} statsMatches={named.statsMatches} users={users} ownLineupId={ownLineupId} hasPlanning={hasPlanning} planningCard={planningCard} canManage={mayManage} matchRules={matchRulesEnabled()} />
 }

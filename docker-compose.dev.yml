@@ -64,6 +64,10 @@ services:
       AUTH_TRUST_HOST: "true"
       BASE_PATH: ${DEV_BASE_PATH:-/stats-dev}
       TMIO_USER_AGENT: ${TMIO_USER_AGENT:-}
+      # Format rules per competition (docs/adr/005): "on" or "off". Dev only; production ignores it.
+      MATCH_RULES: "on"
+      DISCORD_BOT_URL: http://discord-bot:3080
+      DISCORD_BOT_API_TOKEN: ${DISCORD_BOT_API_TOKEN:?DISCORD_BOT_API_TOKEN is required}
 
     volumes:
       - .:/app
@@ -81,6 +85,30 @@ services:
       timeout: 5s
       retries: 3
       start_period: 180s
+
+  # Read-only Discord client: no command registration, member updates or message writes.
+  discord-bot:
+    build:
+      context: ${DISCORD_BOT_SOURCE:-../b2-member-discord}
+      dockerfile: Dockerfile.reactions
+    user: "1000:1000"
+    working_dir: /bot
+    restart: unless-stopped
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    mem_limit: 256m
+    pids_limit: 100
+    env_file:
+      - ${DISCORD_BOT_ENV_FILE:-../b2-member/.env}
+    environment:
+      DISCORD_BOT_API_TOKEN: ${DISCORD_BOT_API_TOKEN:?DISCORD_BOT_API_TOKEN is required}
+      DISCORD_BOT_API_HOST: "0.0.0.0"
+      DISCORD_BOT_API_PORT: "3080"
+    volumes:
+      - ../b2-member/data:/bot/data:ro
 
 volumes:
   postgres_data:

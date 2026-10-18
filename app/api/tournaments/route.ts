@@ -9,6 +9,7 @@ import { needsFormats } from "@/lib/comp-styles"
 import { isValidDay } from "@/lib/player-status"
 import { DEFAULT_STAGE_PLAN, planStageChanges } from "@/lib/stages"
 import { ruledFormats, type RuleSet } from "@/lib/match-rules"
+import { matchRulesEnabled } from "@/lib/features"
 import { compRulesOf, playoffRulesSchema, readRuleSet, rulesBodies, rulesInclude, rulesSchema, rulesWrites } from "@/lib/match-rules-db"
 
 export async function GET() {
@@ -62,7 +63,8 @@ export async function POST(req: Request) {
   }
 
   let ruleSet: RuleSet | null = null, playoffRuleSet: RuleSet | null = null
-  if (ruledFormats(parsed.data.formats).length > 0) {
+  // Switched off, rules are neither asked for nor kept
+  if (matchRulesEnabled() && ruledFormats(parsed.data.formats).length > 0) {
     if (!parsed.data.rules) return NextResponse.json({ error: "Enter the match rules" }, { status: 400 })
     const read = readRuleSet(parsed.data.formats, parsed.data.rules, "comp")
     if ("error" in read) return NextResponse.json({ error: read.error }, { status: 400 })

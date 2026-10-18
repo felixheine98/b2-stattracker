@@ -1,6 +1,7 @@
 "use client"
 
 import { VariantsBoard } from "./variants-board"
+import { DiscordImport } from "@/components/planning/discord-import"
 import { GuestBadge } from "@/components/guest-badge"
 import { AvailabilityInput, answerColor } from "@/components/planning/availability-input"
 import { AVAILABILITY_LABEL, INACTIVE_LABEL, type Answer } from "@/lib/planning"
@@ -154,6 +155,8 @@ export function PlanningView({ initial, ownPlayerId, userId, canManage }: Props)
           {adoptedName && <> “{adoptedName}” was taken over.</>}
         </p>
       )}
+
+      {canManage && !archived && tab === "availability" && <DiscordImport state={state} mutate={mutate} />}
 
       {variants && (
         <div className="inline-flex rounded-lg border border-line p-1" role="tablist">
