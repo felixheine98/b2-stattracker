@@ -43,7 +43,7 @@ Felix explicitly requires the orange logo and favicon to remain exclusive to the
 Felix is not yet sure about the format rules per competition (match rules, hints, points, rule templates; `docs/adr/005-comp-formatregeln.md`). They must never reach production until he explicitly decides otherwise, and a general approval to deploy other changes does not cover them.
 
 - `lib/features.ts` (`matchRulesEnabled`) switches them on only where `MATCH_RULES=on` is set (`docker-compose.dev.yml`) and always off when `NODE_ENV === "production"`. Preserve this condition; do not set `MATCH_RULES` in `docker-compose.yml`.
-- The work lives on the branch `feat/comp-match-rules`; do not merge it into `main` without Felix's explicit decision.
+- Felix explicitly approved merging all local work into `main` on 18.10.2026. The format-rule code is now included in `main`, but remains disabled in production until he explicitly approves activating this feature.
 - Switched off, the app behaves as before: no rule fields or template controls, no hints or points, no rules required for new competitions. Stored rules and templates stay in the database.
 
 # Mobile

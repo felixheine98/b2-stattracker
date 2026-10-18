@@ -20,7 +20,7 @@ Ideen, die noch kein Todo sind: [ideen.md](ideen.md)
   - [x] schritt 3: vorlagen (auswahl, save as template, verwaltungsseite)
   - [ ] die acht bestehenden comps von hand eintragen
   - [x] schalter `MATCH_RULES` in dev, in production immer aus
-  - [ ] entscheiden, ob das feature überhaupt nach production soll (bis dahin nur dev, branch nicht mergen)
+  - [ ] entscheiden, ob die formatregeln in production aktiviert werden sollen (code seit 18.10. auf main, in production weiterhin ausgeschaltet)
 
 ## Unter Beobachtung
 

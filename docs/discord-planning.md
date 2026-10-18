@@ -1,8 +1,6 @@
 # Discord-Reaktionen in die Comp-Planung übernehmen
 
-Stand: erste Implementierung auf `feat/discord-planning`, ausgehend von `main`.
-Die Bot-Erweiterung liegt im Repository `b2-member` auf dem gleichnamigen Branch.
-Die Formatregeln aus `feat/comp-match-rules` gehören nicht zu diesem Branch.
+Stand: Am 18.10.2026 hat Felix Merge, Push und Deployment aller lokalen Arbeiten freigegeben. Webapp und Bot werden auf `main` zusammengeführt. Die Formatregeln bleiben in Produktion ausgeschaltet.
 
 ## Bedienung
 
@@ -36,13 +34,10 @@ beim nächsten manuellen Abruf berücksichtigt; es gibt keine Hintergrund-Synchr
 
 ## Dev-Anbindung
 
-Am 16.10.2026 in der laufenden Dev-App (`/stats-dev`) aktiviert. Die Dev-Arbeitskopie
-auf `feat/comp-match-rules` enthält zusätzlich den Discord-Import; der eigenständige
-Feature-Branch bleibt `feat/discord-planning`. Die Formatregeln wurden nicht in
-`main` übernommen.
+Am 16.10.2026 in der laufenden Dev-App (`/stats-dev`) aktiviert. Die laufende Dev-Arbeitskopie verwendet nach der Freigabe vom 18.10.2026 `main`, einschließlich Discord-Import und ausschließlich in Dev aktivierten Formatregeln.
 
 `docker-compose.dev.yml` startet einen eigenen Service `discord-bot` aus
-`../b2-member-discord/Dockerfile.reactions`. Er verwendet die vorhandene Discord-App,
+`../b2-member/Dockerfile.reactions`. Er verwendet die vorhandene Discord-App,
 registriert keine Commands und hat keine Handler für Mitglieder- oder
 Nachrichtenänderungen. Der bisherige Member-Bot läuft unverändert weiter. Die API
 ist ausschließlich im privaten Docker-Netz erreichbar und veröffentlicht keinen Port.
@@ -86,6 +81,20 @@ Die Prisma-Migration `20261015000000_add_discord_planning` ergänzt ausschließl
 Schemaänderungen zunächst ausschließlich in Dev anwenden. Beim Start einer eigenen
 Dev-Instanz aus diesem Branch auf eine eigene Dev-Datenbank/-Kopie achten: ein
 `db push` vom Main-basierten Schema darf keine Dev-Tabellen der Formatregeln entfernen.
+
+## Produktionsanbindung
+
+Die Freigabe vom 18.10.2026 umfasst das Produktionsdeployment. `docker-compose.yml`
+startet einen eigenen lesenden `discord-bot` im Produktionsnetz. Die API hat keinen
+veröffentlichten Host-Port. Die App verwendet `http://discord-bot:3080`; der separate
+Schlüssel `DISCORD_BOT_PROD_API_TOKEN` liegt in der lokalen Webapp-`.env` und wird
+in App und Bot als `DISCORD_BOT_API_TOKEN` übergeben. Discord-Zugangsdaten und
+Member-Konfiguration kommen wie in Dev vom `b2-member`-Checkout, nur lesend.
+
+Beide Compose-Dateien bauen den Bot standardmäßig aus `../b2-member` (`main`).
+Der native Member-Directory-Service bleibt für seine bisherigen Funktionen zuständig.
+Die Formatregeln bleiben auch nach dem Merge in Produktion immer ausgeschaltet;
+`MATCH_RULES` wird in der Produktions-Compose-Datei nicht gesetzt.
 
 ## Schnittstelle
 

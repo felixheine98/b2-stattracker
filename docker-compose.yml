@@ -60,6 +60,8 @@ services:
       # Path the app is served under; the production image also needs it at build time
       BASE_PATH: ${BASE_PATH:-/b2-stats}
       TMIO_USER_AGENT: ${TMIO_USER_AGENT:-}
+      DISCORD_BOT_URL: http://discord-bot:3080
+      DISCORD_BOT_API_TOKEN: ${DISCORD_BOT_PROD_API_TOKEN:?DISCORD_BOT_PROD_API_TOKEN is required}
 
     depends_on:
       db:
@@ -73,6 +75,30 @@ services:
       timeout: 5s
       retries: 3
       start_period: 30s
+
+  # Only reads messages and reactions; the member directory bot keeps running separately.
+  discord-bot:
+    build:
+      context: ${DISCORD_BOT_SOURCE:-../b2-member}
+      dockerfile: Dockerfile.reactions
+    user: "1000:1000"
+    working_dir: /bot
+    restart: unless-stopped
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    mem_limit: 256m
+    pids_limit: 100
+    env_file:
+      - ${DISCORD_BOT_ENV_FILE:-../b2-member/.env}
+    environment:
+      DISCORD_BOT_API_TOKEN: ${DISCORD_BOT_PROD_API_TOKEN:?DISCORD_BOT_PROD_API_TOKEN is required}
+      DISCORD_BOT_API_HOST: "0.0.0.0"
+      DISCORD_BOT_API_PORT: "3080"
+    volumes:
+      - ../b2-member/data:/bot/data:ro
 
 volumes:
   postgres_data:

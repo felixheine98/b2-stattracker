@@ -16,6 +16,8 @@ export function Dialog({ open, onClose, children, className }: DialogProps) {
   const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
+    // The portal needs document.body after hydration; the server must render nothing.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setMounted(true)
   }, [])
 

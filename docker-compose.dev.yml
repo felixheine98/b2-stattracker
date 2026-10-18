@@ -89,7 +89,7 @@ services:
   # Read-only Discord client: no command registration, member updates or message writes.
   discord-bot:
     build:
-      context: ${DISCORD_BOT_SOURCE:-../b2-member-discord}
+      context: ${DISCORD_BOT_SOURCE:-../b2-member}
       dockerfile: Dockerfile.reactions
     user: "1000:1000"
     working_dir: /bot
