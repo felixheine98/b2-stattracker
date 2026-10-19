@@ -5,6 +5,14 @@ export interface TrackedMessage {
   since: string
   reactions: number
   lastAt: string | null
+  preview?: {
+    channelName: string | null
+    author: string | null
+    postedAt: string
+    // Empty unless the bot may read message content
+    text: string
+    attachments: number
+  } | null
 }
 
 export interface TrackedRow extends TrackedMessage {

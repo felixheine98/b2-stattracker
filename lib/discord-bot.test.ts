@@ -34,7 +34,8 @@ describe("Discord bot boundary", () => {
     await expect(fetchReactions(snapshot.messageUrl, { url: "http://bot:3080", token: "api-secret" })).rejects.toThrow("different message")
   })
   it("lists the messages the bot keeps reaction times for, and asks it to forget one", async () => {
-    const listed = { guildId: "111", messages: [{ messageId: "333", channelId: "222", since: "2026-10-19T20:00:00.000Z", reactions: 2, lastAt: null }] }
+    const listed = { guildId: "111", messages: [{ messageId: "333", channelId: "222", since: "2026-10-19T20:00:00.000Z", reactions: 2, lastAt: null,
+      preview: { channelName: "announcements", author: "Boss", postedAt: "2026-10-19T19:00:00.000Z", text: "EMC S8 lineup", attachments: 0 } }, { messageId: "334", channelId: null, since: "2026-10-19T20:00:00.000Z", reactions: 0, lastAt: null, preview: null }] }
     const fetch = vi.fn().mockResolvedValueOnce(Response.json(listed)).mockResolvedValueOnce(new Response(null, { status: 204 })).mockResolvedValueOnce(new Response(null, { status: 404 }))
     vi.stubGlobal("fetch", fetch)
     const config = { url: "http://bot:3080", token: "api-secret" }
