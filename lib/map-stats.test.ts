@@ -113,3 +113,31 @@ describe("matchesOfFormats", () => {
     expect(matchesOfFormats(matches, ["ROUND_2V2"])[0].subMatches.map((s) => s.format)).toEqual(["ROUND_2V2"])
   })
 })
+
+describe("buildMapAggregates: summary results", () => {
+  const summary = (track: string | null, players: Array<[string, number, number]>) => ({
+    format: "ROUND_4V4" as const,
+    rounds: [],
+    summary: {
+      track, rounds: 12, roundsWon: 3, roundsLost: 7, outcome: "L" as const,
+      players: players.map(([name, rounds, placementSum]) => ({ playerId: name, tmId: name, playerName: name, rounds, placementSum })),
+    },
+  })
+
+  it("adds rounds, places and the record to the map the screenshot names, without times", () => {
+    const [a] = buildMapAggregates([
+      match([sub("ROUND_1V1", round("Roquende", "anna:60", "opp1:61"))]),
+      match([summary("roquende", [["anna", 12, 60], ["ben", 6, 30]])]),
+    ], ["md1"])
+
+    expect(a).toMatchObject({ track: "Roquende", formats: ["ROUND_1V1", "ROUND_4V4"], teamRoundsWon: 4, teamRoundsLost: 7, mapWon: 1, mapLost: 1, teamBestMs: 60000, teamTimeCount: 1 })
+    expect(a.players.get("anna")).toMatchObject({ rounds: 13, placementSum: 61, roundsWon: 4, roundsLost: 7, bestMs: 60000, dnfs: 0 })
+    expect(a.players.get("anna")!.pace.rounds).toBe(1)
+    expect(a.players.get("ben")).toMatchObject({ rounds: 6, placementSum: 30, roundsWon: 0, roundsLost: 0, bestMs: null })
+  })
+
+  it("puts a summary without a map with the rounds that have no map entered", () => {
+    const [none] = buildMapAggregates([match([summary(null, [["anna", 12, 60]])])], ["md1"])
+    expect(none).toMatchObject({ track: null, mapLost: 1 })
+  })
+})

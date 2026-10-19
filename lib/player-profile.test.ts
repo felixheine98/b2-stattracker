@@ -187,3 +187,43 @@ describe("buildProfile: styles", () => {
     expect(onIce.pace).toMatchObject({ value: 10, rank: 2, of: 2 })
   })
 })
+
+describe("buildProfile: summary results", () => {
+  function summarised(players: Array<[string, number, number]>, extra: Partial<ProfileMatch> = {}): ProfileMatch {
+    return match([], {
+      subMatches: [{
+        format: "ROUND_4V4",
+        rounds: [],
+        summary: {
+          track: "Roquende", rounds: 12, roundsWon: 3, roundsLost: 7, outcome: "L",
+          players: players.map(([name, rounds, placementSum]) => ({ playerId: name, tmId: name, playerName: name, rounds, placementSum })),
+        },
+      }],
+      ...extra,
+    })
+  }
+
+  it("counts rounds, places and the record of a summary in the totals, the format, the style and the comp", () => {
+    const profile = buildProfile("anna", [t1], [match([round("A", "anna:60", "opp1:61")]), summarised([["anna", 12, 60], ["ben", 12, 40]])])
+
+    const expected = { roundsPlayed: 12, placementSum: 60, roundsWon: 3, roundsLost: 7, dnfs: 0 }
+    expect(profile.total).toMatchObject({ roundsPlayed: 13, placementSum: 61, roundsWon: 4, roundsLost: 7 })
+    expect(profile.formats.find((f) => f.format === "ROUND_4V4")).toMatchObject(expected)
+    expect(profile.styles[0]).toMatchObject({ style: "TECH", roundsPlayed: 13 })
+    expect(profile.comps[0]).toMatchObject({ deployed: true, lineupIds: ["alpha"] })
+    expect(profile.comps[0].total).toMatchObject({ roundsPlayed: 13 })
+  })
+
+  it("lists the match of a summary without a pace and adds no map", () => {
+    const profile = buildProfile("anna", [t1], [summarised([["anna", 12, 60]])])
+
+    expect(profile.comps[0].matches).toEqual([expect.objectContaining({ roundsPlayed: 12, pace: null, paceMs: null })])
+    expect(profile.comps[0].maps).toEqual([])
+    expect(profile.total.pace.value).toBeNull()
+  })
+
+  it("leaves a summary in the seeding out", () => {
+    const profile = buildProfile("anna", [t1], [summarised([["anna", 12, 60]], { stage: { type: "SEEDING" } })])
+    expect(profile.total.roundsPlayed).toBe(0)
+  })
+})

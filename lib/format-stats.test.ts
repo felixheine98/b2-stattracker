@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest"
 import { pacePct } from "./pace"
 import { buildAggregates, matchesOfLineups, matchesOfStages, type StatsMatch } from "./format-stats"
+import type { SubMatchSummary } from "./summary"
 
 let nextId = 0
 
@@ -141,5 +142,50 @@ describe("buildAggregates: pace", () => {
     const [agg] = buildAggregates([match([timed(["opp1", 50], ["anna", 51]), timed(["opp1", 60], ["anna", null])])])
     expect(agg.players.get("anna")!.pace.rounds).toBe(1)
     expect(pacePct(agg.players.get("anna")!.pace)).toBeCloseTo(2)
+  })
+})
+
+describe("buildAggregates: summary results", () => {
+  // A sub-match taken over from a stats screenshot: no rounds, only the result and per player
+  // the rounds driven and the sum of their places (docs/adr/007)
+  function summarised(summary: Partial<SubMatchSummary> & Pick<SubMatchSummary, "players">): StatsMatch {
+    return {
+      id: `m${nextId++}`,
+      stage: { id: "md1", type: "GROUP" },
+      subMatches: [{ format: "ROUND_2V2", rounds: [], summary: { track: null, rounds: 9, roundsWon: 2, roundsLost: 5, outcome: "L", ...summary } }],
+    }
+  }
+  const player = (name: string, rounds: number, placementSum: number) => ({ playerId: name, tmId: name, playerName: name, rounds, placementSum })
+
+  it("adds the rounds and the sum of places of each player", () => {
+    const [agg] = buildAggregates([
+      match([round("anna", "ben", "opp1", "opp2")]),
+      summarised({ players: [player("anna", 9, 26), player("ben", 9, 24)] }),
+    ])
+
+    expect(agg.players.get("anna")).toMatchObject({ roundsPlayed: 10, placementSum: 27 })
+    expect(agg.players.get("ben")).toMatchObject({ roundsPlayed: 10, placementSum: 26 })
+  })
+
+  it("counts the round result for the team and for every player who drove all rounds", () => {
+    const [agg] = buildAggregates([summarised({ players: [player("anna", 9, 26), player("ben", 5, 14), player("cleo", 4, 10)] })])
+
+    expect(agg).toMatchObject({ teamRoundsWon: 2, teamRoundsLost: 5, mapWon: 0, mapLost: 1, mapDrawn: 0 })
+    expect(agg.players.get("anna")).toMatchObject({ roundsWon: 2, roundsLost: 5 })
+    expect(agg.players.get("ben")).toMatchObject({ roundsWon: 0, roundsLost: 0 })
+  })
+
+  it("counts the map but no rounds won or lost when the screenshot gives no round result", () => {
+    const [agg] = buildAggregates([summarised({ roundsWon: null, roundsLost: null, outcome: "W", players: [player("anna", 9, 26)] })])
+
+    expect(agg).toMatchObject({ teamRoundsWon: 0, teamRoundsLost: 0, mapWon: 1 })
+    expect(agg.players.get("anna")).toMatchObject({ roundsPlayed: 9, roundsWon: 0, roundsLost: 0 })
+  })
+
+  it("adds neither DNFs nor pace", () => {
+    const [agg] = buildAggregates([summarised({ players: [player("anna", 9, 26)] })])
+
+    expect(agg.players.get("anna")).toMatchObject({ dnfs: 0 })
+    expect(agg.players.get("anna")!.pace.rounds).toBe(0)
   })
 })

@@ -3,6 +3,7 @@ import type { Format } from "@prisma/client"
 import { addGap, emptyPace, finishTime, roundBest, type PaceSum } from "./pace"
 import { roundPlacements, roundScore } from "./round-score"
 import type { StageType } from "./stages"
+import { playerRecord, type SubMatchSummary } from "./summary"
 
 interface StatsRoundResult {
   id: string
@@ -23,6 +24,8 @@ export interface StatsMatch {
     format: Format
     // Results of a round must be in finishing order
     rounds: Array<{ track?: string | null; results: StatsRoundResult[] }>
+    // Set instead of rounds for a sub-match taken over from a screenshot
+    summary?: SubMatchSummary | null
   }>
 }
 
@@ -71,6 +74,25 @@ export function matchesOfFormats<T extends { subMatches: Array<{ format: Format 
   return matches.map((m) => ({ ...m, subMatches: m.subMatches.filter((sm) => formats.includes(sm.format)) }))
 }
 
+function addSummary(agg: FormatAggregate, summary: SubMatchSummary): void {
+  agg.teamRoundsWon += summary.roundsWon ?? 0
+  agg.teamRoundsLost += summary.roundsLost ?? 0
+  if (summary.outcome === "W") agg.mapWon++
+  else if (summary.outcome === "L") agg.mapLost++
+  else agg.mapDrawn++
+  for (const sp of summary.players) {
+    if (!agg.players.has(sp.tmId)) {
+      agg.players.set(sp.tmId, { tmId: sp.tmId, name: sp.playerName, currentName: sp.currentName, roundsPlayed: 0, placementSum: 0, roundsWon: 0, roundsLost: 0, dnfs: 0, pace: emptyPace() })
+    }
+    const p = agg.players.get(sp.tmId)!
+    const { won, lost } = playerRecord(summary, sp)
+    p.roundsPlayed += sp.rounds
+    p.placementSum += sp.placementSum
+    p.roundsWon += won
+    p.roundsLost += lost
+  }
+}
+
 // Stats summed up per format. Seeding matches are left out; their numbers are shown on the match page only.
 export function buildAggregates(matches: StatsMatch[]): FormatAggregate[] {
   const byFormat = new Map<Format, FormatAggregate>()
@@ -87,6 +109,10 @@ export function buildAggregates(matches: StatsMatch[]): FormatAggregate[] {
         })
       }
       const agg = byFormat.get(sm.format)!
+      if (sm.summary) {
+        addSummary(agg, sm.summary)
+        continue
+      }
       let smWon = 0, smLost = 0
 
       for (const round of sm.rounds) {

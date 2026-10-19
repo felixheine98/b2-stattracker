@@ -3,6 +3,7 @@
 // fit the rules.
 import type { Format } from "@prisma/client"
 import { roundScore, type ScoredResult } from "./round-score"
+import type { SubMatchSummary } from "./summary"
 import { formatLabel as label } from "./utils"
 
 const formatLabel = (format: string) => label(format as Format) ?? format
@@ -21,8 +22,9 @@ export interface RuleRound {
   results: ScoredResult[]
 }
 
-// empty: no round that both teams drove; unruled: its format has no rule
-export type SubMatchStatus = "empty" | "unruled" | "decided" | "incomplete" | "overplayed"
+// empty: no round that both teams drove; unruled: its format has no rule; summary: taken over
+// from a screenshot, so there are no rounds to check
+export type SubMatchStatus = "empty" | "unruled" | "decided" | "incomplete" | "overplayed" | "summary"
 
 export interface SubMatchState {
   won: number
@@ -58,6 +60,14 @@ export function subMatchState(rounds: RuleRound[], rule: FormatRule | null): Sub
   return { ...tally, outcome, status: "decided", hint: null }
 }
 
+// The state of a sub-match taken over from a screenshot: its result as given there. Without a
+// round result on the screenshot it counts no rounds.
+export function summaryState(summary: Pick<SubMatchSummary, "rounds" | "roundsWon" | "roundsLost" | "outcome">): SubMatchState {
+  const known = summary.roundsWon !== null && summary.roundsLost !== null
+  const won = summary.roundsWon ?? 0, lost = summary.roundsLost ?? 0
+  return { won, lost, drawn: known ? Math.max(0, summary.rounds - won - lost) : 0, outcome: summary.outcome, status: "summary", hint: null }
+}
+
 // ALL: every sub-match of the sequence is played. UNTIL_DECIDED: the match ends once a side has
 // won the majority of the sequence (best of). DECIDER: the last sub-match of the sequence is
 // only played when the others end level.
@@ -76,6 +86,7 @@ export interface RuleSet {
 export interface RuleSubMatch {
   format: string
   rounds: RuleRound[]
+  summary?: SubMatchSummary | null
 }
 
 export interface MatchReport {
@@ -122,7 +133,7 @@ function flowHints(played: Outcome[], ruleSet: RuleSet): string[] {
 // subMatches in the order they were played. Without a rule set there is nothing to check, and
 // the result is the one of the sub-matches alone.
 export function matchReport(subMatches: RuleSubMatch[], ruleSet: RuleSet | null): MatchReport {
-  const states = subMatches.map((sm) => subMatchState(sm.rounds, ruleSet?.formatRules[sm.format] ?? null))
+  const states = subMatches.map((sm) => (sm.summary ? summaryState(sm.summary) : subMatchState(sm.rounds, ruleSet?.formatRules[sm.format] ?? null)))
   const played = states.flatMap((s) => (s.outcome ? [s.outcome] : []))
   const won = played.filter((o) => o === "W").length
   const lost = played.filter((o) => o === "L").length

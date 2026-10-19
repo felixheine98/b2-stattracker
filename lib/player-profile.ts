@@ -7,6 +7,7 @@ import { FORMAT_ORDER } from "./format-stats"
 import { addGap, emptyPace, finishTime, paceMs, pacePct, roundBest, type PaceSum } from "./pace"
 import { roundPlacements, roundScore } from "./round-score"
 import type { StageType } from "./stages"
+import { playerRecord, type SubMatchSummary } from "./summary"
 
 export interface ProfileMatch {
   id: string
@@ -20,6 +21,8 @@ export interface ProfileMatch {
       track: string | null
       results: Array<{ playerId: string | null; isOurTeam: boolean; dnf?: boolean | null; timeMs?: number | null }>
     }>
+    // Set instead of rounds for a sub-match taken over from a screenshot
+    summary?: SubMatchSummary | null
   }>
 }
 
@@ -128,6 +131,15 @@ export function buildProfile(playerId: string, tournaments: ProfileTournament[],
 
   const styleOf = new Map(tournaments.map((t) => [t.id, t.style]))
 
+  // Notes that the player drove in the match
+  function drove(match: ProfileMatch): void {
+    const tid = match.tournamentId
+    const lineups = entry(drivenLineups, tid, () => [])
+    if (match.tournamentLineupId && !lineups.includes(match.tournamentLineupId)) lineups.push(match.tournamentLineupId)
+    const driven = entry(drivenMatches, tid, () => [])
+    if (match.stage.type !== "SEEDING" && !driven.includes(match.id)) driven.push(match.id)
+  }
+
   for (const match of matches) {
     const tid = match.tournamentId
     const seeding = match.stage.type === "SEEDING"
@@ -135,6 +147,20 @@ export function buildProfile(playerId: string, tournaments: ProfileTournament[],
     for (const sm of match.subMatches) {
       const keys = seeding ? [] : ["all", `f:${sm.format}`, `c:${tid}`, `c:${tid}|f:${sm.format}`, `m:${match.id}`]
       if (!seeding && style) keys.push(`s:${style}`)
+      // The seeding leaves no trace of a summary: it has no times for the personal bests
+      if (sm.summary && !seeding) {
+        for (const sp of sm.summary.players) {
+          const { won, lost } = playerRecord(sm.summary, sp)
+          for (const key of keys) {
+            const acc = entry(entry(scopes, key, () => new Map<string, Acc>()), sp.playerId, emptyAcc)
+            acc.roundsPlayed += sp.rounds
+            acc.placementSum += sp.placementSum
+            acc.roundsWon += won
+            acc.roundsLost += lost
+          }
+          if (sp.playerId === playerId) drove(match)
+        }
+      }
       for (const round of sm.rounds) {
         const outcome = roundScore(round.results)?.outcome
         const placements = roundPlacements(round.results)
@@ -160,11 +186,7 @@ export function buildProfile(playerId: string, tournaments: ProfileTournament[],
             if (!seeding && best !== null) addGap(map.pace, time, best)
           }
 
-          if (r.playerId !== playerId) return
-          const lineups = entry(drivenLineups, tid, () => [])
-          if (match.tournamentLineupId && !lineups.includes(match.tournamentLineupId)) lineups.push(match.tournamentLineupId)
-          const driven = entry(drivenMatches, tid, () => [])
-          if (!seeding && !driven.includes(match.id)) driven.push(match.id)
+          if (r.playerId === playerId) drove(match)
         })
       }
     }

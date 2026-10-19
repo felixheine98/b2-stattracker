@@ -2,9 +2,10 @@
 // and who drove best. Seeding matches are left out, as in all stats.
 import type { StatsMatch } from "./format-stats"
 import { suggestMatchOutcome } from "./opponents"
-import { subMatchState } from "./match-rules"
+import { subMatchState, summaryState } from "./match-rules"
 import { dayKey } from "./player-status"
 import { roundPlacements } from "./round-score"
+import { teamSize } from "./utils"
 
 export interface DashMatch extends Omit<StatsMatch, "tournamentLineupId"> {
   tournamentLineupId: string | null
@@ -50,7 +51,7 @@ interface Tally {
 function tally(match: DashMatch): Tally {
   const t: Tally = { mapsWon: 0, mapsDrawn: 0, mapsLost: 0, roundsWon: 0, roundsLost: 0, played: false }
   for (const sm of match.subMatches) {
-    const { won, lost, outcome } = subMatchState(sm.rounds, null)
+    const { won, lost, outcome } = sm.summary ? summaryState(sm.summary) : subMatchState(sm.rounds, null)
     if (!outcome) continue
     t.played = true
     t.roundsWon += won
@@ -138,6 +139,16 @@ export function bestPerformer(matches: DashMatch[], { minRoundShare = 0 }: { min
   for (const match of matches) {
     if (!counted(match)) continue
     for (const sm of match.subMatches) {
+      for (const sp of sm.summary?.players ?? []) {
+        // Same as the rounds below, summed up: a summary only knows the sum of the places
+        const field = 2 * (teamSize(sm.format) ?? 0)
+        const player = players.get(sp.tmId) ?? { name: sp.playerName, currentName: sp.currentName, placeSum: 0, shareSum: 0, rounds: 0, lineups: new Map() }
+        player.placeSum += sp.placementSum
+        player.shareSum += field > 1 ? (sp.placementSum - sp.rounds) / (field - 1) : 0
+        player.rounds += sp.rounds
+        if (match.tournamentLineupId) player.lineups.set(match.tournamentLineupId, (player.lineups.get(match.tournamentLineupId) ?? 0) + sp.rounds)
+        players.set(sp.tmId, player)
+      }
       for (const round of sm.rounds) {
         const placements = roundPlacements(round.results)
         const field = round.results.length
