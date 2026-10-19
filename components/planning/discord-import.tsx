@@ -7,6 +7,7 @@ import { ExternalLink } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Select } from "@/components/ui/select"
+import { PlayerCombobox } from "@/components/player-combobox"
 import { BASE_PATH } from "@/lib/base-path"
 import { AVAILABILITY_LABEL, type Answer } from "@/lib/planning"
 import { suggestPlayer } from "@/lib/discord-accounts"
@@ -160,11 +161,10 @@ export function DiscordImport({ state, mutate }: { state: PlanningState; mutate:
             const value = effective[u.id] ?? ""
             return <div key={u.id} className="flex flex-col gap-2 sm:flex-row sm:items-center">
               <span className="min-w-0 flex-1 truncate text-sm text-fg-soft" title={`Discord ID: ${u.id}`}>{u.name} <span className="text-xs text-fg-subtle">{loaded.snapshot.reactions.filter(r => r.userIds.includes(u.id)).map(r => r.label).join(" ")}</span></span>
-              <Select className="sm:w-64" aria-label={`Player for ${u.name}`} value={value} disabled={busy} onChange={e => { setAccountChoices(old => ({ ...old, [u.id]: e.target.value })); setResolutions({}) }}>
-                <option value="">Not imported this time</option>
-                <option value={NOT_A_PLAYER}>Not a player (always skip)</option>
-                {state.rows.map(r => <option key={r.player.id} value={r.player.id}>{r.player.name}{r.player.id === suggestions[u.id] ? " (suggested)" : ""}</option>)}
-              </Select>
+              <PlayerCombobox className="sm:w-64" aria-label={`Player for ${u.name}`} value={value} disabled={busy} placeholder="Not imported this time"
+                onChange={choice => { setAccountChoices(old => ({ ...old, [u.id]: choice })); setResolutions({}) }}
+                extra={[{ value: "", label: "Not imported this time" }, { value: NOT_A_PLAYER, label: "Not a player (always skip)" }]}
+                players={state.rows.map(r => ({ id: r.player.id, name: r.player.name, hint: r.player.id === suggestions[u.id] ? "suggested" : undefined }))} />
             </div>
           })}
         </div>}

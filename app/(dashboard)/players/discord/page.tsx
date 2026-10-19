@@ -36,6 +36,6 @@ export default async function DiscordAccountsPage() {
         id: p.discordUserId!, name: p.discordUserId!, username: "", roles: [], onServer: false, playerId: p.id, notAPlayer: false, suggestion: null,
       })) : []),
     ]}
-    players={players.map(p => ({ id: p.id, name: p.name, status: currentStatus(p), discordUserId: p.discordUserId }))}
+    players={players.map(p => ({ id: p.id, name: p.name, allNames: allNames(p), status: currentStatus(p), discordUserId: p.discordUserId }))}
   />
 }

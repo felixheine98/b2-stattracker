@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation"
 import { ArrowLeft, Check, Link2Off, UserX, Undo2 } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Select } from "@/components/ui/select"
+import { PlayerCombobox } from "@/components/player-combobox"
 import { BASE_PATH } from "@/lib/base-path"
 import { cn } from "@/lib/utils"
 import type { PlayerStatus } from "@/lib/player-status"
@@ -22,7 +22,7 @@ interface Account {
   notAPlayer: boolean
   suggestion: string | null
 }
-interface Player { id: string; name: string; status: PlayerStatus; discordUserId: string | null }
+interface Player { id: string; name: string; allNames: string[]; status: PlayerStatus; discordUserId: string | null }
 
 type Tab = "open" | "linked" | "ignored"
 
@@ -109,10 +109,8 @@ export function DiscordAccountsView({ accounts, players, error }: { accounts: Ac
               </div>
               {tab === "open" && <>
                 <div className="min-w-0 md:w-64">
-                  <Select aria-label={`Player for ${a.name}`} value={chosen} disabled={busy} onChange={e => setChoices(old => ({ ...old, [a.id]: e.target.value }))}>
-                    <option value="">Choose player…</option>
-                    {players.map(p => <option key={p.id} value={p.id}>{p.name}{p.discordUserId ? " (has an account)" : ""}</option>)}
-                  </Select>
+                  <PlayerCombobox aria-label={`Player for ${a.name}`} value={chosen} disabled={busy} onChange={value => setChoices(old => ({ ...old, [a.id]: value }))}
+                    players={players.map(p => ({ id: p.id, name: p.name, allNames: p.allNames, hint: p.discordUserId ? "has an account" : undefined }))} />
                   {chosen && chosen === a.suggestion && !choices[a.id] && <p className="mt-1 text-xs text-fg-subtle">Suggested by name</p>}
                   {replaces && <p className="mt-1 text-xs text-danger">Replaces {replaces.name}&apos;s current account</p>}
                 </div>
