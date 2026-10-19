@@ -54,6 +54,8 @@ export async function PUT(req: Request, { params }: Params) {
     ...(answer !== undefined && {
       status: answer === "FIX" || answer === "MAYBE" || answer === "OUT" ? (answer as "FIX" | "MAYBE" | "OUT") : null,
       levelId,
+      // An answer given here replaces the one from Discord, and with it the time of that reaction
+      answeredAt: null,
     }),
     ...(note !== undefined && { note: note || null }),
   }

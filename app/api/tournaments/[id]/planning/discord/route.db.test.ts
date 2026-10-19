@@ -8,6 +8,7 @@ vi.mock("@/lib/db", () => ({ get db() { return state.client } }))
 vi.mock("@/lib/auth", () => ({ auth: async () => state.session }))
 vi.mock("@/lib/discord-bot", async original => ({ ...await original<typeof import("@/lib/discord-bot")>(), fetchReactions: async () => state.snapshot }))
 import { POST } from "./route"
+import { PUT as putEntry } from "../entries/[playerId]/route"
 
 describe.skipIf(process.env.DB_TESTS !== "1")("Discord import into a planning with PostgreSQL", () => {
   const root = new PrismaClient(), schema = `route_test_${crypto.randomUUID().replaceAll("-", "")}`
@@ -60,6 +61,25 @@ describe.skipIf(process.env.DB_TESTS !== "1")("Discord import into a planning wi
     const applied = await post(comp.id, { action: "apply", token, emojiMapping: { "unicode:✅": "FIX" }, links: {}, notAPlayer: [unknown, staff], resolutions: {} })
     expect(applied.status).toBe(200)
     expect(await settings(comp.id)).toMatchObject({ discordSettings: { fetchedAt } })
+  })
+
+  it("stores when an imported answer was given, and a later answer by hand clears it", async () => {
+    const { comp, anna, ben, linked, unknown, staff } = await setup()
+    const reactedAt = "2026-10-19T20:05:00.000Z"
+    const snap = state.snapshot as { reactions: Array<{ userIds: string[]; reactedAt?: Record<string, string> }> }
+    snap.reactions[0].reactedAt = { [linked]: reactedAt }
+    const { token } = await (await post(comp.id, { action: "fetch", messageUrl: url })).json()
+    const applied = await post(comp.id, { action: "apply", token, emojiMapping: { "unicode:✅": "FIX" }, links: { [unknown]: ben.id }, notAPlayer: [staff], resolutions: {} })
+    expect(applied.status).toBe(200)
+    const entry = (playerId: string) => client.planningEntry.findFirstOrThrow({ where: { planning: { tournamentId: comp.id }, playerId } })
+    expect((await entry(anna.id)).answeredAt?.toISOString()).toBe(reactedAt)
+    // Ben reacted before the bot kept track, so there is no time for him
+    expect((await entry(ben.id)).answeredAt).toBeNull()
+    const put = (playerId: string, body: unknown) => putEntry(new Request("http://test/api/entry", { method: "PUT", body: JSON.stringify(body) }), { params: Promise.resolve({ id: comp.id, playerId }) })
+    expect((await put(anna.id, { note: "late" })).status).toBe(200)
+    expect((await entry(anna.id)).answeredAt?.toISOString()).toBe(reactedAt)
+    expect((await put(anna.id, { answer: "OUT" })).status).toBe(200)
+    expect((await entry(anna.id)).answeredAt).toBeNull()
   })
 
   it("saves an emoji choice at once without invalidating the preview, then applies links, marks and answers", async () => {

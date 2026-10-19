@@ -15,6 +15,7 @@ import { cn } from "@/lib/utils"
 import { ArrowLeft, Plus, X } from "lucide-react"
 import Link from "next/link"
 import { useSearchParams } from "next/navigation"
+import { formatTime, formatTimeShort } from "@/lib/discord-planning"
 import type { PlanningState } from "@/lib/planning-db"
 import type { Activity } from "@/lib/planning-presence"
 import { usePlanningLive } from "@/lib/use-planning-live"
@@ -309,7 +310,8 @@ export function PlanningView({ initial, ownPlayerId, userId, canManage }: Props)
                             <span className="min-w-0 truncate text-fg">{row.player.name}</span>
                             {row.guest && <GuestBadge />}
                             {own && <span className="text-xs text-brand-ink">you</span>}
-                            {row.note && <span className="ml-auto min-w-0 max-w-[55%] truncate text-xs text-fg-muted" title={row.note}>{row.note}</span>}
+                            {row.answeredAt && <span className="ml-auto shrink-0 text-xs text-fg-subtle" title={`Reacted on Discord ${formatTime(row.answeredAt)}`}>{formatTimeShort(row.answeredAt)}</span>}
+                            {row.note && <span className={cn("min-w-0 max-w-[55%] truncate text-xs text-fg-muted", !row.answeredAt && "ml-auto")} title={row.note}>{row.note}</span>}
                           </button>
                           {editable && editing === row.player.id && (
                             <div ref={answerMenuRef} className="scroll-m-3 space-y-2 border-t border-line/60 bg-canvas px-3 py-2.5">

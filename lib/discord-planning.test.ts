@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { formatFetchedAt, importIdentities, previewSummary, reactionPreview, unknownAccounts, validateReactionMapping, type ReactionSnapshot } from "./discord-planning"
+import { formatTime, formatTimeShort, importIdentities, previewSummary, reactionPreview, unknownAccounts, validateReactionMapping, type ReactionSnapshot } from "./discord-planning"
 
 const snapshot: ReactionSnapshot = {
   messageUrl: "https://discord.com/channels/1/2/3", fetchedAt: "2026-10-15T12:00:00Z",
@@ -55,6 +55,19 @@ describe("Discord reactions in competition planning", () => {
     expect(reactionPreview(snapshot, { "unicode:✅": "FIX", "unicode:👍": "OUT" }, identities, players, {}))
       .toMatchObject([{ playerId: "p1", kind: "conflict" }, { playerId: "p2", before: "MAYBE", kind: "no-answer" }])
   })
+  it("tells when the answer was given: the latest reaction for each status, over all the player's accounts", () => {
+    const timed: ReactionSnapshot = { ...snapshot, trackedSince: "2026-10-15T10:00:00.000Z", reactions: [
+      { key: "unicode:✅", label: "✅", userIds: ["anna", "ben"], reactedAt: { anna: "2026-10-15T11:00:00.000Z", ben: "2026-10-15T11:30:00.000Z" } },
+      { key: "unicode:👍", label: "👍", userIds: ["anna"], reactedAt: { anna: "2026-10-15T11:10:00.000Z" } },
+      { key: "unicode:❌", label: "❌", userIds: ["anna"], reactedAt: {} },
+    ] }
+    const rows = reactionPreview(timed, { "unicode:✅": "FIX", "unicode:👍": "FIX", "unicode:❌": "OUT" }, { anna: "p1", ben: "p1" },
+      [{ playerId: "p1", answer: "OPEN" }], {})
+    expect(rows[0].times).toEqual({ FIX: "2026-10-15T11:30:00.000Z" })
+  })
+  it("has no times when the bot did not see the reactions", () => {
+    expect(reactionPreview(snapshot, { "unicode:✅": "FIX", "unicode:👍": "FIX" }, { anna: "p1" }, [{ playerId: "p1", answer: "OPEN" }], {})[0].times).toEqual({})
+  })
   it("lets a link chosen in the import replace the player's previous account", () => {
     expect(importIdentities({ old: "p1", anna: "p9" }, { ben: "p1" })).toEqual({ anna: "p9", ben: "p1" })
   })
@@ -65,9 +78,15 @@ describe("Discord reactions in competition planning", () => {
   })
 })
 
-describe("formatFetchedAt", () => {
+describe("formatTimeShort", () => {
+  it("leaves out the year, for tight rows", () => {
+    expect(formatTimeShort("2026-10-19T20:05:00Z")).toBe("19.10., 22:05")
+  })
+})
+
+describe("formatTime", () => {
   it("writes the time in German local time, in summer and in winter", () => {
-    expect(formatFetchedAt("2026-10-19T20:30:56.949Z")).toBe("19.10.2026, 22:30")
-    expect(formatFetchedAt("2026-12-01T20:05:00Z")).toBe("01.12.2026, 21:05")
+    expect(formatTime("2026-10-19T20:30:56.949Z")).toBe("19.10.2026, 22:30")
+    expect(formatTime("2026-12-01T20:05:00Z")).toBe("01.12.2026, 21:05")
   })
 })

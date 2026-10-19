@@ -4,8 +4,12 @@ import type { ReactionSnapshot } from "./discord-planning"
 
 export const reactionSnapshotSchema = z.object({
   messageUrl: z.string(), fetchedAt: z.string().datetime(),
+  // Since when the bot has been writing down the moment reactions come in; missing if it has not been asked about this message yet
+  trackedSince: z.string().datetime().optional(),
   users: z.array(z.object({ id: z.string(), name: z.string().max(200) })).max(10000),
-  reactions: z.array(z.object({ key: z.string().max(200), label: z.string().max(200), imageUrl: z.string().optional(), userIds: z.array(z.string()).max(10000) })).max(100),
+  reactions: z.array(z.object({ key: z.string().max(200), label: z.string().max(200), imageUrl: z.string().optional(), userIds: z.array(z.string()).max(10000),
+    // When the bot saw each user react; users who reacted before it started tracking have no entry
+    reactedAt: z.record(z.string(), z.string().datetime()).optional() })).max(100),
 })
 
 interface SignedPreview { snapshot: ReactionSnapshot; tournamentId: string; revision: number }

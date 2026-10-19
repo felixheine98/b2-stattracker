@@ -11,7 +11,7 @@ import { PlayerCombobox } from "@/components/player-combobox"
 import { BASE_PATH } from "@/lib/base-path"
 import { AVAILABILITY_LABEL, type Answer } from "@/lib/planning"
 import { suggestPlayer } from "@/lib/discord-accounts"
-import { formatFetchedAt, importIdentities, previewSummary, reactionPreview, unknownAccounts, validateReactionMapping, type ImportAnswer, type ReactionSnapshot } from "@/lib/discord-planning"
+import { formatTime, formatTimeShort, importIdentities, previewSummary, reactionPreview, unknownAccounts, validateReactionMapping, type ImportAnswer, type ReactionSnapshot } from "@/lib/discord-planning"
 import type { PlanningState } from "@/lib/planning-db"
 import type { PlanningMutate } from "@/lib/use-planning-live"
 
@@ -119,7 +119,7 @@ export function DiscordImport({ state, mutate }: { state: PlanningState; mutate:
       <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
         <h2 className="text-sm font-semibold text-fg">Discord reactions</h2>
         {!editingUrl && savedUrl && <a href={savedUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-sm text-fg-muted hover:text-fg">Announcement <ExternalLink size={13} /></a>}
-        {!editingUrl && fetchedAt && <span className="text-sm text-fg-muted">Fetched {formatFetchedAt(fetchedAt)}</span>}
+        {!editingUrl && fetchedAt && <span className="text-sm text-fg-muted">Fetched {formatTime(fetchedAt)}</span>}
         {savedEmojis.length > 0 && <span className="flex flex-wrap items-center gap-x-2 text-sm text-fg-soft">
           {savedEmojis.map(([key, value]) => <span key={key} className="inline-flex items-center gap-1"><Emoji id={key} /> {label(value)}</span>)}
         </span>}
@@ -143,6 +143,7 @@ export function DiscordImport({ state, mutate }: { state: PlanningState; mutate:
       {success && <p role="status" className="text-sm text-fg-soft">{success}</p>}
 
       {loaded && <div className="space-y-4">
+        {loaded.snapshot.trackedSince && <p className="text-xs text-fg-muted">The time of a reaction is known from {formatTime(loaded.snapshot.trackedSince)} on; earlier reactions show none.</p>}
         {loaded.snapshot.reactions.length === 0 && <p className="text-sm text-fg-muted">This message has no reactions yet.</p>}
         {emojiRows.length > 0 && <div className="space-y-2">
           <p className="text-xs text-fg-muted">{editingEmojis ? "What each emoji means for this comp:" : "New emojis – what do they mean?"}</p>
@@ -181,6 +182,7 @@ export function DiscordImport({ state, mutate }: { state: PlanningState; mutate:
           {rows.map(row => <div key={row.playerId} className="flex flex-col gap-2 rounded-lg border border-line px-3 py-2 sm:flex-row sm:items-center sm:justify-between">
             <p className="min-w-0 text-sm text-fg-soft">
               <span className="font-medium">{playerName(row.playerId)}</span>: {label(row.before)} → {row.after ? label(row.after) : row.kind === "conflict" ? <span className="text-danger">conflicting reactions</span> : row.kind === "skipped" ? "kept" : label(row.before)}
+              {row.after && row.times[row.after] && <span className="text-xs text-fg-muted"> · reacted {formatTime(row.times[row.after]!)}</span>}
             </p>
             {row.kind === "conflict" || (row.kind === "skipped" && row.candidates.length > 1) || (resolutions[row.playerId] !== undefined && row.candidates.length > 1) ? (
               <Select className="sm:w-56" aria-label={`Import answer for ${playerName(row.playerId)}`} value={resolutions[row.playerId] ?? "__choose__"} onChange={e => {
@@ -189,7 +191,7 @@ export function DiscordImport({ state, mutate }: { state: PlanningState; mutate:
               }}>
                 <option value="__choose__" disabled>Resolve…</option>
                 <option value="">Keep current answer</option>
-                {row.candidates.map(a => <option key={a} value={a}>{label(a)}</option>)}
+                {row.candidates.map(a => <option key={a} value={a}>{label(a)}{row.times[a] ? ` · ${formatTimeShort(row.times[a]!)}` : ""}</option>)}
               </Select>
             ) : (row.kind === "change" || row.kind === "skipped") && (
               <label className="flex items-center gap-2 text-xs text-fg-muted">

@@ -4,14 +4,18 @@ export type ImportAnswer = "FIX" | "MAYBE" | "OUT" | `level:${string}`
 export interface ReactionSnapshot {
   messageUrl: string
   fetchedAt: string
+  trackedSince?: string
   users: Array<{ id: string; name: string }>
-  reactions: Array<{ key: string; label: string; imageUrl?: string; userIds: string[] }>
+  reactions: Array<{ key: string; label: string; imageUrl?: string; userIds: string[]; reactedAt?: Record<string, string> }>
 }
 export interface ReactionPreviewRow {
   playerId: string
   before: Answer
   after: ImportAnswer | null
   candidates: ImportAnswer[]
+  // When the answer was given on Discord, per status: the latest reaction for it. Missing for
+  // reactions the bot did not see come in.
+  times: Partial<Record<ImportAnswer, string>>
   kind: "change" | "unchanged" | "conflict" | "skipped" | "no-answer"
 }
 
@@ -70,14 +74,26 @@ export function reactionPreview(
     const candidates = [...new Set(snapshot.reactions
       .filter((r) => r.userIds.some((id) => userIds.has(id)))
       .map((r) => emojiMapping[r.key]).filter((a): a is ImportAnswer => !!a))]
+    const times: ReactionPreviewRow["times"] = {}
+    for (const reaction of snapshot.reactions) {
+      const answer = emojiMapping[reaction.key]
+      if (!answer) continue
+      for (const id of userIds) {
+        const time = reaction.reactedAt?.[id]
+        if (time && (!times[answer] || new Date(time) > new Date(times[answer]!))) times[answer] = time
+      }
+    }
     const choice = resolutions[playerId]
-    if (choice === "") return { playerId, before, after: null, candidates, kind: "skipped" }
+    if (choice === "") return { playerId, before, after: null, candidates, times, kind: "skipped" }
     const after = choice && candidates.includes(choice) ? choice : candidates.length === 1 ? candidates[0] : null
-    return { playerId, before, after, candidates, kind: after ? (after === before ? "unchanged" : "change") : candidates.length > 1 ? "conflict" : "no-answer" }
+    return { playerId, before, after, candidates, times, kind: after ? (after === before ? "unchanged" : "change") : candidates.length > 1 ? "conflict" : "no-answer" }
   })
 }
 
-const fetchedAtFormat = new Intl.DateTimeFormat("de-DE", { timeZone: "Europe/Berlin", day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit", hourCycle: "h23" })
+const berlin = { timeZone: "Europe/Berlin", day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit", hourCycle: "h23" } as const
+const timeFormat = new Intl.DateTimeFormat("de-DE", { ...berlin, year: "numeric" })
+const shortTimeFormat = new Intl.DateTimeFormat("de-DE", berlin)
 
-// When the reactions were last fetched, as shown beside the announcement
-export const formatFetchedAt = (iso: string): string => fetchedAtFormat.format(new Date(iso))
+// A moment from Discord (the last fetch, a reaction), in German local time
+export const formatTime = (iso: string): string => timeFormat.format(new Date(iso))
+export const formatTimeShort = (iso: string): string => shortTimeFormat.format(new Date(iso))

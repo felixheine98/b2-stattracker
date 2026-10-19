@@ -26,6 +26,22 @@ Im Bereich „Discord reactions“ einer offenen Comp-Planung:
    „Apply … changes“ übernimmt die Antworten und speichert neue Verknüpfungen und
    Markierungen. Wer keine relevante Reaktion hat, behält seine Antwort.
 
+## Zeitpunkt der Reaktionen
+
+Discord liefert zu einer Reaktion keinen Zeitstempel, weder beim Abruf noch im Gateway-Ereignis.
+Der Bot schreibt deshalb den Moment mit, in dem er eine Reaktion eintreffen sieht (Gateway-Intent
+`GuildMessageReactions`, Datei `reaction-times.json` im Volume `reaction_times`, Pfad über
+`REACTION_TIMES_DIR`). Das gilt nur für Nachrichten, die einmal abgerufen wurden: der erste
+Abruf einer Ankündigung startet die Aufzeichnung, Reaktionen davor haben keine Zeit
+(`trackedSince` im Snapshot, in der Vorschau als Hinweis). Wird eine Reaktion zurückgenommen,
+vergisst der Bot ihre Zeit; eine neue Reaktion zählt ab dann. War der Bot zwischendurch
+aus, fehlen die Zeiten dieser Phase.
+
+Die Vorschau nennt pro Antwort die Zeit der letzten Reaktion dafür (bei Konflikten pro
+Auswahl). „Apply“ speichert sie als `answeredAt` am Eintrag; Admins und Manager sehen sie in der
+Planungsliste. Eine Antwort, die jemand von Hand setzt, löscht sie. Neben dem Link steht
+außerdem, wann zuletzt abgerufen wurde.
+
 Die Vorschau ist 15 Minuten gültig. Ändert jemand die Antworten der Planung seit dem
 Abruf, ist vor dem Speichern ein neuer Abruf notwendig; Link und Emoji-Zuordnung zu
 speichern macht die Vorschau nicht ungültig. Es gibt keine Hintergrund-Synchronisation.
