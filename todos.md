@@ -4,7 +4,8 @@ Ideen, die noch kein Todo sind: [ideen.md](ideen.md)
 
 ## Offen
 
-- [ ] seeding formate für import/anlegen prüfen
+- [ ] seeding formate für import/anlegen prüfen (Liste der alten Seeding-Screenshots aus Discord folgt nach der Übernahme, [ADR 007](docs/adr/007-zusammengefasste-ergebnisse.md))
+- [ ] Alte Comp-Stats aus Discord-Screenshots übernehmen ([Entscheidung](docs/adr/007-zusammengefasste-ergebnisse.md), [Glossar](docs/zusammengefasste-ergebnisse-glossar.md)); Abgleich mit Felix pro Comp
 - [ ] Design/UI/UX Verbesserungen
 
 ## Teilweise erledigt
