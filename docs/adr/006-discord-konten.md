@@ -1,6 +1,6 @@
 # Discord-Konten der Spieler hinterlegen und Import kompakter machen
 
-Status: Akzeptiert – gemeinsames Verständnis von Felix am 19.10.2026 bestätigt, einschließlich der abgeleiteten Punkte. Am 19.10.2026 umgesetzt auf den Branches `feat/discord-accounts` (Stattracker und `b2-member`) und in Dev gestartet; die Oberfläche ist noch nicht im Browser geprüft. Production, einschließlich der Übernahme der Dev-Verknüpfungen, erst nach ausdrücklicher Freigabe. Begriffe: [Glossar](../discord-konten-glossar.md). Grundlage: [Discord-Anbindung](../discord-planning.md).
+Status: Akzeptiert – gemeinsames Verständnis von Felix am 19.10.2026 bestätigt, einschließlich der abgeleiteten Punkte. Am 19.10.2026 umgesetzt, von Felix in Dev geprüft und freigegeben, nach `main` gemergt (Stattracker und `b2-member`) und in Production ausgerollt. Übernommen wurden alle 52 Verknüpfungen aus Dev (die 41 aus den Tests und 11, die Felix am 19.10. auf der neuen Seite gesetzt hat), über die Trackmania-ID zugeordnet. Begriffe: [Glossar](../discord-konten-glossar.md). Grundlage: [Discord-Anbindung](../discord-planning.md).
 
 ## Kontext
 
@@ -16,7 +16,7 @@ Bestätigt (19.10.2026): Discord-Konten werden auf einer zentralen Seite „Disc
 
 Bestätigt (19.10.2026): Die Seite zeigt standardmäßig die Mitglieder mit den Rollen Manager, Racing Team oder Trial, jeweils mit ihrer Rolle. Ein Schalter „Show all server members“ blendet die übrigen Mitglieder ein (Gäste, frühere Mitglieder); Bots erscheinen nie. Der Reaktions-Bot bekommt dafür einen lesenden Endpunkt für die Mitgliederliste und den Intent `GuildMembers`.
 
-Bestätigt (19.10.2026): Die 41 Verknüpfungen aus Dev werden beim Rollout einmalig nach Production übernommen. Felix prüft sie vorher auf der neuen Seite in Dev; geschrieben wird in Production erst nach seiner ausdrücklichen Freigabe. Eine dauerhafte Export-/Importfunktion gibt es nicht.
+Bestätigt (19.10.2026): Die Verknüpfungen aus Dev (damals 41) werden beim Rollout einmalig nach Production übernommen. Felix prüft sie vorher auf der neuen Seite in Dev; geschrieben wird in Production erst nach seiner ausdrücklichen Freigabe. Eine dauerhafte Export-/Importfunktion gibt es nicht.
 
 Bestätigt (19.10.2026): Für ein noch nicht verknüpftes Konto schlägt die Seite einen Spieler vor, wenn der Discord-Anzeigename, der Name im Member-Verzeichnis oder ein aktueller oder früherer Spielername ohne Rücksicht auf Groß- und Kleinschreibung übereinstimmt. Der Vorschlag ist vorausgewählt und als „Suggested“ markiert, wird aber erst gespeichert, wenn er bestätigt wird – einzeln oder über „Confirm all suggestions“. Ohne Bestätigung wird nie verknüpft. Den Namen aus dem Member-Verzeichnis liefert der Bot mit der Mitgliederliste.
 

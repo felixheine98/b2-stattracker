@@ -13,9 +13,7 @@ Ideen, die noch kein Todo sind: [ideen.md](ideen.md)
   - [x] Abruf, Emoji-Zuordnung, Account-Verknüpfung und Übernahme mit Vorschau
   - [x] In der laufenden Dev-App eingebunden, separater lesender Discord-Prozess
   - [ ] Mit einem Comp-Announcement im Alltag prüfen
-  - [x] Discord-Konten zentral hinterlegen und Import kompakter, in Dev ([Entscheidung](docs/adr/006-discord-konten.md), [Glossar](docs/discord-konten-glossar.md))
-  - [ ] Seite „Discord accounts“ und kompakten Import in Dev im Browser prüfen (Desktop und Telefon)
-  - [ ] Nach Freigabe: Production mit den 41 Dev-Verknüpfungen
+  - [x] Discord-Konten zentral hinterlegen und Import kompakter, in Production seit 19.10.2026 ([Entscheidung](docs/adr/006-discord-konten.md), [Glossar](docs/discord-konten-glossar.md))
 
 - [ ] konfiguration pro comp, wie matches ablaufen (hilfreich für validierung): submatches pro match, rounds to win, punkte für sieg/unentschieden/niederlage, weitere formatregeln; [entscheidung](docs/adr/005-comp-formatregeln.md), [glossar](docs/comp-formatregeln-glossar.md)
   - [x] schritt 1: regelsatz pro comp und playoff (ablauf, rounds to win, max rounds, punkte) im anlegen- und bearbeiten-dialog, hinweise auf der match-seite und beim schließen

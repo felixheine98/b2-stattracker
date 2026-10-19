@@ -119,6 +119,15 @@ Manager. `fetch` liefert einen signierten Schnappschuss, `apply` prüft Signatur
 Competition, Ablaufzeit, Planungsrevision, Stufen und Spielerzuordnung und speichert
 atomar. Geschlossene Planungen lehnen beide Aktionen ab.
 
+## Rollout Discord-Konten (ADR 006)
+
+Am 19.10.2026 nach Felix' Freigabe: Datenbanksicherung `~/backups/prod-before-discord-accounts-20261019-1230.sql.gz`,
+vorherige Images als `b2-stattracker-app:before-discord-accounts` und
+`b2-stattracker-discord-bot:before-discord-accounts` getaggt. Schemaänderung in Production
+vorab gegen eine Kopie des Produktionsschemas geprüft: ausschließlich die neue Tabelle
+`DiscordNonPlayer`. App healthy, `/members` aus dem Produktions-App-Container HTTP 200
+(232 Mitglieder), 52 Verknüpfungen aus Dev über `tmId` übernommen, Login erreichbar.
+
 ## Prüfstand
 
 Unit-Tests decken die Emoji-Zuordnung, Konflikte, unveränderte Nichtantworten,
