@@ -71,6 +71,29 @@ function SavingInput({ value, onSave, onLeave, className, ...props }: { value: s
   )
 }
 
+// Like SavingInput, but a block of several lines: Enter starts a new line, it saves when left
+function SavingTextarea({ value, onSave, onLeave, className, ...props }: { value: string; onSave: (value: string) => void; onLeave?: () => void } & Omit<React.TextareaHTMLAttributes<HTMLTextAreaElement>, "value" | "onChange" | "onBlur">) {
+  const [text, setText] = useState(value)
+  const [previous, setPrevious] = useState(value)
+  if (previous !== value) {
+    setPrevious(value)
+    setText(value)
+  }
+  return (
+    <textarea
+      {...props}
+      rows={1}
+      value={text}
+      onChange={(e) => setText(e.target.value)}
+      onBlur={() => {
+        if (text.trim() !== value) onSave(text.trim())
+        onLeave?.()
+      }}
+      className={cn("min-w-0 resize-y rounded-md border border-transparent bg-transparent field-sizing-content focus:border-brand focus:outline-none", className)}
+    />
+  )
+}
+
 // The lineup variants, one below the other and kept low, so several fit on the screen for comparing.
 // Each has a pool of players and its lineups. A player is moved by dragging (on a computer)
 // or by tapping the player and then the target.
@@ -376,14 +399,14 @@ export function VariantsBoard({ tournamentId, tournamentHref, rows, levels, vari
             {archived ? (
               variant.note && <p className="whitespace-pre-wrap text-xs text-fg-muted">{variant.note}</p>
             ) : (
-              <SavingInput
+              <SavingTextarea
                 value={variant.note ?? ""}
                 onSave={(note) => run({ type: "updateVariant", variantId: variant.id, note: note || null })}
                 onFocus={() => setTyping(`variant:${variant.id}`)}
                 onLeave={() => setTyping(null)}
                 placeholder="Notes on the option"
                 maxLength={1000}
-                className="h-8 w-full border-dashed border-line px-2 text-xs text-fg-soft placeholder:text-fg-subtle"
+                className="min-h-8 w-full border-dashed border-line px-2 py-1.5 text-xs text-fg-soft placeholder:text-fg-subtle"
               />
             )}
           </section>
