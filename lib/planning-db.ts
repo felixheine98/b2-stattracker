@@ -111,6 +111,8 @@ export async function buildPlanningState(tournamentId: string, viewer: PlanningV
     guest: row.guest,
     // Notes are private: only admins and managers read those of others. undefined hides the field.
     note: viewer.canManage || row.player.id === viewer.playerId ? row.entry?.note ?? null : undefined,
+    // When the answer was given on Discord, if the bot saw the reaction come in; for admins and managers
+    answeredAt: viewer.canManage ? row.entry?.answeredAt?.toISOString() ?? null : undefined,
   }))
   const onList = new Set(rows.map((r) => r.player.id))
 

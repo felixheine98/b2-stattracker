@@ -17,6 +17,12 @@ describe("Discord bot boundary", () => {
     expect(() => verifyReactionSnapshot(token, "wrong", "comp", 1001)).toThrow()
     expect(() => verifyReactionSnapshot(token, "secret", "comp", 1000 + 15 * 60 * 1000)).toThrow()
   })
+  it("keeps the times the bot wrote down, which the signed preview carries on to applying", async () => {
+    const timed = { ...snapshot, trackedSince: "2026-10-15T10:00:00.000Z",
+      users: [{ id: "anna", name: "Anna" }], reactions: [{ key: "unicode:✅", label: "✅", userIds: ["anna"], reactedAt: { anna: "2026-10-15T11:00:00.000Z" } }] }
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(Response.json(timed)))
+    expect(await fetchReactions(timed.messageUrl, { url: "http://bot:3080", token: "api-secret" })).toEqual(timed)
+  })
   it("queries the configured bot with authentication and refuses a response for another message", async () => {
     const fetch = vi.fn().mockResolvedValue(Response.json(snapshot))
     vi.stubGlobal("fetch", fetch)

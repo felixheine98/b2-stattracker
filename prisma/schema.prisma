@@ -309,6 +309,9 @@ model PlanningEntry {
   levelId    String?
   level      PlanningLevel? @relation(fields: [levelId], references: [id], onDelete: SetNull)
   note       String?
+  // When the answer was given on Discord, if it came from there and the bot saw the reaction come in;
+  // an answer set by hand clears it
+  answeredAt DateTime?
   updatedAt  DateTime       @updatedAt
 
   @@unique([planningId, playerId])

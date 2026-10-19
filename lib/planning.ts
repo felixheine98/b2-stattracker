@@ -14,6 +14,7 @@ export interface PlanningEntryData {
   status: Availability | null
   levelId: string | null
   note: string | null
+  answeredAt?: Date | null
 }
 
 export const AVAILABILITY_LABEL: Record<Availability, string> = {

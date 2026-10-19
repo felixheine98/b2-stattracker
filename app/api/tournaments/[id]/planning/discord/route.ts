@@ -98,7 +98,8 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
       await tx.discordNonPlayer.createMany({ data: input.notAPlayer.map(discordUserId => ({ discordUserId })), skipDuplicates: true })
       for (const row of changes) {
         const value = row.after!
-        const data = { status: value === "FIX" || value === "MAYBE" || value === "OUT" ? value : null, levelId: value.startsWith("level:") ? value.slice(6) : null }
+        const reactedAt = row.times[value]
+        const data = { status: value === "FIX" || value === "MAYBE" || value === "OUT" ? value : null, levelId: value.startsWith("level:") ? value.slice(6) : null, answeredAt: reactedAt ? new Date(reactedAt) : null }
         await tx.planningEntry.upsert({ where: { planningId_playerId: { planningId: planning.id, playerId: row.playerId } },
           create: { planningId: planning.id, playerId: row.playerId, ...data }, update: data,
         })

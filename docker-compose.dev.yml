@@ -107,9 +107,13 @@ services:
       DISCORD_BOT_API_TOKEN: ${DISCORD_BOT_API_TOKEN:?DISCORD_BOT_API_TOKEN is required}
       DISCORD_BOT_API_HOST: "0.0.0.0"
       DISCORD_BOT_API_PORT: "3080"
+      # When reactions came in: the one place the bot may write to
+      REACTION_TIMES_DIR: /bot/times
     volumes:
       - ../b2-member/data:/bot/data:ro
+      - reaction_times:/bot/times
 
 volumes:
   postgres_data:
+  reaction_times:
   node_modules:
