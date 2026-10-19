@@ -1,6 +1,7 @@
 import { z } from "zod"
 import { createHmac, timingSafeEqual } from "node:crypto"
 import type { ReactionSnapshot } from "./discord-planning"
+import type { TrackedMessage } from "./reaction-log"
 
 export const reactionSnapshotSchema = z.object({
   messageUrl: z.string(), fetchedAt: z.string().datetime(),
@@ -58,4 +59,27 @@ export async function fetchMembers(config = { url: process.env.DISCORD_BOT_URL, 
   const response = await fetch(url, { headers: { Authorization: `Bearer ${config.token}` }, cache: "no-store", signal: AbortSignal.timeout(30000), redirect: "error" })
   if (!response.ok) throw new Error("The bot could not list the server members.")
   return memberListSchema.parse(await response.json()).members
+}
+
+type BotConfig = { url: string | undefined; token: string | undefined }
+const botConfig = (): BotConfig => ({ url: process.env.DISCORD_BOT_URL, token: process.env.DISCORD_BOT_API_TOKEN })
+
+const trackedSchema = z.object({ guildId: z.string(), messages: z.array(z.object({
+  messageId: z.string(), channelId: z.string().nullable(), since: z.string(), reactions: z.number().int(), lastAt: z.string().nullable(),
+})).max(100000) })
+
+// The messages the bot writes reaction times down for
+export async function fetchTrackedMessages(config: BotConfig = botConfig()): Promise<{ guildId: string; messages: TrackedMessage[] }> {
+  if (!config.url || !config.token) throw new Error("The Discord bot connection is not configured.")
+  const response = await fetch(new URL("/tracked", config.url), { headers: { Authorization: `Bearer ${config.token}` }, cache: "no-store", signal: AbortSignal.timeout(30000), redirect: "error" })
+  if (!response.ok) throw new Error("The bot could not list the tracked messages.")
+  return trackedSchema.parse(await response.json())
+}
+
+// The bot stops writing down the reactions of a message; one that is already gone is as good as removed
+export async function removeTrackedMessage(messageId: string, config: BotConfig = botConfig()) {
+  if (!/^\d{1,20}$/.test(messageId)) throw new Error("Invalid message ID.")
+  if (!config.url || !config.token) throw new Error("The Discord bot connection is not configured.")
+  const response = await fetch(new URL(`/tracked/${messageId}`, config.url), { method: "DELETE", headers: { Authorization: `Bearer ${config.token}` }, cache: "no-store", signal: AbortSignal.timeout(30000), redirect: "error" })
+  if (!response.ok && response.status !== 404) throw new Error("The bot could not remove the message.")
 }
