@@ -30,7 +30,7 @@ export function ReactionLog({ rows, error }: { rows: TrackedRow[]; error: string
     <section className="space-y-3 rounded-xl border border-line bg-surface p-4">
       <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
         <h2 className="text-sm font-semibold text-fg">Tracked messages</h2>
-        <span className="text-xs text-fg-muted">The bot writes down when reactions come in for these. Removing one does not touch the message on Discord.</span>
+        <span className="text-xs text-fg-muted">The bot writes down when reactions come in for these. A message no comp uses is forgotten after a week; removing one does not touch the message on Discord.</span>
         {unused.length > 0 && <Button size="sm" variant="outline" className="ml-auto" disabled={busy}
           onClick={() => { if (confirm(`Remove ${unused.length} ${unused.length === 1 ? "message" : "messages"} that ${unused.length === 1 ? "is" : "are"} no comp's announcement?`)) remove(unused.map(r => r.messageId)) }}>
           <Trash2 size={14} /> Remove all not used ({unused.length})
@@ -64,6 +64,7 @@ export function ReactionLog({ rows, error }: { rows: TrackedRow[]; error: string
               <p className="text-xs text-fg-muted">
                 {row.reactions} {row.reactions === 1 ? "reaction" : "reactions"}
                 {row.lastAt ? ` · last ${formatTime(row.lastAt)}` : " · no reactions yet"}
+                {row.expiresAt && <span className="text-bronze"> · removed automatically on {formatTime(row.expiresAt)} unless a comp uses it</span>}
               </p>
             </div>
             <Button size="sm" variant="ghost" className="ml-auto" disabled={busy} onClick={() => remove([row.messageId])} aria-label={`Remove message ${row.messageId}`}>

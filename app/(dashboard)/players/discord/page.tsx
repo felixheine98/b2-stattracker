@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
 import { canManage } from "@/lib/roles"
 import { fetchMembers, fetchTrackedMessages } from "@/lib/discord-bot"
+import { plannedAnnouncements } from "@/lib/reaction-log-db"
 import { describeTracked } from "@/lib/reaction-log"
 import { suggestPlayer, type DiscordMember } from "@/lib/discord-accounts"
 import { allNames } from "@/lib/player-names"
@@ -22,7 +23,7 @@ export default async function DiscordAccountsPage() {
     db.discordNonPlayer.findMany({ select: { discordUserId: true } }),
     fetchMembers().then(list => ({ list }), (error: unknown) => ({ error: error instanceof Error ? error.message : "The bot could not list the server members." })),
     fetchTrackedMessages().then(list => ({ list }), (error: unknown) => ({ error: error instanceof Error ? error.message : "The bot could not list the tracked messages." })),
-    db.planning.findMany({ select: { discordSettings: true, tournament: { select: { name: true } } } }),
+    plannedAnnouncements(),
   ])
   const linkedTo = new Map(players.filter(p => p.discordUserId).map(p => [p.discordUserId!, p.id]))
   const notAPlayer = new Set(marked.map(m => m.discordUserId))
@@ -46,7 +47,7 @@ export default async function DiscordAccountsPage() {
   <div className="page-wide pt-6">
     <ReactionLog
       error={"error" in tracked ? tracked.error : null}
-      rows={"list" in tracked ? describeTracked(tracked.list.guildId, tracked.list.messages, plannings.map(p => ({ name: p.tournament.name, messageUrl: (p.discordSettings as { messageUrl?: string } | null)?.messageUrl ?? "" }))) : []}
+      rows={"list" in tracked ? describeTracked(tracked.list.guildId, tracked.list.messages, plannings) : []}
     />
   </div>
   </>
