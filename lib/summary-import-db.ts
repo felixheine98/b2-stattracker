@@ -53,7 +53,7 @@ export async function importSummary(plan: SummaryPlan, client: PrismaClient): Pr
 
     const report: SummaryImportReport = { tournamentId, created: 0, kept: [] }
     for (const planned of plan.matches) {
-      let lineup = await tx.tournamentLineup.findFirst({ where: { tournamentId, name: planned.team } })
+      let lineup = await tx.tournamentLineup.findFirst({ where: { tournamentId, name: { equals: planned.team, mode: "insensitive" } } })
       if (!lineup) {
         // A lineup the screenshots add: its roster is everyone who drove for it
         const roster = [...new Set(plan.matches.filter((m) => m.team === planned.team).flatMap((m) => m.subMatches.flatMap((sm) => sm.players.map((p) => playerOf.get(p.tmId)!))))]

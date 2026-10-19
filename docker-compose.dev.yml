@@ -66,12 +66,17 @@ services:
       TMIO_USER_AGENT: ${TMIO_USER_AGENT:-}
       # Format rules per competition (docs/adr/005): "on" or "off". Dev only; production ignores it.
       MATCH_RULES: "on"
+      # Comparison page of old stats screenshots (docs/adr/007): "on" or "off". Dev only; production
+      # ignores it. The screenshots are read from the local Discord export, mounted read-only.
+      SUMMARY_COMPARE: "on"
+      SUMMARY_SCREENSHOTS_DIR: /screenshots
       DISCORD_BOT_URL: http://discord-bot:3080
       DISCORD_BOT_API_TOKEN: ${DISCORD_BOT_API_TOKEN:?DISCORD_BOT_API_TOKEN is required}
 
     volumes:
       - .:/app
       - node_modules:/app/node_modules
+      - ${SUMMARY_SCREENSHOTS_SOURCE:-${HOME}/discord-export/admins-1060207503046082592}:/screenshots:ro
 
     depends_on:
       db:

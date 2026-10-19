@@ -62,7 +62,8 @@ describe.skipIf(process.env.DB_TESTS !== "1")("summary import with PostgreSQL", 
 
   it("keeps a match that has round results and only reports it for the comparison", async () => {
     const comp = await client.tournament.create({ data: { name: "Vertigo S1", formats: ["ROUND_2V2"], style: "TECH", stages: { create: { type: "GROUP", number: 1 } } }, include: { stages: true } })
-    const lineup = await client.tournamentLineup.create({ data: { tournamentId: comp.id, name: "B2 Rising" } })
+    // Written differently from the file: lineups are found whatever the case
+    const lineup = await client.tournamentLineup.create({ data: { tournamentId: comp.id, name: "B2 rising" } })
     await client.match.create({
       data: {
         tournamentId: comp.id, tournamentLineupId: lineup.id, stageId: comp.stages[0].id, opponent: "onyx white", number: 1,
