@@ -117,7 +117,7 @@ export async function buildPlanningState(tournamentId: string, viewer: PlanningV
   return {
     tournament: { id: tournament.id, slug: tournament.slug, name: tournament.name },
     revision: tournament.planning.revision,
-    discordSettings: viewer.canManage ? tournament.planning.discordSettings as { messageUrl: string; emojiMapping: Record<string, ImportAnswer | ""> } | null : null,
+    discordSettings: viewer.canManage ? tournament.planning.discordSettings as { messageUrl: string; emojiMapping: Record<string, ImportAnswer | "">; fetchedAt?: string } | null : null,
     // Once the tournament has lineups nothing can be changed any more
     archived: tournament._count.tournamentLineups > 0,
     // The variant the lineups were taken from; only meaningful while the tournament has them

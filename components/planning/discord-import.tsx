@@ -11,7 +11,7 @@ import { PlayerCombobox } from "@/components/player-combobox"
 import { BASE_PATH } from "@/lib/base-path"
 import { AVAILABILITY_LABEL, type Answer } from "@/lib/planning"
 import { suggestPlayer } from "@/lib/discord-accounts"
-import { importIdentities, previewSummary, reactionPreview, unknownAccounts, validateReactionMapping, type ImportAnswer, type ReactionSnapshot } from "@/lib/discord-planning"
+import { formatFetchedAt, importIdentities, previewSummary, reactionPreview, unknownAccounts, validateReactionMapping, type ImportAnswer, type ReactionSnapshot } from "@/lib/discord-planning"
 import type { PlanningState } from "@/lib/planning-db"
 import type { PlanningMutate } from "@/lib/use-planning-live"
 
@@ -35,6 +35,7 @@ function Emoji({ id, label }: { id: string; label?: string }) {
 export function DiscordImport({ state, mutate }: { state: PlanningState; mutate: PlanningMutate }) {
   const [messageUrl, setMessageUrl] = useState(state.discordSettings?.messageUrl ?? "")
   const [savedUrl, setSavedUrl] = useState(state.discordSettings?.messageUrl ?? "")
+  const [fetchedAt, setFetchedAt] = useState(state.discordSettings?.fetchedAt ?? "")
   const [editingUrl, setEditingUrl] = useState(!state.discordSettings?.messageUrl)
   const [mapping, setMapping] = useState<Mapping>(state.discordSettings?.emojiMapping ?? {})
   const [editingEmojis, setEditingEmojis] = useState(false)
@@ -82,6 +83,7 @@ export function DiscordImport({ state, mutate }: { state: PlanningState; mutate:
       const data = await response.json()
       if (!response.ok) throw new Error(data.error ?? "Could not fetch reactions.")
       setLoaded(data as Preview)
+      setFetchedAt(data.snapshot.fetchedAt)
       setSavedUrl(data.snapshot.messageUrl); setMessageUrl(data.snapshot.messageUrl); setEditingUrl(false)
       setAccountChoices({}); setResolutions({}); setShowUnchanged(false)
     } catch (e) { setError(e instanceof Error ? e.message : "Could not fetch reactions.") }
@@ -117,6 +119,7 @@ export function DiscordImport({ state, mutate }: { state: PlanningState; mutate:
       <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
         <h2 className="text-sm font-semibold text-fg">Discord reactions</h2>
         {!editingUrl && savedUrl && <a href={savedUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-sm text-fg-muted hover:text-fg">Announcement <ExternalLink size={13} /></a>}
+        {!editingUrl && fetchedAt && <span className="text-sm text-fg-muted">Fetched {formatFetchedAt(fetchedAt)}</span>}
         {savedEmojis.length > 0 && <span className="flex flex-wrap items-center gap-x-2 text-sm text-fg-soft">
           {savedEmojis.map(([key, value]) => <span key={key} className="inline-flex items-center gap-1"><Emoji id={key} /> {label(value)}</span>)}
         </span>}

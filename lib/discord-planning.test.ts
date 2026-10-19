@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { importIdentities, previewSummary, reactionPreview, unknownAccounts, validateReactionMapping, type ReactionSnapshot } from "./discord-planning"
+import { formatFetchedAt, importIdentities, previewSummary, reactionPreview, unknownAccounts, validateReactionMapping, type ReactionSnapshot } from "./discord-planning"
 
 const snapshot: ReactionSnapshot = {
   messageUrl: "https://discord.com/channels/1/2/3", fetchedAt: "2026-10-15T12:00:00Z",
@@ -62,5 +62,12 @@ describe("Discord reactions in competition planning", () => {
     const players = [{ playerId: "p1", answer: "FIX" as const }, { playerId: "p2", answer: "OPEN" as const }, { playerId: "p3", answer: "OUT" as const }]
     const rows = reactionPreview(snapshot, { "unicode:✅": "FIX", "unicode:👍": "FIX" }, { anna: "p1", ben: "p2" }, players, {})
     expect(previewSummary(rows)).toEqual({ changes: 1, conflicts: 0, unchanged: 1, withoutReaction: 1 })
+  })
+})
+
+describe("formatFetchedAt", () => {
+  it("writes the time in German local time, in summer and in winter", () => {
+    expect(formatFetchedAt("2026-10-19T20:30:56.949Z")).toBe("19.10.2026, 22:30")
+    expect(formatFetchedAt("2026-12-01T20:05:00Z")).toBe("01.12.2026, 21:05")
   })
 })
