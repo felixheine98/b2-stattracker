@@ -41,3 +41,17 @@ export async function fetchReactions(link: string, config = { url: process.env.D
   if (snapshot.messageUrl !== `https://discord.com/channels/${match[1]}/${match[2]}/${match[3]}`) throw new Error("The bot returned reactions for a different message.")
   return snapshot
 }
+
+const memberListSchema = z.object({ members: z.array(z.object({
+  id: z.string().regex(/^\d{1,20}$/), name: z.string().max(200), username: z.string().max(200),
+  directoryName: z.string().max(200).optional(), roles: z.array(z.string().max(100)).max(10),
+})).max(25000) })
+
+// The bot only knows its own server, so the web app does not need its ID.
+export async function fetchMembers(config = { url: process.env.DISCORD_BOT_URL, token: process.env.DISCORD_BOT_API_TOKEN }) {
+  if (!config.url || !config.token) throw new Error("The Discord bot connection is not configured.")
+  const url = new URL("/members", config.url)
+  const response = await fetch(url, { headers: { Authorization: `Bearer ${config.token}` }, cache: "no-store", signal: AbortSignal.timeout(30000), redirect: "error" })
+  if (!response.ok) throw new Error("The bot could not list the server members.")
+  return memberListSchema.parse(await response.json()).members
+}

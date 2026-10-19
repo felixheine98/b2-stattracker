@@ -4,33 +4,31 @@ Stand: Am 18.10.2026 hat Felix Merge, Push und Deployment aller lokalen Arbeiten
 
 ## Bedienung
 
-In einer offenen Comp-Planung sehen Admins und Manager unter „Availability“ den
-Bereich „Import Discord reactions“. Der Nachrichtenlink wird manuell eingefügt.
-„Fetch reactions“ fragt den Bot nach dem aktuellen Stand. Der Abruf allein verändert
-weder die Planung noch Discord.
+Seit ADR 006 ([Entscheidung](adr/006-discord-konten.md)) werden Discord-Konten zentral
+auf der Seite „Discord accounts“ (`/players/discord`, Knopf in der Spielerliste, nur
+Admins und Manager) mit Spielern verknüpft. Sie zeigt die Server-Mitglieder mit den
+Rollen Manager, Racing Team und Trial, auf Wunsch alle Mitglieder. Bei gleichem Namen
+(Discord, Member-Verzeichnis, Namensverlauf) ist ein Spieler vorgeschlagen; verknüpft
+wird erst nach Bestätigung, einzeln oder mit „Confirm all suggestions“. Konten, die nie
+importiert werden sollen, werden als „Not a player“ markiert.
 
-1. Für jedes tatsächlich vorhandene Emoji eine Planungsstufe oder „Ignore“ wählen.
-   Mehrere Emojis dürfen dieselbe Stufe bedeuten. Eigene Server-Emojis werden mit
-   Bild und Namen angezeigt, ihre Zuordnung bleibt über die Discord-Emoji-ID stabil.
-   Zusätzliche Planungsstufen sind ebenfalls auswählbar.
-2. Discord-Accounts ausdrücklich Spielern der Planung zuordnen oder ignorieren.
-   Es gibt keinen automatischen Namensabgleich. Gäste zuerst zur Planung hinzufügen.
-   Gespeicherte Account-Verknüpfungen werden bei weiteren Comps wiederverwendet;
-   sie können für einen Abruf ignoriert, aber hier nicht einem anderen Spieler
-   zugewiesen werden. Zwei Accounts für denselben Spieler werden abgewiesen.
-3. Die Vorschau zeigt alte und neue Antworten. Mehrere Emojis mit derselben
-   Bedeutung sind eindeutig; unterschiedliche Bedeutungen müssen aufgelöst oder
-   übersprungen werden. Auch eindeutige Antworten können einzeln übersprungen werden.
-4. „Apply … changes“ übernimmt ausschließlich die gezeigten Änderungen. Wer keine
-   relevante Reaktion hat, behält seine Antwort. Notizen und Lineup-Varianten bleiben
-   erhalten. „Save assignments“ speichert die Einstellungen auch ohne Antwortänderung.
+Im Bereich „Discord reactions“ einer offenen Comp-Planung:
 
-Nachrichtenlink und Emoji-Zuordnung werden pro Comp gespeichert, Discord-IDs pro
-Spieler. Account-Verknüpfungen und Einstellungen werden erst bei der Übernahme
-gespeichert. Neue Emojis werden beim nächsten Abruf erneut zur Zuordnung angeboten.
-Die Vorschau ist 15 Minuten gültig. Ändert jemand die Planung seit dem Abruf, ist
-vor dem Speichern ein neuer Abruf notwendig. Spätere Discord-Reaktionen werden erst
-beim nächsten manuellen Abruf berücksichtigt; es gibt keine Hintergrund-Synchronisation.
+1. Den Link zum Announcement einmal eintragen und „Fetch reactions“ wählen. Der Link
+   wird beim ersten erfolgreichen Abruf gespeichert, danach genügt der Knopf.
+2. Nur neue Emojis werden nach ihrer Bedeutung gefragt; jede Wahl wird sofort für diese
+   Comp gespeichert. „Edit“ zeigt alle Emojis und den Link zum Ändern.
+3. Verknüpfte Konten werden ohne Rückfrage zugeordnet. Reagierende Konten ohne
+   Verknüpfung erscheinen mit Spielerauswahl (samt Vorschlag) oder „Not a player“;
+   offen gelassen werden sie diesmal nicht importiert. Gäste zuerst zur Planung hinzufügen.
+4. Die Vorschau zeigt nur Änderungen und Konflikte, darüber die Zusammenfassung.
+   Änderungen lassen sich einzeln überspringen, Konflikte müssen aufgelöst werden.
+   „Apply … changes“ übernimmt die Antworten und speichert neue Verknüpfungen und
+   Markierungen. Wer keine relevante Reaktion hat, behält seine Antwort.
+
+Die Vorschau ist 15 Minuten gültig. Ändert jemand die Antworten der Planung seit dem
+Abruf, ist vor dem Speichern ein neuer Abruf notwendig; Link und Emoji-Zuordnung zu
+speichern macht die Vorschau nicht ungültig. Es gibt keine Hintergrund-Synchronisation.
 
 ## Dev-Anbindung
 
@@ -102,8 +100,14 @@ Der Bot stellt authentifiziert und nur lesend bereit:
 
 ```text
 GET /reactions?guildId=…&channelId=…&messageId=…
+GET /members
 Authorization: Bearer <DISCORD_BOT_API_TOKEN>
 ```
+
+`/members` liefert die Mitglieder des konfigurierten Servers ohne Bots mit Teamrollen und
+Namen aus dem Member-Verzeichnis. Der Reaktions-Bot meldet sich dafür mit dem Intent
+`GuildMembers` an; die vollständige Abfrage läuft wegen Discords Gateway-Limit nur einmal,
+danach hält Discord den Cache über Ereignisse aktuell.
 
 Er erlaubt nur `GUILD_ID`, lädt die Nachricht frisch, liest alle Seiten normaler
 und Super-Reaktionen, entfernt Bots und liefert Emoji-Schlüssel sowie Discord-IDs

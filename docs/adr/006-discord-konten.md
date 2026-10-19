@@ -1,6 +1,6 @@
 # Discord-Konten der Spieler hinterlegen und Import kompakter machen
 
-Status: Akzeptiert – gemeinsames Verständnis von Felix am 19.10.2026 bestätigt, einschließlich der abgeleiteten Punkte. Umsetzung zuerst in Dev; Production, einschließlich der Übernahme der Dev-Verknüpfungen, erst nach ausdrücklicher Freigabe. Begriffe: [Glossar](../discord-konten-glossar.md). Grundlage: [Discord-Anbindung](../discord-planning.md).
+Status: Akzeptiert – gemeinsames Verständnis von Felix am 19.10.2026 bestätigt, einschließlich der abgeleiteten Punkte. Am 19.10.2026 umgesetzt auf den Branches `feat/discord-accounts` (Stattracker und `b2-member`) und in Dev gestartet; die Oberfläche ist noch nicht im Browser geprüft. Production, einschließlich der Übernahme der Dev-Verknüpfungen, erst nach ausdrücklicher Freigabe. Begriffe: [Glossar](../discord-konten-glossar.md). Grundlage: [Discord-Anbindung](../discord-planning.md).
 
 ## Kontext
 
@@ -57,7 +57,8 @@ Bestätigt (19.10.2026), aus den Entscheidungen abgeleitet:
 
 ## Konsequenzen
 
-- Das sofortige Speichern von Link und Emoji-Zuordnung darf die Planungsrevision nicht so erhöhen, dass eine laufende Vorschau ungültig wird; oder die Vorschau rechnet mit der neuen Zuordnung neu. *Umsetzung offen.*
+- Link und Emoji-Zuordnung werden ohne neue Planungsrevision gespeichert; eine laufende Vorschau bleibt gültig, nur geänderte Antworten machen sie ungültig.
+- Discord begrenzt die vollständige Mitgliederabfrage über das Gateway (etwa einmal pro 30 Sekunden). Der Bot fragt deshalb einmal vollständig ab und liefert danach den Cache, den Discord über `GuildMembers`-Ereignisse aktuell hält.
 - „Not a player“ braucht eine eigene Speicherung pro Discord-ID, unabhängig vom Spieler (neue Tabelle); die Verknüpfung bleibt `Player.discordUserId`.
 - Die bisherige Regel aus der Discord-Anbindung, dass gespeicherte Verknüpfungen im Import nicht umgehängt werden können, wird durch die Seite ersetzt: Dort lässt sich eine Verknüpfung ändern.
 - Der Reaktions-Bot braucht den Intent `GuildMembers` und einen Endpunkt für die Mitgliederliste mit Rollen und Namen aus dem Member-Verzeichnis.

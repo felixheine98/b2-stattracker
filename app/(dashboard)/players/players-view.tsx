@@ -19,7 +19,7 @@ import { Label } from "@/components/ui/label"
 import { Card, CardContent } from "@/components/ui/card"
 import { Dialog, DialogTitle } from "@/components/ui/dialog"
 import { cn } from "@/lib/utils"
-import { ArrowLeftRight, Check, History, KeyRound, Link2, Link2Off, Pencil, Plus, RefreshCw, Search, Trash2, User, Wand2, X } from "lucide-react"
+import { ArrowLeftRight, Check, MessageCircle, History, KeyRound, Link2, Link2Off, Pencil, Plus, RefreshCw, Search, Trash2, User, Wand2, X } from "lucide-react"
 import { searchPlayers } from "@/lib/player-search"
 import { canManage as canManageRole } from "@/lib/roles"
 
@@ -519,6 +519,12 @@ export function PlayersView({ players: initial, users, canManage }: Props) {
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
+          {canManage && (
+            <Link href="/players/discord" className="inline-flex h-9 shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-md border border-line-strong px-4 text-sm font-medium text-fg transition-colors hover:border-fg-subtle hover:bg-raised">
+              <MessageCircle size={15} />
+              Discord<span className="max-md:hidden"> accounts</span>
+            </Link>
+          )}
           {canManage && tab === "members" && autoLinkCount > 0 && (
             <Button variant="outline" onClick={handleAutoLink} disabled={autoLinking}>
               <Wand2 size={15} />
