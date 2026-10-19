@@ -31,9 +31,12 @@ Im Bereich „Discord reactions“ einer offenen Comp-Planung:
 Discord liefert zu einer Reaktion keinen Zeitstempel, weder beim Abruf noch im Gateway-Ereignis.
 Der Bot schreibt deshalb den Moment mit, in dem er eine Reaktion eintreffen sieht (Gateway-Intent
 `GuildMessageReactions`, Datei `reaction-times.json` im Volume `reaction_times`, Pfad über
-`REACTION_TIMES_DIR`). Das gilt nur für Nachrichten, die einmal abgerufen wurden: der erste
-Abruf einer Ankündigung startet die Aufzeichnung, Reaktionen davor haben keine Zeit
-(`trackedSince` im Snapshot, in der Vorschau als Hinweis). Wird eine Reaktion zurückgenommen,
+`REACTION_TIMES_DIR`). Jede Nachricht in den Channels aus `REACTION_TIMES_CHANNELS` (Standard:
+der Ankündigungs-Channel `940049796633341983`) wird ab ihrer ersten Reaktion erfasst, auch wenn
+sie noch nie abgerufen wurde; jede andere Nachricht erst ab ihrem ersten Abruf. Davor
+liegende Reaktionen haben keine Zeit (`trackedSince` im Snapshot: der spätere Zeitpunkt aus
+Beobachtungsbeginn und Posting der Nachricht, in der Vorschau als Hinweis). Nachrichten, die
+60 Tage niemand angefasst hat, vergisst der Bot beim Start. Wird eine Reaktion zurückgenommen,
 vergisst der Bot ihre Zeit; eine neue Reaktion zählt ab dann. War der Bot zwischendurch
 aus, fehlen die Zeiten dieser Phase.
 

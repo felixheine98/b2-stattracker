@@ -14,7 +14,7 @@ Ideen, die noch kein Todo sind: [ideen.md](ideen.md)
   - [x] Abruf, Emoji-Zuordnung, Account-Verknüpfung und Übernahme mit Vorschau
   - [x] In der laufenden Dev-App eingebunden, separater lesender Discord-Prozess
   - [ ] Mit einem Comp-Announcement im Alltag prüfen
-  - [x] Letzter Abruf neben dem Link, Zeitpunkt der Reaktionen (der Bot schreibt den Eingang mit, Discord liefert keine Zeit), in der Vorschau und als `answeredAt` in der Liste, nur in Dev ([Beschreibung](docs/discord-planning.md))
+  - [x] Letzter Abruf neben dem Link, Zeitpunkt der Reaktionen (der Bot schreibt den Eingang mit, Discord liefert keine Zeit; der Ankündigungs-Channel wird ab dem Posten erfasst), in der Vorschau und als `answeredAt` in der Liste, nur in Dev ([Beschreibung](docs/discord-planning.md))
   - [ ] Zeitpunkt der Reaktionen in Production: Schemaänderung (`answeredAt`), Bot neu bauen, neues Volume `reaction_times`; erst nach Felix' Freigabe
   - [x] Discord-Konten zentral hinterlegen und Import kompakter, in Production seit 19.10.2026 ([Entscheidung](docs/adr/006-discord-konten.md), [Glossar](docs/discord-konten-glossar.md))
 
