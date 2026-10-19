@@ -90,7 +90,7 @@ model PasskeyChallenge {
 
 model Player {
   id        String   @id @default(cuid())
-  // Explicitly assigned by a manager during a Discord reaction import; never matched by name.
+  // Linked by a manager on the Discord accounts page or in a reaction import; a name match is only ever a suggestion.
   discordUserId String? @unique
   tmId      String   @unique
   // Opponent identities share the person table, but are excluded from our pool.
@@ -147,6 +147,13 @@ model PlayerStatusChange {
 }
 
 // A rename, valid from the given day on
+// A Discord account that is never imported into a planning (supporter, staff who does not drive);
+// marked on the Discord accounts page or in an import, and can be taken back (docs/adr/006-discord-konten.md)
+model DiscordNonPlayer {
+  discordUserId String   @id
+  createdAt     DateTime @default(now())
+}
+
 model PlayerNameChange {
   id            String   @id @default(cuid())
   playerId      String

@@ -20,14 +20,9 @@ export function validateReactionMapping(
   playerIds: string[], levelIds: string[],
 ) {
   const valid = new Set(["FIX", "MAYBE", "OUT", "", ...levelIds.map(id => `level:${id}`)])
-  const relevantUsers = new Set<string>()
   for (const reaction of snapshot.reactions) {
     if (!Object.hasOwn(mapping, reaction.key)) throw new Error("Choose a status or Ignore for every emoji.")
     if (!valid.has(mapping[reaction.key])) throw new Error("A selected planning level no longer exists. Fetch again.")
-    if (mapping[reaction.key]) reaction.userIds.forEach(id => relevantUsers.add(id))
-  }
-  for (const id of relevantUsers) {
-    if (!Object.hasOwn(identities, id)) throw new Error("Assign or ignore every Discord account with a relevant reaction.")
   }
   const assigned = new Set<string>()
   const users = new Set(snapshot.users.map(u => u.id))
@@ -38,6 +33,28 @@ export function validateReactionMapping(
     if (assigned.has(playerId)) throw new Error("Two Discord accounts cannot be assigned to the same player.")
     assigned.add(playerId)
   }
+}
+
+// Accounts the import still asks about: a relevant reaction, but no link and not marked as not a player.
+// Accounts linked to a player outside this planning are known and never asked about.
+export function unknownAccounts(
+  snapshot: ReactionSnapshot, emojiMapping: Record<string, ImportAnswer | "">,
+  links: Record<string, string>, notAPlayer: string[],
+) {
+  const relevant = new Set(snapshot.reactions.filter(r => emojiMapping[r.key]).flatMap(r => r.userIds))
+  const known = new Set([...Object.keys(links), ...notAPlayer])
+  return snapshot.users.filter(u => relevant.has(u.id) && !known.has(u.id))
+}
+
+// A player has one Discord account: a link chosen in the import replaces the player's saved one.
+export function importIdentities(saved: Record<string, string>, chosen: Record<string, string>) {
+  const replaced = new Set(Object.values(chosen))
+  return { ...Object.fromEntries(Object.entries(saved).filter(([, playerId]) => !replaced.has(playerId))), ...chosen }
+}
+
+export function previewSummary(rows: ReactionPreviewRow[]) {
+  const count = (kinds: ReactionPreviewRow["kind"][]) => rows.filter(r => kinds.includes(r.kind)).length
+  return { changes: count(["change"]), conflicts: count(["conflict"]), unchanged: count(["unchanged"]), withoutReaction: rows.filter(r => r.kind === "no-answer" && r.candidates.length === 0).length }
 }
 
 // No reaction, an ignored emoji or an explicit skip never clears a planning answer.
