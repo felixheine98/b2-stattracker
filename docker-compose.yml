@@ -99,6 +99,8 @@ services:
       DISCORD_BOT_API_PORT: "3080"
       # When reactions came in: the one place the bot may write to
       REACTION_TIMES_DIR: /bot/times
+      # Channels with announcements: their reactions are written down from the post on, not only after the first fetch
+      REACTION_TIMES_CHANNELS: ${REACTION_TIMES_CHANNELS:-940049796633341983}
     volumes:
       - ../b2-member/data:/bot/data:ro
       - reaction_times:/bot/times
