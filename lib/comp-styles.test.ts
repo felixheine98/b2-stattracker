@@ -16,8 +16,12 @@ describe("parseStyle", () => {
 })
 
 describe("stylesInUse", () => {
-  it("names each style that has a tournament once, in the fixed order", () => {
-    expect(stylesInUse([{ style: "MIXED" }, { style: "ENDURANCE" }, { style: "TECH" }, { style: "MIXED" }])).toEqual(["TECH", "ENDURANCE", "MIXED"])
+  it("names each style that has a tournament once, Mixed first and the others alphabetically", () => {
+    expect(stylesInUse([{ style: "TECH" }, { style: "ENDURANCE" }, { style: "MIXED" }, { style: "TECH" }, { style: "RPG" }, { style: "DIRT" }])).toEqual(["MIXED", "DIRT", "ENDURANCE", "RPG", "TECH"])
+  })
+
+  it("lists the others alphabetically by their name on the page", () => {
+    expect(stylesInUse([{ style: "TECH" }, { style: "ICE" }, { style: "FULLSPEED" }])).toEqual(["FULLSPEED", "ICE", "TECH"])
   })
 
   it("is empty without tournaments", () => {
