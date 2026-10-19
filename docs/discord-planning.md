@@ -40,6 +40,13 @@ Beobachtungsbeginn und Posting der Nachricht, in der Vorschau als Hinweis). Nach
 vergisst der Bot ihre Zeit; eine neue Reaktion zählt ab dann. War der Bot zwischendurch
 aus, fehlen die Zeiten dieser Phase.
 
+Eine erfasste Nachricht, die keiner Comp zugewiesen ist, vergisst die App eine Woche nach Beginn der
+Aufzeichnung (`trackedAt`): `instrumentation-node.ts` fragt eine Minute nach dem Start und danach
+stündlich den Bot nach seiner Liste und lässt ihn die abgelaufenen Nachrichten entfernen. Zugewiesen
+heißt: der Link steht bei einer Comp im Bereich „Discord reactions“. Lassen sich die Comps nicht
+lesen, wird nichts entfernt. Von Hand entfernen geht jederzeit auf „Discord accounts“ unter
+„Tracked messages“, wo auch steht, wann eine Nachricht verfällt.
+
 Die Vorschau nennt pro Antwort die Zeit der letzten Reaktion dafür (bei Konflikten pro
 Auswahl). „Apply“ speichert sie als `answeredAt` am Eintrag; Admins und Manager sehen sie in der
 Planungsliste. Eine Antwort, die jemand von Hand setzt, löscht sie. Neben dem Link steht

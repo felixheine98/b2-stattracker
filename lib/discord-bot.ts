@@ -65,7 +65,7 @@ type BotConfig = { url: string | undefined; token: string | undefined }
 const botConfig = (): BotConfig => ({ url: process.env.DISCORD_BOT_URL, token: process.env.DISCORD_BOT_API_TOKEN })
 
 const trackedSchema = z.object({ guildId: z.string(), messages: z.array(z.object({
-  messageId: z.string(), channelId: z.string().nullable(), since: z.string(), reactions: z.number().int(), lastAt: z.string().nullable(),
+  messageId: z.string(), channelId: z.string().nullable(), since: z.string(), trackedAt: z.string(), reactions: z.number().int(), lastAt: z.string().nullable(),
   // What the message is, read from Discord; missing when the bot was not asked, null when Discord no longer has it
   preview: z.object({
     channelName: z.string().nullable(), author: z.string().nullable(), postedAt: z.string(),
