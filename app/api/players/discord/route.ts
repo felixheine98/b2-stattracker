@@ -1,6 +1,7 @@
 import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
 import { canManage } from "@/lib/roles"
+import { saveDiscordLinks } from "@/lib/discord-links-db"
 import { Prisma } from "@prisma/client"
 import { NextResponse } from "next/server"
 import { z } from "zod"
@@ -36,10 +37,7 @@ export async function POST(req: Request) {
     if (found !== players.length) return NextResponse.json({ error: "Player not found." }, { status: 404 })
     try {
       await db.$transaction(async tx => {
-        // Clear first, so moving an account between players never trips the unique index.
-        await tx.player.updateMany({ where: { OR: [{ discordUserId: { in: accounts } }, { id: { in: players } }] }, data: { discordUserId: null } })
-        for (const link of input.links) await tx.player.update({ where: { id: link.playerId }, data: { discordUserId: link.discordUserId } })
-        await tx.discordNonPlayer.deleteMany({ where: { discordUserId: { in: accounts } } })
+        await saveDiscordLinks(tx, input.links)
       }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable })
     } catch (error) {
       if (error instanceof Prisma.PrismaClientKnownRequestError && ["P2002", "P2034"].includes(error.code)) {
