@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest"
-import { fetchReactions, signReactionSnapshot, verifyReactionSnapshot } from "./discord-bot"
+import { fetchReactions, fetchTrackedMessages, removeTrackedMessage, signReactionSnapshot, verifyReactionSnapshot } from "./discord-bot"
 
 const snapshot = { messageUrl: "https://discord.com/channels/111/222/333", fetchedAt: "2026-10-15T12:00:00Z", users: [], reactions: [] }
 
@@ -32,5 +32,19 @@ describe("Discord bot boundary", () => {
     expect(options.headers.Authorization).toBe("Bearer api-secret")
     fetch.mockResolvedValue(Response.json({ ...snapshot, messageUrl: "https://discord.com/channels/111/222/444" }))
     await expect(fetchReactions(snapshot.messageUrl, { url: "http://bot:3080", token: "api-secret" })).rejects.toThrow("different message")
+  })
+  it("lists the messages the bot keeps reaction times for, and asks it to forget one", async () => {
+    const listed = { guildId: "111", messages: [{ messageId: "333", channelId: "222", since: "2026-10-19T20:00:00.000Z", reactions: 2, lastAt: null }] }
+    const fetch = vi.fn().mockResolvedValueOnce(Response.json(listed)).mockResolvedValueOnce(new Response(null, { status: 204 })).mockResolvedValueOnce(new Response(null, { status: 404 }))
+    vi.stubGlobal("fetch", fetch)
+    const config = { url: "http://bot:3080", token: "api-secret" }
+    expect(await fetchTrackedMessages(config)).toEqual(listed)
+    expect(fetch.mock.calls[0][0].toString()).toBe("http://bot:3080/tracked")
+    await removeTrackedMessage("333", config)
+    expect(fetch.mock.calls[1][0].toString()).toBe("http://bot:3080/tracked/333")
+    expect(fetch.mock.calls[1][1]).toMatchObject({ method: "DELETE", headers: { Authorization: "Bearer api-secret" } })
+    // Already gone is as good as removed
+    await expect(removeTrackedMessage("444", config)).resolves.toBeUndefined()
+    await expect(removeTrackedMessage("not-an-id", config)).rejects.toThrow("message ID")
   })
 })
