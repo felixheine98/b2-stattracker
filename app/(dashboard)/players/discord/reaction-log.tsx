@@ -5,13 +5,14 @@ import { useRouter } from "next/navigation"
 import { ExternalLink, Trash2 } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { Select } from "@/components/ui/select"
 import { BASE_PATH } from "@/lib/base-path"
 import { formatTime } from "@/lib/discord-planning"
 import type { TrackedRow } from "@/lib/reaction-log"
 
 // The messages the bot writes reaction times down for. Messages that are no comp's announcement
 // can go: the bot forgets them (on Discord they stay) and ignores them until they are fetched again.
-export function ReactionLog({ rows, error }: { rows: TrackedRow[]; error: string | null }) {
+export function ReactionLog({ rows, comps, error }: { rows: TrackedRow[]; comps: Array<{ id: string; name: string; messageUrl: string }>; error: string | null }) {
   const router = useRouter()
   const [busy, setBusy] = useState(false)
   const [failure, setFailure] = useState("")
@@ -23,6 +24,20 @@ export function ReactionLog({ rows, error }: { rows: TrackedRow[]; error: string
     const data = await response?.json().catch(() => ({}))
     setBusy(false)
     if (!response?.ok) { setFailure(data?.error ?? "Could not remove."); return }
+    router.refresh()
+  }
+
+  // Makes the message the announcement of the comp; one that already has another is only replaced when confirmed
+  async function assign(row: TrackedRow, tournamentId: string) {
+    const comp = comps.find(c => c.id === tournamentId)
+    if (!comp) return
+    const replace = !!comp.messageUrl && comp.messageUrl !== row.link
+    if (replace && !confirm(`${comp.name} already uses another message. Use this one instead? The other then counts as unused and is forgotten after a week.`)) return
+    setBusy(true); setFailure("")
+    const response = await fetch(`${BASE_PATH}/api/players/discord/reaction-log`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ messageId: row.messageId, tournamentId, ...(replace && { replace }) }) }).catch(() => null)
+    const data = await response?.json().catch(() => ({}))
+    setBusy(false)
+    if (!response?.ok) { setFailure(data?.error ?? "Could not assign."); return }
     router.refresh()
   }
 
@@ -67,7 +82,15 @@ export function ReactionLog({ rows, error }: { rows: TrackedRow[]; error: string
                 {row.expiresAt && <span className="text-bronze"> · removed automatically on {formatTime(row.expiresAt)} unless a comp uses it</span>}
               </p>
             </div>
-            <Button size="sm" variant="ghost" className="ml-auto" disabled={busy} onClick={() => remove([row.messageId])} aria-label={`Remove message ${row.messageId}`}>
+            {!row.usedBy && comps.length > 0 && (
+              <Select className="w-full sm:ml-auto sm:w-52" aria-label={`Assign message ${row.messageId} to a comp`} value="" disabled={busy || !row.link}
+                title={row.link ? undefined : "The bot does not know the channel of this message yet"}
+                onChange={e => assign(row, e.target.value)}>
+                <option value="" disabled>Assign to comp…</option>
+                {comps.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+              </Select>
+            )}
+            <Button size="sm" variant="ghost" className={row.usedBy || comps.length === 0 ? "ml-auto" : undefined} disabled={busy} onClick={() => remove([row.messageId])} aria-label={`Remove message ${row.messageId}`}>
               <Trash2 size={14} /> Remove
             </Button>
           </li>

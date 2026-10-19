@@ -15,7 +15,7 @@ export default async function DiscordAccountsPage() {
   const session = await auth()
   if (!canManage((session?.user as { role?: string })?.role)) redirect("/dashboard")
 
-  const [players, marked, members, tracked, plannings] = await Promise.all([
+  const [players, marked, members, tracked, plannings, openComps] = await Promise.all([
     db.player.findMany({ where: { isOpponentOnly: false },
       select: { id: true, name: true, initialName: true, discordUserId: true, initialStatus: true, statusChanges: true, nameChanges: true },
       orderBy: { name: "asc" },
@@ -24,6 +24,8 @@ export default async function DiscordAccountsPage() {
     fetchMembers().then(list => ({ list }), (error: unknown) => ({ error: error instanceof Error ? error.message : "The bot could not list the server members." })),
     fetchTrackedMessages().then(list => ({ list }), (error: unknown) => ({ error: error instanceof Error ? error.message : "The bot could not list the tracked messages." })),
     plannedAnnouncements(),
+    // The comps that can still take a link
+    db.tournament.findMany({ where: { planning: { isNot: null }, tournamentLineups: { none: {} } }, orderBy: { createdAt: "desc" }, select: { id: true, name: true, planning: { select: { discordSettings: true } } } }),
   ])
   const linkedTo = new Map(players.filter(p => p.discordUserId).map(p => [p.discordUserId!, p.id]))
   const notAPlayer = new Set(marked.map(m => m.discordUserId))
@@ -46,6 +48,7 @@ export default async function DiscordAccountsPage() {
   />
   <div className="page-wide pt-6">
     <ReactionLog
+      comps={openComps.map(c => ({ id: c.id, name: c.name, messageUrl: (c.planning?.discordSettings as { messageUrl?: string } | null)?.messageUrl ?? "" }))}
       error={"error" in tracked ? tracked.error : null}
       rows={"list" in tracked ? describeTracked(tracked.list.guildId, tracked.list.messages, plannings) : []}
     />
