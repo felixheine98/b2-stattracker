@@ -50,6 +50,18 @@ describe.skipIf(process.env.DB_TESTS !== "1")("Discord import into a planning wi
     expect(await settings(comp.id)).toMatchObject({ revision: 0, discordSettings: { messageUrl: url } })
   })
 
+  it("remembers when the reactions were last fetched, also after applying them", async () => {
+    const { comp, unknown, staff } = await setup()
+    const { fetchedAt } = state.snapshot as { fetchedAt: string }
+    const { token } = await (await post(comp.id, { action: "fetch", messageUrl: url })).json()
+    expect(await settings(comp.id)).toMatchObject({ discordSettings: { fetchedAt } })
+    await post(comp.id, { action: "settings", emojiMapping: { "unicode:✅": "FIX" } })
+    expect(await settings(comp.id)).toMatchObject({ discordSettings: { fetchedAt } })
+    const applied = await post(comp.id, { action: "apply", token, emojiMapping: { "unicode:✅": "FIX" }, links: {}, notAPlayer: [unknown, staff], resolutions: {} })
+    expect(applied.status).toBe(200)
+    expect(await settings(comp.id)).toMatchObject({ discordSettings: { fetchedAt } })
+  })
+
   it("saves an emoji choice at once without invalidating the preview, then applies links, marks and answers", async () => {
     const { comp, anna, ben, linked, unknown, open, staff } = await setup()
     const { token } = await (await post(comp.id, { action: "fetch", messageUrl: url })).json()

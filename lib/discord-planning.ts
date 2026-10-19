@@ -76,3 +76,8 @@ export function reactionPreview(
     return { playerId, before, after, candidates, kind: after ? (after === before ? "unchanged" : "change") : candidates.length > 1 ? "conflict" : "no-answer" }
   })
 }
+
+const fetchedAtFormat = new Intl.DateTimeFormat("de-DE", { timeZone: "Europe/Berlin", day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit", hourCycle: "h23" })
+
+// When the reactions were last fetched, as shown beside the announcement
+export const formatFetchedAt = (iso: string): string => fetchedAtFormat.format(new Date(iso))

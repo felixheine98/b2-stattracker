@@ -42,7 +42,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     const input = parsed.data
     // Link and emoji choices are stored as soon as they are made, without a new revision, so an open
     // preview stays valid; only a change to the answers invalidates it.
-    const saveSettings = (settings: { messageUrl?: string; emojiMapping?: Record<string, string> }) =>
+    const saveSettings = (settings: { messageUrl?: string; emojiMapping?: Record<string, string>; fetchedAt?: string }) =>
       db.planning.update({ where: { tournamentId: id }, data: { discordSettings: { messageUrl: "", emojiMapping: {}, ...state.discordSettings, ...settings } } })
     if (input.action === "settings") {
       await saveSettings({ emojiMapping: input.emojiMapping })
@@ -64,7 +64,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     }
     if (input.action === "fetch") {
       const snapshot = await fetchReactions(input.messageUrl)
-      await saveSettings({ messageUrl: snapshot.messageUrl })
+      await saveSettings({ messageUrl: snapshot.messageUrl, fetchedAt: snapshot.fetchedAt })
       const known = await accounts(ids(snapshot))
       return NextResponse.json({ snapshot, revision: state.revision, token: signReactionSnapshot({ snapshot, tournamentId: id, revision: state.revision }, secret),
         identities: known.identities, links: known.links, notAPlayer: known.notAPlayer,
@@ -90,7 +90,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
       const planning = await tx.planning.findUniqueOrThrow({ where: { tournamentId: id }, select: { id: true } })
       // A second import or a changed answer invalidates the preview, rather than overwriting it.
       const updated = await tx.planning.updateMany({ where: { id: planning.id, revision: signed.revision, tournament: { tournamentLineups: { none: {} } } },
-        data: { revision: { increment: 1 }, discordSettings: { messageUrl: signed.snapshot.messageUrl, emojiMapping: input.emojiMapping } },
+        data: { revision: { increment: 1 }, discordSettings: { messageUrl: signed.snapshot.messageUrl, emojiMapping: input.emojiMapping, fetchedAt: signed.snapshot.fetchedAt } },
       })
       if (!updated.count) throw new ImportError("The planning changed. Fetch the reactions again.", 409)
       await saveDiscordLinks(tx, Object.entries(input.links).map(([discordUserId, playerId]) => ({ discordUserId, playerId })))
