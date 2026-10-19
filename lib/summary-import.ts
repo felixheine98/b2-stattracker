@@ -75,7 +75,7 @@ export interface SummaryPlan {
   errors: string[]
 }
 
-const FORMATS: Record<string, Format> = { "1v1": "ROUND_1V1", "2v2": "ROUND_2V2", "3v3": "ROUND_3V3", "4v4": "ROUND_4V4", "5v5": "ROUND_5V5" }
+export const FORMATS: Record<string, Format> = { "1v1": "ROUND_1V1", "2v2": "ROUND_2V2", "3v3": "ROUND_3V3", "4v4": "ROUND_4V4", "5v5": "ROUND_5V5" }
 const STAGES: Record<string, StageType> = { S: "SEEDING", MD: "GROUP", PO: "PLAYOFF" }
 const STAGE_KEYS: Record<StageType, string> = { SEEDING: "S", GROUP: "MD", PLAYOFF: "PO" }
 const FORMAT_KEYS = Object.fromEntries(Object.entries(FORMATS).map(([k, v]) => [v, k])) as Record<Format, string>
