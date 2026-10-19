@@ -18,7 +18,7 @@ import { GuestBadge } from "@/components/guest-badge"
 import { TrialBadge } from "@/components/trial-badge"
 import { Wdl } from "@/components/wdl"
 import { roundPlacements, roundScore } from "@/lib/round-score"
-import { closingHints, matchPoints, matchReport, resultOf, subMatchState, type RuleSet } from "@/lib/match-rules"
+import { closingHints, matchPoints, matchReport, resultOf, subMatchState, summaryState, type RuleSet } from "@/lib/match-rules"
 import { bestPerformer } from "@/lib/dashboard"
 import { dayKey, formatDay } from "@/lib/player-status"
 import { sortStages, stageDate, stageName, type StageRef } from "@/lib/stages"
@@ -27,6 +27,7 @@ import { matchTag } from "@/lib/match-order"
 import { EcmImportDialog } from "./ecm-import-dialog"
 import { MatchCsvImportDialog } from "./match-csv-import-dialog"
 import { RoundEntryDialog } from "./round-entry-dialog"
+import type { SubMatchSummary } from "@/lib/summary"
 
 export interface Player {
   id: string
@@ -70,6 +71,8 @@ export interface SubMatch {
   order: number
   lineup?: Lineup | null
   rounds: Round[]
+  // Set instead of rounds for a sub-match taken over from a stats screenshot (docs/adr/007)
+  summary?: SubMatchSummary | null
 }
 
 interface TournamentLineup {
@@ -257,6 +260,70 @@ function SubMatchStatsTable({ sm, number, isGuest, isTrial }: { sm: SubMatch; nu
           ))}
         </tbody>
       </table>
+      </div>
+    </div>
+  )
+}
+
+// "from summary": a sub-match taken over from a stats screenshot, with the link to it
+function FromSummary({ summary }: { summary: SubMatchSummary }) {
+  return (
+    <span className="inline-flex items-center gap-1.5 text-xs text-fg-subtle">
+      from summary
+      {summary.sourceUrl && (
+        <a href={summary.sourceUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-fg-muted hover:text-brand-ink">
+          <ExternalLink size={11} />
+          Screenshot
+        </a>
+      )}
+    </span>
+  )
+}
+
+// Player stats of a sub-match taken over from a screenshot: only rounds and places, no times
+function SummaryStatsTable({ sm, summary, number, isGuest, isTrial }: { sm: SubMatch; summary: SubMatchSummary; number: number; isGuest: (tmId: string) => boolean; isTrial: (tmId: string) => boolean }) {
+  const state = summaryState(summary)
+  const resultColor = state.outcome === "W" ? "text-brand-ink" : state.outcome === "L" ? "text-danger" : "text-fg-muted"
+  const rows = [...summary.players].sort((a, b) => a.placementSum / a.rounds - b.placementSum / b.rounds)
+  return (
+    <div>
+      <div className="mb-2 flex flex-wrap items-center gap-2">
+        <Badge variant="secondary">{formatLabel(sm.format)}</Badge>
+        <span className="text-sm text-fg">{summary.track || `#${number}`}</span>
+        {summary.roundsWon !== null && summary.roundsLost !== null
+          ? <Wdl won={state.won} drawn={state.drawn} lost={state.lost} unit="Rounds" className={`text-sm font-bold ${resultColor}`} />
+          : <span className={`text-sm font-bold ${resultColor}`}>{state.outcome === "W" ? "Win" : state.outcome === "L" ? "Loss" : "Draw"}</span>}
+        <FromSummary summary={summary} />
+      </div>
+      <div className="overflow-x-auto rounded-lg border border-line">
+        <table className="w-full min-w-[420px] table-fixed text-xs bg-table-row">
+          <colgroup>
+            <col className="w-[40%]" />
+            <col span={3} />
+          </colgroup>
+          <thead>
+            <tr className="border-b border-line text-fg-subtle">
+              <th className="sticky left-0 z-[1] bg-table-cell py-1.5 pl-3 pr-4 text-left font-medium">Player</th>
+              <th className="py-1.5 px-2 text-right font-medium">Played</th>
+              <th className="py-1.5 px-2 text-right font-medium">Place sum</th>
+              <th className="py-1.5 px-2 text-right font-medium">Avg place</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((row) => (
+              <tr key={row.tmId} className="border-b border-table-rule hover:bg-table-hover">
+                <td className="sticky left-0 z-[1] bg-table-cell py-1.5 pl-3 pr-4 text-fg font-medium whitespace-nowrap max-md:shadow-[1px_0_0_var(--border)]">
+                  <PlayerName name={row.playerName} currentName={row.currentName} />
+                  {isGuest(row.tmId) && <GuestBadge className="ml-1.5" />}
+                  {isTrial(row.tmId) && <TrialBadge className="ml-1.5" />}
+                </td>
+                <td className="py-1.5 px-2 text-right text-fg-soft">{row.rounds}</td>
+                <td className="py-1.5 px-2 text-right text-fg-soft">{row.placementSum}</td>
+                <td className="py-1.5 px-2 text-right text-fg-soft font-mono">{(row.placementSum / row.rounds).toFixed(3)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
     </div>
   )
@@ -551,7 +618,7 @@ export function MatchDetailView({ match: initialMatch, ruleSet, allPlayers, gues
       </div>
 
       {/* Player stats, one table per sub-match */}
-      {subMatches.some((sm) => sm.rounds.length > 0) && (
+      {subMatches.some((sm) => sm.rounds.length > 0 || sm.summary) && (
         <div>
           <h2 className="text-sm font-semibold text-fg-muted uppercase tracking-wider mb-3 flex items-center gap-2">
             <BarChart2 size={14} />
@@ -559,7 +626,8 @@ export function MatchDetailView({ match: initialMatch, ruleSet, allPlayers, gues
           </h2>
           <div className="space-y-4">
             {subMatches.map((sm, idx) =>
-              sm.rounds.length > 0 ? <SubMatchStatsTable key={sm.id} sm={sm} number={idx + 1} isGuest={isGuest} isTrial={isTrial} /> : null
+              sm.summary ? <SummaryStatsTable key={sm.id} sm={sm} summary={sm.summary} number={idx + 1} isGuest={isGuest} isTrial={isTrial} />
+              : sm.rounds.length > 0 ? <SubMatchStatsTable key={sm.id} sm={sm} number={idx + 1} isGuest={isGuest} isTrial={isTrial} /> : null
             )}
           </div>
         </div>
@@ -572,6 +640,7 @@ export function MatchDetailView({ match: initialMatch, ruleSet, allPlayers, gues
           const stats = computeStats(sm.rounds)
           const totalRounds = sm.rounds.length
           const hint = report.subMatches[idx]?.hint
+          const summaryResult = sm.summary ? summaryState(sm.summary) : null
 
           return (
             <div key={sm.id} className="rounded-xl border border-line overflow-hidden">
@@ -587,7 +656,16 @@ export function MatchDetailView({ match: initialMatch, ruleSet, allPlayers, gues
                     {formatLabel(sm.format)}
                   </Badge>
                   <span className="text-sm text-fg-muted max-md:hidden">{formatLabelLong(sm.format)}</span>
-                  {sm.rounds[0]?.track && <span className="text-sm text-fg">{sm.rounds[0].track}</span>}
+                  {(sm.summary?.track ?? sm.rounds[0]?.track) && <span className="text-sm text-fg">{sm.summary?.track ?? sm.rounds[0].track}</span>}
+                  {summaryResult && (
+                    <Badge variant={summaryResult.outcome === "W" ? "primary" : summaryResult.outcome === "L" ? "red" : "default"}>
+                      {summaryResult.won + summaryResult.lost + summaryResult.drawn > 0
+                        ? <Wdl won={summaryResult.won} drawn={summaryResult.drawn} lost={summaryResult.lost} unit="Rounds" />
+                        : summaryResult.outcome === "W" ? "Win" : summaryResult.outcome === "L" ? "Loss" : "Draw"}
+                    </Badge>
+                  )}
+                  {/* Inside the header button: the link to the screenshot is in the content below */}
+                  {sm.summary && <span className="text-xs text-fg-subtle">from summary</span>}
                   {totalRounds > 0 && (
                     <span className="text-xs text-fg-subtle">{totalRounds} round{totalRounds !== 1 ? "s" : ""}</span>
                   )}
@@ -609,6 +687,12 @@ export function MatchDetailView({ match: initialMatch, ruleSet, allPlayers, gues
               {/* Sub-match content */}
               {isOpen && (
                 <div className="border-t border-line p-4 space-y-4 bg-canvas">
+                  {sm.summary && (
+                    <p className="text-sm text-fg-muted">
+                      Taken over from a stats screenshot: {sm.summary.rounds} rounds, places per player, no single rounds, times or DNFs.{" "}
+                      <FromSummary summary={sm.summary} />
+                    </p>
+                  )}
                   {/* Summary */}
                   {totalRounds > 0 && (
                     <div className="flex flex-wrap gap-x-8 gap-y-2 rounded-xl border border-line bg-surface px-5 py-3 text-sm">
@@ -636,7 +720,7 @@ export function MatchDetailView({ match: initialMatch, ruleSet, allPlayers, gues
                   )}
 
                   {/* Import button */}
-                  {canEdit && (
+                  {canEdit && !sm.summary && (
                     <div className="flex justify-end gap-2">
                       {teamSize(sm.format) != null && (
                         <Button variant="outline" size="sm" onClick={() => setRoundEntryId(sm.id)}>

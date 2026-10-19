@@ -1,6 +1,7 @@
 import { openPlanningsFor } from "@/lib/planning-db"
 import { LINEUP_MANAGERS_INCLUDE } from "@/lib/lineup-access-db"
 import { db } from "@/lib/db"
+import { shapeSummaries, summaryInclude } from "@/lib/summary"
 import { auth } from "@/lib/auth"
 import { canManage } from "@/lib/roles"
 import { notFound, redirect } from "next/navigation"
@@ -63,10 +64,11 @@ export default async function TournamentDetailPage({ params }: Props) {
               orderBy: { number: "asc" },
               include: { results: { orderBy: [{ position: "asc" }, { timeMs: "asc" }] } },
             },
+            ...summaryInclude,
           },
         },
       },
-    }),
+    }).then(shapeSummaries),
   ])
 
   if (!tournament) notFound()
