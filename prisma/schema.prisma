@@ -126,6 +126,7 @@ model Player {
   user                  User?
   lineupSlots           LineupSlot[]
   roundResults          RoundResult[]
+  summaryResults        SubMatchSummaryPlayer[]
   tournamentLineupSlots TournamentLineupSlot[]
   opponentTeamSlots     OpponentTeamSlot[]
   opponentLineupSlots   OpponentLineupSlot[]
@@ -569,8 +570,45 @@ model SubMatch {
 
   lineup Lineup?
   rounds Round[]
+  // Set instead of rounds for a sub-match taken over from an old stats screenshot
+  summary SubMatchSummary?
 
   @@unique([matchId, order])
+}
+
+// A sub-match taken over from an old stats screenshot (docs/adr/007-zusammengefasste-ergebnisse.md):
+// no rounds, only the result and per player the rounds driven and the sum of their places. Counts
+// in the stats of rounds, places and records, not in pace, times or DNFs.
+model SubMatchSummary {
+  id          String   @id @default(cuid())
+  subMatchId  String   @unique
+  subMatch    SubMatch @relation(fields: [subMatchId], references: [id], onDelete: Cascade)
+  // The map, when the screenshot names it
+  track       String?
+  rounds      Int
+  // Rounds won and lost by our team; null where the screenshot gives no round result
+  roundsWon   Int?
+  roundsLost  Int?
+  // W, L or D: who took the sub-match
+  outcome     String
+  // The Discord message with the screenshot, and the image's file name in the local export
+  sourceUrl   String
+  sourceImage String?
+  createdAt   DateTime @default(now())
+
+  players SubMatchSummaryPlayer[]
+}
+
+model SubMatchSummaryPlayer {
+  id           String          @id @default(cuid())
+  summaryId    String
+  summary      SubMatchSummary @relation(fields: [summaryId], references: [id], onDelete: Cascade)
+  playerId     String
+  player       Player          @relation(fields: [playerId], references: [id], onDelete: Restrict)
+  rounds       Int
+  placementSum Int
+
+  @@unique([summaryId, playerId])
 }
 
 model Lineup {
