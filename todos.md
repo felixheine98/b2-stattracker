@@ -14,7 +14,7 @@ Ideen, die noch kein Todo sind: [ideen.md](ideen.md)
   - [x] Abruf, Emoji-Zuordnung, Account-Verknüpfung und Übernahme mit Vorschau
   - [x] In der laufenden Dev-App eingebunden, separater lesender Discord-Prozess
   - [ ] Mit einem Comp-Announcement im Alltag prüfen
-  - [x] Letzter Abruf neben dem Link, Zeitpunkt der Reaktionen (der Bot schreibt den Eingang mit, Discord liefert keine Zeit; der Ankündigungs-Channel wird ab dem Posten erfasst), in der Vorschau und als `answeredAt` in der Liste, Liste der erfassten Nachrichten mit Löschen, in Production seit 19.10.2026 ([Beschreibung](docs/discord-planning.md))
+  - [x] Letzter Abruf neben dem Link, Zeitpunkt der Reaktionen (der Bot schreibt den Eingang mit, Discord liefert keine Zeit; der Ankündigungs-Channel wird ab dem Posten erfasst), in der Vorschau und als `answeredAt` in der Liste, Liste der erfassten Nachrichten mit Löschen und Zuweisen zu einer Comp, automatisches Vergessen nach einer Woche ohne Zuweisung, in Production seit 19.10.2026 ([Beschreibung](docs/discord-planning.md))
   - [ ] Erfasste Nachrichten mit Text anzeigen: braucht das Message Content Intent im Developer Portal (Felix entscheidet) und einen Schalter im Bot
   - [x] Discord-Konten zentral hinterlegen und Import kompakter, in Production seit 19.10.2026 ([Entscheidung](docs/adr/006-discord-konten.md), [Glossar](docs/discord-konten-glossar.md))
 
