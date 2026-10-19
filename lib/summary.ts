@@ -11,7 +11,10 @@ export interface SummaryPlayer {
   // Today's name, when the data carries tournament names
   currentName?: string
   rounds: number
-  placementSum: number
+  // null: the screenshot gives no places (points instead), so the sub-match counts for the record only
+  placementSum: number | null
+  // Points instead of places, as some comps (FSM) list them
+  points?: number | null
 }
 
 export interface SubMatchSummary {
@@ -46,7 +49,7 @@ interface StoredSummary {
   outcome: string
   sourceUrl: string
   sourceImage: string | null
-  players: Array<{ playerId: string; rounds: number; placementSum: number; player: { tmId: string; name: string } }>
+  players: Array<{ playerId: string; rounds: number; placementSum: number | null; points: number | null; player: { tmId: string; name: string } }>
 }
 
 // What to include with a sub-match to load its summary
@@ -70,6 +73,6 @@ function toSummary({ players, outcome, ...summary }: StoredSummary): SubMatchSum
   return {
     ...summary,
     outcome: outcome as SubMatchSummary["outcome"],
-    players: players.map((p) => ({ playerId: p.playerId, tmId: p.player.tmId, playerName: p.player.name, rounds: p.rounds, placementSum: p.placementSum })),
+    players: players.map((p) => ({ playerId: p.playerId, tmId: p.player.tmId, playerName: p.player.name, rounds: p.rounds, placementSum: p.placementSum, points: p.points })),
   }
 }

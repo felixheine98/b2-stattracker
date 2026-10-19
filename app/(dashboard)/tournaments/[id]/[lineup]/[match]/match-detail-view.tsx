@@ -284,7 +284,11 @@ function FromSummary({ summary }: { summary: SubMatchSummary }) {
 function SummaryStatsTable({ sm, summary, number, isGuest, isTrial }: { sm: SubMatch; summary: SubMatchSummary; number: number; isGuest: (tmId: string) => boolean; isTrial: (tmId: string) => boolean }) {
   const state = summaryState(summary)
   const resultColor = state.outcome === "W" ? "text-brand-ink" : state.outcome === "L" ? "text-danger" : "text-fg-muted"
-  const rows = [...summary.players].sort((a, b) => a.placementSum / a.rounds - b.placementSum / b.rounds)
+  // A screenshot with points instead of places (FSM): the sub-match counts for the record only
+  const inPoints = summary.players.some((p) => p.placementSum === null)
+  const rows = inPoints
+    ? [...summary.players].sort((a, b) => (b.points ?? 0) / b.rounds - (a.points ?? 0) / a.rounds)
+    : [...summary.players].sort((a, b) => a.placementSum! / a.rounds - b.placementSum! / b.rounds)
   return (
     <div>
       <div className="mb-2 flex flex-wrap items-center gap-2">
@@ -305,8 +309,8 @@ function SummaryStatsTable({ sm, summary, number, isGuest, isTrial }: { sm: SubM
             <tr className="border-b border-line text-fg-subtle">
               <th className="sticky left-0 z-[1] bg-table-cell py-1.5 pl-3 pr-4 text-left font-medium">Player</th>
               <th className="py-1.5 px-2 text-right font-medium">Played</th>
-              <th className="py-1.5 px-2 text-right font-medium">Place sum</th>
-              <th className="py-1.5 px-2 text-right font-medium">Avg place</th>
+              <th className="py-1.5 px-2 text-right font-medium">{inPoints ? "Points" : "Place sum"}</th>
+              <th className="py-1.5 px-2 text-right font-medium">{inPoints ? "Avg points" : "Avg place"}</th>
             </tr>
           </thead>
           <tbody>
@@ -318,13 +322,16 @@ function SummaryStatsTable({ sm, summary, number, isGuest, isTrial }: { sm: SubM
                   {isTrial(row.tmId) && <TrialBadge className="ml-1.5" />}
                 </td>
                 <td className="py-1.5 px-2 text-right text-fg-soft">{row.rounds}</td>
-                <td className="py-1.5 px-2 text-right text-fg-soft">{row.placementSum}</td>
-                <td className="py-1.5 px-2 text-right text-fg-soft font-mono">{(row.placementSum / row.rounds).toFixed(3)}</td>
+                <td className="py-1.5 px-2 text-right text-fg-soft">{inPoints ? (row.points ?? "—") : row.placementSum}</td>
+                <td className="py-1.5 px-2 text-right text-fg-soft font-mono">
+                  {inPoints ? (row.points !== null && row.points !== undefined ? (row.points / row.rounds).toFixed(3) : "—") : (row.placementSum! / row.rounds).toFixed(3)}
+                </td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
+      {inPoints && <p className="mt-1.5 text-xs text-fg-muted">The screenshot gives points instead of places: this sub-match counts for the record only.</p>}
     </div>
   )
 }

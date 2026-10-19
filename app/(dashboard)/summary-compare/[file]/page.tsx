@@ -35,7 +35,9 @@ function Notes({ title, lines, tone }: { title: string; lines: string[]; tone: "
   )
 }
 
-const values = (v: { rounds: number; placementSum: number } | null) => (v ? `${v.rounds} / ${v.placementSum}` : "—")
+// Rounds / place sum, or rounds / points where the screenshot gives points instead of places
+const values = (v: { rounds: number; placementSum: number | null; points: number | null } | null) =>
+  !v ? "—" : v.placementSum !== null ? `${v.rounds} / ${v.placementSum}` : `${v.rounds} / ${v.points ?? "—"} pts`
 const result = (r: { won: number | null; lost: number | null; outcome: string | null } | null) =>
   !r ? "—" : r.won !== null && r.lost !== null ? `${r.won}:${r.lost} ${r.outcome ?? ""}` : (r.outcome ?? "—")
 
@@ -104,7 +106,7 @@ export default async function SummaryCompareFilePage({ params }: Props) {
         </Link>
         <h1 className="mt-2 text-2xl font-bold text-fg">{plan.comp || file}</h1>
         <p className="mt-1 text-sm text-fg-muted">
-          Per player: rounds / place sum. Red: screenshot and stored values differ.
+          Per player: rounds / place sum (or points, marked &ldquo;pts&rdquo;). Red: screenshot and stored values differ.
           {!tournamentFound && " The comp is not in the database yet."}
         </p>
       </div>

@@ -606,7 +606,10 @@ model SubMatchSummaryPlayer {
   playerId     String
   player       Player          @relation(fields: [playerId], references: [id], onDelete: Restrict)
   rounds       Int
-  placementSum Int
+  // null: the screenshot gives no places, so the sub-match counts for the record only
+  placementSum Int?
+  // Points instead of places, as some comps (FSM) list them
+  points       Int?
 
   @@unique([summaryId, playerId])
 }

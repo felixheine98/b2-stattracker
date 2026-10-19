@@ -18,7 +18,9 @@ export interface StoredMatch {
 
 interface Values {
   rounds: number
-  placementSum: number
+  // null: given in points instead of places
+  placementSum: number | null
+  points: number | null
 }
 
 export interface ComparedSubMatch {
@@ -40,23 +42,24 @@ type StoredSubMatch = StoredMatch["subMatches"][number]
 function storedValues(sm: StoredSubMatch): Map<string, Values & { name: string }> {
   const values = new Map<string, Values & { name: string }>()
   if (sm.summary) {
-    for (const p of sm.summary.players) values.set(p.tmId, { name: p.playerName, rounds: p.rounds, placementSum: p.placementSum })
+    for (const p of sm.summary.players) values.set(p.tmId, { name: p.playerName, rounds: p.rounds, placementSum: p.placementSum, points: p.points ?? null })
     return values
   }
   for (const round of sm.rounds) {
     const placements = roundPlacements(round.results)
     round.results.forEach((r, i) => {
       if (!r.isOurTeam) return
-      const v = values.get(r.tmId) ?? { name: r.playerName, rounds: 0, placementSum: 0 }
+      const v = values.get(r.tmId) ?? { name: r.playerName, rounds: 0, placementSum: 0, points: null }
       v.rounds++
-      v.placementSum += placements[i]
+      v.placementSum = (v.placementSum ?? 0) + placements[i]
       values.set(r.tmId, v)
     })
   }
   return values
 }
 
-const same = (a: Values | null, b: Values | null) => !!a && !!b && a.rounds === b.rounds && a.placementSum === b.placementSum
+const same = (a: Values | null, b: Values | null) => !!a && !!b && a.rounds === b.rounds && a.placementSum === b.placementSum && a.points === b.points
+const valuesOf = (v: Values): Values => ({ rounds: v.rounds, placementSum: v.placementSum, points: v.points })
 
 // Each sub-match of the screenshot next to the first unused stored sub-match of its format
 export function compareMatch(planned: PlannedMatch, stored: StoredMatch | null): ComparedSubMatch[] {
@@ -76,13 +79,13 @@ export function compareMatch(planned: PlannedMatch, stored: StoredMatch | null):
     const values = sm ? storedValues(sm) : new Map<string, Values & { name: string }>()
     const players: ComparedSubMatch["players"] = psm.players.map((p) => {
       const s = values.get(p.tmId)
-      const fileValues = { rounds: p.rounds, placementSum: p.placementSum }
-      const storedValues = s ? { rounds: s.rounds, placementSum: s.placementSum } : null
+      const fileValues = valuesOf(p)
+      const storedValues = s ? valuesOf(s) : null
       return { tmId: p.tmId, name: p.name, file: fileValues, stored: storedValues, differs: !same(fileValues, storedValues) }
     })
     for (const [tmId, s] of values) {
       if (psm.players.some((p) => p.tmId === tmId)) continue
-      players.push({ tmId, name: s.name, file: null, stored: { rounds: s.rounds, placementSum: s.placementSum }, differs: true })
+      players.push({ tmId, name: s.name, file: null, stored: valuesOf(s), differs: true })
     }
 
     return {

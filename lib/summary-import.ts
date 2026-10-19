@@ -24,7 +24,10 @@ export interface PlannedPlayer {
   name: string
   tmId: string
   rounds: number
-  placementSum: number
+  // null: the screenshot gives no places (points instead), so the sub-match counts for the record only
+  placementSum: number | null
+  // Points instead of places, as some comps (FSM) list them
+  points: number | null
 }
 
 export interface PlannedSubMatch {
@@ -62,7 +65,9 @@ export interface PlannedTotal {
   name: string
   tmId: string
   rounds: number
-  placementSum: number
+  // What the table sums up: places, or points where the comp gives them instead
+  placementSum: number | null
+  points: number | null
   sourceImage: string
 }
 
@@ -187,7 +192,8 @@ export function planSummaryImport(text: string, names: NameEntry[]): SummaryPlan
       rounds = roundsWon + roundsLost
       placementSum = roundsWon + 2 * roundsLost
     }
-    if (rounds === null || placementSum === null) { errors.push(`${at}: rounds and places must be numbers`); continue }
+    const points = cells.points ? int(cells.points) : null
+    if (rounds === null || (cells.places && placementSum === null) || (cells.points && points === null)) { errors.push(`${at}: rounds, places and points must be numbers`); continue }
 
     // The rounds of the sub-match: those of whoever drove the most, results left out included
     sm.rounds = Math.max(sm.rounds, rounds, (roundsWon ?? 0) + (roundsLost ?? 0))
@@ -198,10 +204,10 @@ export function planSummaryImport(text: string, names: NameEntry[]): SummaryPlan
     const tmId = found[0].tmId
     if (tmId === null) continue
     const field = 2 * (teamSize(format) ?? 1)
-    if (placementSum < rounds) { errors.push(`${at}: ${placementSum} places in ${rounds} rounds is less than first place every round`); continue }
-    if (placementSum > rounds * field) { errors.push(`${at}: ${placementSum} places in ${rounds} rounds is more than last place (${field}) every round`); continue }
+    if (placementSum !== null && placementSum < rounds) { errors.push(`${at}: ${placementSum} places in ${rounds} rounds is less than first place every round`); continue }
+    if (placementSum !== null && placementSum > rounds * field) { errors.push(`${at}: ${placementSum} places in ${rounds} rounds is more than last place (${field}) every round`); continue }
     if (sm.players.some((p) => p.tmId === tmId)) { errors.push(`${at}: ${found[0].player} (${tmId}) is listed twice in this sub-match`); continue }
-    sm.players.push({ name: cells.name, tmId, rounds, placementSum })
+    sm.players.push({ name: cells.name, tmId, rounds, placementSum, points })
   }
 
   const totals: PlannedTotal[] = []
@@ -209,17 +215,20 @@ export function planSummaryImport(text: string, names: NameEntry[]): SummaryPlan
     const at = `line ${line}`
     const format = FORMATS[cells.format.toLowerCase()]
     const stages = cells.stages === "*" ? null : cells.stages.split(",").map((key) => parseStage(key.trim()))
-    const rounds = int(cells.rounds), placementSum = int(cells.places)
+    const rounds = int(cells.rounds), placementSum = cells.places ? int(cells.places) : null, points = cells.points ? int(cells.points) : null
     if (!format) { errors.push(`${at}: format "${cells.format}" unknown`); continue }
     if (stages?.some((st) => st === null)) { errors.push(`${at}: stages must be "*" or a list such as MD1,MD2`); continue }
-    if (rounds === null || placementSum === null) { errors.push(`${at}: rounds and places must be numbers`); continue }
+    if (rounds === null || (cells.places && placementSum === null) || (cells.points && points === null) || (placementSum === null && points === null)) {
+      errors.push(`${at}: rounds and places or points must be numbers`)
+      continue
+    }
     // The day of the team's last match in scope decides what a nickname stands for
     const dates = matches.filter((m) => m.team === cells.team && inStages(m, stages as PlannedTotal["stages"])).map((m) => m.date).filter((d): d is string => !!d)
     const found = lookup(names, cells.name, dates.sort().at(-1) ?? null)
     if (found.length === 0) { errors.push(`${at}: name "${cells.name}" is not in the name list`); continue }
     if (found.length > 1) { errors.push(`${at}: name "${cells.name}" stands for several players`); continue }
     if (found[0].tmId === null) continue
-    totals.push({ line, team: cells.team, stages: stages as PlannedTotal["stages"], scope: cells.stages, format, name: cells.name, tmId: found[0].tmId, rounds, placementSum, sourceImage: cells.screenshot })
+    totals.push({ line, team: cells.team, stages: stages as PlannedTotal["stages"], scope: cells.stages, format, name: cells.name, tmId: found[0].tmId, rounds, placementSum, points, sourceImage: cells.screenshot })
   }
 
   return { comp, meta, matches, totals, errors }
@@ -244,29 +253,32 @@ export function checkTotals(plan: SummaryPlan): string[] {
   }
   for (const rows of groups.values()) {
     const { team, stages, scope, format, sourceImage } = rows[0]
-    const sums = new Map<string, { name: string; rounds: number; placementSum: number }>()
+    // A table sums up places, or points where the comp gives them instead
+    const unit = rows[0].placementSum === null ? "points" : "places"
+    const sums = new Map<string, { name: string; rounds: number; value: number }>()
     for (const match of plan.matches) {
       if (match.team !== team || !inStages(match, stages)) continue
       for (const sm of match.subMatches) {
         if (sm.format !== format) continue
         for (const p of sm.players) {
-          const sum = sums.get(p.tmId) ?? { name: p.name, rounds: 0, placementSum: 0 }
+          const sum = sums.get(p.tmId) ?? { name: p.name, rounds: 0, value: 0 }
           sum.rounds += p.rounds
-          sum.placementSum += p.placementSum
+          sum.value += (unit === "points" ? p.points : p.placementSum) ?? 0
           sums.set(p.tmId, sum)
         }
       }
     }
     const label = `${team} ${scope} ${FORMAT_KEYS[format]}`
     for (const total of rows) {
-      const sum = sums.get(total.tmId) ?? { rounds: 0, placementSum: 0 }
-      if (sum.rounds !== total.rounds || sum.placementSum !== total.placementSum) {
-        differences.push(`${label} ${total.name} (line ${total.line}): total ${total.rounds} rounds / ${total.placementSum} places, matches ${sum.rounds} / ${sum.placementSum}`)
+      const sum = sums.get(total.tmId) ?? { rounds: 0, value: 0 }
+      const value = unit === "points" ? total.points : total.placementSum
+      if (sum.rounds !== total.rounds || sum.value !== value) {
+        differences.push(`${label} ${total.name} (line ${total.line}): total ${total.rounds} rounds / ${value} ${unit}, matches ${sum.rounds} / ${sum.value}`)
       }
     }
     for (const [tmId, sum] of sums) {
       if (sum.rounds > 0 && !rows.some((t) => t.tmId === tmId)) {
-        differences.push(`${label} ${sum.name}: ${sum.rounds} rounds / ${sum.placementSum} places in the matches, not in the total (screenshot ${sourceImage})`)
+        differences.push(`${label} ${sum.name}: ${sum.rounds} rounds / ${sum.value} ${unit} in the matches, not in the total (screenshot ${sourceImage})`)
       }
     }
   }

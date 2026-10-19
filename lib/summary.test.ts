@@ -11,7 +11,7 @@ describe("shapeSummaries", () => {
           format: "ROUND_4V4",
           summary: {
             track: "Roquende", rounds: 12, roundsWon: 3, roundsLost: 7, outcome: "L", sourceUrl: "https://discord.com/x", sourceImage: "1_0",
-            players: [{ playerId: "p1", rounds: 12, placementSum: 60, player: { tmId: "tm1", name: "Sebi" } }],
+            players: [{ playerId: "p1", rounds: 12, placementSum: 60, points: null, player: { tmId: "tm1", name: "Sebi" } }],
           },
         },
       ],
@@ -19,7 +19,19 @@ describe("shapeSummaries", () => {
     expect(match.subMatches[0].summary).toBeNull()
     expect(match.subMatches[1].summary).toEqual({
       track: "Roquende", rounds: 12, roundsWon: 3, roundsLost: 7, outcome: "L", sourceUrl: "https://discord.com/x", sourceImage: "1_0",
-      players: [{ playerId: "p1", tmId: "tm1", playerName: "Sebi", rounds: 12, placementSum: 60 }],
+      players: [{ playerId: "p1", tmId: "tm1", playerName: "Sebi", rounds: 12, placementSum: 60, points: null }],
     })
+  })
+
+  it("keeps the points of a sub-match given in points instead of places", () => {
+    const [match] = shapeSummaries([{
+      subMatches: [{
+        summary: {
+          track: "Szimpla", rounds: 6, roundsWon: 1, roundsLost: 5, outcome: "L", sourceUrl: "https://discord.com/x", sourceImage: "1_0",
+          players: [{ playerId: "p1", rounds: 6, placementSum: null, points: 3, player: { tmId: "tm1", name: "Clin" } }],
+        },
+      }],
+    }])
+    expect(match.subMatches[0].summary!.players).toEqual([{ playerId: "p1", tmId: "tm1", playerName: "Clin", rounds: 6, placementSum: null, points: 3 }])
   })
 })

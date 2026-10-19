@@ -188,4 +188,12 @@ describe("buildAggregates: summary results", () => {
     expect(agg.players.get("anna")).toMatchObject({ dnfs: 0 })
     expect(agg.players.get("anna")!.pace.rounds).toBe(0)
   })
+
+  it("counts a sub-match without places (points instead) for the record only", () => {
+    const pointsOnly = { ...player("anna", 9, 0), placementSum: null, points: 30 }
+    const [agg] = buildAggregates([summarised({ players: [pointsOnly] })])
+
+    expect(agg).toMatchObject({ teamRoundsWon: 2, teamRoundsLost: 5, mapLost: 1 })
+    expect(agg.players.get("anna")).toMatchObject({ roundsPlayed: 0, placementSum: 0, roundsWon: 2, roundsLost: 5 })
+  })
 })

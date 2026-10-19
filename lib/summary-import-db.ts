@@ -98,7 +98,7 @@ export async function importSummary(plan: SummaryPlan, client: PrismaClient): Pr
                   outcome: sm.outcome,
                   sourceUrl: sm.sourceUrl,
                   sourceImage: sm.sourceImage,
-                  players: { create: sm.players.map((p) => ({ playerId: playerOf.get(p.tmId)!, rounds: p.rounds, placementSum: p.placementSum })) },
+                  players: { create: sm.players.map((p) => ({ playerId: playerOf.get(p.tmId)!, rounds: p.rounds, placementSum: p.placementSum, points: p.points })) },
                 },
               },
             })),

@@ -189,7 +189,7 @@ describe("buildProfile: styles", () => {
 })
 
 describe("buildProfile: summary results", () => {
-  function summarised(players: Array<[string, number, number]>, extra: Partial<ProfileMatch> = {}): ProfileMatch {
+  function summarised(players: Array<[string, number, number | null]>, extra: Partial<ProfileMatch> = {}): ProfileMatch {
     return match([], {
       subMatches: [{
         format: "ROUND_4V4",
@@ -225,5 +225,12 @@ describe("buildProfile: summary results", () => {
   it("leaves a summary in the seeding out", () => {
     const profile = buildProfile("anna", [t1], [summarised([["anna", 12, 60]], { stage: { type: "SEEDING" } })])
     expect(profile.total.roundsPlayed).toBe(0)
+  })
+
+  it("counts a summary without places (points instead) for the record only, and still lists the match", () => {
+    const profile = buildProfile("anna", [t1], [summarised([["anna", 12, null]])])
+
+    expect(profile.total).toMatchObject({ roundsPlayed: 0, placementSum: 0, roundsWon: 3, roundsLost: 7 })
+    expect(profile.comps[0].deployed).toBe(true)
   })
 })

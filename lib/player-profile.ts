@@ -153,8 +153,11 @@ export function buildProfile(playerId: string, tournaments: ProfileTournament[],
           const { won, lost } = playerRecord(sm.summary, sp)
           for (const key of keys) {
             const acc = entry(entry(scopes, key, () => new Map<string, Acc>()), sp.playerId, emptyAcc)
-            acc.roundsPlayed += sp.rounds
-            acc.placementSum += sp.placementSum
+            // Without places the rounds would lower the average place, so they count for the record only
+            if (sp.placementSum !== null) {
+              acc.roundsPlayed += sp.rounds
+              acc.placementSum += sp.placementSum
+            }
             acc.roundsWon += won
             acc.roundsLost += lost
           }

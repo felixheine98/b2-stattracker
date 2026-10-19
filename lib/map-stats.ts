@@ -97,8 +97,11 @@ export function buildMapAggregates(matches: StatsMatch[], stageOrder: string[]):
           }
           const p = agg.players.get(sp.tmId)!
           const { won, lost } = playerRecord(summary, sp)
-          p.rounds += sp.rounds
-          p.placementSum += sp.placementSum
+          // Without places the rounds would lower the average place, so they count for the record only
+          if (sp.placementSum !== null) {
+            p.rounds += sp.rounds
+            p.placementSum += sp.placementSum
+          }
           p.roundsWon += won
           p.roundsLost += lost
         }

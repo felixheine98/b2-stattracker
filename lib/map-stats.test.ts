@@ -115,7 +115,7 @@ describe("matchesOfFormats", () => {
 })
 
 describe("buildMapAggregates: summary results", () => {
-  const summary = (track: string | null, players: Array<[string, number, number]>) => ({
+  const summary = (track: string | null, players: Array<[string, number, number | null]>) => ({
     format: "ROUND_4V4" as const,
     rounds: [],
     summary: {
@@ -139,5 +139,11 @@ describe("buildMapAggregates: summary results", () => {
   it("puts a summary without a map with the rounds that have no map entered", () => {
     const [none] = buildMapAggregates([match([summary(null, [["anna", 12, 60]])])], ["md1"])
     expect(none).toMatchObject({ track: null, mapLost: 1 })
+  })
+
+  it("counts a sub-match without places (points instead) for the record only", () => {
+    const [a] = buildMapAggregates([match([summary("Szimpla", [["anna", 12, null]])])], ["md1"])
+    expect(a).toMatchObject({ teamRoundsWon: 3, teamRoundsLost: 7, mapLost: 1 })
+    expect(a.players.get("anna")).toMatchObject({ rounds: 0, placementSum: 0, roundsWon: 3, roundsLost: 7 })
   })
 })

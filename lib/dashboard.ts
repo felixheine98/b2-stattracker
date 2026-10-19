@@ -140,6 +140,8 @@ export function bestPerformer(matches: DashMatch[], { minRoundShare = 0 }: { min
     if (!counted(match)) continue
     for (const sm of match.subMatches) {
       for (const sp of sm.summary?.players ?? []) {
+        // Without places (points instead) there is nothing to compare
+        if (sp.placementSum === null) continue
         // Same as the rounds below, summed up: a summary only knows the sum of the places
         const field = 2 * (teamSize(sm.format) ?? 0)
         const player = players.get(sp.tmId) ?? { name: sp.playerName, currentName: sp.currentName, placeSum: 0, shareSum: 0, rounds: 0, lineups: new Map() }

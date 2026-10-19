@@ -39,6 +39,25 @@ describe("planSummaryImport", () => {
       },
     ])
   })
+
+  it("takes a sub-match given in points instead of places for the record only, keeping the points", () => {
+    const plan = planSummaryImport([
+      "# comp: FSM S1", "", "## matches", `${HEAD}\tpoints`,
+      "B2 eSports\tMD2\t1\tTeamNL\t2025-03-30\t2\t2v2\tSzimpla\t1\t5\tL\t1355962953890791534_0\tSebi\t6\t\t3",
+      "B2 eSports\tMD2\t1\tTeamNL\t2025-03-30\t2\t2v2\tSzimpla\t1\t5\tL\t1355962953890791534_0\ts0nity\t6\t\t2",
+      // A 1v1 with the rounds driven but no places: record only, too
+      "B2 eSports\tMD2\t1\tTeamNL\t2025-03-30\t1\t1v1\tSzimpla\t7\t0\tW\t1355962953890791534_0\tRain\t8\t\t",
+    ].join("\n"), names)
+
+    expect(plan.errors).toEqual([])
+    const [twos, ones] = plan.matches[0].subMatches
+    expect(twos.players).toEqual([
+      { name: "Sebi", tmId: "tm-sebi", rounds: 6, placementSum: null, points: 3 },
+      { name: "s0nity", tmId: "tm-sonity", rounds: 6, placementSum: null, points: 2 },
+    ])
+    expect(ones.rounds).toBe(8)
+    expect(ones.players).toEqual([{ name: "Rain", tmId: "tm-rain", rounds: 8, placementSum: null, points: null }])
+  })
 })
 
 describe("planSummaryImport: checks", () => {
@@ -118,5 +137,17 @@ describe("checkTotals", () => {
       "B2 Rising * 2v2 Sebi (line 13): total 29 rounds / 75 places, matches 29 / 74",
       "B2 Rising * 2v2 Rain: 19 rounds / 50 places in the matches, not in the total (screenshot 3_0)",
     ])
+  })
+
+  it("checks a total given in points against the points of the matches", () => {
+    const plan = planSummaryImport([
+      "# comp: FSM S1", "", "## matches", `${HEAD}\tpoints`,
+      "B2 eSports\tMD1\t1\tSzimpla\t2025-03-23\t1\t2v2\t\t5\t2\tW\t1_0\tSebi\t7\t\t20",
+      "B2 eSports\tMD2\t1\tTeamNL\t2025-03-30\t1\t2v2\t\t1\t5\tL\t2_0\tSebi\t6\t\t3",
+      "", "## totals", "team\tstages\tformat\tname\trounds\tplaces\tpoints\tscreenshot",
+      "B2 eSports\t*\t2v2\tSebi\t13\t\t24\t3_0",
+    ].join("\n"), names)
+    expect(plan.errors).toEqual([])
+    expect(checkTotals(plan)).toEqual(["B2 eSports * 2v2 Sebi (line 10): total 13 rounds / 24 points, matches 13 / 23"])
   })
 })

@@ -77,6 +77,15 @@ describe.skipIf(process.env.DB_TESTS !== "1")("summary import with PostgreSQL", 
     expect(matches[0].subMatches[0].summary).toBeNull()
   })
 
+  it("stores the points of a sub-match given in points instead of places", async () => {
+    const withPoints = planSummaryImport(["# comp: FSM S1", ...newComp, "## matches", `${HEAD}\tpoints`,
+      "B2 eSports\tMD2\t1\tTeamNL\t2025-03-30\t1\t2v2\tSzimpla\t1\t5\tL\t222_0\tSebi\t6\t\t3",
+    ].join("\n"), names)
+    await importSummary(withPoints, client)
+    const players = await client.subMatchSummaryPlayer.findMany({ where: { summary: { subMatch: { match: { tournament: { name: "FSM S1" } } } } } })
+    expect(players.map((p) => [p.rounds, p.placementSum, p.points])).toEqual([[6, null, 3]])
+  })
+
   it("refuses an unknown comp that is not marked for creation and a player that does not exist", async () => {
     await expect(importSummary(plan("Nowhere", [], ...rows), client)).rejects.toThrow(`Comp "Nowhere" not found`)
     const ghost = planSummaryImport(["# comp: SMS S1", "## matches", HEAD, "B2 Rising\tMD1\t1\tX\t\t1\t2v2\t\t\t\tW\t1_0\tGhost\t9\t20"].join("\n"), parseNames("name\ttmId\tplayer\nGhost\ttm-ghost\tGhost"))

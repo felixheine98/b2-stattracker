@@ -166,7 +166,7 @@ describe("latestStageId", () => {
 })
 
 describe("summary results", () => {
-  function summarised(outcome: "W" | "L", roundsWon: number | null, roundsLost: number | null, players: Array<[string, number, number]>, extra: Partial<DashMatch> = {}): DashMatch {
+  function summarised(outcome: "W" | "L", roundsWon: number | null, roundsLost: number | null, players: Array<[string, number, number | null]>, extra: Partial<DashMatch> = {}): DashMatch {
     return match([], {
       subMatches: [{
         format: "ROUND_2V2",
@@ -187,5 +187,9 @@ describe("summary results", () => {
     // anna: average 2 of 4, ben: average 3 of 4 over the rounds
     const best = bestPerformer([summarised("L", 2, 5, [["anna", 9, 18], ["ben", 9, 27]])])
     expect(best).toMatchObject({ tmId: "anna", rounds: 9, avgPlace: 2, lineupId: "alpha" })
+  })
+
+  it("without places (points instead) do not count for the best performer", () => {
+    expect(bestPerformer([summarised("L", 2, 5, [["anna", 9, null]])])).toBeNull()
   })
 })
