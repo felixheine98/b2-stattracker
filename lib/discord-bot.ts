@@ -66,6 +66,11 @@ const botConfig = (): BotConfig => ({ url: process.env.DISCORD_BOT_URL, token: p
 
 const trackedSchema = z.object({ guildId: z.string(), messages: z.array(z.object({
   messageId: z.string(), channelId: z.string().nullable(), since: z.string(), reactions: z.number().int(), lastAt: z.string().nullable(),
+  // What the message is, read from Discord; missing when the bot was not asked, null when Discord no longer has it
+  preview: z.object({
+    channelName: z.string().nullable(), author: z.string().nullable(), postedAt: z.string(),
+    text: z.string().max(1000), attachments: z.number().int(),
+  }).nullable().optional(),
 })).max(100000) })
 
 // The messages the bot writes reaction times down for

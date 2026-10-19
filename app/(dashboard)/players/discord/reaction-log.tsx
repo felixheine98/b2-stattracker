@@ -42,16 +42,30 @@ export function ReactionLog({ rows, error }: { rows: TrackedRow[]; error: string
       <ul className="divide-y divide-line/60">
         {rows.map(row => (
           <li key={row.messageId} className="flex flex-wrap items-center gap-x-3 gap-y-1 py-2 text-sm">
-            <span className="flex min-w-0 items-center gap-2">
-              {row.link
-                ? <a href={row.link} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 font-mono text-xs text-fg-soft hover:text-fg">{row.messageId} <ExternalLink size={12} /></a>
-                : <span className="font-mono text-xs text-fg-soft">{row.messageId}</span>}
-              {row.usedBy && <Badge>{row.usedBy}</Badge>}
-            </span>
-            <span className="text-xs text-fg-muted">
-              {row.reactions} {row.reactions === 1 ? "reaction" : "reactions"}
-              {row.lastAt ? ` · last ${formatTime(row.lastAt)}` : " · no reactions yet"}
-            </span>
+            <div className="min-w-0 flex-1 basis-64 space-y-0.5">
+              <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-fg">
+                {row.usedBy && <Badge>{row.usedBy}</Badge>}
+                {row.preview
+                  ? <span className="min-w-0 break-words">
+                      {row.preview.channelName && <span className="text-fg-muted">#{row.preview.channelName} · </span>}
+                      <span className="font-medium">{row.preview.author ?? "Unknown"}</span>
+                      <span className="text-fg-muted"> · {formatTime(row.preview.postedAt)}</span>
+                    </span>
+                  : <span className="text-fg-muted">{row.preview === null ? "Not found on Discord any more" : "Message"}</span>}
+                {row.link
+                  ? <a href={row.link} target="_blank" rel="noreferrer" aria-label="Open on Discord" className="inline-flex items-center gap-1 font-mono text-xs text-fg-subtle hover:text-fg">{row.messageId} <ExternalLink size={12} /></a>
+                  : <span className="font-mono text-xs text-fg-subtle">{row.messageId}</span>}
+              </p>
+              {(row.preview?.text || row.preview?.attachments) ? (
+                <p className="line-clamp-2 break-words text-xs text-fg-soft">
+                  {row.preview.text || ""}{row.preview.attachments > 0 && <span className="text-fg-muted"> {row.preview.text ? "· " : ""}{row.preview.attachments} {row.preview.attachments === 1 ? "attachment" : "attachments"}</span>}
+                </p>
+              ) : null}
+              <p className="text-xs text-fg-muted">
+                {row.reactions} {row.reactions === 1 ? "reaction" : "reactions"}
+                {row.lastAt ? ` · last ${formatTime(row.lastAt)}` : " · no reactions yet"}
+              </p>
+            </div>
             <Button size="sm" variant="ghost" className="ml-auto" disabled={busy} onClick={() => remove([row.messageId])} aria-label={`Remove message ${row.messageId}`}>
               <Trash2 size={14} /> Remove
             </Button>
