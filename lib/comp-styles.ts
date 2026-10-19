@@ -26,9 +26,13 @@ export const styleLabel = (style: CompStyle): string => LABELS[style]
 // How the style is written in the address
 export const styleParam = (style: CompStyle): string => style.toLowerCase()
 
-// The styles that have at least one of the tournaments; only these are offered as a filter
+// The styles that have at least one of the tournaments; only these are offered as a filter.
+// Mixed comes first, the others follow alphabetically by their name on the page.
 export function stylesInUse(tournaments: Array<{ style: CompStyle }>): CompStyle[] {
-  return STYLE_ORDER.filter((style) => tournaments.some((t) => t.style === style))
+  return STYLE_ORDER.filter((style) => tournaments.some((t) => t.style === style)).sort((a, b) => {
+    if (a === "MIXED" || b === "MIXED") return a === "MIXED" ? -1 : 1
+    return LABELS[a].localeCompare(LABELS[b])
+  })
 }
 
 // The tournaments of a style; all of them without one
