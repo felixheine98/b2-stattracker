@@ -196,8 +196,8 @@ function MatchTable({ matches }: { matches: CompView["matches"] }) {
   )
 }
 
-function CompCard({ comp, initiallyOpen }: { comp: CompView; initiallyOpen: boolean }) {
-  const [open, setOpen] = useState(initiallyOpen)
+function CompCard({ comp }: { comp: CompView }) {
+  const [open, setOpen] = useState(false)
   return (
     <div className="overflow-hidden rounded-xl border border-line bg-surface">
       <button
@@ -392,7 +392,7 @@ export function PlayerProfileView({ player: initial, total, formats, styles, com
 
           <section className="page-main space-y-3">
             <h2 className="text-lg font-semibold text-fg">Tournaments</h2>
-            {comps.map((comp, i) => <CompCard key={comp.tournamentId} comp={comp} initiallyOpen={i === 0} />)}
+            {comps.map((comp) => <CompCard key={comp.tournamentId} comp={comp} />)}
           </section>
         </>
       )}
