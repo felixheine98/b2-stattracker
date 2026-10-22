@@ -49,8 +49,10 @@ lesen, wird nichts entfernt. Von Hand entfernen geht jederzeit auf „Discord ac
 
 Die Vorschau nennt pro Antwort die Zeit der letzten Reaktion dafür (bei Konflikten pro
 Auswahl). „Apply“ speichert sie als `answeredAt` am Eintrag; Admins und Manager sehen sie in der
-Planungsliste. Eine Antwort, die jemand von Hand setzt, löscht sie. Neben dem Link steht
-außerdem, wann zuletzt abgerufen wurde.
+Planung in der Gruppen- und Listenansicht. Eine Antwort, die jemand von Hand setzt, löscht sie.
+Beim Knopf „Fetch reactions“ steht unter „Last fetched“ außerdem der letzte erfolgreiche Abruf
+mit Datum und Uhrzeit (Europe/Berlin), auch beim Bearbeiten des Announcement-Links.
+Fehlt ein gespeicherter Abrufzeitpunkt, steht dort „No fetch time recorded“.
 
 Die Vorschau ist 15 Minuten gültig. Ändert jemand die Antworten der Planung seit dem
 Abruf, ist vor dem Speichern ein neuer Abruf notwendig; Link und Emoji-Zuordnung zu
