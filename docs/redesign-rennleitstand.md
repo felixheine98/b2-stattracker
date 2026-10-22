@@ -4,7 +4,7 @@ Entwurf vom 22.10.2026 auf `redesign/rennleitstand`, zunächst ausschließlich i
 
 ## Gestaltung
 
-B2-Blau `#002484` trägt die Navigation und die Ergebnisleisten. Deren gelbe Unterkante `#FBD00D` ist das gemeinsame Match-Motiv. Die helle Ansicht nutzt `#F1F4FA` mit weißen Arbeitsflächen, die dunkle Ansicht `#101D36` mit navyfarbenen Flächen. Vorhandene Themes und die gespeicherte Auswahl bleiben erhalten. Die helle Variante des Entwurfs lässt sich unter **Appearance → B2 Light** ansehen.
+B2-Blau `#002484` trägt die Navigation und die Ergebnisleisten. Deren gelbe Unterkante `#FBD00D` ist das gemeinsame Match-Motiv. Die vorhandenen Theme-Paletten bleiben unverändert: unter anderem das bisherige B2 Dark, B2 Light, Warm Light, Midnight, OLED Black und B2 Blue. Das neue Layout verwendet deren bestehende Farben weiter; die gespeicherte Theme-Auswahl bleibt erhalten. Die helle Variante des Entwurfs lässt sich unter **Appearance → B2 Light** ansehen.
 
 IBM Plex Sans ist die Leseschrift, Barlow Semi Condensed setzt Seitentitel und Ergebnisse. Vergleichbare Zahlen nutzen tabellarische Ziffern. Technische Kennungen und Zeit-Eingaben dürfen weiter Monospace verwenden. Abschnittstitel sind nicht mehr durchgehend großgeschrieben.
 

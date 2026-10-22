@@ -5,16 +5,16 @@
      in the dark */
   color-scheme: dark;
 
-  --bg: #101d36;
-  --surface: #192a48;
-  --surface-raised: #233958;
-  --border: #304665;
-  --border-strong: #50698b;
+  --bg: #0e0b0b;
+  --surface: #1c1819;
+  --surface-raised: #251f20;
+  --border: #2d2829;
+  --border-strong: #3a3435;
 
-  --fg: #f3f6fc;
-  --fg-soft: #d6e0f0;
-  --fg-muted: #b5c3da;
-  --fg-subtle: #98accb;
+  --fg: #f5f0f0;
+  --fg-soft: #c5bfbf;
+  --fg-muted: #9a9090;
+  --fg-subtle: #5e5858;
 
   --primary: #FBD00D;
   --primary-hover: #e6bc0c;
@@ -36,11 +36,11 @@
 
   /* Stats tables: on the dark theme only the head stands out from the page */
   --table-head: var(--surface);
-  --table-row: var(--surface);
+  --table-row: transparent;
   /* The first column stays in place when a table scrolls sideways and has to cover what passes under it */
-  --table-cell: var(--surface);
-  --table-rule: var(--border);
-  --table-hover: #233958;
+  --table-cell: var(--bg);
+  --table-rule: var(--surface);
+  --table-hover: rgb(28 24 25 / 0.6);
 }
 
 /* Dark alternatives keep the same accent and status colours. */
@@ -54,7 +54,7 @@
   --fg: #eef3fc;
   --fg-soft: #c2cde0;
   --fg-muted: #94a5c1;
-  --fg-subtle: #9aacc7;
+  --fg-subtle: #7183a0;
 
   --table-hover: rgb(27 41 66 / 0.6);
 }
@@ -69,7 +69,7 @@
   --fg: #f5f5f5;
   --fg-soft: #c9c9c9;
   --fg-muted: #a0a0a0;
-  --fg-subtle: #a0a0a0;
+  --fg-subtle: #737373;
 
   --table-hover: rgb(23 23 23 / 0.7);
 }
@@ -84,7 +84,7 @@
   --fg: #f3f6ff;
   --fg-soft: #d6e2ff;
   --fg-muted: #b0c4ef;
-  --fg-subtle: #b0c4ef;
+  --fg-subtle: #88a4d9;
 
   --info: #a8c4ff;
   --table-hover: rgb(16 61 160 / 0.6);
@@ -97,16 +97,16 @@
 :root[data-theme="warm-light"] {
   color-scheme: light;
 
-  --bg: #f1f4fa;
+  --bg: #f4f2ee;
   --surface: #ffffff;
-  --surface-raised: #edf2fc;
-  --border: #d5ddea;
-  --border-strong: #a8b7ce;
+  --surface-raised: #efece6;
+  --border: #e0dbd3;
+  --border-strong: #c9c2b8;
 
-  --fg: #152746;
-  --fg-soft: #354b6c;
-  --fg-muted: #546580;
-  --fg-subtle: #61718a;
+  --fg: #1a1718;
+  --fg-soft: #3d3839;
+  --fg-muted: #696162;
+  --fg-subtle: #8a8283;
 
   --primary-ink: #002484;
 
@@ -121,10 +121,10 @@
 
   /* Stats tables: white rows under a grey head, so they stand out from the page */
   --table-head: var(--surface-raised);
-  --table-row: var(--surface);
-  --table-cell: var(--surface);
-  --table-rule: var(--border);
-  --table-hover: #edf2fc;
+  --table-row: transparent;
+  --table-cell: var(--bg);
+  --table-rule: var(--surface);
+  --table-hover: #f8f6f2;
 }
 
 /* A softer, distinctly cream alternative, with the same readable light-theme accents. */
@@ -138,17 +138,9 @@
   --fg: #33291f;
   --fg-soft: #514337;
   --fg-muted: #756452;
-  --fg-subtle: #756452;
+  --fg-subtle: #8b7965;
 
   --table-hover: #f4ead8;
-}
-
-/* Selection is blue on light surfaces, while the result stripe stays team yellow. */
-:root[data-theme="light"],
-:root[data-theme="warm-light"] {
-  --primary: #002484;
-  --primary-hover: #001e70;
-  --primary-fg: #ffffff;
 }
 
 /* For the few things that differ by more than a colour: light:hidden, light:block, ... */
