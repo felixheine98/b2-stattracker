@@ -71,7 +71,7 @@ export function Sidebar({ userName, role, profileHref, styles }: SidebarProps) {
       </button>
       <div className={cn("flex items-center gap-3 py-4 border-b border-line", collapsed ? "justify-center px-2" : "px-5")}>
         <BrandLogo className={cn("object-contain", collapsed ? "h-9 w-9" : "h-11 w-11")} />
-        {!collapsed && <span className="font-semibold text-white text-xl tracking-tight">B2 Stats</span>}
+        {!collapsed && <span className="font-semibold text-fg text-xl tracking-tight">B2 Stats</span>}
       </div>
 
       <nav className="min-h-0 flex-1 space-y-0.5 overflow-y-auto px-3 py-4">

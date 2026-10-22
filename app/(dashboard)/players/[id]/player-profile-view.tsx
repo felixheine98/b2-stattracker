@@ -303,11 +303,11 @@ export function PlayerProfileView({ player: initial, total, formats, styles, com
         Players
       </Link>
 
-      <div className="flex flex-wrap items-start justify-between gap-4">
+      <div className="profile-hero flex flex-wrap items-start justify-between gap-4">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
             <PlayerAvatar player={player} className="h-8 w-8 text-base" />
-            <h1 className="break-words   text-fg page-title">{player.name}</h1>
+            <h1 className="break-words text-fg page-title">{player.name}</h1>
             <Badge variant={status === "MEMBER" ? "primary" : status === "TRIAL" ? "secondary" : "default"}>{STATUS_TEXT[status]}</Badge>
             {player.inactive && <Badge variant="purple" title="Does not drive competitions as a rule">{INACTIVE_LABEL}</Badge>}
           </div>
