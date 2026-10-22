@@ -12,20 +12,20 @@ interface Params {
 }
 
 // Who may plan: the lineup's managers (until a week after the tournament) and admins and managers
-async function access({ params }: Params) {
-  if (!matchdayPlanningEnabled()) return { error: NextResponse.json({ error: "Not found" }, { status: 404 }) }
+async function access({ params }: Params): Promise<{ ok: false; response: NextResponse } | { ok: true; lineup: NonNullable<Awaited<ReturnType<typeof findPlanLineup>>>; stageId: string }> {
+  if (!matchdayPlanningEnabled()) return { ok: false, response: NextResponse.json({ error: "Not found" }, { status: 404 }) }
   const user = await sessionUser()
-  if (!user) return { error: NextResponse.json({ error: "Unauthorized" }, { status: 401 }) }
+  if (!user) return { ok: false, response: NextResponse.json({ error: "Unauthorized" }, { status: 401 }) }
   const { id, lineupId, stageId } = await params
   const lineup = await findPlanLineup(id, lineupId, stageId)
-  if (!lineup) return { error: NextResponse.json({ error: "Not found" }, { status: 404 }) }
-  if (!mayEditLineup(user, lineup)) return { error: NextResponse.json({ error: "Forbidden" }, { status: 403 }) }
-  return { lineup, stageId }
+  if (!lineup) return { ok: false, response: NextResponse.json({ error: "Not found" }, { status: 404 }) }
+  if (!mayEditLineup(user, lineup)) return { ok: false, response: NextResponse.json({ error: "Forbidden" }, { status: 403 }) }
+  return { ok: true, lineup, stageId }
 }
 
 export async function GET(_req: Request, ctx: Params) {
   const found = await access(ctx)
-  if ("error" in found) return found.error
+  if (!found.ok) return found.response
   return NextResponse.json(await loadPlan(found.lineup.id, found.stageId))
 }
 
@@ -47,7 +47,7 @@ const bad = (error: string, status = 400) => NextResponse.json({ error }, { stat
 
 export async function PATCH(req: Request, ctx: Params) {
   const found = await access(ctx)
-  if ("error" in found) return found.error
+  if (!found.ok) return found.response
   const parsed = actionSchema.safeParse(await req.json().catch(() => null))
   if (!parsed.success) return bad(parsed.error.issues[0].message)
   const body = parsed.data
