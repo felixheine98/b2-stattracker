@@ -377,7 +377,13 @@ html {
   text-align: center;
 }
 .result-board-detail { display: block; margin-top: .5rem; color: var(--fg-muted); font-family: var(--font-body), sans-serif; font-size: .75rem; line-height: 1.4; font-weight: 400; }
-.metric-strip { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); border-block: 1px solid var(--border); }
+.metric-strip {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  border: 1px solid var(--border-strong);
+  border-radius: .75rem;
+  background: var(--surface);
+}
 .metric-tile { min-width: 0; padding: 1rem; }
 .metric-tile + .metric-tile { border-left: 1px solid var(--border); }
 .metric-tile:nth-child(odd) { border-left: 0; }

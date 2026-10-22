@@ -82,7 +82,7 @@ function Tile({ label, value, hint }: { label: string; value: React.ReactNode; h
     <div className="metric-tile">
       <p className="text-xs text-fg-muted">{label}</p>
       <p className="metric-value text-fg">{value}</p>
-      {hint && <p className="mt-0.5 text-xs text-fg-subtle">{hint}</p>}
+      {hint && <p className="mt-0.5 text-xs text-fg-muted">{hint}</p>}
     </div>
   )
 }

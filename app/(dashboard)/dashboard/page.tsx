@@ -30,7 +30,7 @@ function Tile({ label, value, hint, icon }: { label: string; value: React.ReactN
         {icon}
       </p>
       <p className="metric-value text-fg">{value}</p>
-      {hint && <p className="mt-0.5 text-xs text-fg-subtle">{hint}</p>}
+      {hint && <p className="mt-0.5 text-xs text-fg-muted">{hint}</p>}
     </div>
   )
 }
