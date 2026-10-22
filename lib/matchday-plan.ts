@@ -49,6 +49,16 @@ export function matchLineup(variant: PlanVariant, match: PlanMatch): Seats {
   return lineup
 }
 
+// Puts a player on a place of a format. A player already driving the format swaps places with
+// the one there; a player from outside the format takes the place.
+export function placePlayer(seats: Seats, format: Format, index: number, playerId: string | null): Seats {
+  const places = fit(seats[format] ?? [], format)
+  const from = playerId ? places.indexOf(playerId) : -1
+  if (from >= 0) places[from] = places[index]
+  places[index] = playerId
+  return { ...seats, [format]: places }
+}
+
 // A planned player who is not there for a match
 export interface PlanAbsence {
   playerId: string

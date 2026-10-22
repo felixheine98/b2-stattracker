@@ -2,19 +2,18 @@
 
 import Link from "next/link"
 import { useState } from "react"
-import { AlertTriangle, ArrowLeft, CheckCircle2, ClipboardList, Copy, Pencil, Plus, Trash2, Users } from "lucide-react"
+import { AlertTriangle, ArrowLeft, CheckCircle2, ClipboardList, Copy, Pencil, Plus, Trash2, Users, X } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
-import { Select } from "@/components/ui/select"
 import { BASE_PATH } from "@/lib/base-path"
 import { matchTag } from "@/lib/match-order"
 import {
   hasUnpublishedChanges,
   matchLineup,
   planHints,
-  planPool,
+  placePlayer,
   type MatchdayAnswer,
   type PlanHint,
   type PlanVariant,
@@ -40,22 +39,27 @@ interface Props {
   dayFormats: Format[]
 }
 
-const ANSWERS: Array<{ value: MatchdayAnswer | ""; label: string }> = [
-  { value: "", label: "No answer" },
-  { value: "FIX", label: "Fix" },
-  { value: "PARTIAL", label: "Partly" },
-  { value: "MAYBE", label: "Maybe" },
-  { value: "OUT", label: "Out" },
+const ANSWERS: Array<{ value: MatchdayAnswer; label: string; on: string }> = [
+  { value: "FIX", label: "Fix", on: "border-green-400/70 bg-green-400/15 text-green-400" },
+  { value: "PARTIAL", label: "Partly", on: "border-bronze/70 bg-bronze/15 text-bronze" },
+  { value: "MAYBE", label: "Maybe", on: "border-info/70 bg-info/15 text-info" },
+  { value: "OUT", label: "Out", on: "border-danger/70 bg-danger/15 text-danger" },
 ]
 
-const ANSWER_STYLE: Record<MatchdayAnswer, string> = {
-  FIX: "text-ok",
-  PARTIAL: "text-brand-ink",
-  MAYBE: "text-fg-muted",
-  OUT: "text-danger",
+const DOT: Record<MatchdayAnswer, string> = {
+  FIX: "bg-green-400",
+  PARTIAL: "bg-bronze",
+  MAYBE: "bg-info",
+  OUT: "bg-danger",
 }
 
 const DAY = "__day"
+
+// A player picked up from the kader, or from a place of a lineup
+interface Held {
+  playerId: string
+  from?: { scope: string; format: Format }
+}
 
 export function MatchdayPlanView({ initial, apiPath, title, links, dayFormats }: Props) {
   const [plan, setPlan] = useState<Plan>(initial)
@@ -63,10 +67,13 @@ export function MatchdayPlanView({ initial, apiPath, title, links, dayFormats }:
   const [busy, setBusy] = useState(false)
   const [variantId, setVariantId] = useState(initial.publishedVariantId ?? initial.variants[0]?.id)
   const variant = plan.variants.find((v) => v.id === variantId) ?? plan.variants[0]
+  // The player tapped (on a phone) or dragged (on a computer), waiting for a place
+  const [picked, setPicked] = useState<Held | null>(null)
+  const [dragging, setDragging] = useState<Held | null>(null)
+  const [dragOver, setDragOver] = useState<string | null>(null)
 
   const answerOf = (playerId: string) => plan.answers[playerId]?.answer ?? undefined
   const answers = Object.fromEntries(plan.kader.map((p) => [p.id, answerOf(p.id)]))
-  const pool = planPool(plan.kader, answers)
   const nameOf = (playerId: string) => plan.kader.find((p) => p.id === playerId)?.name ?? "Unknown"
   const hints = planHints(variant.seats, plan.matches, answers, plan.absences)
 
@@ -94,13 +101,40 @@ export function MatchdayPlanView({ initial, apiPath, title, links, dayFormats }:
     void send({ action: "seats", variantId: variant.id, seats })
   }
 
-  function setSeat(scope: string, format: Format, index: number, playerId: string | null, current: Array<string | null>) {
-    const next = [...current]
-    next[index] = playerId
+  // The places of a format on the day (scope DAY) or in a match of its own
+  function placesOf(scope: string, format: Format): Array<string | null> {
+    const seats = scope === DAY ? { day: variant.seats.day, matches: {} } : variant.seats
+    return matchLineup(seats, { id: scope, formats: [format] })[format]!
+  }
+
+  function setPlaces(scope: string, format: Format, places: Array<string | null>) {
     const seats: PlanVariant = { day: { ...variant.seats.day }, matches: { ...variant.seats.matches } }
-    if (scope === DAY) seats.day[format] = next
-    else seats.matches[scope] = { ...seats.matches[scope], [format]: next }
+    if (scope === DAY) seats.day[format] = places
+    else seats.matches[scope] = { ...seats.matches[scope], [format]: places }
     saveSeats(seats)
+  }
+
+  // A player put on a place: within the same lineup of a format the two swap, from the kader or
+  // another format the player is added and keeps their other places
+  function place(scope: string, format: Format, index: number, held: Held) {
+    setPicked(null)
+    const places = placesOf(scope, format)
+    if (places[index] === held.playerId) return
+    setPlaces(scope, format, placePlayer({ [format]: places }, format, index, held.playerId)[format]!)
+  }
+
+  function clear(scope: string, format: Format, index: number) {
+    setPicked(null)
+    setPlaces(scope, format, placePlayer({ [format]: placesOf(scope, format) }, format, index, null)[format]!)
+  }
+
+  // A player dragged from a place back onto the kader leaves that place
+  function takeBack(held: Held) {
+    setPicked(null)
+    if (!held.from) return
+    const places = placesOf(held.from.scope, held.from.format)
+    const index = places.indexOf(held.playerId)
+    if (index >= 0) clear(held.from.scope, held.from.format, index)
   }
 
   // A match takes the day lineup of a format as its own to change it, or gives its own up again
@@ -141,32 +175,94 @@ export function MatchdayPlanView({ initial, apiPath, title, links, dayFormats }:
     return `${formatLabel(hint.format)}: ${nameOf(hint.playerId)} is not there for this match`
   }
 
-  // A select for one place; out players cannot be picked, but one already placed stays visible
-  function seatSelect(scope: string, format: Format, index: number, current: Array<string | null>, disabled = false) {
-    const value = current[index]
-    const taken = current.filter((id, i) => id && i !== index)
-    const option = (p: { id: string; name: string }) => (
-      <option key={p.id} value={p.id} disabled={taken.includes(p.id)}>
-        {p.name}
-        {answers[p.id] === "PARTIAL" ? " (partly)" : answers[p.id] === "MAYBE" ? " (maybe)" : !answers[p.id] ? " (no answer)" : ""}
-      </option>
-    )
+  const readHeld = (e: React.DragEvent): Held | null => {
+    try {
+      return JSON.parse(e.dataTransfer.getData("text/plain")) as Held
+    } catch {
+      return dragging
+    }
+  }
+
+  const dragProps = (held: Held) => ({
+    draggable: !busy,
+    onDragStart: (e: React.DragEvent) => {
+      e.dataTransfer.setData("text/plain", JSON.stringify(held))
+      e.dataTransfer.effectAllowed = "move"
+      setDragging(held)
+    },
+    onDragEnd: () => {
+      setDragging(null)
+      setDragOver(null)
+    },
+  })
+
+  const dropProps = (target: string, onHeld: (held: Held) => void) => ({
+    onDragOver: (e: React.DragEvent) => {
+      e.preventDefault()
+      setDragOver(target)
+    },
+    onDragLeave: () => setDragOver((t) => (t === target ? null : t)),
+    onDrop: (e: React.DragEvent) => {
+      e.preventDefault()
+      setDragOver(null)
+      setDragging(null)
+      const held = readHeld(e)
+      if (held) onHeld(held)
+    },
+  })
+
+  // One place of a lineup: takes a dragged or tapped player, and can itself be dragged elsewhere
+  function seat(scope: string, format: Format, index: number, places: Array<string | null>) {
+    const playerId = places[index]
+    const target = `${scope}:${format}:${index}`
+    const out = playerId && answers[playerId] === "OUT"
+    const absent = playerId && scope !== DAY && plan.absences.some((a) => a.playerId === playerId && a.matchId === scope)
+    const isPicked = picked?.playerId === playerId && picked?.from?.scope === scope && picked.from.format === format
     return (
-      <Select
+      <div
         key={index}
-        aria-label={`${formatLabel(format)} place ${index + 1}`}
-        value={value ?? ""}
-        disabled={disabled || busy}
-        onChange={(e) => setSeat(scope, format, index, e.target.value || null, current)}
-        className={cn("h-9 min-w-0", value && answers[value] === "OUT" && "border-danger text-danger")}
+        {...dropProps(target, (held) => place(scope, format, index, held))}
+        onClick={() => {
+          if (picked && !isPicked) place(scope, format, index, picked)
+          else if (playerId) setPicked(isPicked ? null : { playerId, from: { scope, format } })
+        }}
+        className={cn(
+          "flex h-10 min-w-0 cursor-pointer items-center gap-1.5 rounded-lg border px-2.5 text-sm transition-colors",
+          playerId ? "border-line bg-raised text-fg" : "border-dashed border-line-strong text-fg-subtle",
+          (out || absent) && "border-danger/60 text-danger",
+          dragOver === target && "border-brand bg-brand/10",
+          picked && !isPicked && "hover:border-brand/60",
+          isPicked && "ring-2 ring-brand"
+        )}
       >
-        <option value="">— open —</option>
-        {pool.top.length > 0 && <optgroup label="Available">{pool.top.map(option)}</optgroup>}
-        {pool.below.length > 0 && <optgroup label="Maybe / no answer">{pool.below.map(option)}</optgroup>}
-        {value && answers[value] === "OUT" && <option value={value}>{nameOf(value)} (out)</option>}
-      </Select>
+        {playerId ? (
+          <>
+            <span {...dragProps({ playerId, from: { scope, format } })} className="flex min-w-0 flex-1 cursor-grab items-center gap-1.5 active:cursor-grabbing">
+              <span className={cn("h-2 w-2 shrink-0 rounded-full", answers[playerId] ? DOT[answers[playerId]] : "bg-fg-subtle")} />
+              <span className="truncate">{nameOf(playerId)}</span>
+              {(out || absent) && <AlertTriangle size={12} className="shrink-0" />}
+            </span>
+            <button
+              type="button"
+              aria-label={`Remove ${nameOf(playerId)} from ${formatLabel(format)}`}
+              onClick={(e) => {
+                e.stopPropagation()
+                clear(scope, format, index)
+              }}
+              className="-mr-1 shrink-0 rounded p-1 text-fg-subtle hover:text-danger"
+            >
+              <X size={14} />
+            </button>
+          </>
+        ) : (
+          <span className="truncate text-xs">{picked ? "Tap to place here" : "open"}</span>
+        )}
+      </div>
     )
   }
+
+  // The formats a player drives on the day
+  const dayFormatsOf = (playerId: string) => dayFormats.filter((f) => dayLineup[f]!.includes(playerId))
 
   const dayLineup = matchLineup({ day: variant.seats.day, matches: {} }, { id: DAY, formats: dayFormats })
 
@@ -207,44 +303,74 @@ export function MatchdayPlanView({ initial, apiPath, title, links, dayFormats }:
         {error && <p className="mt-3 text-sm text-danger">{error}</p>}
       </div>
 
-      <div className="page-columns">
-        {/* Availability */}
-        <section>
-          <h2 className="section-title mb-3 flex items-center gap-2">
+      {/* A board: the lineup on the left, the kader with its answers on the right to drag players from.
+          On phones the kader comes first, and players are tapped instead of dragged. */}
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_22rem] 2xl:grid-cols-[minmax(0,1fr)_26rem]">
+        <section className="lg:sticky lg:top-4 lg:col-start-2 lg:row-start-1 lg:max-h-[calc(100dvh-2rem)] lg:overflow-y-auto">
+          <h2 className="section-title mb-1 flex items-center gap-2">
             <Users size={15} />
-            Availability
+            Kader
           </h2>
-          <Card>
+          <p className="mb-3 text-xs text-fg-subtle">Set who is there, then drag players onto a place – or tap a player and then the place.</p>
+          <Card {...dropProps("kader", takeBack)} className={cn("transition-colors", dragOver === "kader" && dragging?.from && "border-brand bg-brand/5")}>
             <CardContent className="divide-y divide-line p-0">
               {plan.kader.map((player) => {
                 const entry = plan.answers[player.id]
+                const isOut = entry?.answer === "OUT"
+                const isPicked = picked?.playerId === player.id && !picked.from
+                const placed = dayFormatsOf(player.id)
                 return (
-                  <div key={player.id} className="space-y-2 px-4 py-2.5">
-                    <div className="grid grid-cols-[minmax(0,1fr)_8.5rem] items-center gap-2 sm:grid-cols-[minmax(0,1fr)_8.5rem_minmax(0,1.3fr)]">
-                      <span className={cn("min-w-0 truncate font-medium", entry?.answer ? ANSWER_STYLE[entry.answer] : "text-fg")}>{player.name}</span>
-                      <Select
-                        aria-label={`Answer of ${player.name}`}
-                        value={entry?.answer ?? ""}
-                        disabled={busy}
-                        onChange={(e) => send({ action: "answer", playerId: player.id, answer: e.target.value || null })}
-                        className="h-9"
+                  <div key={player.id} className="space-y-2 px-3 py-2.5">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <button
+                        type="button"
+                        {...(isOut ? {} : dragProps({ playerId: player.id }))}
+                        disabled={isOut}
+                        onClick={() => setPicked(isPicked ? null : { playerId: player.id })}
+                        title={isOut ? "Out – cannot be placed" : "Drag onto a place, or tap and then tap the place"}
+                        className={cn(
+                          "inline-flex min-w-0 max-w-full flex-1 items-center gap-1.5 rounded-md border px-2 py-1 text-left text-sm font-medium transition-colors",
+                          isOut ? "cursor-not-allowed border-transparent text-fg-subtle line-through" : "cursor-grab border-line bg-raised text-fg active:cursor-grabbing",
+                          isPicked && "ring-2 ring-brand"
+                        )}
                       >
-                        {ANSWERS.map((a) => (
-                          <option key={a.value} value={a.value}>{a.label}</option>
-                        ))}
-                      </Select>
+                        <span className={cn("h-2 w-2 shrink-0 rounded-full", entry?.answer ? DOT[entry.answer] : "bg-fg-subtle")} />
+                        <span className="truncate">{player.name}</span>
+                        {placed.length > 0 && <span className="ml-auto shrink-0 text-[10px] font-normal text-fg-subtle">{placed.map(formatLabel).join(" ")}</span>}
+                      </button>
+                      <div className="flex shrink-0 gap-1" role="group" aria-label={`Answer of ${player.name}`}>
+                        {ANSWERS.map((a) => {
+                          const on = entry?.answer === a.value
+                          return (
+                            <button
+                              key={a.value}
+                              type="button"
+                              aria-pressed={on}
+                              disabled={busy}
+                              // A second tap on the chosen answer takes it back
+                              onClick={() => send({ action: "answer", playerId: player.id, answer: on ? null : a.value })}
+                              className={cn(
+                                "rounded-full border px-2 py-1 text-xs transition-colors md:py-0.5",
+                                on ? a.on : "border-line text-fg-muted hover:border-line-strong hover:text-fg"
+                              )}
+                            >
+                              {a.label}
+                            </button>
+                          )
+                        })}
+                      </div>
+                    </div>
                     <Input
                       key={`${player.id}:${entry?.note ?? ""}`}
                       aria-label={`Note on ${player.name}`}
                       placeholder="Note, e.g. only until 22:00"
                       defaultValue={entry?.note ?? ""}
-                      className="col-span-2 h-9 sm:col-span-1"
+                      className="h-8 border-dashed text-xs"
                       onBlur={(e) => {
                         const note = e.target.value.trim()
                         if (note !== (entry?.note ?? "")) void send({ action: "answer", playerId: player.id, answer: entry?.answer ?? null, note })
                       }}
                     />
-                    </div>
                     {entry?.answer === "PARTIAL" && plan.matches.length > 0 && (
                       <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-fg-muted">
                         <span>Not there for:</span>
@@ -269,7 +395,17 @@ export function MatchdayPlanView({ initial, apiPath, title, links, dayFormats }:
           </Card>
         </section>
 
-        <div className="page-main space-y-6">
+        <div className="min-w-0 space-y-6 lg:col-start-1 lg:row-start-1">
+          {/* The tapped player, waiting for a place; stays in view while scrolling on a phone */}
+          {picked && (
+            <div className="sticky top-16 z-10 flex flex-wrap items-center gap-x-3 gap-y-1 rounded-lg bg-brand/15 px-3 py-2 text-xs text-brand-ink backdrop-blur md:top-2">
+              <span className="min-w-0 flex-1">
+                <strong>{nameOf(picked.playerId)}</strong> selected – tap a place to put them there
+              </span>
+              <button type="button" onClick={() => setPicked(null)} className="font-medium hover:underline">Cancel</button>
+            </div>
+          )}
+
           {/* Variants */}
           <section className="space-y-3">
             <div className="flex flex-wrap items-center gap-2">
@@ -314,8 +450,8 @@ export function MatchdayPlanView({ initial, apiPath, title, links, dayFormats }:
                 {dayFormats.map((format) => (
                   <div key={format} className="grid grid-cols-1 gap-2 sm:grid-cols-[4rem_minmax(0,1fr)] sm:items-center">
                     <span className="text-sm font-semibold text-fg">{formatLabel(format)}</span>
-                    <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-3">
-                      {dayLineup[format]!.map((_, i) => seatSelect(DAY, format, i, dayLineup[format]!))}
+                    <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                      {dayLineup[format]!.map((_, i) => seat(DAY, format, i, dayLineup[format]!))}
                     </div>
                   </div>
                 ))}
@@ -357,8 +493,8 @@ export function MatchdayPlanView({ initial, apiPath, title, links, dayFormats }:
                           <div key={format} className="grid grid-cols-1 gap-2 sm:grid-cols-[4rem_minmax(0,1fr)_auto] sm:items-center">
                             <span className="text-sm font-semibold text-fg">{formatLabel(format)}</span>
                             {isOwn ? (
-                              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-3">
-                                {lineup[format]!.map((_, i) => seatSelect(match.id, format, i, lineup[format]!))}
+                              <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                                {lineup[format]!.map((_, i) => seat(match.id, format, i, lineup[format]!))}
                               </div>
                             ) : (
                               <p className="text-sm text-fg-soft">

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
 import type { Seats } from "./matchday-plan"
-import { hasUnpublishedChanges, matchLineup, planHints, planPool, publishedSnapshot } from "./matchday-plan"
+import { hasUnpublishedChanges, matchLineup, placePlayer, planHints, planPool, publishedSnapshot } from "./matchday-plan"
 
 const kader = ["anna", "ben", "cleo", "dora", "emil"].map((id) => ({ id }))
 
@@ -91,5 +91,28 @@ describe("published state", () => {
     expect(hasUnpublishedChanges(snapshot, variant, [m1, m2, { id: "m3", formats: ["ROUND_2V2"] }])).toBe(true)
     const plain = { day: variant.day, matches: {} }
     expect(hasUnpublishedChanges(publishedSnapshot(plain, [m1]), plain, [m1, { id: "m3", formats: ["ROUND_2V2"] }])).toBe(false)
+  })
+})
+
+describe("placePlayer", () => {
+  it("puts a player on a free place and leaves the other formats alone", () => {
+    const seats: Seats = { ROUND_1V1: ["anna"] }
+    expect(placePlayer(seats, "ROUND_2V2", 1, "ben")).toEqual({ ROUND_1V1: ["anna"], ROUND_2V2: [null, "ben"] })
+  })
+
+  it("swaps two players when one is put on the place of the other", () => {
+    expect(placePlayer({ ROUND_4V4: ["anna", "ben", null, "cleo"] }, "ROUND_4V4", 0, "cleo")).toEqual({ ROUND_4V4: ["cleo", "ben", null, "anna"] })
+  })
+
+  it("moves a player to a free place without leaving them on the old one", () => {
+    expect(placePlayer({ ROUND_2V2: ["anna", null] }, "ROUND_2V2", 1, "anna")).toEqual({ ROUND_2V2: [null, "anna"] })
+  })
+
+  it("replaces the player on the place when the new one comes from outside the format", () => {
+    expect(placePlayer({ ROUND_2V2: ["anna", "ben"] }, "ROUND_2V2", 0, "cleo")).toEqual({ ROUND_2V2: ["cleo", "ben"] })
+  })
+
+  it("frees a place", () => {
+    expect(placePlayer({ ROUND_2V2: ["anna", "ben"] }, "ROUND_2V2", 1, null)).toEqual({ ROUND_2V2: ["anna", null] })
   })
 })
