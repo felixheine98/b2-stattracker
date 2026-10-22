@@ -80,26 +80,31 @@ export function PlanningView({ initial, ownPlayerId, userId, canManage }: Props)
   ].map((g) => ({ ...g, rows: rows.filter((r) => r.answer === g.answer) }))
 
   const rowName = (row: Row) => (
-    <div className="flex min-w-0 items-center gap-2 md:w-52 md:shrink-0">
-      <PlayerAvatar player={row.player} />
-      <span className="truncate text-sm font-medium text-fg">{row.player.name}</span>
-      {row.guest && <GuestBadge />}
-      {row.answer === "INACTIVE" && (
-        <span title="Does not drive competitions as a rule. An answer for this tournament still counts." className="shrink-0 rounded-full border border-violet/40 bg-violet/15 px-1.5 py-px text-[10px] font-medium leading-4 text-violet">
-          {INACTIVE_LABEL}
-        </span>
-      )}
-      {row.player.id === ownPlayerId && <span className="text-xs text-brand-ink">you</span>}
-      {layout === "list" && canManage && !archived && row.guest && (
-        <button
-          type="button"
-          onClick={() => call(`/entries/${row.player.id}`, "DELETE")}
-          title="Take off the list"
-          className="ml-auto text-fg-subtle hover:text-danger md:ml-0"
-        >
-          <X size={13} />
-        </button>
-      )}
+    <div className="min-w-0 md:w-52 md:shrink-0">
+      <div className="flex min-w-0 items-center gap-2">
+        <PlayerAvatar player={row.player} />
+        <span className="truncate text-sm font-medium text-fg">{row.player.name}</span>
+        {row.guest && <GuestBadge />}
+        {row.answer === "INACTIVE" && (
+          <span title="Does not drive competitions as a rule. An answer for this tournament still counts." className="shrink-0 rounded-full border border-violet/40 bg-violet/15 px-1.5 py-px text-[10px] font-medium leading-4 text-violet">
+            {INACTIVE_LABEL}
+          </span>
+        )}
+        {row.player.id === ownPlayerId && <span className="text-xs text-brand-ink">you</span>}
+        {layout === "list" && canManage && !archived && row.guest && (
+          <button
+            type="button"
+            onClick={() => call(`/entries/${row.player.id}`, "DELETE")}
+            title="Take off the list"
+            className="ml-auto text-fg-subtle hover:text-danger md:ml-0"
+          >
+            <X size={13} />
+          </button>
+        )}
+      </div>
+      {row.answeredAt && <time dateTime={row.answeredAt} className="mt-1 block text-xs text-fg-muted" title={`Reacted on Discord ${formatTime(row.answeredAt)}`}>
+        Discord · {formatTimeShort(row.answeredAt)}
+      </time>}
     </div>
   )
 
@@ -310,7 +315,7 @@ export function PlanningView({ initial, ownPlayerId, userId, canManage }: Props)
                             <span className="min-w-0 truncate text-fg">{row.player.name}</span>
                             {row.guest && <GuestBadge />}
                             {own && <span className="text-xs text-brand-ink">you</span>}
-                            {row.answeredAt && <span className="ml-auto shrink-0 text-xs text-fg-subtle" title={`Reacted on Discord ${formatTime(row.answeredAt)}`}>{formatTimeShort(row.answeredAt)}</span>}
+                            {row.answeredAt && <time dateTime={row.answeredAt} className="ml-auto shrink-0 text-xs text-fg-muted" title={`Reacted on Discord ${formatTime(row.answeredAt)}`}>{formatTimeShort(row.answeredAt)}</time>}
                             {row.note && <span className={cn("min-w-0 max-w-[55%] truncate text-xs text-fg-muted", !row.answeredAt && "ml-auto")} title={row.note}>{row.note}</span>}
                           </button>
                           {editable && editing === row.player.id && (
