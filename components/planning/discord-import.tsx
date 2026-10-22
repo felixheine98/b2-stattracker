@@ -119,13 +119,17 @@ export function DiscordImport({ state, mutate }: { state: PlanningState; mutate:
       <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
         <h2 className="text-sm font-semibold text-fg">Discord reactions</h2>
         {!editingUrl && savedUrl && <a href={savedUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-sm text-fg-muted hover:text-fg">Announcement <ExternalLink size={13} /></a>}
-        {!editingUrl && fetchedAt && <span className="text-sm text-fg-muted">Fetched {formatTime(fetchedAt)}</span>}
         {savedEmojis.length > 0 && <span className="flex flex-wrap items-center gap-x-2 text-sm text-fg-soft">
           {savedEmojis.map(([key, value]) => <span key={key} className="inline-flex items-center gap-1"><Emoji id={key} /> {label(value)}</span>)}
         </span>}
-        <div className="ml-auto flex flex-wrap gap-2">
-          {!editingUrl && <Button size="sm" variant="ghost" disabled={busy} onClick={() => { setEditingUrl(true); setEditingEmojis(true) }}>Edit</Button>}
-          {!editingUrl && <Button size="sm" variant="outline" disabled={busy} onClick={read}>{busy ? "Working…" : "Fetch reactions"}</Button>}
+        <div className="ml-auto flex flex-col items-start gap-1.5 sm:items-end">
+          {!editingUrl && <div className="flex flex-wrap gap-2">
+            <Button size="sm" variant="ghost" disabled={busy} onClick={() => { setEditingUrl(true); setEditingEmojis(true) }}>Edit</Button>
+            <Button size="sm" variant="outline" disabled={busy} onClick={read}>{busy ? "Working…" : "Fetch reactions"}</Button>
+          </div>}
+          <p role="status" className="text-xs text-fg-muted">
+            {fetchedAt ? <>Last fetched: <time dateTime={fetchedAt} className="text-fg-soft">{formatTime(fetchedAt)}</time></> : "No fetch time recorded"}
+          </p>
         </div>
       </div>
 
