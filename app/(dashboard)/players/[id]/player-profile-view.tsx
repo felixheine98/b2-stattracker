@@ -79,9 +79,9 @@ const avgPlace = (line: StatLine) => (line.roundsPlayed > 0 ? (line.placementSum
 
 function Tile({ label, value, hint }: { label: string; value: React.ReactNode; hint?: React.ReactNode }) {
   return (
-    <div className="rounded-xl border border-line bg-surface px-4 py-3">
+    <div className="metric-tile">
       <p className="text-xs text-fg-muted">{label}</p>
-      <p className="mt-0.5 font-mono text-xl font-semibold text-fg">{value}</p>
+      <p className="metric-value text-fg">{value}</p>
       {hint && <p className="mt-0.5 text-xs text-fg-subtle">{hint}</p>}
     </div>
   )
@@ -121,9 +121,9 @@ function StatTable({ heading, rows }: { heading: string; rows: Array<StatLine & 
           <tr key={f.label} className="border-b border-table-rule last:border-0">
             <td className={FIRST_TD}>{f.label}</td>
             <td className={TD}>{f.roundsPlayed}</td>
-            <td className={cn(TD, "font-mono")}>{avgPlace(f)}</td>
-            <td className={cn(TD, "font-mono text-fg")}><PacePct pct={f.pace.value} ms={f.pace.valueMs} /></td>
-            <td className={cn(TD, "font-mono")}><PacePct pct={f.pace.team} ms={f.pace.teamMs} /></td>
+            <td className={cn(TD, "tabular-nums")}>{avgPlace(f)}</td>
+            <td className={cn(TD, "tabular-nums text-fg")}><PacePct pct={f.pace.value} ms={f.pace.valueMs} /></td>
+            <td className={cn(TD, "tabular-nums")}><PacePct pct={f.pace.team} ms={f.pace.teamMs} /></td>
             <td className={TD}>{rankLabel(f.pace.rank, f.pace.of)}</td>
             <td className={TD}>{f.dnfs}</td>
             <td className={cn(TD, "text-fg")}>{f.roundsWon}</td>
@@ -149,11 +149,11 @@ function MapTable({ maps }: { maps: CompView["maps"] }) {
         {maps.map((m) => (
           <tr key={m.track} className="border-b border-table-rule last:border-0">
             <td className={FIRST_TD}>{m.track}</td>
-            <td className={cn(TD, "font-mono text-brand-ink")}>{m.pbMs === null ? "—" : formatTime(m.pbMs)}</td>
+            <td className={cn(TD, "tabular-nums text-brand-ink")}>{m.pbMs === null ? "—" : formatTime(m.pbMs)}</td>
             <td className={TD}>{rankLabel(m.pbRank, m.pbOf)}</td>
-            <td className={cn(TD, "font-mono")}>{formatGapSeconds(m.pbGapMs)}</td>
+            <td className={cn(TD, "tabular-nums")}>{formatGapSeconds(m.pbGapMs)}</td>
             <td className={TD}>{m.rounds}</td>
-            <td className={cn(TD, "font-mono text-fg")}>{formatGapSeconds(m.avgGapMs)}</td>
+            <td className={cn(TD, "tabular-nums text-fg")}>{formatGapSeconds(m.avgGapMs)}</td>
             <td className={TD}>{rankLabel(m.avgGapRank, m.avgGapOf)}</td>
             <td className={cn(TD, "text-left")}>
               {m.pbMatchPath ? <Link href={m.pbMatchPath} className="text-brand-ink hover:underline">Match →</Link> : "—"}
@@ -188,7 +188,7 @@ function MatchTable({ matches }: { matches: CompView["matches"] }) {
             <td className={cn(TD, "text-left")}>{m.lineupName}</td>
             <td className={cn(TD, "text-left")}>{m.day ? formatDay(m.day) : "—"}</td>
             <td className={TD}>{m.roundsPlayed}</td>
-            <td className={cn(TD, "font-mono text-fg")}><PacePct pct={m.pace} ms={m.paceMs} /></td>
+            <td className={cn(TD, "tabular-nums text-fg")}><PacePct pct={m.pace} ms={m.paceMs} /></td>
           </tr>
         ))}
       </tbody>
@@ -218,7 +218,7 @@ function CompCard({ comp, initiallyOpen }: { comp: CompView; initiallyOpen: bool
             {comp.deployed ? (
               <>
                 <span>{comp.total.roundsPlayed} rounds</span>
-                <span className="font-mono text-fg-soft">Pace <PacePct pct={comp.total.pace.value} ms={comp.total.pace.valueMs} /></span>
+                <span className="tabular-nums text-fg-soft">Pace <PacePct pct={comp.total.pace.value} ms={comp.total.pace.valueMs} /></span>
               </>
             ) : (
               <span className="text-bronze">not fielded</span>
@@ -307,7 +307,7 @@ export function PlayerProfileView({ player: initial, total, formats, styles, com
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
             <PlayerAvatar player={player} className="h-8 w-8 text-base" />
-            <h1 className="break-words text-2xl font-bold text-fg">{player.name}</h1>
+            <h1 className="break-words   text-fg page-title">{player.name}</h1>
             <Badge variant={status === "MEMBER" ? "primary" : status === "TRIAL" ? "secondary" : "default"}>{STATUS_TEXT[status]}</Badge>
             {player.inactive && <Badge variant="purple" title="Does not drive competitions as a rule">{INACTIVE_LABEL}</Badge>}
           </div>
@@ -364,7 +364,7 @@ export function PlayerProfileView({ player: initial, total, formats, styles, com
           <div className="space-y-6">
           <section className="space-y-3">
             <h2 className="text-lg font-semibold text-fg">Overall</h2>
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5 2xl:grid-cols-3 min-[1800px]:grid-cols-5">
+            <div className="metric-strip metric-strip-five">
               <Tile label="Comps" value={comps.length} />
               <Tile label="Rounds" value={total.roundsPlayed} />
               <Tile label="Pace" value={<PacePct pct={total.pace.value} ms={total.pace.valueMs} />} hint={paceHint(total.pace)} />

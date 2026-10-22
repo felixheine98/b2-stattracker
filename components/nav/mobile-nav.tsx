@@ -29,14 +29,14 @@ export function MobileTopBar({ userName, role, profileHref }: Props) {
   const [showTwoFactor, setShowTwoFactor] = useState(false)
 
   return (
-    <header className="relative z-20 flex items-center gap-2.5 border-b border-line bg-surface px-4 py-2 md:hidden">
+    <header className="mobile-topbar relative z-20 flex items-center gap-2.5 border-b border-white/15 px-4 py-2 md:hidden">
       <BrandLogo className="h-8 w-8 object-contain" />
-      <span className="flex-1 text-base font-bold tracking-tight text-fg">B2 Stats</span>
+      <span className="flex-1 text-base font-semibold tracking-tight text-white">B2 Stats</span>
       <button
         type="button"
         onClick={openSearch}
         aria-label="Search"
-        className="rounded-md p-2 text-fg-soft hover:bg-raised"
+        className="flex h-11 w-11 items-center justify-center rounded-md text-white hover:bg-white/10"
       >
         <Search size={18} />
       </button>
@@ -44,7 +44,7 @@ export function MobileTopBar({ userName, role, profileHref }: Props) {
         type="button"
         onClick={() => setOpen((o) => !o)}
         aria-expanded={open}
-        className="flex max-w-[40%] items-center gap-1 rounded-md px-2 py-1.5 text-sm text-fg-soft hover:bg-raised"
+        className="flex max-w-[40%] items-center gap-1 min-h-11 rounded-md px-2 py-1.5 text-sm text-white hover:bg-white/10"
       >
         <span className="truncate">{userName}</span>
         <ChevronDown size={14} className="shrink-0" />
@@ -111,7 +111,7 @@ export function MobileTabBar({ role, profileHref }: Pick<Props, "role" | "profil
   const items = canSeeAccounts(role) ? [...navItems, accountsItem] : navItems
 
   return (
-    <nav className="flex border-t border-line bg-surface pb-[env(safe-area-inset-bottom)] md:hidden">
+    <nav className="mobile-nav flex border-t border-line bg-surface pb-[env(safe-area-inset-bottom)] md:hidden">
       {items.map(({ href, label, icon: Icon }) => {
         const active = isActiveItem(pathname, href, profileHref)
         return (

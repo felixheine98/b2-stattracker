@@ -104,7 +104,7 @@ export default async function SummaryCompareFilePage({ params }: Props) {
           <ArrowLeft size={14} />
           All comps
         </Link>
-        <h1 className="mt-2 text-2xl font-bold text-fg">{plan.comp || file}</h1>
+        <h1 className="mt-2   text-fg page-title">{plan.comp || file}</h1>
         <p className="mt-1 text-sm text-fg-muted">
           Per player: rounds / place sum (or points, marked &ldquo;pts&rdquo;). Red: screenshot and stored values differ.
           {!tournamentFound && " The comp is not in the database yet."}
@@ -147,7 +147,7 @@ export default async function SummaryCompareFilePage({ params }: Props) {
 
       {totalImages.length > 0 && (
         <div className="space-y-4">
-          <h2 className="text-sm font-semibold uppercase tracking-wider text-fg-muted">Total tables</h2>
+          <h2 className="text-sm font-semibold  text-fg-muted">Total tables</h2>
           <p className="text-sm text-fg-muted">{totals.length === 0 ? "The matches add up to every total table." : `${totals.length} differences, listed at the top.`}</p>
           {totalImages.map((image) => (
             <section key={image} className="rounded-xl border border-line bg-surface p-4">

@@ -107,12 +107,12 @@ export function MapStatsTable({ agg, isGuest, isTrial, lineupName, profilePath, 
                 </td>
                 {lineupName && <td className="py-1.5 px-3 text-fg-soft whitespace-nowrap">{lineupName(p.tmId) ?? "—"}</td>}
                 <td className="py-1.5 px-3 text-right text-fg-soft">{p.rounds}</td>
-                <td className="py-1.5 px-3 text-right text-brand-ink font-mono">{p.bestMs === null ? "—" : formatTime(p.bestMs)}</td>
-                <td className="py-1.5 px-3 text-right text-fg font-mono" title="Average gap to the fastest time of the round, without DNFs">
+                <td className="py-1.5 px-3 text-right text-brand-ink tabular-nums">{p.bestMs === null ? "—" : formatTime(p.bestMs)}</td>
+                <td className="py-1.5 px-3 text-right text-fg tabular-nums" title="Average gap to the fastest time of the round, without DNFs">
                   {formatGapSeconds(mapGapMs(p))}
                 </td>
                 {showPlacement && (
-                  <td className="py-1.5 px-3 text-right text-fg-soft font-mono">{p.rounds > 0 ? (p.placementSum / p.rounds).toFixed(3) : "—"}</td>
+                  <td className="py-1.5 px-3 text-right text-fg-soft tabular-nums">{p.rounds > 0 ? (p.placementSum / p.rounds).toFixed(3) : "—"}</td>
                 )}
                 <td className="py-1.5 px-3 text-right text-fg-soft">{p.dnfs}</td>
                 <td className="py-1.5 px-3 text-right text-fg">{p.roundsWon}</td>
@@ -152,11 +152,11 @@ export function MapOverviewTable({ maps }: { maps: MapAggregate[] }) {
               <tr key={agg.track ?? ""} className="border-b border-table-rule last:border-0">
                 <td className="sticky left-0 z-[1] bg-table-cell py-1.5 pl-3 pr-4 font-medium whitespace-nowrap text-fg max-md:shadow-[1px_0_0_var(--border)]">{agg.track ?? "No map"}</td>
                 <td className={cn(td, "text-left")}>{agg.formats.map((f) => formatLabel(f)).join(", ")}</td>
-                <td className={cn(td, "font-mono text-fg")}>{agg.mapWon}–{agg.mapDrawn}–{agg.mapLost}</td>
-                <td className={cn(td, "font-mono")}>{agg.teamRoundsWon}–{agg.teamRoundsLost}</td>
-                <td className={cn(td, "font-mono")}>{decided > 0 ? `${Math.round((agg.teamRoundsWon / decided) * 100)} %` : "—"}</td>
-                <td className={cn(td, "font-mono text-brand-ink")}>{agg.teamBestMs === null ? "—" : formatTime(agg.teamBestMs)}</td>
-                <td className={cn(td, "font-mono")}>{avg === null ? "—" : formatTime(Math.round(avg))}</td>
+                <td className={cn(td, "tabular-nums text-fg")}>{agg.mapWon}–{agg.mapDrawn}–{agg.mapLost}</td>
+                <td className={cn(td, "tabular-nums")}>{agg.teamRoundsWon}–{agg.teamRoundsLost}</td>
+                <td className={cn(td, "tabular-nums")}>{decided > 0 ? `${Math.round((agg.teamRoundsWon / decided) * 100)} %` : "—"}</td>
+                <td className={cn(td, "tabular-nums text-brand-ink")}>{agg.teamBestMs === null ? "—" : formatTime(agg.teamBestMs)}</td>
+                <td className={cn(td, "tabular-nums")}>{avg === null ? "—" : formatTime(Math.round(avg))}</td>
               </tr>
             )
           })}

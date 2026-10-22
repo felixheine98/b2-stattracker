@@ -5,16 +5,16 @@
      in the dark */
   color-scheme: dark;
 
-  --bg: #0e0b0b;
-  --surface: #1c1819;
-  --surface-raised: #251f20;
-  --border: #2d2829;
-  --border-strong: #3a3435;
+  --bg: #101d36;
+  --surface: #192a48;
+  --surface-raised: #233958;
+  --border: #304665;
+  --border-strong: #50698b;
 
-  --fg: #f5f0f0;
-  --fg-soft: #c5bfbf;
-  --fg-muted: #9a9090;
-  --fg-subtle: #5e5858;
+  --fg: #f3f6fc;
+  --fg-soft: #d6e0f0;
+  --fg-muted: #b5c3da;
+  --fg-subtle: #98accb;
 
   --primary: #FBD00D;
   --primary-hover: #e6bc0c;
@@ -36,11 +36,11 @@
 
   /* Stats tables: on the dark theme only the head stands out from the page */
   --table-head: var(--surface);
-  --table-row: transparent;
+  --table-row: var(--surface);
   /* The first column stays in place when a table scrolls sideways and has to cover what passes under it */
-  --table-cell: var(--bg);
-  --table-rule: var(--surface);
-  --table-hover: rgb(28 24 25 / 0.6);
+  --table-cell: var(--surface);
+  --table-rule: var(--border);
+  --table-hover: #233958;
 }
 
 /* Dark alternatives keep the same accent and status colours. */
@@ -54,7 +54,7 @@
   --fg: #eef3fc;
   --fg-soft: #c2cde0;
   --fg-muted: #94a5c1;
-  --fg-subtle: #7183a0;
+  --fg-subtle: #9aacc7;
 
   --table-hover: rgb(27 41 66 / 0.6);
 }
@@ -69,7 +69,7 @@
   --fg: #f5f5f5;
   --fg-soft: #c9c9c9;
   --fg-muted: #a0a0a0;
-  --fg-subtle: #737373;
+  --fg-subtle: #a0a0a0;
 
   --table-hover: rgb(23 23 23 / 0.7);
 }
@@ -84,7 +84,7 @@
   --fg: #f3f6ff;
   --fg-soft: #d6e2ff;
   --fg-muted: #b0c4ef;
-  --fg-subtle: #88a4d9;
+  --fg-subtle: #b0c4ef;
 
   --info: #a8c4ff;
   --table-hover: rgb(16 61 160 / 0.6);
@@ -97,16 +97,16 @@
 :root[data-theme="warm-light"] {
   color-scheme: light;
 
-  --bg: #f4f2ee;
+  --bg: #f1f4fa;
   --surface: #ffffff;
-  --surface-raised: #efece6;
-  --border: #e0dbd3;
-  --border-strong: #c9c2b8;
+  --surface-raised: #edf2fc;
+  --border: #d5ddea;
+  --border-strong: #a8b7ce;
 
-  --fg: #1a1718;
-  --fg-soft: #3d3839;
-  --fg-muted: #696162;
-  --fg-subtle: #8a8283;
+  --fg: #152746;
+  --fg-soft: #354b6c;
+  --fg-muted: #546580;
+  --fg-subtle: #61718a;
 
   --primary-ink: #002484;
 
@@ -124,7 +124,7 @@
   --table-row: var(--surface);
   --table-cell: var(--surface);
   --table-rule: var(--border);
-  --table-hover: #f8f6f2;
+  --table-hover: #edf2fc;
 }
 
 /* A softer, distinctly cream alternative, with the same readable light-theme accents. */
@@ -138,25 +138,17 @@
   --fg: #33291f;
   --fg-soft: #514337;
   --fg-muted: #756452;
-  --fg-subtle: #8b7965;
+  --fg-subtle: #756452;
 
   --table-hover: #f4ead8;
 }
 
-/* Tints of the team yellow (selected tabs, the active page, badges, highlighted rows) are
-   made for a dark page: 10 % yellow on white is hardly there. On the light theme they are
-   drawn several times stronger, so the yellow carries as it does on the buttons. */
+/* Selection is blue on light surfaces, while the result stripe stays team yellow. */
 :root[data-theme="light"],
 :root[data-theme="warm-light"] {
-  .bg-brand\/5 { background-color: color-mix(in oklab, var(--primary) 30%, transparent); }
-  .bg-brand\/10 { background-color: color-mix(in oklab, var(--primary) 55%, transparent); }
-  .bg-brand\/15 { background-color: color-mix(in oklab, var(--primary) 75%, transparent); }
-  .border-brand\/30,
-  .border-brand\/40,
-  .border-brand\/50,
-  .border-brand\/60,
-  .hover\:border-brand\/50:hover,
-  .hover\:border-brand\/60:hover { border-color: var(--primary); }
+  --primary: #002484;
+  --primary-hover: #001e70;
+  --primary-fg: #ffffff;
 }
 
 /* For the few things that differ by more than a colour: light:hidden, light:block, ... */
@@ -164,6 +156,7 @@
 
 /* The colours as Tailwind names: bg-surface, text-fg-muted, border-line, ... */
 @theme inline {
+  --font-sans: var(--font-body), "IBM Plex Sans", system-ui, sans-serif;
   --color-canvas: var(--bg);
   --color-surface: var(--surface);
   --color-raised: var(--surface-raised);
@@ -201,12 +194,13 @@
 body {
   background: var(--bg);
   color: var(--fg);
-  font-family: var(--font-inter), "Inter", system-ui, sans-serif;
+  font-family: var(--font-body), "IBM Plex Sans", system-ui, sans-serif;
+  font-variant-numeric: tabular-nums;
   -webkit-font-smoothing: antialiased;
 }
 
 h1, h2, h3, h4, h5, h6 {
-  font-family: var(--font-heading), "Space Grotesk", system-ui, sans-serif;
+  font-family: var(--font-body), "IBM Plex Sans", system-ui, sans-serif;
 }
 
 * {
@@ -330,4 +324,110 @@ input[type="date"] {
    Zooming with two fingers stays possible. */
 html {
   touch-action: manipulation;
+}
+
+
+/* Rennleitstand: shared hierarchy, navigation and results. Component classes live outside
+   Tailwind's layers so a heading has the same scale on every page, including legacy views. */
+.page-title {
+  font-family: var(--font-heading), "Barlow Semi Condensed", sans-serif;
+  font-size: clamp(1.875rem, 2.6vw, 2.5rem);
+  font-weight: 600;
+  line-height: 1.12;
+  letter-spacing: -0.015em;
+  overflow-wrap: anywhere;
+}
+.section-title { font-size: 1rem; font-weight: 600; color: var(--fg); }
+.app-content { scrollbar-gutter: stable; }
+.app-sidebar {
+  --fg: #ffffff;
+  --fg-soft: #e0e9ff;
+  --fg-muted: #c1d2fa;
+  --fg-subtle: #b2c7f1;
+  --surface: #002484;
+  --surface-raised: #173e98;
+  --border: #ffffff26;
+  --border-strong: #ffffff45;
+  --primary: #fbd00d;
+  --primary-ink: #fbd00d;
+  --primary-fg: #152746;
+  background: #002484;
+  color: #ffffff;
+}
+.app-sidebar .nav-active { background: #ffffff14; color: #fff; box-shadow: inset 3px 0 #fbd00d; }
+.mobile-topbar { background: #002484; color: #fff; }
+.mobile-nav a[aria-current="page"] { box-shadow: inset 0 3px var(--primary); }
+.result-board {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  gap: 1rem;
+  padding: 1.5rem;
+  border-radius: .75rem;
+  border-bottom: 5px solid #fbd00d;
+  background: #002484;
+  color: #fff;
+}
+.result-board-team {
+  font-family: var(--font-heading), sans-serif;
+  font-size: clamp(1.25rem, 2vw, 1.875rem);
+  font-weight: 600;
+  line-height: 1.15;
+  overflow-wrap: anywhere;
+}
+.result-board-team:last-child { text-align: right; }
+.result-board-score {
+  font-family: var(--font-heading), sans-serif;
+  font-weight: 600;
+  font-size: clamp(2.5rem, 5vw, 4rem);
+  line-height: 1;
+  white-space: nowrap;
+  text-align: center;
+}
+.result-board-detail { display: block; margin-top: .5rem; color: #d3e1ff; font-family: var(--font-body), sans-serif; font-size: .75rem; line-height: 1.4; font-weight: 400; }
+.metric-strip { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); border-block: 1px solid var(--border); }
+.metric-tile { min-width: 0; padding: 1rem; }
+.metric-tile + .metric-tile { border-left: 1px solid var(--border); }
+.metric-tile:nth-child(odd) { border-left: 0; }
+.metric-tile:nth-child(n+3) { border-top: 1px solid var(--border); }
+.metric-value { margin-top: .25rem; font-size: 1.625rem; line-height: 1.2; font-weight: 600; }
+.work-panel { border: 1px solid var(--border); border-radius: .75rem; background: var(--surface); }
+.planning-tabs { display: flex; width: 100%; gap: 1.5rem; border-bottom: 1px solid var(--border); }
+.planning-tabs [role="tab"] { padding: .75rem 0; border-radius: 0; background: transparent; border-bottom: 3px solid transparent; }
+.planning-tabs [aria-selected="true"] { border-bottom-color: var(--primary-ink); color: var(--primary-ink); }
+.auth-shell { display: grid; min-height: 100dvh; align-items: center; padding: 2rem 1rem; }
+.auth-brand { border-bottom: 4px solid #fbd00d; padding: 2rem; background: #002484; color: #fff; border-radius: .75rem .75rem 0 0; }
+.auth-form > div { border-top: 0; border-radius: 0 0 .75rem .75rem; }
+.auth-brand h1 { font-family: var(--font-heading), sans-serif; font-size: 2.5rem; font-weight: 600; }
+.auth-brand p { color: #d3e1ff; }
+@layer base {
+  :focus-visible { outline: 2px solid var(--info); outline-offset: 3px; }
+  input[type="checkbox"], input[type="radio"] { accent-color: var(--primary-ink); }
+  table { font-variant-numeric: tabular-nums; }
+  th { font-weight: 500; }
+  tbody tr { transition: background-color .12s; }
+  tbody tr:hover { background-color: var(--table-hover); }
+}
+@media (min-width: 64rem) {
+  .metric-strip { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .metric-tile:nth-child(n) { border-top: 0; border-left: 1px solid var(--border); }
+  .metric-tile:first-child { border-left: 0; }
+}
+@media (max-width: 767px) {
+  .result-board { gap: .75rem; padding: 1.125rem 1rem; }
+  .result-board-detail { font-size: .6875rem; }
+  .metric-tile { padding: .875rem .75rem; }
+  .mobile-nav a { min-height: 3.5rem; }
+  .dialog-footer { display: flex; flex-wrap: wrap; gap: .5rem; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; }
+}
+
+@media (min-width: 64rem) {
+  .metric-strip-five { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+}
+@media (min-width: 96rem) and (max-width: 112rem) {
+  .page-columns-even .metric-strip-five { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .page-columns-even .metric-strip-five .metric-tile:nth-child(n) { border: 0; }
 }

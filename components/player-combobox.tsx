@@ -67,11 +67,11 @@ export function PlayerCombobox({ value, onChange, players, extra = [], placehold
         onBlur={() => { setOpen(false); setQuery("") }}
         onChange={e => { setQuery(e.target.value); setActive(0); setOpen(true) }}
         onKeyDown={handleKeyDown}
-        className="flex h-9 w-full rounded-md border border-line-strong bg-raised py-1 pl-3 pr-8 text-sm text-fg placeholder:text-fg-subtle focus:border-transparent focus:outline-none focus:ring-2 focus:ring-brand disabled:cursor-not-allowed disabled:opacity-50"
+        className="flex h-10 w-full rounded-md border border-line-strong bg-surface py-1 pl-3 pr-8 text-sm text-fg placeholder:text-fg-subtle focus:border-transparent focus:outline-none focus:ring-2 focus:ring-info disabled:cursor-not-allowed disabled:opacity-50"
       />
       <button type="button" tabIndex={-1} aria-label="Show all players" disabled={disabled}
         onMouseDown={e => { e.preventDefault(); if (open) setOpen(false); else input.current?.focus() }}
-        className="absolute right-0 top-0 flex h-9 w-8 items-center justify-center text-fg-subtle hover:text-fg disabled:opacity-50">
+        className="absolute right-0 top-0 flex h-10 w-8 items-center justify-center text-fg-subtle hover:text-fg disabled:opacity-50">
         <ChevronDown size={14} />
       </button>
       {open && (

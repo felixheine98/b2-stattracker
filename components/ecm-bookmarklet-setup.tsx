@@ -44,7 +44,7 @@ export function EcmBookmarkletSetup() {
       {error && <p className="text-xs text-danger">{error}</p>}
 
       <details className="rounded-lg border border-line px-3 py-2" open>
-        <summary className="cursor-pointer text-xs font-semibold uppercase tracking-wider text-fg-muted">On a computer</summary>
+        <summary className="cursor-pointer text-xs font-semibold  text-fg-muted">On a computer</summary>
         <ol className="mt-2 list-decimal space-y-1.5 pl-5">
           <li>Drag the yellow link into the bookmarks bar (show it with ⌘⇧B or Ctrl+Shift+B).</li>
           <li>Open the match page on ecircuitmania.com and click the bookmark.</li>
@@ -53,7 +53,7 @@ export function EcmBookmarkletSetup() {
       </details>
 
       <details className="rounded-lg border border-line px-3 py-2">
-        <summary className="cursor-pointer text-xs font-semibold uppercase tracking-wider text-fg-muted">On a phone</summary>
+        <summary className="cursor-pointer text-xs font-semibold  text-fg-muted">On a phone</summary>
         <ol className="mt-2 list-decimal space-y-1.5 pl-5">
           <li>Tap “Copy address” above.</li>
           <li>

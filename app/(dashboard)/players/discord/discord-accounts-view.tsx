@@ -60,7 +60,7 @@ export function DiscordAccountsView({ accounts, players, error }: { accounts: Ac
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="min-w-0">
           <Link href="/players" className="mb-1 inline-flex items-center gap-1 text-sm text-fg-muted hover:text-fg"><ArrowLeft size={14} /> Players</Link>
-          <h1 className="text-2xl font-bold text-fg">Discord accounts</h1>
+          <h1 className="text-fg page-title">Discord accounts</h1>
           <p className="mt-0.5 text-sm text-fg-muted">Link each account to its player once. Reaction imports then recognise it by its Discord ID, also after renames.</p>
         </div>
         {tab === "open" && suggested.length > 0 && (

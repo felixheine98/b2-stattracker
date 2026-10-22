@@ -1,3 +1,5 @@
+import { ResultBoard } from "@/components/result-board"
+import { Wdl } from "@/components/wdl"
 import { AvailabilityCard } from "@/components/planning/availability-card"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
@@ -18,16 +20,16 @@ import { cn, formatLabel } from "@/lib/utils"
 import { ChevronRight, Star, Swords, Trophy, Users } from "lucide-react"
 import Link from "next/link"
 
-const HEADING = "text-sm font-semibold text-fg-muted uppercase tracking-wider mb-3"
+const HEADING = "section-title mb-3"
 
 function Tile({ label, value, hint, icon }: { label: string; value: React.ReactNode; hint?: React.ReactNode; icon?: React.ReactNode }) {
   return (
-    <div className="rounded-xl border border-line bg-surface px-4 py-3">
+    <div className="metric-tile">
       <p className="flex items-center justify-between text-xs text-fg-muted">
         {label}
         {icon}
       </p>
-      <p className="mt-0.5 font-mono text-xl font-semibold text-fg">{value}</p>
+      <p className="metric-value text-fg">{value}</p>
       {hint && <p className="mt-0.5 text-xs text-fg-subtle">{hint}</p>}
     </div>
   )
@@ -106,8 +108,8 @@ export default async function DashboardPage() {
   return (
     <div className="space-y-6 page-wide">
       <div>
-        <h1 className="text-2xl font-bold text-fg">Welcome back, {session?.user?.name}</h1>
-        <p className="text-fg-muted text-sm mt-0.5">Here is how the team is doing.</p>
+        <h1 className="text-fg page-title">Welcome back, {session?.user?.name}</h1>
+        <p className="text-fg-muted text-sm mt-0.5">Your results, lineups and next competition.</p>
       </div>
 
       {/* From 1536px on the tournaments stand on the left, the rest on the right */}
@@ -122,21 +124,6 @@ export default async function DashboardPage() {
           </div>
         </div>
       )}
-
-      <div>
-        <h2 className={HEADING}>Overall</h2>
-        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4 2xl:grid-cols-2">
-          <Tile label="Members" value={memberCount} icon={<Users size={15} className="text-brand-ink" />} />
-          <Tile label="Round tournaments" value={tournaments.length} icon={<Trophy size={15} className="text-brand-ink" />} />
-          <Tile
-            label="Matches"
-            value={matches.length}
-            hint={`${overall.matchesWon} W · ${overall.matchesDrawn} D · ${overall.matchesLost} L`}
-            icon={<Swords size={15} className="text-brand-ink" />}
-          />
-          <Tile label="Round win rate" value={winRate(overall.roundsWon, overall.roundsLost)} hint={`${overall.roundsWon} W – ${overall.roundsLost} L`} />
-        </div>
-      </div>
 
       <div className="page-main space-y-6">
       {blocks.map(({ tournament, heading }) => {
@@ -173,7 +160,7 @@ export default async function DashboardPage() {
             <Card>
               <CardContent className="space-y-5 pt-5">
                 <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
-                  <Link href={tournamentPath(tournament)} className="flex items-center gap-2 text-lg font-semibold text-fg hover:text-brand-ink">
+                  <Link href={tournamentPath(tournament)} className="flex min-w-0 items-center gap-2 text-xl font-semibold text-fg hover:text-brand-ink">
                     <Trophy size={17} className="shrink-0 text-brand-ink" />
                     <span className="break-words">{tournament.name}</span>
                   </Link>
@@ -182,6 +169,22 @@ export default async function DashboardPage() {
                     {tournament.endDate ? ` – ${formatDay(tournament.endDate)}` : ""}
                   </span>
                 </div>
+
+                {records.length === 1 && records.map((record) => {
+                  const last = lastMatchOf(record)
+                  const lineup = lineups.find((l) => l.id === record.lineupId)
+                  return last && lineup && record.lastMatch ? (
+                    <Link key={record.lineupId} href={last.path} className="block rounded-xl focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-info">
+                      <ResultBoard
+                        team={lineup.name}
+                        opponent={record.lastMatch.opponent ?? "Opponent"}
+                        score={<Wdl won={record.lastMatch.mapsWon} drawn={0} lost={record.lastMatch.mapsLost} unit="Maps" />}
+                        detail={<>Maps · {record.lastMatch.confirmed ? "Confirmed" : "Open"}</>}
+                        context="Last match"
+                      />
+                    </Link>
+                  ) : null
+                })}
 
                 {/* One row per lineup; on phones each row stacks into a small card */}
                 <div className="overflow-hidden rounded-lg border border-line">
@@ -208,23 +211,23 @@ export default async function DashboardPage() {
                           <Link href={lineupPath(tournament, lineup)} className="truncate font-medium text-fg hover:text-brand-ink">{lineup.name}</Link>
                           {record.lineupId === ownLineupId && <span className="shrink-0 text-xs text-brand-ink">your lineup</span>}
                         </span>
-                        <span className="font-mono text-fg md:text-right">
+                        <span className="tabular-nums text-fg md:text-right">
                           <span className="mr-1.5 font-sans text-xs text-fg-subtle md:hidden">Matches</span>
                           {record.matchesWon}–{record.matchesDrawn}–{record.matchesLost}
                         </span>
-                        <span className="font-mono text-fg-soft md:text-right">
+                        <span className="tabular-nums text-fg-soft md:text-right">
                           <span className="mr-1.5 font-sans text-xs text-fg-subtle md:hidden">Maps</span>
                           {record.mapsWon}–{record.mapsLost}
                         </span>
-                        <span className="font-mono text-fg-soft md:text-right">
+                        <span className="tabular-nums text-fg-soft md:text-right">
                           <span className="mr-1.5 font-sans text-xs text-fg-subtle md:hidden">Rounds</span>
                           {record.roundsWon}–{record.roundsLost}
                         </span>
                         <span className="col-span-3 min-w-0 text-xs md:col-span-1 md:text-sm">
                           {last && record.lastMatch ? (
                             <Link href={last.path} className="flex min-w-0 items-center gap-1.5 text-fg-soft hover:text-fg">
-                              {outcome && <span className={cn("font-mono font-bold", outcome.className)}>{outcome.label}</span>}
-                              <span className="font-mono">{record.lastMatch.mapsWon}–{record.lastMatch.mapsLost}</span>
+                              {outcome && <span className={cn("tabular-nums font-bold", outcome.className)}>{outcome.label}</span>}
+                              <span className="tabular-nums">{record.lastMatch.mapsWon}–{record.lastMatch.mapsLost}</span>
                               <span className="truncate">vs {record.lastMatch.opponent ?? "Unknown"}</span>
                               {matchTag(last.match) && <span className="shrink-0 text-fg-subtle">{matchTag(last.match)}</span>}
                               {!record.lastMatch.confirmed && <span className="shrink-0 text-bronze">open</span>}
@@ -250,7 +253,7 @@ export default async function DashboardPage() {
                         <div key={title} className="flex items-center gap-3 rounded-lg border border-line bg-canvas px-3 py-2.5">
                           <Star size={18} className="shrink-0 text-brand-ink" />
                           <div className="min-w-0 flex-1">
-                            <p className="text-[11px] font-semibold uppercase tracking-wider text-fg-subtle">{title}</p>
+                            <p className="text-[11px] font-semibold  text-fg-subtle">{title}</p>
                             <p className="truncate text-sm">
                               {player ? (
                                 <Link href={playerPath(player)} className="font-semibold text-fg hover:text-brand-ink">{player.name}</Link>
@@ -261,7 +264,7 @@ export default async function DashboardPage() {
                             </p>
                           </div>
                           <div className="shrink-0 text-right">
-                            <p className="font-mono text-sm font-semibold text-fg">{performer.avgPlace.toFixed(2)}</p>
+                            <p className="tabular-nums text-sm font-semibold text-fg">{performer.avgPlace.toFixed(2)}</p>
                             <p className="text-xs text-fg-subtle">avg place · {performer.rounds} rounds</p>
                           </div>
                         </div>
@@ -281,7 +284,7 @@ export default async function DashboardPage() {
                         </Link>
                       )}
                     </div>
-                    <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+                    <div className="metric-strip">
                       <Tile label="Rounds" value={mine.total.roundsPlayed} />
                       <Tile
                         label="Avg place"
@@ -312,7 +315,7 @@ export default async function DashboardPage() {
       {recent.length > 0 && (
         <section>
           <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-            <h2 className="text-sm font-semibold text-fg-muted uppercase tracking-wider">Recent Tournaments</h2>
+            <h2 className="section-title">Recent Tournaments</h2>
             <Link href="/tournaments" className="inline-flex items-center gap-1 text-sm text-brand-ink hover:underline">
               All tournaments
               <ChevronRight size={14} />
@@ -332,6 +335,21 @@ export default async function DashboardPage() {
         </section>
       )}
       </div>
+      <div>
+        <h2 className={HEADING}>Overall</h2>
+        <div className="metric-strip">
+          <Tile label="Members" value={memberCount} icon={<Users size={15} className="text-brand-ink" />} />
+          <Tile label="Round tournaments" value={tournaments.length} icon={<Trophy size={15} className="text-brand-ink" />} />
+          <Tile
+            label="Matches"
+            value={matches.length}
+            hint={`${overall.matchesWon} W · ${overall.matchesDrawn} D · ${overall.matchesLost} L`}
+            icon={<Swords size={15} className="text-brand-ink" />}
+          />
+          <Tile label="Round win rate" value={winRate(overall.roundsWon, overall.roundsLost)} hint={`${overall.roundsWon} W – ${overall.roundsLost} L`} />
+        </div>
+      </div>
+
       </div>
     </div>
   )

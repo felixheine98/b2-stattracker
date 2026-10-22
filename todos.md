@@ -6,9 +6,14 @@ Ideen, die noch kein Todo sind: [ideen.md](ideen.md)
 
 - [ ] seeding formate für import/anlegen prüfen (Liste der alten Seeding-Screenshots aus Discord folgt nach der Übernahme, [ADR 007](docs/adr/007-zusammengefasste-ergebnisse.md))
 - [ ] Alte Comp-Stats aus Discord-Screenshots übernehmen ([Entscheidung](docs/adr/007-zusammengefasste-ergebnisse.md), [Glossar](docs/zusammengefasste-ergebnisse-glossar.md)); Abgleich mit Felix pro Comp
-- [ ] Design/UI/UX Verbesserungen
 
 ## Teilweise erledigt
+
+- [ ] Design/UI/UX Verbesserungen ([Rennleitstand-Entwurf](docs/redesign-rennleitstand.md))
+  - [x] In Dev: B2-Farben, Typografie, Navigation, gemeinsame Felder/Buttons/Dialoge, Listen und Stats auf allen Seiten
+  - [x] Ergebnisleiste auf Match und Dashboard, Turnierliste als Zeilen, ruhigere Kennzahlen, Planungsansicht
+  - [ ] Felix prüft den Entwurf in Dev; Details und verbleibende Abläufe gemeinsam abstimmen
+  - [ ] Nach Freigabe Production übernehmen
 
 - [ ] Discord-Reaktionen in der Comp-Planung ([Anbindung](docs/discord-planning.md))
   - [x] Abruf, Emoji-Zuordnung, Account-Verknüpfung und Übernahme mit Vorschau

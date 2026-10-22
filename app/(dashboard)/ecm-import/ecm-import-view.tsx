@@ -117,7 +117,7 @@ export function EcmImportView({ tournaments }: { tournaments: Tournament[] }) {
     return (
       <div className="page-narrow space-y-5">
         <div>
-          <h1 className="text-2xl font-bold text-fg">eCM import</h1>
+          <h1 className="text-fg page-title">eCM import</h1>
           <p className="mt-0.5 text-sm text-fg-muted">
             {fragment ? "The data that came along cannot be read. Please start the bookmark on the eCM match page once more." : "The eCM bookmark brings you here with the data of a match."}
           </p>
@@ -133,7 +133,7 @@ export function EcmImportView({ tournaments }: { tournaments: Tournament[] }) {
   return (
     <div className="max-w-xl space-y-5">
       <div>
-        <h1 className="text-2xl font-bold text-fg">eCM import</h1>
+        <h1 className="text-fg page-title">eCM import</h1>
         <p className="mt-0.5 text-sm text-fg-muted">
           {teams.join(" vs ")} · {payload.sets.length} sets, {rounds} rounds read
         </p>

@@ -14,7 +14,7 @@ export default async function SummaryComparePage() {
   return (
     <div className="space-y-6 page-wide">
       <div>
-        <h1 className="text-2xl font-bold text-fg">Screenshot comparison</h1>
+        <h1 className="text-fg page-title">Screenshot comparison</h1>
         <p className="mt-1 text-sm text-fg-muted">Old stats screenshots next to the values taken over from them. Dev only.</p>
       </div>
       {files.length === 0 && <p className="text-sm text-fg-subtle">No comp transcribed yet.</p>}

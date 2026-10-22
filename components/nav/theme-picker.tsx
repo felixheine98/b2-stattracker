@@ -8,13 +8,13 @@ import type { ThemeChoice } from "@/lib/theme"
 import { currentThemeChoice, selectTheme, THEME_CHANGE_EVENT } from "./theme-toggle"
 
 const options: { value: ThemeChoice; label: string; description: string; bg: string; surface: string; fg: string }[] = [
-  { value: "dark", label: "B2 Dark", description: "Classic dark with B2 yellow", bg: "#0e0b0b", surface: "#251f20", fg: "#f5f0f0" },
-  { value: "light", label: "B2 Light", description: "Warm white with B2 colours", bg: "#f4f2ee", surface: "#ffffff", fg: "#1a1718" },
+  { value: "dark", label: "B2 Dark", description: "Navy work surfaces with B2 yellow", bg: "#101d36", surface: "#233958", fg: "#f3f6fc" },
+  { value: "light", label: "B2 Light", description: "Cool white surfaces with B2 blue", bg: "#f1f4fa", surface: "#ffffff", fg: "#152746" },
   { value: "warm-light", label: "Warm Light", description: "Soft cream with warm surfaces and B2 blue", bg: "#f6efdf", surface: "#ede2ce", fg: "#33291f" },
   { value: "b2-blue", label: "B2 Blue", description: "Bold team blue with yellow highlights", bg: "#00164f", surface: "#103da0", fg: "#f3f6ff" },
   { value: "midnight", label: "Midnight", description: "Deep navy with cool blue surfaces", bg: "#0b1224", surface: "#1b2942", fg: "#eef3fc" },
   { value: "oled", label: "OLED Black", description: "Pure black with subtle grey surfaces", bg: "#000000", surface: "#171717", fg: "#f5f5f5" },
-  { value: "system", label: "Follow system", description: "B2 Light or Dark to match your device", bg: "#0e0b0b", surface: "#f4f2ee", fg: "#f5f0f0" },
+  { value: "system", label: "Follow system", description: "B2 Light or Dark to match your device", bg: "#101d36", surface: "#f1f4fa", fg: "#f5f0f0" },
 ]
 
 function subscribe(onChange: () => void) {
@@ -68,7 +68,7 @@ export function ThemePicker({ collapsed = false }: { collapsed?: boolean }) {
                     choice === option.value && "ring-2 ring-brand ring-offset-2 ring-offset-surface"
                   )}
                   style={{ background: option.value === "system"
-                    ? "linear-gradient(135deg, #f4f2ee 0%, #f4f2ee 48%, #251f20 52%, #0e0b0b 100%)"
+                    ? "linear-gradient(135deg, #f1f4fa 0%, #f1f4fa 48%, #233958 52%, #101d36 100%)"
                     : `radial-gradient(circle at 30% 25%, color-mix(in srgb, ${option.surface} 65%, ${option.fg}) 0%, ${option.surface} 40%, ${option.bg} 85%)` }}
                 >
                   {option.value === "system" && <Monitor size={18} className="rounded bg-black/50 p-0.5 text-white" />}

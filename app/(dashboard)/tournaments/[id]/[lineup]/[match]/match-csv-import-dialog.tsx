@@ -212,7 +212,7 @@ export function MatchCsvImportDialog({ tournamentId, matchId, subMatches, ruleSe
                   <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                     {sides.map((side) => (
                       <div key={side.label}>
-                        <p className={cn("mb-1 text-[11px] font-semibold uppercase tracking-wider", side.label === "Us" ? "text-brand-ink" : "text-fg-subtle")}>{side.label}</p>
+                        <p className={cn("mb-1 text-[11px] font-semibold ", side.label === "Us" ? "text-brand-ink" : "text-fg-subtle")}>{side.label}</p>
                         <div className="flex flex-wrap gap-1.5">
                           {side.list.length === 0 && <span className="text-xs text-fg-subtle">nobody</span>}
                           {side.list.map((d) => {

@@ -274,7 +274,7 @@ export function VariantsBoard({ tournamentId, tournamentHref, rows, levels, vari
         }
 
         return (
-          <section key={variant.id} className={cn("space-y-4 rounded-xl border p-5", adopted ? "border-brand/60" : "border-line")}>
+          <section key={variant.id} className={cn("space-y-4 rounded-xl border bg-surface p-4 sm:p-5", adopted ? "border-brand/60" : "border-line")}>
             <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5">
               {archived ? (
                 <h3 className="text-base font-semibold text-fg">{variant.name}</h3>
@@ -357,7 +357,7 @@ export function VariantsBoard({ tournamentId, tournamentHref, rows, levels, vari
             )}
 
             <div className={cn(area(POOL), "flex min-h-14 flex-wrap items-center gap-2")} {...dropProps(POOL)}>
-              <span className="mr-1 text-[11px] font-semibold uppercase tracking-wider text-fg-subtle">Not placed {board.pool.length}</span>
+              <span className="mr-1 text-xs font-medium text-fg-muted">Player pool {board.pool.length}</span>
               {board.pool.map((row) => chip(row))}
             </div>
 

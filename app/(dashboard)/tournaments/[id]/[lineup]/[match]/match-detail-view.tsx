@@ -1,5 +1,6 @@
 "use client"
 
+import { ResultBoard } from "@/components/result-board"
 import { MatchOpponentPanel } from "@/components/opponents/match-opponent-panel"
 import { BASE_PATH } from "@/lib/base-path"
 import { lineupPath, matchPath, tournamentPath } from "@/lib/paths"
@@ -249,13 +250,13 @@ function SubMatchStatsTable({ sm, number, isGuest, isTrial }: { sm: SubMatch; nu
               </td>
               <td className="py-1.5 px-2 text-right text-fg-soft">{row.roundsPlayed}</td>
               <td className="py-1.5 px-2 text-right text-fg-soft">{row.placementSum}</td>
-              <td className="py-1.5 px-2 text-right text-fg-soft font-mono">
+              <td className="py-1.5 px-2 text-right text-fg-soft tabular-nums">
                 {row.avg > 0 ? row.avg.toFixed(3) : "—"}
               </td>
               <td className="py-1.5 px-2 text-right text-fg-soft">{row.dnfs}</td>
-              <td className="py-1.5 px-2 text-right text-brand-ink font-mono">{row.bestTime != null ? formatTime(row.bestTime) : "—"}</td>
-              <td className="py-1.5 px-2 text-right text-fg-soft font-mono">{row.medianTime != null ? formatTime(Math.round(row.medianTime)) : "—"}</td>
-              <td className="py-1.5 px-2 text-right text-fg-soft font-mono">{row.avgTime != null ? formatTime(Math.round(row.avgTime)) : "—"}</td>
+              <td className="py-1.5 px-2 text-right text-brand-ink tabular-nums">{row.bestTime != null ? formatTime(row.bestTime) : "—"}</td>
+              <td className="py-1.5 px-2 text-right text-fg-soft tabular-nums">{row.medianTime != null ? formatTime(Math.round(row.medianTime)) : "—"}</td>
+              <td className="py-1.5 px-2 text-right text-fg-soft tabular-nums">{row.avgTime != null ? formatTime(Math.round(row.avgTime)) : "—"}</td>
             </tr>
           ))}
         </tbody>
@@ -323,7 +324,7 @@ function SummaryStatsTable({ sm, summary, number, isGuest, isTrial }: { sm: SubM
                 </td>
                 <td className="py-1.5 px-2 text-right text-fg-soft">{row.rounds}</td>
                 <td className="py-1.5 px-2 text-right text-fg-soft">{inPoints ? (row.points ?? "—") : row.placementSum}</td>
-                <td className="py-1.5 px-2 text-right text-fg-soft font-mono">
+                <td className="py-1.5 px-2 text-right text-fg-soft tabular-nums">
                   {inPoints ? (row.points !== null && row.points !== undefined ? (row.points / row.rounds).toFixed(3) : "—") : (row.placementSum! / row.rounds).toFixed(3)}
                 </td>
               </tr>
@@ -505,7 +506,7 @@ export function MatchDetailView({ match: initialMatch, ruleSet, allPlayers, gues
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="min-w-0 flex-1 basis-full lg:basis-0">
             <div className="flex items-center gap-2 mb-1 flex-wrap">
-              <h1 className="text-2xl font-bold text-fg">{matchTitle}</h1>
+              <h1 className="text-fg page-title">{matchTitle}</h1>
               {matchTag(initialMatch) && <Badge variant="default">{matchTag(initialMatch)}</Badge>}
               {/* A match can be moved between match days and playoffs, but never into or out of the seeding */}
               {canEdit && !isSeeding ? (
@@ -607,27 +608,25 @@ export function MatchDetailView({ match: initialMatch, ruleSet, allPlayers, gues
             )}
           </div>
           <div className="flex w-full flex-wrap items-center justify-end gap-3 sm:ml-auto sm:w-auto">
-            {report.outcome && (
-              <Card className="shrink-0">
-                <CardContent className="py-2 px-4">
-                  <div className="text-center">
-                    <p className="text-2xl font-bold text-fg">
-                      <Wdl won={report.won} drawn={report.drawn} lost={report.lost} unit="Sub-Matches" />
-                    </p>
-                    <p className="text-xs text-fg-subtle">sub-match score{points !== null && ` · ${points} ${points === 1 ? "pt" : "pts"}`}</p>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
             {!isSeeding && <MatchOpponentPanel competitionId={initialMatch.tournament.id} matchId={initialMatch.id} canEdit={canEdit} results={subMatches} hints={closingHints(subMatches, report)} />}
           </div>
         </div>
       </div>
 
+      {!isSeeding && (
+        <ResultBoard
+          team={matchLineup?.name ?? "B2"}
+          opponent={initialMatch.opponent ?? "Opponent"}
+          score={report.outcome ? <Wdl won={report.won} drawn={report.drawn} lost={report.lost} unit="Sub-matches" /> : "—"}
+          detail={<>Sub-matches · {closed ? "Closed" : "Open"}{points !== null && ` · ${points} ${points === 1 ? "pt" : "pts"}`}</>}
+          context={initialMatch.tournament.name}
+        />
+      )}
+
       {/* Player stats, one table per sub-match */}
       {subMatches.some((sm) => sm.rounds.length > 0 || sm.summary) && (
         <div>
-          <h2 className="text-sm font-semibold text-fg-muted uppercase tracking-wider mb-3 flex items-center gap-2">
+          <h2 className="section-title mb-3 flex items-center gap-2">
             <BarChart2 size={14} />
             Stats
           </h2>
@@ -650,7 +649,7 @@ export function MatchDetailView({ match: initialMatch, ruleSet, allPlayers, gues
           const summaryResult = sm.summary ? summaryState(sm.summary) : null
 
           return (
-            <div key={sm.id} className="rounded-xl border border-line overflow-hidden">
+            <div key={sm.id} className="rounded-xl border border-line bg-surface overflow-hidden">
               {/* Sub-match header */}
               <button
                 type="button"
@@ -714,13 +713,13 @@ export function MatchDetailView({ match: initialMatch, ruleSet, allPlayers, gues
                       {stats.bestOurTime && (
                         <div>
                           <p className="text-xs text-fg-muted">Our best time</p>
-                          <p className="text-brand-ink font-mono font-medium">{formatTime(stats.bestOurTime)}</p>
+                          <p className="text-brand-ink tabular-nums font-medium">{formatTime(stats.bestOurTime)}</p>
                         </div>
                       )}
                       {stats.bestOpponentTime && (
                         <div>
                           <p className="text-xs text-fg-muted">Opponent best</p>
-                          <p className="text-fg-soft font-mono">{formatTime(stats.bestOpponentTime)}</p>
+                          <p className="text-fg-soft tabular-nums">{formatTime(stats.bestOpponentTime)}</p>
                         </div>
                       )}
                     </div>
@@ -753,7 +752,7 @@ export function MatchDetailView({ match: initialMatch, ruleSet, allPlayers, gues
                         onClick={() => toggleRounds(sm.id)}
                         className="w-full flex items-center justify-between rounded-lg border border-line bg-surface px-4 py-2.5 text-left hover:bg-raised transition-colors"
                       >
-                        <span className="text-xs font-semibold text-fg-muted uppercase tracking-wider">
+                        <span className="text-xs font-semibold text-fg-muted ">
                           Round Results
                           <span className="ml-2 font-normal normal-case tracking-normal text-fg-subtle">
                             {totalRounds} round{totalRounds !== 1 ? "s" : ""}
@@ -799,7 +798,7 @@ export function MatchDetailView({ match: initialMatch, ruleSet, allPlayers, gues
                                 {score?.outcome === "W" && <Badge variant="primary">WIN</Badge>}
                                 {score?.outcome === "L" && <Badge variant="red">LOSS</Badge>}
                                 {score?.outcome === "D" && <Badge variant="default">DRAW</Badge>}
-                                {score && <span className="text-xs font-mono text-fg-muted" title="Points: us – opponent">{score.ours}–{score.theirs}</span>}
+                                {score && <span className="text-xs tabular-nums text-fg-muted" title="Points: us – opponent">{score.ours}–{score.theirs}</span>}
                               </div>
                               {/* Phones: one list in finishing order, our players highlighted */}
                               <ol className="space-y-1 md:hidden">
@@ -813,13 +812,13 @@ export function MatchDetailView({ match: initialMatch, ruleSet, allPlayers, gues
                                         r.isOurTeam ? "bg-brand/10 text-fg" : "text-fg-muted"
                                       )}
                                     >
-                                      <span className={`w-6 shrink-0 text-xs font-bold font-mono ${rankColor(rank)}`}>#{rank}</span>
+                                      <span className={`w-6 shrink-0 text-xs font-bold tabular-nums ${rankColor(rank)}`}>#{rank}</span>
                                       <span className="min-w-0 flex-1 truncate">
                                         {r.isOurTeam ? <PlayerName name={r.playerName} currentName={r.currentName} /> : r.playerName}
                                         {r.isOurTeam && isGuest(r.tmId) && <GuestBadge className="ml-1.5" />}
 {r.isOurTeam && isTrial(r.tmId) && <TrialBadge className="ml-1.5" />}
                                       </span>
-                                      <span className={`shrink-0 font-mono text-xs ${rankColor(rank)}`}>
+                                      <span className={`shrink-0 tabular-nums text-xs ${rankColor(rank)}`}>
                                         {r.dnf ? "DNF" : r.timeMs != null ? formatTime(r.timeMs) : "—"}
                                       </span>
                                     </li>
@@ -837,7 +836,7 @@ export function MatchDetailView({ match: initialMatch, ruleSet, allPlayers, gues
                                       const rank = rankMap.get(r.id) ?? 0
                                       return (
                                         <div key={r.id} className="flex items-center gap-2 text-sm">
-                                          <span className={`w-5 shrink-0 text-xs font-bold font-mono ${rankColor(rank)}`}>
+                                          <span className={`w-5 shrink-0 text-xs font-bold tabular-nums ${rankColor(rank)}`}>
                                             #{rank}
                                           </span>
                                           <span className="text-fg flex-1 truncate">
@@ -845,7 +844,7 @@ export function MatchDetailView({ match: initialMatch, ruleSet, allPlayers, gues
                                             {isGuest(r.tmId) && <GuestBadge className="ml-1.5" />}
 {isTrial(r.tmId) && <TrialBadge className="ml-1.5" />}
                                           </span>
-                                          <span className={`font-mono shrink-0 ${rankColor(rank)}`}>
+                                          <span className={`tabular-nums shrink-0 ${rankColor(rank)}`}>
                                             {r.dnf ? "DNF" : r.timeMs != null ? formatTime(r.timeMs) : "—"}
                                           </span>
                                         </div>
@@ -860,11 +859,11 @@ export function MatchDetailView({ match: initialMatch, ruleSet, allPlayers, gues
                                       const rank = rankMap.get(r.id) ?? 0
                                       return (
                                         <div key={r.id} className="flex items-center gap-2 text-sm">
-                                          <span className={`w-5 shrink-0 text-xs font-bold font-mono ${rankColor(rank)}`}>
+                                          <span className={`w-5 shrink-0 text-xs font-bold tabular-nums ${rankColor(rank)}`}>
                                             #{rank}
                                           </span>
                                           <span className="text-fg-muted flex-1 truncate">{r.playerName}</span>
-                                          <span className={`font-mono shrink-0 ${rankColor(rank)}`}>
+                                          <span className={`tabular-nums shrink-0 ${rankColor(rank)}`}>
                                             {r.dnf ? "DNF" : r.timeMs != null ? formatTime(r.timeMs) : "—"}
                                           </span>
                                         </div>

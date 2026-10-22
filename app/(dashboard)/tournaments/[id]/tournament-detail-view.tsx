@@ -393,7 +393,7 @@ export function TournamentDetailView({ tournament: initial, players, statsMatche
         </Link>
         <div className="flex items-start justify-between gap-4">
           <div className="min-w-0">
-            <h1 className="text-2xl font-bold text-fg mb-1">{tournament.name}</h1>
+            <h1 className="text-fg mb-1 page-title">{tournament.name}</h1>
             <div className="flex flex-wrap gap-1 mb-1">
               <Link href={`/tournaments?style=${styleParam(tournament.style)}`}>
                 <Badge variant="purple">{styleLabel(tournament.style)}</Badge>
@@ -578,7 +578,7 @@ export function TournamentDetailView({ tournament: initial, players, statsMatche
         return (
           <div>
             <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-              <h2 className="text-sm font-semibold text-fg-muted uppercase tracking-wider flex items-center gap-2">
+              <h2 className="text-sm font-semibold text-fg-muted  flex items-center gap-2">
                 <BarChart2 size={14} />
                 Overall stats
               </h2>
@@ -621,7 +621,7 @@ export function TournamentDetailView({ tournament: initial, players, statsMatche
       {/* Matches section */}
       <div>
         {matches.length === 0 ? (
-          <h2 className="mb-3 text-sm font-semibold text-fg-muted uppercase tracking-wider">Matches (0)</h2>
+          <h2 className="mb-3 text-sm font-semibold text-fg-muted ">Matches (0)</h2>
         ) : (
           <button
             type="button"
@@ -629,7 +629,7 @@ export function TournamentDetailView({ tournament: initial, players, statsMatche
             aria-expanded={showMatches}
             className="flex w-full items-center justify-between gap-3 rounded-xl border border-line bg-surface px-4 py-3 text-left hover:bg-raised/50"
           >
-            <h2 className="text-sm font-semibold text-fg-muted uppercase tracking-wider">Matches ({matches.length})</h2>
+            <h2 className="section-title">Matches ({matches.length})</h2>
             <ChevronDown size={16} className={cn("shrink-0 text-fg-muted transition-transform", showMatches && "rotate-180")} />
           </button>
         )}
@@ -858,7 +858,7 @@ export function TournamentDetailView({ tournament: initial, players, statsMatche
                 {playerGroups.map((group) => (
                   <div key={group.label ?? "members"} className="space-y-2">
                     {group.label && (
-                      <p className="border-t border-line pt-2 text-[10px] font-semibold uppercase tracking-wider text-fg-subtle">
+                      <p className="border-t border-line pt-2 text-[10px] font-semibold  text-fg-subtle">
                         {group.label}
                       </p>
                     )}

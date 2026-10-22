@@ -54,7 +54,7 @@ export function TfhImportView({ players, initialUrl }: { players: Array<{ id: st
 
   return <div className="page-narrow space-y-6">
     <Link href="/tournaments" className="inline-flex items-center gap-2 text-sm text-fg-muted"><ArrowLeft size={14} />Tournaments</Link>
-    <div><h1 className="text-2xl font-bold">TFH import</h1><p className="mt-1 text-sm text-fg-muted">Archive a completed 24h race or 12h RPG edition. Review teams and drivers before saving.</p></div>
+    <div><h1 className="page-title">TFH import</h1><p className="mt-1 text-sm text-fg-muted">Archive a completed 24h race or 12h RPG edition. Review teams and drivers before saving.</p></div>
     <form onSubmit={e => { e.preventDefault(); void loadPreview(false) }} className="space-y-2">
       <Label htmlFor="tfh-url">TFH race URL</Label>
       <div className="flex flex-wrap gap-2">

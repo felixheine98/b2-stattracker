@@ -127,7 +127,7 @@ export function AdminView({ users: initial, currentUserId, isAdmin }: Props) {
     <div className="space-y-6 page-wide">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-fg">Accounts</h1>
+          <h1 className="text-fg page-title">Accounts</h1>
           <p className="text-fg-muted text-sm mt-0.5">{users.length} accounts</p>
         </div>
         <Button onClick={() => { setShowForm(true); setError("") }}>

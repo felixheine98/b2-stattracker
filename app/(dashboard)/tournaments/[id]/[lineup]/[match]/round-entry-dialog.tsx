@@ -588,7 +588,7 @@ export function RoundEntryDialog({ subMatch, pool, allPlayers, isGuest, onClose,
                     </tr>
                   )}
                   <tr>
-                    <td className="sticky left-0 z-10 bg-surface pr-3 text-[10px] uppercase tracking-wider text-fg-subtle">
+                    <td className="sticky left-0 z-10 bg-surface pr-3 text-[10px]  text-fg-subtle">
                       Points
                     </td>
                     {states.map((state, c) => (

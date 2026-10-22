@@ -513,7 +513,7 @@ export function PlayersView({ players: initial, users, canManage }: Props) {
     <div className="space-y-6 page-wide">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-fg">Players</h1>
+          <h1 className="text-fg page-title">Players</h1>
           <p className="text-fg-muted text-sm mt-0.5">
             {count("MEMBER")} member{count("MEMBER") !== 1 ? "s" : ""}, {count("TRIAL")} on trial, {count("GUEST")} guest{count("GUEST") !== 1 ? "s" : ""}
           </p>
@@ -640,7 +640,7 @@ export function PlayersView({ players: initial, users, canManage }: Props) {
                 {/* Members: the managers first, under a heading of their own */}
                 {tab === "members" && managers.length > 0 && (i === 0 || i === managers.length) && (
                   <tr className="border-b border-line bg-raised/60 max-md:block max-md:border-0 max-md:bg-transparent">
-                    <td colSpan={7} className="px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-fg-muted @7xl:px-4 max-md:block max-md:px-0.5 max-md:py-0">
+                    <td colSpan={7} className="px-3 py-1.5 text-[11px] font-semibold  text-fg-muted @7xl:px-4 max-md:block max-md:px-0.5 max-md:py-0">
                       {i === 0 ? "Manager" : "Member"}
                     </td>
                   </tr>
@@ -691,7 +691,7 @@ export function PlayersView({ players: initial, users, canManage }: Props) {
                     <span className="block w-[9ch] truncate @7xl:w-auto max-md:ml-auto max-md:w-[14ch]" title={player.tmId}>{player.tmId}</span>
                   </td>
                   {tab !== "former" && <td className="px-3 py-3 @7xl:px-4 max-md:order-5 max-md:col-span-2 max-md:block max-md:min-w-0 max-md:p-0">
-                    <span className="mb-1 block text-[10px] uppercase tracking-wider text-fg-subtle md:hidden">{mayGetLogin(TAB_STATUS[tab]) ? "Account" : "Login"}</span>
+                    <span className="mb-1 block text-[10px]  text-fg-subtle md:hidden">{mayGetLogin(TAB_STATUS[tab]) ? "Account" : "Login"}</span>
                     {!mayGetLogin(currentStatus(player)) ? (
                       // Guests keep existing links; members and trials can link new accounts.
                       player.user ? (

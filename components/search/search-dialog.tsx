@@ -110,7 +110,7 @@ export function SearchDialog() {
 
         {groups.map((group) => (
           <section key={group.kind}>
-            <h3 className="mb-1 px-2 text-[11px] font-medium uppercase tracking-wider text-fg-subtle">{GROUP_LABEL[group.kind]}</h3>
+            <h3 className="mb-1 px-2 text-[11px] font-medium  text-fg-subtle">{GROUP_LABEL[group.kind]}</h3>
             <ul>
               {group.hits.map(({ entry, via }) => {
                 const i = ++index

@@ -56,7 +56,7 @@ export function Sidebar({ userName, role, profileHref, styles }: SidebarProps) {
   }
 
   return (
-    <aside className={cn("relative hidden h-dvh shrink-0 flex-col border-r border-line bg-surface transition-[width]", collapsed ? "w-14" : "w-56",
+    <aside className={cn("app-sidebar relative hidden h-dvh shrink-0 flex-col border-r border-line bg-surface transition-[width]", collapsed ? "w-14" : "w-60",
       // Phones use the bottom bar instead (components/nav/mobile-nav.tsx)
       "md:flex")}>
       {/* Sits just outside the sidebar, in the top left corner of the page (the layout leaves room for it) */}
@@ -65,16 +65,16 @@ export function Sidebar({ userName, role, profileHref, styles }: SidebarProps) {
         aria-expanded={!collapsed}
         aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
         title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-        className="absolute left-full top-[18px] z-10 ml-3 flex h-8 w-8 items-center justify-center rounded-md text-fg-subtle hover:bg-raised hover:text-fg transition-colors"
+        className="absolute left-full top-[18px] z-10 ml-3 flex h-8 w-8 items-center justify-center rounded-md text-info hover:bg-info/10 transition-colors"
       >
         {collapsed ? <PanelLeftOpen size={16} /> : <PanelLeftClose size={16} />}
       </button>
       <div className={cn("flex items-center gap-3 py-4 border-b border-line", collapsed ? "justify-center px-2" : "px-5")}>
         <BrandLogo className={cn("object-contain", collapsed ? "h-9 w-9" : "h-11 w-11")} />
-        {!collapsed && <span className="font-bold text-fg text-xl tracking-tight">B2 Stats</span>}
+        {!collapsed && <span className="font-semibold text-white text-xl tracking-tight">B2 Stats</span>}
       </div>
 
-      <nav className="flex-1 space-y-0.5 px-2 py-4">
+      <nav className="min-h-0 flex-1 space-y-0.5 overflow-y-auto px-3 py-4">
         <button
           type="button"
           onClick={openSearch}
@@ -89,7 +89,7 @@ export function Sidebar({ userName, role, profileHref, styles }: SidebarProps) {
           {!collapsed && (
             <>
               <span className="flex-1 text-left">Search</span>
-              <kbd className="text-[10px] text-fg-subtle">Ctrl K</kbd>
+              <kbd className="text-[10px] text-fg-muted">Ctrl K</kbd>
             </>
           )}
         </button>
@@ -106,7 +106,7 @@ export function Sidebar({ userName, role, profileHref, styles }: SidebarProps) {
                     collapsed ? "justify-center px-0" : "px-3",
                     hasStyles && "pr-9",
                     isActiveItem(pathname, href, profileHref)
-                      ? "bg-brand/10 text-brand-ink"
+                      ? "nav-active"
                       : "text-fg-muted hover:bg-raised hover:text-fg"
                   )}
                 >
@@ -159,7 +159,7 @@ export function Sidebar({ userName, role, profileHref, styles }: SidebarProps) {
                 "flex items-center gap-3 rounded-md py-2 text-sm font-medium transition-colors",
                 collapsed ? "justify-center px-0" : "px-3",
                 pathname === "/admin"
-                  ? "bg-danger/10 text-danger"
+                  ? "nav-active"
                   : "text-fg-muted hover:bg-raised hover:text-fg"
               )}
             >

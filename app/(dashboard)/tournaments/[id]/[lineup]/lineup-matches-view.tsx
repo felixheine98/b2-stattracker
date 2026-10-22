@@ -217,7 +217,7 @@ export function LineupMatchesView({ lineup, rules, guestTmIds, trialTmIds, profi
         </Link>
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="min-w-0">
-            <h1 className="text-2xl font-bold text-fg mb-1">{lineup.name}</h1>
+            <h1 className="text-fg mb-1 page-title">{lineup.name}</h1>
             <p className="text-xs text-fg-subtle">
               Lineup · {tournament.name}
               {points !== null && <span title="Points from the group stage"> · {points} pts</span>}
@@ -236,7 +236,7 @@ export function LineupMatchesView({ lineup, rules, guestTmIds, trialTmIds, profi
       <div className="page-columns">
       {/* Players */}
       <div>
-        <h2 className="text-sm font-semibold text-fg-muted uppercase tracking-wider mb-3 flex items-center gap-2">
+        <h2 className="text-sm font-semibold text-fg-muted  mb-3 flex items-center gap-2">
           <Users size={14} />
           Players ({lineup.slots.length})
         </h2>
@@ -288,7 +288,7 @@ export function LineupMatchesView({ lineup, rules, guestTmIds, trialTmIds, profi
       {hasStats && (
         <div>
           <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-            <h2 className="text-sm font-semibold text-fg-muted uppercase tracking-wider flex items-center gap-2">
+            <h2 className="text-sm font-semibold text-fg-muted  flex items-center gap-2">
               <BarChart2 size={14} />
               Overall stats
             </h2>
@@ -311,7 +311,7 @@ export function LineupMatchesView({ lineup, rules, guestTmIds, trialTmIds, profi
             <p className="text-sm text-fg-subtle">No data for this selection.</p>
           ) : (
             <div className="mb-4 space-y-2">
-              <h3 className="text-xs font-semibold uppercase tracking-wider text-fg-subtle">Maps at a glance</h3>
+              <h3 className="text-xs font-semibold  text-fg-subtle">Maps at a glance</h3>
               <MapOverviewTable maps={mapAggregates} />
             </div>
           )}
@@ -334,7 +334,7 @@ export function LineupMatchesView({ lineup, rules, guestTmIds, trialTmIds, profi
       {/* Matches */}
       <div>
         {matches.length === 0 ? (
-          <h2 className="mb-3 text-sm font-semibold text-fg-muted uppercase tracking-wider flex items-center gap-2">
+          <h2 className="mb-3 text-sm font-semibold text-fg-muted  flex items-center gap-2">
             <Swords size={14} />
             Matches (0)
           </h2>
@@ -345,7 +345,7 @@ export function LineupMatchesView({ lineup, rules, guestTmIds, trialTmIds, profi
             aria-expanded={showMatches}
             className="flex w-full items-center justify-between gap-3 rounded-xl border border-line bg-surface px-4 py-3 text-left hover:bg-raised/50"
           >
-            <h2 className="text-sm font-semibold text-fg-muted uppercase tracking-wider flex items-center gap-2">
+            <h2 className="text-sm font-semibold text-fg-muted  flex items-center gap-2">
               <Swords size={14} />
               Matches ({matches.length})
             </h2>
@@ -381,7 +381,7 @@ export function LineupMatchesView({ lineup, rules, guestTmIds, trialTmIds, profi
                               <div className="min-w-0">
                                 <div className="flex items-center gap-2 flex-wrap">
                                   <p className="text-sm font-medium text-fg">
-                                    {matchTag(match) && <span className="mr-2 font-mono text-xs text-brand-ink">{matchTag(match)}</span>}
+                                    {matchTag(match) && <span className="mr-2 tabular-nums text-xs text-brand-ink">{matchTag(match)}</span>}
                                     {match.stage.type === "SEEDING" ? "Seeding" : match.opponent ?? "Unknown opponent"}
                                   </p>
                                 </div>

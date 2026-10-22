@@ -33,7 +33,7 @@ export function Dialog({ open, onClose, children, className }: DialogProps) {
   return createPortal(
     // On phones a dialog fills the screen; its content scrolls and the buttons (.dialog-footer) stay at the bottom
     <div className="fixed inset-0 z-9999 flex items-stretch justify-center md:items-center md:p-4">
-      <div className="absolute inset-0 bg-black/60" onClick={onClose} />
+      <div className="absolute inset-0 bg-[#07142b]/70 backdrop-blur-sm" onClick={onClose} />
       <div
         className={cn(
           "relative z-10 w-full max-w-md overflow-y-auto overflow-x-hidden rounded-xl border border-line bg-surface p-6 shadow-2xl md:max-h-full",
@@ -43,7 +43,8 @@ export function Dialog({ open, onClose, children, className }: DialogProps) {
       >
         <button
           onClick={onClose}
-          className="absolute right-4 top-4 text-fg-muted hover:text-fg transition-colors"
+          aria-label="Close dialog"
+          className="absolute right-3 top-3 flex h-10 w-10 items-center justify-center rounded-md text-fg-muted hover:text-fg transition-colors"
         >
           <X size={18} />
         </button>
@@ -55,5 +56,5 @@ export function Dialog({ open, onClose, children, className }: DialogProps) {
 }
 
 export function DialogTitle({ className, ...props }: HTMLAttributes<HTMLHeadingElement>) {
-  return <h2 className={cn("text-lg font-semibold text-fg mb-4", className)} {...props} />
+  return <h2 className={cn("pr-10 text-xl font-semibold text-fg mb-6", className)} {...props} />
 }
