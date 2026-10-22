@@ -11,6 +11,8 @@ import { styleLabel } from "@/lib/comp-styles"
 import { db } from "@/lib/db"
 import { shapeSummaries, summaryInclude } from "@/lib/summary"
 import { matchTag } from "@/lib/match-order"
+import { matchdayPlanningEnabled } from "@/lib/features"
+import { isPlanned, upcomingMatches } from "@/lib/upcoming"
 import { formatGapSeconds } from "@/lib/pace"
 import { PacePct } from "@/components/pace-pct"
 import { lineupPath, matchPath, playerPath, tournamentPath } from "@/lib/paths"
@@ -19,7 +21,7 @@ import { buildProfile } from "@/lib/player-profile"
 import { currentStatus, formatDay } from "@/lib/player-status"
 import { sortStages, stageName } from "@/lib/stages"
 import { cn, formatLabel } from "@/lib/utils"
-import { ChevronRight, Star, Swords, Trophy, Users } from "lucide-react"
+import { CalendarClock, ChevronRight, Star, Swords, Trophy, Users } from "lucide-react"
 import Link from "next/link"
 
 const HEADING = "section-title mb-3"
@@ -108,6 +110,15 @@ export default async function DashboardPage() {
     ...(shown.last ? [{ tournament: shown.last, heading: "Last Tournament" }] : []),
   ]
 
+  // Matches of the current tournaments that are set up but not played yet (docs/adr/008)
+  const upcoming = matchdayPlanningEnabled()
+    ? upcomingMatches(matches.filter((m) => shown.current.some((t) => t.id === m.tournamentId))).slice(0, 6).flatMap((match) => {
+        const tournament = shown.current.find((t) => t.id === match.tournamentId)!
+        const lineup = tournament.tournamentLineups.find((l) => l.id === match.tournamentLineupId)
+        return lineup ? [{ match, tournament, lineup }] : []
+      })
+    : []
+
   return (
     <div className="space-y-6 page-wide">
       <div>
@@ -129,6 +140,31 @@ export default async function DashboardPage() {
       )}
 
       <div className="page-main space-y-6">
+      {upcoming.length > 0 && (
+        <section>
+          <h2 className={HEADING}>Next Matches</h2>
+          <div className="overflow-hidden rounded-lg border border-line">
+            {upcoming.map(({ match, tournament, lineup }) => (
+              <Link
+                key={match.id}
+                href={matchPath(tournament, lineup, match)}
+                className="flex flex-wrap items-center gap-x-3 gap-y-0.5 border-b border-line px-3 py-2.5 text-sm last:border-0 hover:bg-raised"
+              >
+                <CalendarClock size={15} className="shrink-0 text-brand-ink" />
+                <span className="w-24 shrink-0 tabular-nums text-fg-soft">{match.date ? formatDay(match.date) : "date open"}</span>
+                <span className="min-w-0 flex-1 truncate">
+                  <span className="font-medium text-fg">{lineup.name}</span>
+                  <span className="text-fg-muted"> vs {match.opponent ?? "opponent open"}</span>
+                </span>
+                <span className="w-full text-xs text-fg-subtle sm:w-auto">
+                  {[tournament.name, stageName(match.stage, tournament.stages), matchTag(match)].filter(Boolean).join(" · ")}
+                </span>
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
+
       {blocks.map(({ tournament, heading }) => {
         const own = matches.filter((m) => m.tournamentId === tournament.id)
         const stages = sortStages(tournament.stages)
@@ -350,7 +386,7 @@ export default async function DashboardPage() {
           <Tile label="Round tournaments" value={tournaments.length} icon={<Trophy size={15} className="text-brand-ink" />} />
           <Tile
             label="Matches"
-            value={matches.length}
+            value={matches.filter((m) => !isPlanned(m)).length}
             hint={`${overall.matchesWon} W · ${overall.matchesDrawn} D · ${overall.matchesLost} L`}
             icon={<Swords size={15} className="text-brand-ink" />}
           />

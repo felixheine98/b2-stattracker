@@ -94,6 +94,13 @@ describe("lineupRecords", () => {
     expect(alpha).toMatchObject({ matchesWon: 0, matchesDrawn: 0, matchesLost: 0, roundsWon: 0, lastMatch: null })
   })
 
+  it("does not take a planned match after the last played one as the last match", () => {
+    const played = match([[won()]], { date: "2026-06-14", opponent: "Played" })
+    const planned = match([], { date: "2026-06-21", opponent: "Planned" })
+    const [alpha] = lineupRecords([played, planned], ["alpha"])
+    expect(alpha).toMatchObject({ matchesWon: 1, matchesLost: 0, matchesDrawn: 0, lastMatch: { id: played.id, opponent: "Played" } })
+  })
+
   it("lists a lineup without matches with an empty record", () => {
     expect(lineupRecords([], ["alpha"])).toMatchObject([{ lineupId: "alpha", matchesWon: 0, lastMatch: null }])
   })
@@ -158,6 +165,11 @@ describe("latestStageId", () => {
   it("is the last stage in playing order that has results", () => {
     const matches = [match([[won()]]), match([[won()]], { stage: { id: "md2", type: "GROUP" } }), match([[]], { stage: { id: "po", type: "PLAYOFF" } })]
     expect(latestStageId(matches, ["md1", "md2", "po"])).toBe("md2")
+  })
+
+  it("does not move on to a stage that has only planned matches", () => {
+    const matches = [match([[won()]]), match([], { stage: { id: "md2", type: "GROUP" } })]
+    expect(latestStageId(matches, ["md1", "md2"])).toBe("md1")
   })
 
   it("is null without results", () => {

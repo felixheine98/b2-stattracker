@@ -1,6 +1,7 @@
 import { matchReport } from "./match-rules"
 import { roundPlacements, roundScore } from "./round-score"
 import type { SubMatchSummary } from "./summary"
+import { isPlanned } from "./upcoming"
 
 export const opponentNameKey = (name: string) => name.normalize("NFKC").trim().replace(/\s+/g, " ").toLocaleLowerCase("en")
 export function findRosterIdentity<T extends { name: string; initialName?: string; opponentNames?: string[] }>(players: T[], name: string): T | null {
@@ -52,12 +53,13 @@ interface MapStats {
   measured: number; best: number; average: number; median: number
 }
 export function opponentStats(matches: OpponentStatsMatch[]) {
-  const balance = { won: 0, drawn: 0, lost: 0, open: 0 }
+  const balance = { won: 0, drawn: 0, lost: 0, open: 0, upcoming: 0 }
   const players = new Map<string, PlayerStats>()
   const maps = new Map<string, MapStats & { times: number[] }>()
   for (const match of matches) {
     if (match.stage?.type === "SEEDING") continue
-    if (!match.closedAt || !match.confirmedOutcome) balance.open++
+    if (isPlanned(match)) balance.upcoming++
+    else if (!match.closedAt || !match.confirmedOutcome) balance.open++
     else if (match.confirmedOutcome === "W") balance.won++
     else if (match.confirmedOutcome === "L") balance.lost++
     else if (match.confirmedOutcome === "D") balance.drawn++

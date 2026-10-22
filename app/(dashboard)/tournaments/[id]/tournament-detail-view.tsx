@@ -131,13 +131,15 @@ interface Props {
   lineupPoints: Record<string, number>
   // Whether the format rules are switched on (lib/features.ts)
   matchRules: boolean
+  // Matches set up ahead without a result yet (docs/adr/008); empty while the planning is switched off
+  plannedMatchIds: string[]
 }
 
 function formatBadgeVariant(format: Format): "primary" | "secondary" {
   return format === "TIME_ATTACK_10" ? "primary" : "secondary"
 }
 
-export function TournamentDetailView({ tournament: initial, players, statsMatches, users, ownLineupId, hasPlanning, planningCard, canManage, lineupPoints, matchRules }: Props) {
+export function TournamentDetailView({ tournament: initial, players, statsMatches, users, ownLineupId, hasPlanning, planningCard, canManage, lineupPoints, matchRules, plannedMatchIds }: Props) {
   const [planningStarting, setPlanningStarting] = useState(false)
 
   async function startPlanning() {
@@ -674,9 +676,13 @@ export function TournamentDetailView({ tournament: initial, players, statsMatche
                                     {match.date && (
                                       <span>{formatDay(match.date)}</span>
                                     )}
-                                    <span>
-                                      {match._count.subMatches} sub-match{match._count.subMatches !== 1 ? "es" : ""}
-                                    </span>
+                                    {plannedMatchIds.includes(match.id) ? (
+                                      <Badge variant="secondary">upcoming</Badge>
+                                    ) : (
+                                      <span>
+                                        {match._count.subMatches} sub-match{match._count.subMatches !== 1 ? "es" : ""}
+                                      </span>
+                                    )}
                                   </div>
                                 </div>
                               </div>

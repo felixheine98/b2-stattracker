@@ -105,9 +105,11 @@ interface Props {
   // May add matches and maintain results of this lineup (managers, and whoever is responsible for it)
   canEdit: boolean
   editExpired?: boolean
+  // Matches set up ahead without a result yet (docs/adr/008); empty while the planning is switched off
+  plannedMatchIds: string[]
 }
 
-export function LineupMatchesView({ lineup, rules, guestTmIds, trialTmIds, profilePaths, canManage, canEdit, editExpired }: Props) {
+export function LineupMatchesView({ lineup, rules, guestTmIds, trialTmIds, profilePaths, canManage, canEdit, editExpired, plannedMatchIds }: Props) {
   const profilePath = (tmId: string) => profilePaths[tmId.toLowerCase()]
   const responsiblePlayerIds = new Set(lineup.managers.map((m) => m.user.playerId))
   const guests = new Set(guestTmIds)
@@ -392,7 +394,11 @@ export function LineupMatchesView({ lineup, rules, guestTmIds, trialTmIds, profi
                                       {formatDay(match.date)}
                                     </span>
                                   )}
-                                  <span>{match._count.subMatches} sub-match{match._count.subMatches !== 1 ? "es" : ""}</span>
+                                  {plannedMatchIds.includes(match.id) ? (
+                                    <Badge variant="secondary">upcoming</Badge>
+                                  ) : (
+                                    <span>{match._count.subMatches} sub-match{match._count.subMatches !== 1 ? "es" : ""}</span>
+                                  )}
                                 </div>
                               </div>
                             </div>

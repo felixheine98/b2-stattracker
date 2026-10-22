@@ -11,3 +11,9 @@ export function matchRulesEnabled(env: Env = process.env): boolean {
 export function summaryCompareEnabled(env: Env = process.env): boolean {
   return env.NODE_ENV !== "production" && env.SUMMARY_COMPARE === "on" && !!env.SUMMARY_SCREENSHOTS_DIR
 }
+
+// The lineup planning per match day (docs/adr/008) is on only where MATCHDAY_PLANNING=on is set,
+// and never in production, whatever the setting says.
+export function matchdayPlanningEnabled(env: Env = process.env): boolean {
+  return env.NODE_ENV !== "production" && env.MATCHDAY_PLANNING === "on"
+}

@@ -8,7 +8,7 @@ Ideen, die noch kein Todo sind: [ideen.md](ideen.md)
 - [ ] Alte Comp-Stats aus Discord-Screenshots übernehmen ([Entscheidung](docs/adr/007-zusammengefasste-ergebnisse.md), [Glossar](docs/zusammengefasste-ergebnisse-glossar.md)); Abgleich mit Felix pro Comp
 
 - [ ] Lineup-Planung pro Match Day ([Entscheidung](docs/adr/008-matchday-planung.md), [Glossar](docs/matchday-planung-glossar.md)); hinter `MATCHDAY_PLANNING`, in Production aus
-  - [ ] schritt 1: geplante Matches ohne Ergebnis in allen Auswertungen, upcoming auf Turnierseite und Dashboard
+  - [ ] schritt 1: geplante Matches ohne Ergebnis in allen Auswertungen, upcoming auf Turnierseite und Dashboard (gebaut, Felix prüft in Dev)
   - [ ] schritt 2: planung (verfügbarkeit von hand, teilweise/ausnahmen, varianten, tagesbesetzung, abweichungen, hinweise, finalisieren)
   - [ ] schritt 3: vorbelegung der sub-matches, planabweichung im import, „geplant“ am match
   - [ ] schritt 4: discord (lineup-channel, bot erkennt markierten ping, abruf durch lineup-manager)
