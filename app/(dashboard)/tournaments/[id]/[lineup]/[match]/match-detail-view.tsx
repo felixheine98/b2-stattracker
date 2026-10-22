@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { cn, formatLabel, formatLabelLong, formatTime, teamSize } from "@/lib/utils"
 import type { Format } from "@prisma/client"
-import { ArrowLeft, BarChart2, ChevronDown, ChevronUp, Clock, Download, ExternalLink, Grid3x3, ListChecks, Trash2, TriangleAlert, Trophy, Upload, Users } from "lucide-react"
+import { ArrowLeft, BarChart2, ChevronDown, ChevronUp, ClipboardList, Clock, Download, ExternalLink, Grid3x3, ListChecks, Trash2, TriangleAlert, Trophy, Upload, Users } from "lucide-react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useSyncedState } from "@/lib/use-synced-state"
@@ -352,9 +352,11 @@ interface Props {
   canManage: boolean
   // Open the eCM import dialog right away (the import page sends people here with the data)
   autoEcmImport?: boolean
+  // The lineup finalised in the match day planning; null without one or while it is switched off
+  plannedLineup?: { publishedAt: Date | string | null; formats: Array<{ format: Format; players: Array<{ id: string; name: string } | null> }> } | null
 }
 
-export function MatchDetailView({ match: initialMatch, ruleSet, allPlayers, guestTmIds, trialTmIds, canEdit, canManage, autoEcmImport = false }: Props) {
+export function MatchDetailView({ match: initialMatch, ruleSet, allPlayers, guestTmIds, trialTmIds, canEdit, canManage, autoEcmImport = false, plannedLineup = null }: Props) {
   const router = useRouter()
   const guests = new Set(guestTmIds)
   const isGuest = (tmId: string) => guests.has(tmId.toLowerCase())
@@ -621,6 +623,24 @@ export function MatchDetailView({ match: initialMatch, ruleSet, allPlayers, gues
           detail={<>Sub-matches · {closed ? "Closed" : "Open"}{points !== null && ` · ${points} ${points === 1 ? "pt" : "pts"}`}</>}
           context={initialMatch.tournament.name}
         />
+      )}
+
+      {plannedLineup && (
+        <div>
+          <h2 className="section-title mb-3 flex items-center gap-2">
+            <ClipboardList size={14} />
+            Planned lineup
+          </h2>
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-3">
+            {plannedLineup.formats.map(({ format, players }, i) => (
+              <div key={i} className="rounded-lg border border-line bg-surface px-3 py-2.5 text-sm">
+                <span className="mr-2 font-semibold text-fg">{formatLabel(format)}</span>
+                <span className="text-fg-soft">{players.map((p) => p?.name ?? "—").join(", ")}</span>
+              </div>
+            ))}
+          </div>
+          {plannedLineup.publishedAt && <p className="mt-1.5 text-xs text-fg-subtle">Finalised {formatDay(plannedLineup.publishedAt)}</p>}
+        </div>
       )}
 
       {/* Player stats, one table per sub-match */}

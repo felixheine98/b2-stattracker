@@ -3,7 +3,7 @@
 import { OpponentPicker, type OpponentValue } from "@/components/opponents/opponent-picker"
 import { Badge } from "@/components/ui/badge"
 import { BASE_PATH } from "@/lib/base-path"
-import { matchPath, tournamentPath } from "@/lib/paths"
+import { matchPath, planPath, tournamentPath } from "@/lib/paths"
 import { PlayerName } from "@/components/player-name"
 import { GuestBadge } from "@/components/guest-badge"
 import { TrialBadge } from "@/components/trial-badge"
@@ -11,7 +11,7 @@ import { PlayerAvatar } from "@/components/player-avatar"
 import { useSyncedState } from "@/lib/use-synced-state"
 import { formatDay } from "@/lib/player-status"
 import Link from "next/link"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogTitle } from "@/components/ui/dialog"
@@ -29,7 +29,7 @@ import { StageHeading } from "@/components/stage-heading"
 import { Select } from "@/components/ui/select"
 import { FormatStatsTable } from "../format-stats"
 import { MapOverviewTable, MapStatsTable, StatsViewToggle } from "../map-stats"
-import { ArrowLeft, Swords, Users, ChevronDown, ChevronRight, Calendar, BarChart2, Plus, Trash2, ShieldCheck } from "lucide-react"
+import { ArrowLeft, ClipboardList, Swords, Users, ChevronDown, ChevronRight, Calendar, BarChart2, Plus, Trash2, ShieldCheck } from "lucide-react"
 import { cn, formatLabel } from "@/lib/utils"
 import type { Format } from "@prisma/client"
 import { lineupPoints, type CompRules } from "@/lib/match-rules"
@@ -107,9 +107,11 @@ interface Props {
   editExpired?: boolean
   // Matches set up ahead without a result yet (docs/adr/008); empty while the planning is switched off
   plannedMatchIds: string[]
+  // Whether the signed-in user may plan the match days of this lineup (planning switched on and canEdit)
+  canPlan: boolean
 }
 
-export function LineupMatchesView({ lineup, rules, guestTmIds, trialTmIds, profilePaths, canManage, canEdit, editExpired, plannedMatchIds }: Props) {
+export function LineupMatchesView({ lineup, rules, guestTmIds, trialTmIds, profilePaths, canManage, canEdit, editExpired, plannedMatchIds, canPlan }: Props) {
   const profilePath = (tmId: string) => profilePaths[tmId.toLowerCase()]
   const responsiblePlayerIds = new Set(lineup.managers.map((m) => m.user.playerId))
   const guests = new Set(guestTmIds)
@@ -140,11 +142,15 @@ export function LineupMatchesView({ lineup, rules, guestTmIds, trialTmIds, profi
   const mapAggregates = buildMapAggregates(statsSelection, stages.map((st) => st.id))
 
   // --- Add match dialog state ---
+  // The match day planning links here with ?addMatch=<stage>: the dialog opens for that stage
+  const addMatchFor = useSearchParams().get("addMatch")
+  const openingStage = canEdit ? stages.find((st) => st.id === addMatchFor) : undefined
+  const dayOf = (stage: StageRef | undefined) => (stage ? stageDate(stage, stages, new Date(startDate)).toISOString().slice(0, 10) : "")
   const [opponentValue, setOpponentValue] = useState<OpponentValue>({ name: "" })
-  const [showAddMatch, setShowAddMatch] = useState(false)
-  const [stageId, setStageId] = useState("")
-  const [matchDate, setMatchDate] = useState("")
-  const [matchNumber, setMatchNumber] = useState("")
+  const [showAddMatch, setShowAddMatch] = useState(!!openingStage)
+  const [stageId, setStageId] = useState(openingStage?.id ?? "")
+  const [matchDate, setMatchDate] = useState(dayOf(openingStage))
+  const [matchNumber, setMatchNumber] = useState(openingStage ? String(nextMatchNumber(lineup.matches)) : "")
   const isSeeding = stages.find((st) => st.id === stageId)?.type === "SEEDING"
   const [matchError, setMatchError] = useState("")
   const [matchLoading, setMatchLoading] = useState(false)
@@ -154,7 +160,7 @@ export function LineupMatchesView({ lineup, rules, guestTmIds, trialTmIds, profi
   function selectStage(id: string) {
     const stage = stages.find((st) => st.id === id)
     setStageId(id)
-    setMatchDate(stage ? stageDate(stage, stages, new Date(startDate)).toISOString().slice(0, 10) : "")
+    setMatchDate(dayOf(stage))
   }
 
   function openAddMatch() {
@@ -226,13 +232,27 @@ export function LineupMatchesView({ lineup, rules, guestTmIds, trialTmIds, profi
             </p>
           </div>
           {canEdit && (
-            <Button onClick={openAddMatch} className="shrink-0">
+            <Button onClick={() => openAddMatch()} className="shrink-0">
               <Plus size={16} />
               Add Match
             </Button>
           )}
         </div>
       </div>
+
+      {canPlan && (
+        <div className="flex flex-wrap items-center gap-2 text-sm">
+          <span className="inline-flex items-center gap-1.5 text-fg-muted">
+            <ClipboardList size={14} />
+            Plan
+          </span>
+          {stages.filter((st) => st.type !== "SEEDING").map((st) => (
+            <Link key={st.id} href={planPath(tournament, lineup, st)} className="rounded-full border border-line bg-raised px-3 py-1 text-fg-soft hover:border-line-strong hover:text-fg">
+              {stageName(st, stages)}
+            </Link>
+          ))}
+        </div>
+      )}
 
       {/* From 1536px on stats and matches stand on the left, the players on the right */}
       <div className="page-columns">

@@ -2,7 +2,7 @@
 import type { Prisma } from "@prisma/client"
 import { db } from "./db"
 import { LINEUP_ACCESS_SELECT } from "./lineup-access-db"
-import type { MatchdayAnswer, PlanVariant } from "./matchday-plan"
+import { matchLineup, type MatchdayAnswer, type PlanVariant } from "./matchday-plan"
 import { sortMatches } from "./match-order"
 import type { Format } from "@/types"
 
@@ -10,7 +10,7 @@ import type { Format } from "@/types"
 export async function findPlanLineup(tournamentId: string, lineupId: string, stageId: string) {
   const lineup = await db.tournamentLineup.findUnique({
     where: { id: lineupId, tournamentId },
-    select: { id: true, name: true, ...LINEUP_ACCESS_SELECT, tournament: { select: { ...LINEUP_ACCESS_SELECT.tournament.select, formats: true, stages: { select: { id: true, type: true, number: true } } } } },
+    select: { id: true, name: true, ...LINEUP_ACCESS_SELECT, tournament: { select: { ...LINEUP_ACCESS_SELECT.tournament.select, name: true, formats: true, stages: { select: { id: true, type: true, number: true } } } } },
   })
   if (!lineup || !lineup.tournament.stages.some((s) => s.id === stageId)) return null
   return lineup
@@ -40,7 +40,7 @@ export async function loadPlan(lineupId: string, stageId: string) {
   return {
     planId: plan.id,
     kader: kader.map((s) => s.player),
-    matches: sortMatches(matches).map(({ subMatches, ...m }) => ({ ...m, formats: subMatches.map((sm) => sm.format as Format) })),
+    matches: sortMatches(matches).map(({ subMatches, ...m }) => ({ ...m, formats: [...new Set(subMatches.map((sm) => sm.format as Format))] })),
     answers: Object.fromEntries(plan.answers.map((a) => [a.playerId, { answer: a.answer as MatchdayAnswer | null, note: a.note, answeredAt: a.answeredAt }])),
     absences: plan.absences.map((a) => ({ playerId: a.playerId, matchId: a.matchId })),
     variants: plan.variants.map((v) => ({ id: v.id, name: v.name, seats: v.seats as unknown as PlanVariant })),
@@ -51,3 +51,17 @@ export async function loadPlan(lineupId: string, stageId: string) {
 }
 
 export type LoadedPlan = Awaited<ReturnType<typeof loadPlan>>
+
+// The finalised lineup of a match, per format, for everyone to see; null while none is finalised
+export async function publishedLineupOf(match: { id: string; tournamentLineupId: string | null; stageId: string; formats: Format[] }) {
+  if (!match.tournamentLineupId) return null
+  const plan = await db.matchdayPlan.findUnique({ where: { lineupId_stageId: { lineupId: match.tournamentLineupId, stageId: match.stageId } }, select: { published: true, publishedAt: true } })
+  if (!plan?.published) return null
+  const lineup = matchLineup(plan.published as unknown as PlanVariant, { id: match.id, formats: match.formats })
+  const ids = Object.values(lineup).flat().filter((id): id is string => !!id)
+  const players = await db.player.findMany({ where: { id: { in: ids } }, select: { id: true, name: true } })
+  return {
+    publishedAt: plan.publishedAt,
+    formats: match.formats.map((format) => ({ format, players: lineup[format]!.map((id) => players.find((p) => p.id === id) ?? null) })),
+  }
+}

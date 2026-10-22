@@ -92,6 +92,7 @@ export default async function LineupMatchesPage({ params }: Props) {
       // Responsible for the lineup, but the week after the tournament's end is over
       editExpired={responsible && !canEdit}
       plannedMatchIds={matchdayPlanningEnabled() ? named.matches.filter(isPlanned).map((m) => m.id) : []}
+      canPlan={matchdayPlanningEnabled() && canEdit}
     />
   )
 }
