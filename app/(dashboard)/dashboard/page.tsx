@@ -1,4 +1,6 @@
 import { ResultBoard } from "@/components/result-board"
+import { BrandLogo } from "@/components/brand-logo"
+import { OpponentLogo } from "@/components/opponents/opponent-logo"
 import { Wdl } from "@/components/wdl"
 import { AvailabilityCard } from "@/components/planning/availability-card"
 import { Badge } from "@/components/ui/badge"
@@ -69,6 +71,7 @@ export default async function DashboardPage() {
       select: {
         id: true, slug: true, date: true, createdAt: true, opponent: true, number: true, label: true, closedAt: true, confirmedOutcome: true,
         tournamentId: true, tournamentLineupId: true,
+        opponentLineup: { select: { logo: true, team: { select: { logo: true } } } },
         stage: { select: { id: true, type: true, number: true } },
         subMatches: {
           orderBy: { order: "asc" },
@@ -173,11 +176,14 @@ export default async function DashboardPage() {
                 {records.length === 1 && records.map((record) => {
                   const last = lastMatchOf(record)
                   const lineup = lineups.find((l) => l.id === record.lineupId)
+                  const opponentLogo = last?.match.opponentLineup?.logo ?? last?.match.opponentLineup?.team?.logo
                   return last && lineup && record.lastMatch ? (
                     <Link key={record.lineupId} href={last.path} className="block rounded-xl focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-info">
                       <ResultBoard
                         team={lineup.name}
                         opponent={record.lastMatch.opponent ?? "Opponent"}
+                        teamLogo={<BrandLogo className="h-10 w-10 object-contain" />}
+                        opponentLogo={opponentLogo ? <OpponentLogo name={record.lastMatch.opponent ?? "Opponent"} logo={opponentLogo} /> : undefined}
                         score={<Wdl won={record.lastMatch.mapsWon} drawn={0} lost={record.lastMatch.mapsLost} unit="Maps" />}
                         detail={<>Maps · {record.lastMatch.confirmed ? "Confirmed" : "Open"}</>}
                         context="Last match"
@@ -198,6 +204,7 @@ export default async function DashboardPage() {
                   {records.map((record) => {
                     const lineup = lineups.find((l) => l.id === record.lineupId)!
                     const last = lastMatchOf(record)
+                    const opponentLogo = last?.match.opponentLineup?.logo ?? last?.match.opponentLineup?.team?.logo
                     const outcome = record.lastMatch?.outcome ? OUTCOME[record.lastMatch.outcome] : null
                     return (
                       <div
@@ -226,6 +233,7 @@ export default async function DashboardPage() {
                         <span className="col-span-3 min-w-0 text-xs md:col-span-1 md:text-sm">
                           {last && record.lastMatch ? (
                             <Link href={last.path} className="flex min-w-0 items-center gap-1.5 text-fg-soft hover:text-fg">
+                              {opponentLogo && <OpponentLogo name={record.lastMatch.opponent ?? "Opponent"} logo={opponentLogo} size={24} />}
                               {outcome && <span className={cn("tabular-nums font-bold", outcome.className)}>{outcome.label}</span>}
                               <span className="tabular-nums">{record.lastMatch.mapsWon}–{record.lastMatch.mapsLost}</span>
                               <span className="truncate">vs {record.lastMatch.opponent ?? "Unknown"}</span>

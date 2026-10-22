@@ -368,6 +368,9 @@ html {
   overflow-wrap: anywhere;
 }
 .result-board-team:last-child { text-align: right; }
+.result-board-identity { display: flex; align-items: center; gap: .75rem; min-width: 0; }
+.result-board-team:last-child .result-board-identity { flex-direction: row-reverse; }
+.result-board-logo { display: flex; flex: 0 0 2.5rem; align-items: center; justify-content: center; width: 2.5rem; height: 2.5rem; }
 .result-board-score {
   font-family: var(--font-heading), sans-serif;
   font-weight: 600;
@@ -413,6 +416,8 @@ html {
 }
 @media (max-width: 767px) {
   .result-board { gap: .75rem; padding: 1.125rem 1rem; }
+  .result-board-identity { flex-direction: column; align-items: flex-start; gap: .5rem; }
+  .result-board-team:last-child .result-board-identity { flex-direction: column; align-items: flex-end; }
   .result-board-detail { font-size: .6875rem; }
   .metric-tile { padding: .875rem .75rem; }
   .mobile-nav a { min-height: 3.5rem; }
