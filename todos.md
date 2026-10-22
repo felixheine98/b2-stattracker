@@ -7,6 +7,12 @@ Ideen, die noch kein Todo sind: [ideen.md](ideen.md)
 - [ ] seeding formate für import/anlegen prüfen (Liste der alten Seeding-Screenshots aus Discord folgt nach der Übernahme, [ADR 007](docs/adr/007-zusammengefasste-ergebnisse.md))
 - [ ] Alte Comp-Stats aus Discord-Screenshots übernehmen ([Entscheidung](docs/adr/007-zusammengefasste-ergebnisse.md), [Glossar](docs/zusammengefasste-ergebnisse-glossar.md)); Abgleich mit Felix pro Comp
 
+- [ ] Lineup-Planung pro Match Day ([Entscheidung](docs/adr/008-matchday-planung.md), [Glossar](docs/matchday-planung-glossar.md)); hinter `MATCHDAY_PLANNING`, in Production aus
+  - [ ] schritt 1: geplante Matches ohne Ergebnis in allen Auswertungen, upcoming auf Turnierseite und Dashboard
+  - [ ] schritt 2: planung (verfügbarkeit von hand, teilweise/ausnahmen, varianten, tagesbesetzung, abweichungen, hinweise, finalisieren)
+  - [ ] schritt 3: vorbelegung der sub-matches, planabweichung im import, „geplant“ am match
+  - [ ] schritt 4: discord (lineup-channel, bot erkennt markierten ping, abruf durch lineup-manager)
+
 ## Teilweise erledigt
 
 - [ ] Design/UI/UX Verbesserungen ([Rennleitstand-Entwurf](docs/redesign-rennleitstand.md))
@@ -43,6 +49,7 @@ Ideen, die noch kein Todo sind: [ideen.md](ideen.md)
 
 ## Low Prio
 
+- [ ] Discord-Bot postet die finalisierte Matchday-Besetzung in den passenden Channel ([Matchday-Planung](docs/adr/008-matchday-planung.md))
 - [ ] spieler-profil: seeding-bereich mit seeding-stats (erst entscheiden, wie seeding-daten ins system kommen)
 
 ## Erledigt

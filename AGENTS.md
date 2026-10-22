@@ -46,6 +46,13 @@ Felix is not yet sure about the format rules per competition (match rules, hints
 - Felix explicitly approved merging all local work into `main` on 18.10.2026. The format-rule code is now included in `main`, but remains disabled in production until he explicitly approves activating this feature.
 - Switched off, the app behaves as before: no rule fields or template controls, no hints or points, no rules required for new competitions. Stored rules and templates stay in the database.
 
+## Matchday planning stays dev-only
+
+The lineup planning per match day (`docs/adr/008-matchday-planung.md`) must not reach production until Felix explicitly approves activating it; a general approval to deploy other changes does not cover it.
+
+- `lib/features.ts` (`matchdayPlanningEnabled`) switches it on only where `MATCHDAY_PLANNING=on` is set (`docker-compose.dev.yml`) and always off when `NODE_ENV === "production"`. Preserve this condition; do not set `MATCHDAY_PLANNING` in `docker-compose.yml`.
+- Switched off, the app behaves as before.
+
 # Mobile
 
 Every change to the interface has to work on phones as well as on desktop. Below 768px (`md`) the app uses its phone layout: bottom bar instead of the sidebar, full-screen dialogs, wide tables that scroll sideways or turn into cards.
