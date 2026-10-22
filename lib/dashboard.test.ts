@@ -164,3 +164,32 @@ describe("latestStageId", () => {
     expect(latestStageId([], ["md1"])).toBeNull()
   })
 })
+
+describe("summary results", () => {
+  function summarised(outcome: "W" | "L", roundsWon: number | null, roundsLost: number | null, players: Array<[string, number, number | null]>, extra: Partial<DashMatch> = {}): DashMatch {
+    return match([], {
+      subMatches: [{
+        format: "ROUND_2V2",
+        rounds: [],
+        summary: { track: null, rounds: 9, roundsWon, roundsLost, outcome, players: players.map(([name, rounds, placementSum]) => ({ playerId: name, tmId: name, playerName: name, rounds, placementSum })) },
+      }],
+      ...extra,
+    })
+  }
+
+  it("count in the records with their map result and, where known, their rounds", () => {
+    const [alpha] = lineupRecords([summarised("L", 2, 5, []), summarised("W", null, null, [])], ["alpha"])
+    expect(alpha).toMatchObject({ matchesWon: 1, matchesLost: 1, mapsWon: 1, mapsLost: 1, roundsWon: 2, roundsLost: 5 })
+    expect(overallRecord([summarised("L", 2, 5, [])])).toMatchObject({ matchesLost: 1, mapsLost: 1, roundsWon: 2, roundsLost: 5 })
+  })
+
+  it("count for the best performer by the average place in the field", () => {
+    // anna: average 2 of 4, ben: average 3 of 4 over the rounds
+    const best = bestPerformer([summarised("L", 2, 5, [["anna", 9, 18], ["ben", 9, 27]])])
+    expect(best).toMatchObject({ tmId: "anna", rounds: 9, avgPlace: 2, lineupId: "alpha" })
+  })
+
+  it("without places (points instead) do not count for the best performer", () => {
+    expect(bestPerformer([summarised("L", 2, 5, [["anna", 9, null]])])).toBeNull()
+  })
+})

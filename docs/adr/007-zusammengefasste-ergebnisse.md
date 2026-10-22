@@ -32,6 +32,10 @@ Bestätigt (19.10.2026): Für fehlende Comps werden Name, Zeitraum (aus den Date
 
 Bestätigt (19.10.2026): Die bestehende Comp „SMS S1“ (2026) wird in „SMS S2“ umbenannt, wie sie im Discord heißt; die Comp von Feb./März 2025 wird als „SMS S1“ angelegt. Frühere Adressen leiten weiter. Erst in Dev, Production nach Freigabe.
 
+Korrigiert (19.10.2026): Die bestehende „SMS S1“ enthält die Matches von 2025 (Molotov Gaming, Loading Black; Fahrer PASZS, Bodiis, Alexs, Uso), nur ihre Daten standen auf 2026. Sie bleibt „SMS S1“ und bekommt die Daten 16.02.–09.03.2025; die Comp von 2026 wird als „SMS S2“ neu angelegt. Ein Umbenennen und Weiterleiten entfällt.
+
+Bestätigt (19.10.2026): FSM listet in 2v2 und 3v3 Punkte statt Plätzen. Solche Sub-Matches zählen nur zur Bilanz (Map-Bilanz, gewonnene und verlorene Runden), nicht zu gespielten Runden und Platzsumme; die Punkte werden pro Spieler gespeichert und am Match gezeigt. Gilt auch für ein 1v1 ohne Plätze.
+
 Bestätigt (19.10.2026), aus den Entscheidungen abgeleitet:
 
 - Ein zusammengefasstes Sub-Match speichert Format, Map (falls angegeben), das Rundenergebnis (falls angegeben), Map-Sieg/-Niederlage und den Link zur Discord-Nachricht; pro Spieler gespielte Runden und Platzsumme. Gegnerische Spieler stehen nicht auf den Screenshots und fehlen.

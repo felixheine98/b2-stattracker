@@ -300,3 +300,19 @@ describe("lineupPoints", () => {
     expect(lineupPoints([match("WWWW")], { comp: null, playoff: null })).toBeNull()
   })
 })
+
+describe("matchReport: summary results", () => {
+  const summary = (outcome: "W" | "L" | "D", roundsWon: number | null, roundsLost: number | null) => ({
+    format: "ROUND_4V4", rounds: [], summary: { track: null, rounds: 12, roundsWon, roundsLost, outcome, players: [] },
+  })
+
+  it("takes the result of a summary sub-match from the screenshot", () => {
+    const result = matchReport([summary("L", 3, 7), summary("W", 6, 5), { format: "ROUND_1V1", rounds: rounds("WW") }], null)
+    expect(result).toMatchObject({ won: 2, lost: 1, outcome: "W" })
+    expect(result.subMatches[0]).toMatchObject({ won: 3, lost: 7, drawn: 2, outcome: "L", status: "summary", hint: null })
+  })
+
+  it("counts no rounds for a summary without a round result", () => {
+    expect(matchReport([summary("W", null, null)], null).subMatches[0]).toMatchObject({ won: 0, lost: 0, drawn: 0, outcome: "W" })
+  })
+})

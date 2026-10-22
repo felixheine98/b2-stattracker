@@ -1,5 +1,6 @@
 import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
+import { shapeSummaries, summaryInclude } from "@/lib/summary"
 import { lineupPath, matchPath, playerPath, tournamentPath } from "@/lib/paths"
 import { buildProfile } from "@/lib/player-profile"
 import { dayKey, statusAt, tournamentReferenceDate } from "@/lib/player-status"
@@ -65,10 +66,11 @@ export default async function PlayerProfilePage({ params }: Props) {
                 },
               },
             },
+            summary: summaryInclude.summary,
           },
         },
       },
-    }),
+    }).then(shapeSummaries),
     db.roundResult.count({ where: { playerId: id, isOurTeam: false } }),
     getTfhPlayerResults(id),
   ])

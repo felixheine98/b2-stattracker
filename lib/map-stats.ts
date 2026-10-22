@@ -5,6 +5,7 @@ import type { Format } from "@prisma/client"
 import { FORMAT_ORDER, type StatsMatch } from "./format-stats"
 import { addGap, emptyPace, finishTime, paceMs, roundBest, type PaceSum } from "./pace"
 import { roundPlacements, roundScore } from "./round-score"
+import { playerRecord } from "./summary"
 
 export interface MapPlayerAggregate {
   tmId: string
@@ -60,27 +61,58 @@ export function buildMapAggregates(matches: StatsMatch[], stageOrder: string[]):
     const stageIndex = stageOrder.indexOf(match.stage.id)
     const firstStage = stageIndex === -1 ? stageOrder.length : stageIndex
 
+    // The aggregate of a map as driven in this sub-match; the same map written differently is one map
+    const mapOf = (track: string | null | undefined, format: Format) => {
+      const key = track?.trim().toLowerCase() ?? ""
+      if (!byMap.has(key)) {
+        byMap.set(key, {
+          track: key ? track!.trim() : null,
+          formats: [],
+          teamRoundsWon: 0, teamRoundsLost: 0,
+          mapWon: 0, mapLost: 0, mapDrawn: 0,
+          teamBestMs: null, teamTimeSum: 0, teamTimeCount: 0,
+          players: new Map(),
+          firstStage,
+        })
+      }
+      const agg = byMap.get(key)!
+      agg.firstStage = Math.min(agg.firstStage, firstStage)
+      if (!agg.formats.includes(format)) agg.formats.push(format)
+      return { key, agg }
+    }
+
     for (const sm of match.subMatches) {
+      if (sm.summary) {
+        // Summary results have no times
+        const summary = sm.summary
+        const { agg } = mapOf(summary.track, sm.format)
+        agg.teamRoundsWon += summary.roundsWon ?? 0
+        agg.teamRoundsLost += summary.roundsLost ?? 0
+        if (summary.outcome === "W") agg.mapWon++
+        else if (summary.outcome === "L") agg.mapLost++
+        else agg.mapDrawn++
+        for (const sp of summary.players) {
+          if (!agg.players.has(sp.tmId)) {
+            agg.players.set(sp.tmId, { tmId: sp.tmId, name: sp.playerName, currentName: sp.currentName, rounds: 0, placementSum: 0, bestMs: null, pace: emptyPace(), dnfs: 0, roundsWon: 0, roundsLost: 0 })
+          }
+          const p = agg.players.get(sp.tmId)!
+          const { won, lost } = playerRecord(summary, sp)
+          // Without places the rounds would lower the average place, so they count for the record only
+          if (sp.placementSum !== null) {
+            p.rounds += sp.rounds
+            p.placementSum += sp.placementSum
+          }
+          p.roundsWon += won
+          p.roundsLost += lost
+        }
+        continue
+      }
+
       // Won and lost rounds of this sub-match per map, to tell who took the map
       const tally = new Map<string, { won: number; lost: number }>()
 
       for (const round of sm.rounds) {
-        // The same map written differently is one map
-        const key = round.track?.trim().toLowerCase() ?? ""
-        if (!byMap.has(key)) {
-          byMap.set(key, {
-            track: key ? round.track!.trim() : null,
-            formats: [],
-            teamRoundsWon: 0, teamRoundsLost: 0,
-            mapWon: 0, mapLost: 0, mapDrawn: 0,
-            teamBestMs: null, teamTimeSum: 0, teamTimeCount: 0,
-            players: new Map(),
-            firstStage,
-          })
-        }
-        const agg = byMap.get(key)!
-        agg.firstStage = Math.min(agg.firstStage, firstStage)
-        if (!agg.formats.includes(sm.format)) agg.formats.push(sm.format)
+        const { key, agg } = mapOf(round.track, sm.format)
         if (!tally.has(key)) tally.set(key, { won: 0, lost: 0 })
 
         const o = roundScore(round.results)?.outcome

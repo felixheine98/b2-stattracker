@@ -1,0 +1,25 @@
+# comp: 7CC S1
+
+## matches
+team	stage	match	opponent	date	sub	format	map	won	lost	outcome	screenshot	name	rounds	places
+B2 Academy	PO1	1	OWIP	2025-11-29	1	3v3	Yoshinoyama	3	7	L	1444428833980944414_0	Sven	10	29
+B2 Academy	PO1	1	OWIP	2025-11-29	1	3v3	Yoshinoyama	3	7	L	1444428833980944414_0	Chomp	10	34
+B2 Academy	PO1	1	OWIP	2025-11-29	1	3v3	Yoshinoyama	3	7	L	1444428833980944414_0	Tilt	10	45
+B2 Academy	PO1	1	OWIP	2025-11-29	2	3v3	New Order	3	7	L	1444428833980944414_0	Sven	10	29
+B2 Academy	PO1	1	OWIP	2025-11-29	2	3v3	New Order	3	7	L	1444428833980944414_0	Chomp	10	42
+B2 Academy	PO1	1	OWIP	2025-11-29	2	3v3	New Order	3	7	L	1444428833980944414_0	Tilt	10	45
+B2 Academy	PO1	2	TeamNL Goats	2025-11-29	1	3v3	Yoshinoyama	2	7	L	1444428833980944414_0	Sven	9	31
+B2 Academy	PO1	2	TeamNL Goats	2025-11-29	1	3v3	Yoshinoyama	2	7	L	1444428833980944414_0	Chomp	9	39
+B2 Academy	PO1	2	TeamNL Goats	2025-11-29	1	3v3	Yoshinoyama	2	7	L	1444428833980944414_0	Tilt	9	40
+B2 Academy	PO1	2	TeamNL Goats	2025-11-29	2	3v3	New Order	7	1	W	1444428833980944414_0	Sven	8	13
+B2 Academy	PO1	2	TeamNL Goats	2025-11-29	2	3v3	New Order	7	1	W	1444428833980944414_0	Chomp	8	23
+B2 Academy	PO1	2	TeamNL Goats	2025-11-29	2	3v3	New Order	7	1	W	1444428833980944414_0	Tilt	8	38
+
+## totals
+team	stages	format	name	rounds	places	screenshot
+B2 Academy	*	3v3	Exo	37	88	1444428970123591730_0
+B2 Academy	*	3v3	Sven	44	126	1444428970123591730_0
+B2 Academy	*	3v3	Oliwn	29	87	1444428970123591730_0
+B2 Academy	*	3v3	Str1keBoii	26	86	1444428970123591730_0
+B2 Academy	*	3v3	Chomp	52	177	1444428970123591730_0
+B2 Academy	*	3v3	Tilt	55	243	1444428970123591730_0

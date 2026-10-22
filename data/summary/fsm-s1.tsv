@@ -1,0 +1,35 @@
+# comp: FSM S1
+# create: yes
+# start: 2025-03-23
+# end: 2025-03-30
+# formats: 1v1,2v2,3v3
+# style: FULLSPEED
+
+# Only week 2 has a match screenshot. 2v2 and 3v3 give points instead of places (record only).
+# The 1v1 total (Existenz 21 rounds 3-14, Boris 8 rounds 7-0) has no places or points to check.
+
+## matches
+team	stage	match	opponent	date	sub	format	map	won	lost	outcome	screenshot	name	rounds	places	points
+B2 eSports	MD2	1	TeamNL	2025-03-30	1	1v1	Szimpla	7	0	W	1355962953890791534_0	Boris	8		
+B2 eSports	MD2	1	TeamNL	2025-03-30	2	2v2	Szimpla	1	5	L	1355962953890791534_0	Clin	6		3
+B2 eSports	MD2	1	TeamNL	2025-03-30	2	2v2	Szimpla	1	5	L	1355962953890791534_0	s0nity	6		2
+B2 eSports	MD2	1	TeamNL	2025-03-30	3	3v3	Ra	7	1	W	1355962953890791534_0	Linkcrafter	8		41
+B2 eSports	MD2	1	TeamNL	2025-03-30	3	3v3	Ra	7	1	W	1355962953890791534_0	Peb	8		34
+B2 eSports	MD2	1	TeamNL	2025-03-30	3	3v3	Ra	7	1	W	1355962953890791534_0	Existenz	8		14
+B2 eSports	MD2	1	TeamNL	2025-03-30	4	3v3	Axion	7	2	W	1355962953890791534_0	Boris	9		39
+B2 eSports	MD2	1	TeamNL	2025-03-30	4	3v3	Axion	7	2	W	1355962953890791534_0	Nismo	9		23
+B2 eSports	MD2	1	TeamNL	2025-03-30	4	3v3	Axion	7	2	W	1355962953890791534_0	Sam	9		17
+
+## totals
+team	stages	format	name	rounds	places	points	screenshot
+B2 eSports	*	2v2	Linkcrafter	13		40	1355963065165807717_0
+B2 eSports	*	2v2	Peb	13		26	1355963065165807717_0
+B2 eSports	*	2v2	Clin	6		3	1355963065165807717_0
+B2 eSports	*	2v2	s0nity	6		2	1355963065165807717_0
+B2 eSports	*	3v3	Linkcrafter	15		73	1355963065165807717_0
+B2 eSports	*	3v3	Boris	58		241	1355963065165807717_0
+B2 eSports	*	3v3	Peb	28		87	1355963065165807717_0
+B2 eSports	*	3v3	Nismo	31		95	1355963065165807717_0
+B2 eSports	*	3v3	Sam	58		157	1355963065165807717_0
+B2 eSports	*	3v3	Existenz	15		40	1355963065165807717_0
+B2 eSports	*	3v3	s0nity	14		8	1355963065165807717_0

@@ -1,5 +1,6 @@
 import { matchReport } from "./match-rules"
 import { roundPlacements, roundScore } from "./round-score"
+import type { SubMatchSummary } from "./summary"
 
 export const opponentNameKey = (name: string) => name.normalize("NFKC").trim().replace(/\s+/g, " ").toLocaleLowerCase("en")
 export function findRosterIdentity<T extends { name: string; initialName?: string; opponentNames?: string[] }>(players: T[], name: string): T | null {
@@ -33,14 +34,14 @@ export function rosterDifference(local: Array<{ name: string }>, source: Array<{
 export interface OpponentResult {
   tmId: string; playerId?: string | null; playerName: string; isOurTeam: boolean; timeMs?: number | null; dnf?: boolean | null
 }
-interface StatsSubMatch { format?: string; rounds: Array<{ track?: string | null; results: OpponentResult[] }> }
+interface StatsSubMatch { format?: string; rounds: Array<{ track?: string | null; results: OpponentResult[] }>; summary?: SubMatchSummary | null }
 export interface OpponentStatsMatch {
   id: string; tournamentId: string; tournament?: { name: string }; stage?: { type: string }
   closedAt?: Date | string | null; confirmedOutcome?: string | null; subMatches: StatsSubMatch[]
 }
 // Match outcome is always from our team's perspective, just like roundScore.
 export function suggestMatchOutcome(subMatches: StatsSubMatch[]): "W" | "L" | "D" | null {
-  return matchReport(subMatches.map((sm) => ({ format: sm.format ?? "", rounds: sm.rounds })), null).outcome
+  return matchReport(subMatches.map((sm) => ({ format: sm.format ?? "", rounds: sm.rounds, summary: sm.summary })), null).outcome
 }
 interface PlayerStats {
   playerId: string | null; tmId: string; name: string; format: string; played: number; won: number; drawn: number; lost: number

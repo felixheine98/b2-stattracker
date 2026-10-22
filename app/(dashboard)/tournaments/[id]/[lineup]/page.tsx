@@ -1,5 +1,6 @@
 import { LINEUP_MANAGERS_INCLUDE, mayEditLineup, type SessionUser } from "@/lib/lineup-access-db"
 import { db } from "@/lib/db"
+import { shapeSummaries, summaryInclude } from "@/lib/summary"
 import { auth } from "@/lib/auth"
 import { canManage } from "@/lib/roles"
 import { guestTmIdsAt, tournamentReferenceDate, trialTmIdsAt } from "@/lib/player-status"
@@ -54,6 +55,7 @@ export default async function LineupMatchesPage({ params }: Props) {
                   orderBy: { number: "asc" },
                   include: { results: { orderBy: [{ position: "asc" }, { timeMs: "asc" }] } },
                 },
+                ...summaryInclude,
               },
             },
           },
@@ -69,7 +71,7 @@ export default async function LineupMatchesPage({ params }: Props) {
   const guestTmIds = guestTmIdsAt(players, tournamentReferenceDate(lineup.tournament))
 
   // Everyone is shown under the name they had when the tournament started
-  const named = await withCompNames(lineup, lineup.tournament)
+  const named = await withCompNames({ ...lineup, matches: shapeSummaries(lineup.matches) }, lineup.tournament)
 
   // Admins and managers may do everything; whoever is responsible for this lineup may add matches and results
   const user = (session?.user as SessionUser | undefined) ?? null

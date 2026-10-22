@@ -5,6 +5,7 @@ import { auth } from "@/lib/auth"
 import { bestPerformer, dashboardTournaments, latestStageId, lineupRecords, overallRecord, type LineupRecord, type Performer } from "@/lib/dashboard"
 import { styleLabel } from "@/lib/comp-styles"
 import { db } from "@/lib/db"
+import { shapeSummaries, summaryInclude } from "@/lib/summary"
 import { matchTag } from "@/lib/match-order"
 import { formatGapSeconds } from "@/lib/pace"
 import { PacePct } from "@/components/pace-pct"
@@ -81,10 +82,11 @@ export default async function DashboardPage() {
                 },
               },
             },
+            summary: summaryInclude.summary,
           },
         },
       },
-    }),
+    }).then(shapeSummaries),
   ])
 
   // Tournaments being planned that still want an answer from the signed-in player
