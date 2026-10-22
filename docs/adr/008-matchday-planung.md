@@ -59,6 +59,8 @@ Bestätigt (22.10.2026): Umsetzung in vier Schritten, jeder für sich in Dev pr�
 
 Später (Todo): Der Discord-Bot postet die finalisierte Besetzung in den passenden Channel.
 
+Bestätigt (22.10.2026): Die Planung liegt auf der Lineup-Seite, pro Stage: Lineup-Manager (und Admins/Manager) sehen bei jeder Stage einen Knopf „Plan“, der zur Seite `/tournaments/[comp]/[lineup]/plan/[stage]` führt (Verfügbarkeit, Varianten, Tagesbesetzung, Matches der Stage).
+
 ## Erwogene Alternativen
 
 - A: nur festlegen, wer aus dem Kader am Match Day spielt; die Zuteilung zu Formaten bleibt beim Match. Bildet Verfügbarkeiten zwischen den Matches eines Abends nicht ab.
@@ -82,11 +84,12 @@ Später (Todo): Der Discord-Bot postet die finalisierte Besetzung in den passend
 - Nur ein Format pro Spieler und Match; oder Finalisieren erst bei vollständiger, hinweisfreier Besetzung.
 - Discord zuerst oder alles in einem Zug.
 - Ausrollen ohne Schalter; oder Schalter nur für den Discord-Teil.
+- Planung als Tab der Comp-Planung (die nach der Übernahme geschlossen ist und anderen Regeln folgt) oder eigene Seite pro Comp mit Auswahl von Lineup und Stage.
 - Keine einzelnen Matches, Besetzung pro Format für den ganzen Match Day. Widerspricht der Planung pro Match.
 
 ## Offene Fragen
 
-- Wo die Planung in der Oberfläche liegt (eigener Tab am Lineup, an der Stage oder in der bestehenden Planungsseite) und wie sie auf dem Handy aussieht; gilt ohnehin die Mobile-Regel aus `AGENTS.md`.
+Keine.
 
 ## Konsequenzen
 
