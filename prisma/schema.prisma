@@ -456,6 +456,8 @@ model Stage {
   type         StageType
   // Position among the stages of the same type, starting at 1
   number       Int
+  // The map of every format on this match day, e.g. {"ROUND_1V1": "Heat"} (docs/adr/008-matchday-planung.md)
+  maps         Json?
   createdAt    DateTime   @default(now())
 
   matches Match[]

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
 import type { Seats } from "./matchday-plan"
-import { hasUnpublishedChanges, matchLineup, placePlayer, planHints, planPool, publishedSnapshot } from "./matchday-plan"
+import { hasUnpublishedChanges, matchLineup, placePlayer, planHints, planPool, publishedSnapshot, seatSuggestions } from "./matchday-plan"
 
 const kader = ["anna", "ben", "cleo", "dora", "emil"].map((id) => ({ id }))
 
@@ -114,5 +114,28 @@ describe("placePlayer", () => {
 
   it("frees a place", () => {
     expect(placePlayer({ ROUND_2V2: ["anna", "ben"] }, "ROUND_2V2", 1, null)).toEqual({ ROUND_2V2: ["anna", null] })
+  })
+})
+
+describe("seatSuggestions", () => {
+  const players = [
+    { id: "a", name: "Agent.TM" },
+    { id: "b", name: "BlinG.xoxo" },
+    { id: "c", name: "Chomp.Tm" },
+    { id: "d", name: "DrTilt." },
+    { id: "m", name: "MagnaT" },
+  ]
+  const names = (list: Array<{ name: string }>) => list.map((p) => p.name)
+
+  it("finds players by any part of the name, ignoring case, those starting with it first", () => {
+    expect(names(seatSuggestions("tm", players, {}, []))).toEqual(["Agent.TM", "Chomp.Tm"])
+    expect(names(seatSuggestions("a", players, {}, []))).toEqual(["Agent.TM", "MagnaT"])
+    expect(names(seatSuggestions("ag", players, {}, []))).toEqual(["Agent.TM", "MagnaT"])
+    expect(names(seatSuggestions("mag", players, {}, []))).toEqual(["MagnaT"])
+  })
+
+  it("puts available players before maybe and unanswered ones, and leaves out who is out or already placed", () => {
+    const answers = { a: "MAYBE", b: "FIX", c: "OUT", d: "PARTIAL" } as const
+    expect(names(seatSuggestions("", players, answers, ["m"]))).toEqual(["BlinG.xoxo", "DrTilt.", "Agent.TM"])
   })
 })

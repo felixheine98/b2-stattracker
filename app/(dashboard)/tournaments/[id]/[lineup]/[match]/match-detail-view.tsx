@@ -353,7 +353,7 @@ interface Props {
   // Open the eCM import dialog right away (the import page sends people here with the data)
   autoEcmImport?: boolean
   // The lineup finalised in the match day planning; null without one or while it is switched off
-  plannedLineup?: { publishedAt: Date | string | null; formats: Array<{ format: Format; players: Array<{ id: string; name: string } | null> }> } | null
+  plannedLineup?: { publishedAt: Date | string | null; formats: Array<{ format: Format; map: string | null; players: Array<{ id: string; name: string; country: string | null } | null> }> } | null
 }
 
 export function MatchDetailView({ match: initialMatch, ruleSet, allPlayers, guestTmIds, trialTmIds, canEdit, canManage, autoEcmImport = false, plannedLineup = null }: Props) {
@@ -632,10 +632,20 @@ export function MatchDetailView({ match: initialMatch, ruleSet, allPlayers, gues
             Planned lineup
           </h2>
           <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-3">
-            {plannedLineup.formats.map(({ format, players }, i) => (
-              <div key={i} className="rounded-lg border border-line bg-surface px-3 py-2.5 text-sm">
-                <span className="mr-2 font-semibold text-fg">{formatLabel(format)}</span>
-                <span className="text-fg-soft">{players.map((p) => p?.name ?? "—").join(", ")}</span>
+            {plannedLineup.formats.map(({ format, map, players }, i) => (
+              <div key={i} className="space-y-1.5 rounded-lg border border-line bg-surface px-3 py-2.5 text-sm">
+                <p className="font-semibold text-fg">
+                  {formatLabel(format)}
+                  {map && <span className="font-normal text-fg-muted"> · {map}</span>}
+                </p>
+                <p className="flex flex-wrap gap-x-3 gap-y-1 text-fg-soft">
+                  {players.map((p, j) => (
+                    <span key={j} className="inline-flex items-center gap-1">
+                      {p && <PlayerAvatar player={p} className="h-4 w-4 text-[9px]" />}
+                      {p?.name ?? "—"}
+                    </span>
+                  ))}
+                </p>
               </div>
             ))}
           </div>

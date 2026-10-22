@@ -77,4 +77,14 @@ describe.skipIf(process.env.DB_TESTS !== "1")("matchday planning with PostgreSQL
     expect(published.publishedVariantId).toBe(variant.id)
     expect(published.published.matches[ids.match]).toEqual({ ROUND_1V1: [ids.ben], ROUND_2V2: [ids.anna, ids.ben] })
   })
+
+  it("keeps the map of every format for the match day, shared by all lineups", async () => {
+    state.session = { user: { id: ids.manager, role: "PLAYER" } }
+    expect((await (await get()).json()).maps).toEqual({})
+    expect((await patch({ action: "maps", maps: { ROUND_4V4: "Palmo" } })).status).toBe(400)
+    const saved = await (await patch({ action: "maps", maps: { ROUND_1V1: " Heat ", ROUND_2V2: "Heat" } })).json()
+    expect(saved.maps).toEqual({ ROUND_1V1: "Heat", ROUND_2V2: "Heat" })
+    const cleared = await (await patch({ action: "maps", maps: { ROUND_1V1: "Heat", ROUND_2V2: "" } })).json()
+    expect(cleared.maps).toEqual({ ROUND_1V1: "Heat" })
+  })
 })

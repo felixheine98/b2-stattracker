@@ -41,6 +41,7 @@ const actionSchema = z.discriminatedUnion("action", [
   z.object({ action: z.literal("deleteVariant"), variantId: z.string() }),
   z.object({ action: z.literal("seats"), variantId: z.string(), seats: variantSchema }),
   z.object({ action: z.literal("publish"), variantId: z.string() }),
+  z.object({ action: z.literal("maps"), maps: z.partialRecord(z.enum(FORMATS), z.string().trim().max(60)) }),
 ])
 
 const bad = (error: string, status = 400) => NextResponse.json({ error }, { status })
@@ -100,6 +101,14 @@ export async function PATCH(req: Request, ctx: Params) {
         data: { published: publishedSnapshot(variant!.seats, plan.matches) as unknown as Prisma.InputJsonValue, publishedVariantId: variant!.id, publishedAt: new Date() },
       })
       break
+    case "maps": {
+      // Only formats of the competition; an empty name removes the map
+      const formats = found.lineup.tournament.formats
+      if (Object.keys(body.maps).some((format) => !formats.includes(format as (typeof formats)[number]))) return bad("The competition has no such format")
+      const maps = Object.fromEntries(Object.entries(body.maps).filter(([, name]) => name))
+      await db.stage.update({ where: { id: found.stageId }, data: { maps } })
+      break
+    }
   }
   return NextResponse.json(await loadPlan(found.lineup.id, found.stageId))
 }

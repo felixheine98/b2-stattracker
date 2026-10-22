@@ -59,6 +59,23 @@ export function placePlayer(seats: Seats, format: Format, index: number, playerI
   return { ...seats, [format]: places }
 }
 
+// The players offered while typing into a place: names containing the typed text, those starting
+// with it first, then available players before maybe and unanswered ones. Players who are out or
+// already drive the format are not offered.
+export function seatSuggestions<P extends { id: string; name: string }>(
+  query: string,
+  kader: P[],
+  answers: Record<string, MatchdayAnswer | undefined>,
+  taken: Array<string | null>
+): P[] {
+  const text = query.trim().toLowerCase()
+  const { top, below } = planPool(kader, answers)
+  const rank = (p: P) => (p.name.toLowerCase().startsWith(text) ? 0 : 1)
+  return [...top, ...below]
+    .filter((p) => !taken.includes(p.id) && p.name.toLowerCase().includes(text))
+    .sort((a, b) => rank(a) - rank(b))
+}
+
 // A planned player who is not there for a match
 export interface PlanAbsence {
   playerId: string

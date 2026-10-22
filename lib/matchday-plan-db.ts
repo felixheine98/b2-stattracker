@@ -30,12 +30,13 @@ export async function loadPlan(lineupId: string, stageId: string) {
       variants: { orderBy: { createdAt: "asc" } },
     },
   })
-  const [kader, matches] = await Promise.all([
-    db.tournamentLineupSlot.findMany({ where: { lineupId }, select: { player: { select: { id: true, name: true, slug: true } } }, orderBy: { player: { name: "asc" } } }),
+  const [kader, matches, stage] = await Promise.all([
+    db.tournamentLineupSlot.findMany({ where: { lineupId }, select: { player: { select: { id: true, name: true, slug: true, country: true } } }, orderBy: { player: { name: "asc" } } }),
     db.match.findMany({
       where: { tournamentLineupId: lineupId, stageId },
       select: { id: true, slug: true, number: true, label: true, opponent: true, date: true, createdAt: true, subMatches: { orderBy: { order: "asc" }, select: { format: true } } },
     }),
+    db.stage.findUniqueOrThrow({ where: { id: stageId }, select: { maps: true } }),
   ])
   return {
     planId: plan.id,
@@ -47,8 +48,12 @@ export async function loadPlan(lineupId: string, stageId: string) {
     published: plan.published as unknown as PlanVariant | null,
     publishedVariantId: plan.publishedVariantId,
     publishedAt: plan.publishedAt,
+    maps: (stage.maps ?? {}) as StageMaps,
   }
 }
+
+// The map of every format on a match day
+export type StageMaps = Partial<Record<Format, string>>
 
 export type LoadedPlan = Awaited<ReturnType<typeof loadPlan>>
 
@@ -59,9 +64,13 @@ export async function publishedLineupOf(match: { id: string; tournamentLineupId:
   if (!plan?.published) return null
   const lineup = matchLineup(plan.published as unknown as PlanVariant, { id: match.id, formats: match.formats })
   const ids = Object.values(lineup).flat().filter((id): id is string => !!id)
-  const players = await db.player.findMany({ where: { id: { in: ids } }, select: { id: true, name: true } })
+  const [players, stage] = await Promise.all([
+    db.player.findMany({ where: { id: { in: ids } }, select: { id: true, name: true, country: true } }),
+    db.stage.findUnique({ where: { id: match.stageId }, select: { maps: true } }),
+  ])
+  const maps = (stage?.maps ?? {}) as StageMaps
   return {
     publishedAt: plan.publishedAt,
-    formats: match.formats.map((format) => ({ format, players: lineup[format]!.map((id) => players.find((p) => p.id === id) ?? null) })),
+    formats: match.formats.map((format) => ({ format, map: maps[format] ?? null, players: lineup[format]!.map((id) => players.find((p) => p.id === id) ?? null) })),
   }
 }
