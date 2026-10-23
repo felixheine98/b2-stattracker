@@ -3,7 +3,7 @@ import { NextResponse } from "next/server"
 import { z } from "zod"
 import { db } from "@/lib/db"
 import { fetchAnnouncements, fetchReactions, fetchServerEmojis, postAnnouncement, signReactionSnapshot, verifyReactionSnapshot } from "@/lib/discord-bot"
-import { answersRevision, checkEmojis, emojiMapping, lastUsedEmojis, matchdayReactionPreview, parseChannelLink, suggestAnnouncement } from "@/lib/matchday-discord"
+import { answersRevision, checkEmojis, emojiMapping, lastUsedEmojis, matchdayReactionPreview, withDefaultMapping, parseChannelLink, suggestAnnouncement } from "@/lib/matchday-discord"
 import type { MatchdayAnswer } from "@/lib/matchday-plan"
 import type { ReactionSnapshot } from "@/lib/discord-planning"
 import { planAccess, type PlanParams } from "@/lib/matchday-plan-access"
@@ -121,7 +121,7 @@ export async function POST(req: Request, ctx: PlanParams) {
       const snapshot = await fetchReactions(settings.messageUrl)
       await saveSettings({ fetchedAt: snapshot.fetchedAt })
       const known = await accounts(snapshot.users.map((u) => u.id))
-      const mapping = settings.emojiMapping ?? {}
+      const mapping = withDefaultMapping(settings.emojiMapping ?? {})
       // Without a meaning for every emoji nothing is taken over yet
       if (input.action === "fetch" || snapshot.reactions.some((r) => !Object.hasOwn(mapping, r.key))) {
         return NextResponse.json({ ...previewFor(snapshot, known, kaderAnswers()), ...(input.action === "sync" && { applied: null }) })

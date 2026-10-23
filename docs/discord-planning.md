@@ -186,13 +186,14 @@ Bereich „Discord“, wenn die App einen Bot kennt (`DISCORD_BOT_URL`):
 
 1. Einmal pro Lineup den Link zum Lineup-Channel eintragen (Channel oder eine Nachricht darin).
 2. „Post announcement“: Emojis und ihre Bedeutung wählen (Server-Emojis und gängige Emojis per
-   Klick, vorbelegt mit denen des letzten Announcements des Lineups, sonst ✅ 🕗 ❔ ❌), Text prüfen.
+   Klick, vorbelegt mit denen des letzten Announcements des Lineups, sonst ✅ Fix und ❌ Out; weitere
+   Antworten als eigene Emoji-Slots), Text prüfen.
    Der Bot postet in den Lineup-Channel, setzt die Emojis darunter und ordnet die Nachricht dem
    Match Day zu; die Emojis bedeuten schon ihre Antwort. Weiter mit Schritt 4.
 3. Alternativ: Wer den wöchentlichen Ping selbst postet, erwähnt darin den Bot (oder seine Rolle). „Find announcement“
    listet diese Pings und hebt den vorgeschlagenen hervor; „Use this“ ordnet ihn dem Match Day zu.
 4. „Fetch reactions“ übernimmt die eindeutigen Antworten sofort, „Show changes“ zeigt die Liste.
-   Hat ein Emoji noch keine Bedeutung, erscheint stattdessen die Vorschau: Emoji auf
+   ✅ und ❌ zählen ohne Zuordnung als Fix und Out. Hat ein anderes Emoji noch keine Bedeutung, erscheint stattdessen die Vorschau: Emoji auf
    Fix/Partly/Maybe/Out oder Ignore setzen (pro Match Day gespeichert), dann „Apply“. Spieler mit
    widersprüchlichen Reaktionen bleiben in der Vorschau zum Auflösen stehen. Nur verknüpfte Konten des Kaders werden übernommen; nicht verknüpfte
    erscheinen als Hinweis, verknüpfen bleibt bei Admins und Managern („Discord accounts“).

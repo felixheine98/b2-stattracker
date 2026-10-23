@@ -62,16 +62,19 @@ export interface EmojiChoice {
 
 const LABEL: Record<MatchdayAnswer, string> = { FIX: "Fix", PARTIAL: "Partly", MAYBE: "Maybe", OUT: "Out" }
 
+// In and out; any other answer is an emoji slot of its own
 export const DEFAULT_EMOJIS: readonly EmojiChoice[] = [
   { key: "unicode:✅", text: "✅", answer: "FIX" },
-  { key: "unicode:🕗", text: "🕗", answer: "PARTIAL" },
-  { key: "unicode:❔", text: "❔", answer: "MAYBE" },
   { key: "unicode:❌", text: "❌", answer: "OUT" },
 ]
 
 // What the emojis of a posted announcement mean
 export const emojiMapping = (choices: readonly EmojiChoice[]): Record<string, MatchdayAnswer> =>
   Object.fromEntries(choices.map((e) => [e.key, e.answer]))
+
+// ✅ and ❌ mean Fix and Out without being chosen; a choice of the match day goes first
+export const withDefaultMapping = (mapping: Record<string, MatchdayAnswer | "">): Record<string, MatchdayAnswer | ""> =>
+  ({ ...emojiMapping(DEFAULT_EMOJIS), ...mapping })
 
 // What each emoji means, as the announcement says it
 export const emojiLegend = (choices: readonly EmojiChoice[]): string => choices.map((e) => `${e.text} ${LABEL[e.answer]}`).join(" · ")

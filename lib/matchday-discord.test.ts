@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { DEFAULT_EMOJIS, announcementText, checkEmojis, emojiLegend, emojiMapping, insertAt, lastUsedEmojis, searchEmojis, answersRevision, matchdayReactionPreview, parseChannelLink, suggestAnnouncement } from "./matchday-discord"
+import { DEFAULT_EMOJIS, withDefaultMapping, announcementText, checkEmojis, emojiLegend, emojiMapping, insertAt, lastUsedEmojis, searchEmojis, answersRevision, matchdayReactionPreview, parseChannelLink, suggestAnnouncement } from "./matchday-discord"
 
 const ping = (id: string, postedAt: string) => ({ messageUrl: `https://discord.com/channels/1/2/${id}`, postedAt })
 
@@ -86,8 +86,8 @@ describe("the emojis of an announcement the bot posts", () => {
   const custom = { key: "custom:501", text: "<:b2fix:501>", answer: "FIX" as const }
 
   it("start with one emoji per answer, which read back the way a snapshot names them", () => {
-    expect(DEFAULT_EMOJIS.map((e) => [e.text, e.answer])).toEqual([["✅", "FIX"], ["🕗", "PARTIAL"], ["❔", "MAYBE"], ["❌", "OUT"]])
-    expect(emojiMapping(DEFAULT_EMOJIS)).toEqual({ "unicode:✅": "FIX", "unicode:🕗": "PARTIAL", "unicode:❔": "MAYBE", "unicode:❌": "OUT" })
+    expect(DEFAULT_EMOJIS.map((e) => [e.text, e.answer])).toEqual([["✅", "FIX"], ["❌", "OUT"]])
+    expect(emojiMapping(DEFAULT_EMOJIS)).toEqual({ "unicode:✅": "FIX", "unicode:❌": "OUT" })
   })
 
   it("can be any emojis, the server's own too, and several for one answer", () => {
@@ -112,7 +112,7 @@ describe("the emojis of an announcement the bot posts", () => {
   })
 
   it("ask by default who is there on the match day and say what each emoji means", () => {
-    expect(announcementText("Match Day 2", new Date("2026-10-28T00:00:00.000Z"), DEFAULT_EMOJIS)).toBe("Who is there for Match Day 2 on Wed 28.10.?\n✅ Fix · 🕗 Partly · ❔ Maybe · ❌ Out")
+    expect(announcementText("Match Day 2", new Date("2026-10-28T00:00:00.000Z"), DEFAULT_EMOJIS)).toBe("Who is there for Match Day 2 on Wed 28.10.?\n✅ Fix · ❌ Out")
   })
 })
 
@@ -132,5 +132,10 @@ describe("insertAt", () => {
     expect(insertAt("Who is there?", 13, 13, " ✅")).toEqual({ text: "Who is there? ✅", cursor: 15 })
     expect(insertAt("Fix: X", 5, 6, "✅")).toEqual({ text: "Fix: ✅", cursor: 6 })
     expect(insertAt("ab", 1, 1, "<:b2fix:501>")).toEqual({ text: "a<:b2fix:501>b", cursor: 13 })
+  })
+
+  it("counts ✅ as Fix and ❌ as Out without a choice, unless the match day chose otherwise", () => {
+    expect(withDefaultMapping({})).toEqual({ "unicode:✅": "FIX", "unicode:❌": "OUT" })
+    expect(withDefaultMapping({ "unicode:❌": "", "custom:1": "MAYBE" })).toEqual({ "unicode:✅": "FIX", "unicode:❌": "", "custom:1": "MAYBE" })
   })
 })

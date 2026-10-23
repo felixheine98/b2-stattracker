@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input"
 import { Select } from "@/components/ui/select"
 import { BASE_PATH } from "@/lib/base-path"
 import { formatTime, formatTimeShort, previewSummary, type ReactionSnapshot } from "@/lib/discord-planning"
-import { matchdayReactionPreview, type EmojiChoice, type ServerEmoji } from "@/lib/matchday-discord"
+import { matchdayReactionPreview, withDefaultMapping, type EmojiChoice, type ServerEmoji } from "@/lib/matchday-discord"
 import { AnnouncementForm } from "./announcement-form"
 import type { MatchdayAnswer } from "@/lib/matchday-plan"
 import type { MatchdayDiscordSettings } from "@/lib/matchday-plan-db"
@@ -68,7 +68,7 @@ export function MatchdayDiscord({ apiPath, channelId: initialChannel, settings, 
   const [channelLink, setChannelLink] = useState("")
   const [messageUrl, setMessageUrl] = useState(settings?.messageUrl ?? "")
   const [fetchedAt, setFetchedAt] = useState(settings?.fetchedAt ?? "")
-  const [mapping, setMapping] = useState<Mapping>(settings?.emojiMapping ?? {})
+  const [mapping, setMapping] = useState<Mapping>(withDefaultMapping(settings?.emojiMapping ?? {}))
   const [pings, setPings] = useState<{ announcements: Ping[]; suggested: string | null; taken: string[] } | null>(null)
   const [loaded, setLoaded] = useState<Loaded | null>(null)
   const [resolutions, setResolutions] = useState<Mapping>({})
@@ -104,7 +104,7 @@ export function MatchdayDiscord({ apiPath, channelId: initialChannel, settings, 
 
   const post = (text: string, emojis: EmojiChoice[]) => run(async () => {
     const data = await call({ action: "post", text, emojis })
-    setMessageUrl(data.messageUrl); setMapping(data.emojiMapping); setFetchedAt(""); setWriting(null); setLoaded(null)
+    setMessageUrl(data.messageUrl); setMapping(withDefaultMapping(data.emojiMapping)); setFetchedAt(""); setWriting(null); setLoaded(null)
     setSuccess("The bot posted the announcement. Reactions to it come with their time.")
   })
 

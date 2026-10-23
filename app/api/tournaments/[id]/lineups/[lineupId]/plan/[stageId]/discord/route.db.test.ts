@@ -123,7 +123,7 @@ describe.skipIf(process.env.DB_TESTS !== "1")("Discord for the matchday planning
     const emojis = [{ key: "custom:501", text: "<:b2fix:501>", answer: "FIX" }, { key: "unicode:🚫", text: "🚫", answer: "OUT" }]
     const first = await (await post({ action: "emojis" }, ids.stage2)).json()
     expect(first.server).toHaveLength(1)
-    expect(first.lastUsed.map((e: { text: string }) => e.text)).toEqual(["✅", "🕗", "❔", "❌"])
+    expect(first.lastUsed.map((e: { text: string }) => e.text)).toEqual(["✅", "❌"])
     expect((await post({ action: "post", text: "", emojis }, ids.stage2)).status).toBe(400)
     expect((await post({ action: "post", text: "Who?", emojis: [{ key: "custom:501", text: "<:b2fix:999>", answer: "FIX" }] }, ids.stage2)).status).toBe(400)
     expect((await post({ action: "post", text: "Who is there?", emojis }, ids.stage2)).status).toBe(200)
@@ -165,5 +165,21 @@ describe.skipIf(process.env.DB_TESTS !== "1")("Discord for the matchday planning
     expect(waiting.applied).toBeNull()
     expect(waiting.snapshot.reactions.map((r: { key: string }) => r.key)).toEqual(["unicode:🎉"])
     expect((await answers())[ids.anna].answer).toBe("FIX")
+  })
+
+  it("takes ✅ and ❌ of a ping written by hand over as Fix and Out without choosing them first", async () => {
+    state.session = { user: { id: ids.manager, role: "PLAYER" } }
+    await client.matchdayPlan.update({ where: { lineupId_stageId: { lineupId: ids.lineup, stageId: ids.stage } }, data: { discordSettings: { messageUrl: ping("10", "").messageUrl } } })
+    await client.matchdayPlanAnswer.deleteMany({ where: { plan: { lineupId: ids.lineup, stageId: ids.stage } } })
+    state.snapshot = {
+      messageUrl: ping("10", "").messageUrl, fetchedAt: new Date().toISOString(),
+      users: [{ id: "101", name: "Anna" }, { id: "102", name: "Ben" }],
+      reactions: [{ key: "unicode:✅", label: "✅", userIds: ["101"] }, { key: "unicode:❌", label: "❌", userIds: ["102"] }],
+    }
+    const synced = await (await post({ action: "sync" })).json()
+    expect(synced.applied.map((c: { after: string }) => c.after)).toEqual(["FIX", "OUT"])
+    // Any other emoji is a slot of its own and needs a meaning
+    state.snapshot = { ...(state.snapshot as object), reactions: [{ key: "unicode:🕗", label: "🕗", userIds: ["101"] }] }
+    expect((await (await post({ action: "sync" })).json()).applied).toBeNull()
   })
 })
