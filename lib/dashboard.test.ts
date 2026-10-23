@@ -121,6 +121,12 @@ describe("bestPerformer", () => {
     expect(best!.avgPlace).toBe(2)
   })
 
+  it("keeps the nickname and the other names of the player for the name shown", () => {
+    const named = round("anna:50", "opp1:51")
+    Object.assign(named.results[0], { nickname: "Annie", currentName: "anna2", allNames: ["anna", "anna2"] })
+    expect(bestPerformer([match([[named]])])).toMatchObject({ name: "anna", nickname: "Annie", currentName: "anna2", allNames: ["anna", "anna2"] })
+  })
+
   it("compares placements by the size of the field, so formats can be mixed", () => {
     const best = bestPerformer([
       // ben: 2nd of 2, twice

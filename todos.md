@@ -12,6 +12,7 @@ Ideen, die noch kein Todo sind: [ideen.md](ideen.md)
   - [ ] schritt 3: vorbelegung der rundeneingabe (fahrer + map des spieltags), planabweichung im csv- und ecm-import (nur hinweis), „geplant“ am match (gebaut, Felix prüft in Dev)
   - [ ] schritt 3: vorbelegung der sub-matches, planabweichung im import, „geplant“ am match
   - [ ] schritt 4: discord (lineup-channel, bot erkennt markierten ping, abruf durch lineup-manager)
+- [ ] Spitznamen statt Gamertags überall anzeigen, Gamertag beim Hover ([Entscheidung](docs/adr/009-spitznamen.md)) (gebaut, Felix prüft in Dev)
 
 ## Teilweise erledigt
 

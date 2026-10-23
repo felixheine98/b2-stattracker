@@ -1,7 +1,7 @@
 import { db } from "@/lib/db"
 import { confirmedTmId, opponentNameKey } from "@/lib/opponents"
 import { matchPath, playerPath, tournamentPath } from "@/lib/paths"
-import { allNames } from "@/lib/player-names"
+import { allNames, shownName } from "@/lib/player-names"
 import { currentStatus, dayKey, formatDay, tournamentReferenceDate } from "@/lib/player-status"
 import { matchTag } from "@/lib/match-order"
 import type { SearchEntry } from "@/lib/search"
@@ -44,12 +44,13 @@ export async function searchIndex(): Promise<SearchEntry[]> {
         : {
             kind: "player",
             id: p.id,
-            title: p.name,
+            // A nickname is the title; the gamertag is then found as an alias
+            title: shownName(p),
             ...(currentStatus(p) === "TRIAL" && { detail: "Trial" }),
             ...(currentStatus(p) === "GUEST" && { detail: "Guest" }),
             ...(currentStatus(p) === "FORMER" && { marker: "former" as const }),
             href: playerPath(p),
-            aliases: allNames(p).filter((n) => n !== p.name),
+            aliases: allNames(p).filter((n) => n !== shownName(p)),
           }
     ),
     ...teams.map((t): SearchEntry => ({ kind: "team", id: t.id, title: t.name, href: `/opponents/${t.id}?kind=team`, aliases: t.aliases, ...marker(t.archived) })),

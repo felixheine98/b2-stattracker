@@ -42,6 +42,7 @@ import { StageHeading } from "@/components/stage-heading"
 import { StagePlanFields } from "@/components/stage-plan-fields"
 import { FormatStatsTable } from "./format-stats"
 import { MapStatsTable, StatsViewToggle } from "./map-stats"
+import { shownName } from "@/lib/player-names"
 
 interface Player {
   id: string
@@ -50,6 +51,7 @@ interface Player {
   name: string
   currentName?: string
   allNames?: string[]
+  nickname?: string | null
   country?: string | null
 }
 
@@ -540,7 +542,7 @@ export function TournamentDetailView({ tournament: initial, players, statsMatche
                             )}
                           >
                             <PlayerAvatar player={slot.player} className="h-3.5 w-3.5 text-[9px]" />
-                            <PlayerName name={slot.player.name} currentName={slot.player.currentName} />
+                            <PlayerName name={slot.player.name} nickname={slot.player.nickname} currentName={slot.player.currentName} allNames={slot.player.allNames} />
                             {isGuest(slot.player.tmId) && <GuestBadge />}
 {isTrial(slot.player.tmId) && <TrialBadge />}
                           </span>
@@ -824,13 +826,13 @@ export function TournamentDetailView({ tournament: initial, players, statsMatche
                       key={id}
                       className="inline-flex items-center gap-1.5 rounded-full border border-brand/30 bg-brand/10 py-0.5 pl-2.5 pr-1.5 text-xs text-fg"
                     >
-                      {player.name}
+                      <PlayerName name={player.name} nickname={player.nickname} currentName={player.currentName} allNames={player.allNames} />
                       {isGuest(player.tmId) && <GuestBadge />}
 {isTrial(player.tmId) && <TrialBadge />}
                       <button
                         type="button"
                         onClick={() => setLineupPlayerIds((ids) => ids.filter((x) => x !== id))}
-                        aria-label={`Remove ${player.name}`}
+                        aria-label={`Remove ${shownName(player)}`}
                         className="text-fg-muted hover:text-danger"
                       >
                         <X size={12} />
@@ -878,7 +880,7 @@ export function TournamentDetailView({ tournament: initial, players, statsMatche
                     return (
                       <div key={p.id} className="flex items-center gap-3 opacity-50" title={`Already in lineup ${otherLineup.name}`}>
                         <input type="checkbox" disabled className="h-4 w-4" />
-                        <span className="text-sm text-fg-muted">{p.name}</span>
+                        <span className="text-sm text-fg-muted"><PlayerName name={p.name} nickname={p.nickname} currentName={p.currentName} allNames={p.allNames} /></span>
                         {isGuest(p.tmId) && <GuestBadge />}
 {isTrial(p.tmId) && <TrialBadge />}
                         <span className="text-xs text-fg-muted ml-auto">in {otherLineup.name}</span>
@@ -897,7 +899,7 @@ export function TournamentDetailView({ tournament: initial, players, statsMatche
                         }
                         className="h-4 w-4 accent-brand"
                       />
-                      <span className="text-sm text-fg group-hover:text-white">{p.name}</span>
+                      <span className="text-sm text-fg group-hover:text-white"><PlayerName name={p.name} nickname={p.nickname} currentName={p.currentName} allNames={p.allNames} /></span>
                       {isGuest(p.tmId) && <GuestBadge />}
 {isTrial(p.tmId) && <TrialBadge />}
                       <span className="text-xs text-fg-subtle font-mono ml-auto">{p.tmId.slice(0, 8)}…</span>

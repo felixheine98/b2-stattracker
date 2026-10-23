@@ -77,6 +77,8 @@ interface Player {
   id: string
   name: string
   currentName?: string
+  allNames?: string[]
+  nickname?: string | null
   tmId: string
   country?: string | null
 }
@@ -274,7 +276,7 @@ export function LineupMatchesView({ lineup, rules, guestTmIds, trialTmIds, profi
             >
               <PlayerAvatar player={slot.player} className="h-5 w-5 text-[10px]" />
               <Link href={profilePath(slot.player.tmId) ?? "/players"} className="hover:text-brand-ink">
-                <PlayerName name={slot.player.name} currentName={slot.player.currentName} />
+                <PlayerName name={slot.player.name} nickname={slot.player.nickname} currentName={slot.player.currentName} allNames={slot.player.allNames} />
               </Link>
               {isGuest(slot.player.tmId) && <GuestBadge />}
 {isTrial(slot.player.tmId) && <TrialBadge />}
@@ -459,7 +461,7 @@ export function LineupMatchesView({ lineup, rules, guestTmIds, trialTmIds, profi
               <span className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-xs text-fg-muted">
                 {lineup.slots.map((s) => (
                   <span key={s.id} className="inline-flex items-center gap-1">
-                    {s.player.name}
+                    <PlayerName name={s.player.name} nickname={s.player.nickname} currentName={s.player.currentName} allNames={s.player.allNames} />
                     {isGuest(s.player.tmId) && <GuestBadge />}
 {isTrial(s.player.tmId) && <TrialBadge />}
                   </span>

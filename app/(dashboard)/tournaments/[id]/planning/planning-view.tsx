@@ -20,6 +20,7 @@ import type { PlanningState } from "@/lib/planning-db"
 import type { Activity } from "@/lib/planning-presence"
 import { usePlanningLive } from "@/lib/use-planning-live"
 import { useLayoutEffect, useRef, useState } from "react"
+import { PlayerName } from "@/components/player-name"
 
 interface Props {
   initial: PlanningState
@@ -83,7 +84,7 @@ export function PlanningView({ initial, ownPlayerId, userId, canManage }: Props)
     <div className="min-w-0 md:w-52 md:shrink-0">
       <div className="flex min-w-0 items-center gap-2">
         <PlayerAvatar player={row.player} />
-        <span className="truncate text-sm font-medium text-fg">{row.player.name}</span>
+        <span className="truncate text-sm font-medium text-fg"><PlayerName name={row.player.name} nickname={row.player.nickname} currentName={row.player.currentName} allNames={row.player.allNames} /></span>
         {row.guest && <GuestBadge />}
         {row.answer === "INACTIVE" && (
           <span title="Does not drive competitions as a rule. An answer for this tournament still counts." className="shrink-0 rounded-full border border-violet/40 bg-violet/15 px-1.5 py-px text-[10px] font-medium leading-4 text-violet">
@@ -281,7 +282,7 @@ export function PlanningView({ initial, ownPlayerId, userId, canManage }: Props)
                             className={cn("flex min-h-9 max-md:min-h-11 w-full items-center gap-2 px-3 py-1.5 text-left text-sm", editable && "hover:bg-raised", own && "bg-brand/5")}
                           >
                             <PlayerAvatar player={row.player} className="h-5 w-5 text-[10px]" />
-                            <span className="min-w-0 truncate text-fg">{row.player.name}</span>
+                            <span className="min-w-0 truncate text-fg"><PlayerName name={row.player.name} nickname={row.player.nickname} currentName={row.player.currentName} allNames={row.player.allNames} /></span>
                             {row.guest && <GuestBadge />}
                             {own && <span className="text-xs text-brand-ink">you</span>}
                             {row.answeredAt && <time dateTime={row.answeredAt} className="ml-auto shrink-0 text-xs text-fg-muted" title={`Reacted on Discord ${formatTime(row.answeredAt)}`}>{formatTimeShort(row.answeredAt)}</time>}

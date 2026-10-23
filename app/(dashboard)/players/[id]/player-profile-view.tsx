@@ -9,7 +9,7 @@ import { countryName } from "@/lib/countries"
 import { confirmedTmId } from "@/lib/opponents"
 import { formatGapSeconds } from "@/lib/pace"
 import { PacePct } from "@/components/pace-pct"
-import { allNames, type NameChange } from "@/lib/player-names"
+import { allNames, shownName, type NameChange } from "@/lib/player-names"
 import type { CompProfile, MapLine, RankedPace, StatLine } from "@/lib/player-profile"
 import { currentStatus, formatDay, type PlayerStatus, type StatusChange } from "@/lib/player-status"
 import { useSyncedState } from "@/lib/use-synced-state"
@@ -32,6 +32,7 @@ interface Player extends StatusPlayer {
   country: string | null
   initialName: string
   nameChanges: NameChange[]
+  nickname: string | null
 }
 
 type FormatLine = StatLine & { format: Format }
@@ -307,11 +308,12 @@ export function PlayerProfileView({ player: initial, total, formats, styles, com
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
             <PlayerAvatar player={player} className="h-8 w-8 text-base" />
-            <h1 className="break-words text-fg page-title">{player.name}</h1>
+            <h1 className="break-words text-fg page-title">{shownName(player)}</h1>
             <Badge variant={status === "MEMBER" ? "primary" : status === "TRIAL" ? "secondary" : "default"}>{STATUS_TEXT[status]}</Badge>
             {player.inactive && <Badge variant="purple" title="Does not drive competitions as a rule">{INACTIVE_LABEL}</Badge>}
           </div>
           <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-sm text-fg-muted">
+            {player.nickname && <span>gamertag: {player.name}</span>}
             {player.country && <span>{countryName(player.country)}</span>}
             {formerNames.length > 0 && <span>formerly: {formerNames.join(", ")}</span>}
             {tmId && (

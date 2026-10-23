@@ -17,7 +17,7 @@ export default async function DiscordAccountsPage() {
 
   const [players, marked, members, tracked, plannings, openComps] = await Promise.all([
     db.player.findMany({ where: { isOpponentOnly: false },
-      select: { id: true, name: true, initialName: true, discordUserId: true, initialStatus: true, statusChanges: true, nameChanges: true },
+      select: { id: true, name: true, nickname: true, initialName: true, discordUserId: true, initialStatus: true, statusChanges: true, nameChanges: true },
       orderBy: { name: "asc" },
     }),
     db.discordNonPlayer.findMany({ select: { discordUserId: true } }),
@@ -44,7 +44,7 @@ export default async function DiscordAccountsPage() {
         id: p.discordUserId!, name: p.discordUserId!, username: "", roles: [], onServer: false, playerId: p.id, notAPlayer: false, suggestion: null,
       })) : []),
     ]}
-    players={players.map(p => ({ id: p.id, name: p.name, allNames: allNames(p), status: currentStatus(p), discordUserId: p.discordUserId }))}
+    players={players.map(p => ({ id: p.id, name: p.name, nickname: p.nickname, allNames: allNames(p), status: currentStatus(p), discordUserId: p.discordUserId }))}
   />
   <div className="page-wide pt-6">
     <ReactionLog

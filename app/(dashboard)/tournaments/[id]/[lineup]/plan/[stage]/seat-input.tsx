@@ -3,11 +3,13 @@
 import { useState } from "react"
 import { AlertTriangle, X } from "lucide-react"
 import { PlayerAvatar } from "@/components/player-avatar"
+import { shownName } from "@/lib/player-names"
 import { cn } from "@/lib/utils"
 
 export interface SeatPlayer {
   id: string
   name: string
+  nickname?: string | null
   country: string | null
 }
 
@@ -41,7 +43,7 @@ export function SeatInput({ label, player, suggest, dot, warn, disabled, onPick,
   function leave() {
     if (text === null) return
     const typed = text.trim().toLowerCase()
-    const exact = options.find((p) => p.name.toLowerCase() === typed)
+    const exact = options.find((p) => [p.name, p.nickname].some((n) => n?.toLowerCase() === typed))
     if (exact) pick(exact.id)
     else if (!typed && player) {
       setText(null)
@@ -62,11 +64,11 @@ export function SeatInput({ label, player, suggest, dot, warn, disabled, onPick,
         <input
           aria-label={label}
           aria-autocomplete="list"
-          value={text ?? player?.name ?? ""}
+          value={text ?? (player ? shownName(player) : "")}
           placeholder="open"
           disabled={disabled}
           onFocus={(e) => {
-            setText(player?.name ?? "")
+            setText(player ? shownName(player) : "")
             setActive(0)
             e.target.select()
           }}
@@ -98,7 +100,7 @@ export function SeatInput({ label, player, suggest, dot, warn, disabled, onPick,
         {player && !open && (
           <button
             type="button"
-            aria-label={`Remove ${player.name}`}
+            aria-label={`Remove ${shownName(player)}`}
             disabled={disabled}
             onClick={onClear}
             className="-mr-1 shrink-0 rounded p-1 text-fg-subtle hover:text-danger"
@@ -123,7 +125,10 @@ export function SeatInput({ label, player, suggest, dot, warn, disabled, onPick,
               className={cn("flex cursor-pointer items-center gap-2 px-2.5 py-1.5 text-sm text-fg", i === active && "bg-brand/15")}
             >
               <PlayerAvatar player={p} className="h-4 w-4 text-[9px]" />
-              <span className="min-w-0 flex-1 truncate">{p.name}</span>
+              <span className="min-w-0 flex-1 truncate">
+                {shownName(p)}
+                {p.nickname && <span className="ml-1.5 text-xs text-fg-subtle">{p.name}</span>}
+              </span>
               <span className={cn("h-2 w-2 shrink-0 rounded-full", dot(p.id))} />
             </li>
           ))}

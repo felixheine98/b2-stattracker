@@ -2,6 +2,7 @@
 
 import { useId, useRef, useState } from "react"
 import { ChevronDown } from "lucide-react"
+import { shownName } from "@/lib/player-names"
 import { searchPlayers } from "@/lib/player-search"
 import { cn } from "@/lib/utils"
 
@@ -10,7 +11,7 @@ interface Option { value: string; label: string; hint?: string }
 interface Props {
   value: string
   onChange: (value: string) => void
-  players: Array<{ id: string; name: string; allNames?: string[]; hint?: string }>
+  players: Array<{ id: string; name: string; allNames?: string[]; nickname?: string | null; hint?: string }>
   // Fixed choices above the players, e.g. "Not a player"; their value must not be a player id
   extra?: Option[]
   placeholder?: string
@@ -27,10 +28,12 @@ export function PlayerCombobox({ value, onChange, players, extra = [], placehold
   const [active, setActive] = useState(0)
   const input = useRef<HTMLInputElement>(null)
   const listId = useId()
-  const all: Option[] = [...extra, ...players.map(p => ({ value: p.id, label: p.name, hint: p.hint }))]
+  // A nickname is the label, with the gamertag beside it
+  const optionOf = (p: Props["players"][number]): Option => ({ value: p.id, label: shownName(p), hint: [p.nickname && p.name, p.hint].filter(Boolean).join(" · ") || undefined })
+  const all: Option[] = [...extra, ...players.map(optionOf)]
   const selected = all.find(o => o.value === value)
   const options: Option[] = query.trim()
-    ? searchPlayers(players, query).map(p => ({ value: p.id, label: p.name, hint: p.hint }))
+    ? searchPlayers(players, query).map(optionOf)
     : all
 
   function show() { setOpen(true); setQuery(""); setActive(Math.max(0, all.findIndex(o => o.value === value))) }

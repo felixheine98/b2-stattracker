@@ -3,13 +3,12 @@
 // sum of their places. It counts in the stats of rounds, places and records, never in pace,
 // times or DNFs.
 import type { Outcome } from "./match-rules"
+import type { NameFields } from "./player-names"
 
-export interface SummaryPlayer {
+export interface SummaryPlayer extends NameFields {
   playerId: string
   tmId: string
   playerName: string
-  // Today's name, when the data carries tournament names
-  currentName?: string
   rounds: number
   // null: the screenshot gives no places (points instead), so the sub-match counts for the record only
   placementSum: number | null

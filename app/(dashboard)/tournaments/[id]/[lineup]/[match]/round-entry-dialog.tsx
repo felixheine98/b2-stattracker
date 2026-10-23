@@ -13,6 +13,7 @@ import { ArrowDown, ArrowRight, Delete, Hash, Timer } from "lucide-react"
 import { useIsMobile } from "@/lib/use-is-mobile"
 import { useEffect, useMemo, useState } from "react"
 import type { Player, Round, SubMatch } from "./match-detail-view"
+import { PlayerName } from "@/components/player-name"
 
 // One round: playerId -> placement or DNF, plus how many opponents did not finish under OPPONENT_DNFS
 type Column = Record<string, Cell>
@@ -420,7 +421,7 @@ export function RoundEntryDialog({ subMatch, pool, planned = null, allPlayers, i
                         : "border-line text-fg-muted hover:border-line-strong hover:text-fg"
                     )}
                   >
-                    {player.name}
+                    <PlayerName name={player.name} nickname={player.nickname} currentName={player.currentName} allNames={player.allNames} />
                     {isGuest(player.tmId) && <GuestBadge className="ml-1.5" />}
                   </button>
                 )

@@ -14,6 +14,8 @@ export interface NameHistory {
   name: string
   initialName: string
   nameChanges: NameChange[]
+  // What the team calls the player, shown instead of the gamertag (docs/adr/009-spitznamen.md)
+  nickname?: string | null
 }
 
 interface Props {
@@ -22,7 +24,7 @@ interface Props {
   suggestion?: string
   canManage: boolean
   onClose: () => void
-  onChanged: (history: NameHistory) => void
+  onChanged: (history: Partial<NameHistory>) => void
 }
 
 // The names a player had over time: the one from the start and every rename with its day.
@@ -30,6 +32,7 @@ interface Props {
 export function NameHistoryDialog({ player, suggestion, canManage, onClose, onChanged }: Props) {
   const changes = sortedNameChanges(player)
   const [initialName, setInitialName] = useState(player.initialName)
+  const [nickname, setNickname] = useState(player.nickname ?? "")
   // Edited but not yet saved values of existing renames, keyed by their ID
   const [edits, setEdits] = useState<Record<string, { name?: string; day?: string }>>({})
   const [newName, setNewName] = useState(suggestion ?? "")
@@ -55,6 +58,21 @@ export function NameHistoryDialog({ player, suggestion, canManage, onClose, onCh
     return true
   }
 
+  async function saveNickname() {
+    setError("")
+    setLoading(true)
+    const res = await fetch(`${BASE_PATH}/api/players/${player.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ nickname }),
+    }).catch(() => null)
+    setLoading(false)
+    const data = await res?.json().catch(() => null)
+    if (!res?.ok) return setError(data?.error ?? "Failed to save")
+    setNickname(data.nickname ?? "")
+    onChanged({ nickname: data.nickname })
+  }
+
   async function addRename() {
     if (await send("", "POST", { name: newName.trim(), effectiveFrom: newDay })) setNewName("")
   }
@@ -70,6 +88,20 @@ export function NameHistoryDialog({ player, suggestion, canManage, onClose, onCh
     <Dialog open onClose={onClose} className="max-w-lg">
       <DialogTitle>Names of {player.name}</DialogTitle>
       <div className="space-y-4">
+        {(canManage || player.nickname) && (
+          <div className="space-y-1.5 border-b border-line pb-3">
+            <Label htmlFor="nickname">Nickname</Label>
+            {canManage ? (
+              <div className="flex items-center gap-2">
+                <Input id="nickname" value={nickname} onChange={(e) => setNickname(e.target.value)} placeholder="e.g. Dennis" className="flex-1" />
+                {nickname.trim() !== (player.nickname ?? "") && <Button onClick={saveNickname} disabled={loading}>Save</Button>}
+              </div>
+            ) : (
+              <p className="text-sm font-medium text-fg">{player.nickname}</p>
+            )}
+            <p className="text-xs text-fg-subtle">Shown instead of the gamertag everywhere, the gamertag on hover. Empty shows the gamertag.</p>
+          </div>
+        )}
         <p className="text-xs text-fg-subtle">
           Inside a tournament the name of its start day is shown. Everywhere else it is the current name.
         </p>

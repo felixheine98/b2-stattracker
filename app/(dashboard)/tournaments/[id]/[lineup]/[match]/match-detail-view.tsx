@@ -28,6 +28,7 @@ import { matchTag } from "@/lib/match-order"
 import { EcmImportDialog } from "./ecm-import-dialog"
 import { MatchCsvImportDialog } from "./match-csv-import-dialog"
 import { RoundEntryDialog } from "./round-entry-dialog"
+import { nameFieldsOf, type NameFields } from "@/lib/player-names"
 import type { SubMatchSummary } from "@/lib/summary"
 
 export interface Player {
@@ -37,6 +38,7 @@ export interface Player {
   name: string
   currentName?: string
   allNames?: string[]
+  nickname?: string | null
   country?: string | null
   // No longer with the team: not offered for picking
   former?: boolean
@@ -47,6 +49,8 @@ interface RoundResult {
   tmId: string
   playerName: string
   currentName?: string
+  allNames?: string[]
+  nickname?: string | null
   timeMs: number | null
   dnf?: boolean
   isOurTeam: boolean
@@ -119,11 +123,11 @@ function SubMatchStatsTable({ sm, number, isGuest, isTrial }: { sm: SubMatch; nu
   const teamStats = useMemo(() => computeStats(sm.rounds), [sm.rounds])
 
   const rows = useMemo(() => {
-    const playerMap = new Map<string, { id: string | null; tmId: string; name: string; currentName?: string }>()
+    const playerMap = new Map<string, NameFields & { id: string | null; tmId: string; name: string }>()
     for (const round of sm.rounds) {
       for (const r of round.results) {
         if (r.isOurTeam && !playerMap.has(r.tmId)) {
-          playerMap.set(r.tmId, { id: r.playerId ?? null, tmId: r.tmId, name: r.playerName, currentName: r.currentName })
+          playerMap.set(r.tmId, { id: r.playerId ?? null, tmId: r.tmId, name: r.playerName, ...nameFieldsOf(r) })
         }
       }
     }
@@ -152,7 +156,7 @@ function SubMatchStatsTable({ sm, number, isGuest, isTrial }: { sm: SubMatch; nu
       return {
         tmId: p.tmId,
         name: p.name,
-        currentName: p.currentName,
+        ...nameFieldsOf(p),
         roundsPlayed,
         placementSum,
         avg: roundsPlayed > 0 ? placementSum / roundsPlayed : 0,
@@ -244,7 +248,7 @@ function SubMatchStatsTable({ sm, number, isGuest, isTrial }: { sm: SubMatch; nu
           {sorted.map((row) => (
             <tr key={row.tmId} className="border-b border-table-rule hover:bg-table-hover">
               <td className="sticky left-0 z-[1] bg-table-cell py-1.5 pl-3 pr-4 text-fg font-medium whitespace-nowrap max-md:shadow-[1px_0_0_var(--border)]">
-                <PlayerName name={row.name} currentName={row.currentName} />
+                <PlayerName name={row.name} nickname={row.nickname} currentName={row.currentName} allNames={row.allNames} />
                 {isGuest(row.tmId) && <GuestBadge className="ml-1.5" />}
 {isTrial(row.tmId) && <TrialBadge className="ml-1.5" />}
               </td>
@@ -318,7 +322,7 @@ function SummaryStatsTable({ sm, summary, number, isGuest, isTrial }: { sm: SubM
             {rows.map((row) => (
               <tr key={row.tmId} className="border-b border-table-rule hover:bg-table-hover">
                 <td className="sticky left-0 z-[1] bg-table-cell py-1.5 pl-3 pr-4 text-fg font-medium whitespace-nowrap max-md:shadow-[1px_0_0_var(--border)]">
-                  <PlayerName name={row.playerName} currentName={row.currentName} />
+                  <PlayerName name={row.playerName} nickname={row.nickname} currentName={row.currentName} allNames={row.allNames} />
                   {isGuest(row.tmId) && <GuestBadge className="ml-1.5" />}
                   {isTrial(row.tmId) && <TrialBadge className="ml-1.5" />}
                 </td>
@@ -353,7 +357,7 @@ interface Props {
   // Open the eCM import dialog right away (the import page sends people here with the data)
   autoEcmImport?: boolean
   // The lineup finalised in the match day planning; null without one or while it is switched off
-  plannedLineup?: { publishedAt: Date | string | null; formats: Array<{ format: Format; map: string | null; players: Array<{ id: string; name: string; country: string | null } | null> }> } | null
+  plannedLineup?: { publishedAt: Date | string | null; formats: Array<{ format: Format; map: string | null; players: Array<{ id: string; name: string; nickname?: string | null; country: string | null } | null> }> } | null
 }
 
 export function MatchDetailView({ match: initialMatch, ruleSet, allPlayers, guestTmIds, trialTmIds, canEdit, canManage, autoEcmImport = false, plannedLineup = null }: Props) {
@@ -578,7 +582,7 @@ export function MatchDetailView({ match: initialMatch, ruleSet, allPlayers, gues
                       className="inline-flex items-center gap-1.5 rounded-full bg-raised border border-line px-2.5 py-1 text-xs text-fg-soft"
                     >
                       <PlayerAvatar player={slot.player} className="h-4 w-4 text-[9px]" />
-                      <PlayerName name={slot.player.name} currentName={slot.player.currentName} />
+                      <PlayerName name={slot.player.name} nickname={slot.player.nickname} currentName={slot.player.currentName} allNames={slot.player.allNames} />
                       {isGuest(slot.player.tmId) && <GuestBadge />}
 {isTrial(slot.player.tmId) && <TrialBadge />}
                     </span>
@@ -609,7 +613,7 @@ export function MatchDetailView({ match: initialMatch, ruleSet, allPlayers, gues
               <p className="mt-3 flex flex-wrap items-center gap-x-1.5 text-sm text-fg-muted">
                 <Trophy size={13} className="shrink-0 text-brand-ink" />
                 Best performer:
-                <span className="font-medium text-fg"><PlayerName name={performer.name} currentName={performer.currentName} /></span>
+                <span className="font-medium text-fg"><PlayerName name={performer.name} nickname={performer.nickname} currentName={performer.currentName} allNames={performer.allNames} /></span>
                 <span className="text-xs text-fg-subtle">avg place {performer.avgPlace.toFixed(2)} · {performer.rounds} rounds</span>
               </p>
             )}
@@ -647,7 +651,7 @@ export function MatchDetailView({ match: initialMatch, ruleSet, allPlayers, gues
                   {players.map((p, j) => (
                     <span key={j} className="inline-flex items-center gap-1">
                       {p && <PlayerAvatar player={p} className="h-4 w-4 text-[9px]" />}
-                      {p?.name ?? "—"}
+                      {p ? <PlayerName name={p.name} nickname={p.nickname} /> : "—"}
                     </span>
                   ))}
                 </p>
@@ -849,7 +853,7 @@ export function MatchDetailView({ match: initialMatch, ruleSet, allPlayers, gues
                                     >
                                       <span className={`w-6 shrink-0 text-xs font-bold tabular-nums ${rankColor(rank)}`}>#{rank}</span>
                                       <span className="min-w-0 flex-1 truncate">
-                                        {r.isOurTeam ? <PlayerName name={r.playerName} currentName={r.currentName} /> : r.playerName}
+                                        {r.isOurTeam ? <PlayerName name={r.playerName} nickname={r.nickname} currentName={r.currentName} allNames={r.allNames} /> : r.playerName}
                                         {r.isOurTeam && isGuest(r.tmId) && <GuestBadge className="ml-1.5" />}
 {r.isOurTeam && isTrial(r.tmId) && <TrialBadge className="ml-1.5" />}
                                       </span>
@@ -875,7 +879,7 @@ export function MatchDetailView({ match: initialMatch, ruleSet, allPlayers, gues
                                             #{rank}
                                           </span>
                                           <span className="text-fg flex-1 truncate">
-                                            <PlayerName name={r.playerName} currentName={r.currentName} />
+                                            <PlayerName name={r.playerName} nickname={r.nickname} currentName={r.currentName} allNames={r.allNames} />
                                             {isGuest(r.tmId) && <GuestBadge className="ml-1.5" />}
 {isTrial(r.tmId) && <TrialBadge className="ml-1.5" />}
                                           </span>

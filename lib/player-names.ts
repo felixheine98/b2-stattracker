@@ -110,3 +110,14 @@ export function nameHint(player: ShownNameInfo): string | null {
   }
   return player.currentName && player.currentName !== player.name ? `today: ${player.currentName}` : null
 }
+
+// The fields a shown name needs, carried along wherever names of loaded data are summed up
+export interface NameFields {
+  currentName?: string
+  nickname?: string | null
+  allNames?: string[]
+}
+
+export function nameFieldsOf(source: NameFields): NameFields {
+  return { currentName: source.currentName, nickname: source.nickname, allNames: source.allNames }
+}

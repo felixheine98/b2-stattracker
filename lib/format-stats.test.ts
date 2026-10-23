@@ -74,6 +74,13 @@ describe("buildAggregates", () => {
     expect(aggregates[0].players.get("anna")).toMatchObject({ roundsPlayed: 1, roundsWon: 1, roundsLost: 0 })
   })
 
+  it("keeps the nickname and the other names of a player for the name shown", () => {
+    const named = round("anna", "ben", "opp1", "opp2")
+    Object.assign(named.results[0], { nickname: "Annie", currentName: "anna2", allNames: ["anna", "anna2"] })
+    const [agg] = buildAggregates([match([named])])
+    expect(agg.players.get("anna")).toMatchObject({ name: "anna", nickname: "Annie", currentName: "anna2", allNames: ["anna", "anna2"] })
+  })
+
   it("keeps formats apart", () => {
     const aggregates = buildAggregates([
       {

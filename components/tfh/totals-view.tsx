@@ -7,9 +7,10 @@ import { playerPath, tournamentPath } from "@/lib/paths"
 import { formatTfhDuration } from "@/lib/tfh-profile"
 import { rankTfhTotals, splitTfhByKind, type TfhTotalMetric } from "@/lib/tfh-ranking"
 import { SortHeader } from "./sort-header"
+import { PlayerName } from "@/components/player-name"
 
 interface Result { playerId: string; raceId: string; kind: string; checkpoints: number | null; playTimeSeconds: number | null; finishes: number; cpm: number | null }
-interface Player { id: string; slug: string | null; name: string }
+interface Player { id: string; slug: string | null; name: string; nickname?: string | null }
 // Newest first, as the page loads them
 interface Race { id: string; name: string; kind: string; tournament: { id: string; slug: string | null } }
 
@@ -66,7 +67,7 @@ function Totals({ results, players, races }: Props) {
                   <td className={first}>
                     <span className="flex items-center gap-2">
                       <span className="w-5 shrink-0 text-right tabular-nums text-xs text-fg-subtle">{row.rank ?? "–"}</span>
-                      {player ? <Link href={playerPath(player)} className="block max-w-40 truncate text-brand-ink hover:underline sm:max-w-64">{player.name}</Link> : "—"}
+                      {player ? <Link href={playerPath(player)} className="block max-w-40 truncate text-brand-ink hover:underline sm:max-w-64"><PlayerName name={player.name} nickname={player.nickname} /></Link> : "—"}
                     </span>
                   </td>
                   {editions.map(r => {

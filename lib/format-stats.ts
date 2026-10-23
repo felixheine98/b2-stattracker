@@ -3,17 +3,16 @@ import type { Format } from "@prisma/client"
 import { addGap, emptyPace, finishTime, roundBest, type PaceSum } from "./pace"
 import { roundPlacements, roundScore } from "./round-score"
 import type { StageType } from "./stages"
+import { nameFieldsOf, type NameFields } from "./player-names"
 import { playerRecord, type SubMatchSummary } from "./summary"
 
-interface StatsRoundResult {
+interface StatsRoundResult extends NameFields {
   id: string
   tmId: string
   playerName: string
   isOurTeam: boolean
   dnf?: boolean | null
   timeMs?: number | null
-  // Today's name, when the data carries tournament names
-  currentName?: string
 }
 
 export interface StatsMatch {
@@ -29,10 +28,9 @@ export interface StatsMatch {
   }>
 }
 
-interface PlayerAggregate {
+interface PlayerAggregate extends NameFields {
   tmId: string
   name: string
-  currentName?: string
   roundsPlayed: number
   placementSum: number
   // Rounds the player took part in
@@ -82,7 +80,7 @@ function addSummary(agg: FormatAggregate, summary: SubMatchSummary): void {
   else agg.mapDrawn++
   for (const sp of summary.players) {
     if (!agg.players.has(sp.tmId)) {
-      agg.players.set(sp.tmId, { tmId: sp.tmId, name: sp.playerName, currentName: sp.currentName, roundsPlayed: 0, placementSum: 0, roundsWon: 0, roundsLost: 0, dnfs: 0, pace: emptyPace() })
+      agg.players.set(sp.tmId, { tmId: sp.tmId, name: sp.playerName, ...nameFieldsOf(sp), roundsPlayed: 0, placementSum: 0, roundsWon: 0, roundsLost: 0, dnfs: 0, pace: emptyPace() })
     }
     const p = agg.players.get(sp.tmId)!
     const { won, lost } = playerRecord(summary, sp)
@@ -128,7 +126,7 @@ export function buildAggregates(matches: StatsMatch[]): FormatAggregate[] {
         round.results.forEach((r, idx) => {
           if (!r.isOurTeam) return
           if (!agg.players.has(r.tmId)) {
-            agg.players.set(r.tmId, { tmId: r.tmId, name: r.playerName, currentName: r.currentName, roundsPlayed: 0, placementSum: 0, roundsWon: 0, roundsLost: 0, dnfs: 0, pace: emptyPace() })
+            agg.players.set(r.tmId, { tmId: r.tmId, name: r.playerName, ...nameFieldsOf(r), roundsPlayed: 0, placementSum: 0, roundsWon: 0, roundsLost: 0, dnfs: 0, pace: emptyPace() })
           }
           const p = agg.players.get(r.tmId)!
           p.roundsPlayed++

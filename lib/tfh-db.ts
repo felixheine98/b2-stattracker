@@ -141,7 +141,7 @@ export async function getTfhRace(tournamentId: string, database: PrismaClient = 
     tournament: true,
     teams: { orderBy: { rank: "asc" }, include: {
       lineup: { include: { slots: true } },
-      drivers: { orderBy: { sourceName: "asc" }, include: { player: { select: { id: true, slug: true, name: true } }, finishes: { orderBy: { number: "asc" } } } },
+      drivers: { orderBy: { sourceName: "asc" }, include: { player: { select: { id: true, slug: true, name: true, nickname: true } }, finishes: { orderBy: { number: "asc" } } } },
     } },
   } })
 }
@@ -157,7 +157,7 @@ export async function getTfhB2Results(database: PrismaClient = db) {
     where: { team: { isB2: true } },
     select: {
       playerId: true, checkpoints: true, playTimeSeconds: true, cpm: true, _count: { select: { finishes: true } },
-      player: { select: { id: true, slug: true, name: true } },
+      player: { select: { id: true, slug: true, name: true, nickname: true } },
       team: { select: { isB2: true, race: { select: { id: true, tournamentId: true, kind: true } } } },
     },
   })

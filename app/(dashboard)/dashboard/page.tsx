@@ -6,6 +6,7 @@ import { AvailabilityCard } from "@/components/planning/availability-card"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
 import { auth } from "@/lib/auth"
+import { PlayerName } from "@/components/player-name"
 import { bestPerformer, dashboardTournaments, latestStageId, lineupRecords, overallRecord, type LineupRecord, type Performer } from "@/lib/dashboard"
 import { styleLabel } from "@/lib/comp-styles"
 import { db } from "@/lib/db"
@@ -52,7 +53,7 @@ export default async function DashboardPage() {
 
   const [self, players, tournaments, recent, matches] = await Promise.all([
     userId ? db.user.findUnique({ where: { id: userId }, select: { playerId: true } }) : null,
-    db.player.findMany({ where: { isOpponentOnly: false }, select: { id: true, slug: true, tmId: true, name: true, initialStatus: true, statusChanges: true } }),
+    db.player.findMany({ where: { isOpponentOnly: false }, select: { id: true, slug: true, tmId: true, name: true, nickname: true, initialStatus: true, statusChanges: true } }),
     db.tournament.findMany({
       where: { tfhRace: { is: null } },
       select: {
@@ -300,9 +301,9 @@ export default async function DashboardPage() {
                             <p className="text-[11px] font-semibold  text-fg-subtle">{title}</p>
                             <p className="truncate text-sm">
                               {player ? (
-                                <Link href={playerPath(player)} className="font-semibold text-fg hover:text-brand-ink">{player.name}</Link>
+                                <Link href={playerPath(player)} className="font-semibold text-fg hover:text-brand-ink"><PlayerName name={player.name} nickname={player.nickname} /></Link>
                               ) : (
-                                <span className="font-semibold text-fg">{performer.name}</span>
+                                <span className="font-semibold text-fg"><PlayerName name={performer.name} nickname={performer.nickname} currentName={performer.currentName} allNames={performer.allNames} /></span>
                               )}
                               {lineup && <span className="text-fg-muted"> · {lineup.name}</span>}
                             </p>

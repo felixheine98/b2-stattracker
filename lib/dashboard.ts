@@ -3,6 +3,7 @@
 import type { StatsMatch } from "./format-stats"
 import { suggestMatchOutcome } from "./opponents"
 import { subMatchState, summaryState } from "./match-rules"
+import { nameFieldsOf, type NameFields } from "./player-names"
 import { dayKey } from "./player-status"
 import { roundPlacements } from "./round-score"
 import { teamSize } from "./utils"
@@ -117,10 +118,9 @@ export function overallRecord(matches: DashMatch[]): TeamRecord {
   return record
 }
 
-export interface Performer {
+export interface Performer extends NameFields {
   tmId: string
   name: string
-  currentName?: string
   // Lineup the player drove most of the rounds for
   lineupId: string | null
   // Average placement over the rounds driven; a round not finished is the last place
@@ -135,7 +135,7 @@ export interface Performer {
 // drove less than that share of the rounds of the busiest player: within a single match a
 // 1v1 of three rounds would otherwise beat a whole evening of 4v4.
 export function bestPerformer(matches: DashMatch[], { minRoundShare = 0 }: { minRoundShare?: number } = {}): Performer | null {
-  const players = new Map<string, { name: string; currentName?: string; placeSum: number; shareSum: number; rounds: number; lineups: Map<string, number> }>()
+  const players = new Map<string, NameFields & { name: string; placeSum: number; shareSum: number; rounds: number; lineups: Map<string, number> }>()
   for (const match of matches) {
     if (!counted(match)) continue
     for (const sm of match.subMatches) {
@@ -144,7 +144,7 @@ export function bestPerformer(matches: DashMatch[], { minRoundShare = 0 }: { min
         if (sp.placementSum === null) continue
         // Same as the rounds below, summed up: a summary only knows the sum of the places
         const field = 2 * (teamSize(sm.format) ?? 0)
-        const player = players.get(sp.tmId) ?? { name: sp.playerName, currentName: sp.currentName, placeSum: 0, shareSum: 0, rounds: 0, lineups: new Map() }
+        const player = players.get(sp.tmId) ?? { name: sp.playerName, ...nameFieldsOf(sp), placeSum: 0, shareSum: 0, rounds: 0, lineups: new Map() }
         player.placeSum += sp.placementSum
         player.shareSum += field > 1 ? (sp.placementSum - sp.rounds) / (field - 1) : 0
         player.rounds += sp.rounds
@@ -156,7 +156,7 @@ export function bestPerformer(matches: DashMatch[], { minRoundShare = 0 }: { min
         const field = round.results.length
         round.results.forEach((r, i) => {
           if (!r.isOurTeam) return
-          const player = players.get(r.tmId) ?? { name: r.playerName, currentName: r.currentName, placeSum: 0, shareSum: 0, rounds: 0, lineups: new Map() }
+          const player = players.get(r.tmId) ?? { name: r.playerName, ...nameFieldsOf(r), placeSum: 0, shareSum: 0, rounds: 0, lineups: new Map() }
           player.placeSum += placements[i]
           player.shareSum += field > 1 ? (placements[i] - 1) / (field - 1) : 0
           player.rounds++
@@ -173,10 +173,10 @@ export function bestPerformer(matches: DashMatch[], { minRoundShare = 0 }: { min
     const share = player.shareSum / player.rounds
     if (top && (share > top.share || (share === top.share && player.rounds <= top.rounds))) continue
     const lineupId = [...player.lineups.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] ?? null
-    top = { tmId, name: player.name, currentName: player.currentName, lineupId, avgPlace: player.placeSum / player.rounds, rounds: player.rounds, share }
+    top = { tmId, name: player.name, ...nameFieldsOf(player), lineupId, avgPlace: player.placeSum / player.rounds, rounds: player.rounds, share }
   }
   if (!top) return null
-  return { tmId: top.tmId, name: top.name, currentName: top.currentName, lineupId: top.lineupId, avgPlace: top.avgPlace, rounds: top.rounds }
+  return { tmId: top.tmId, name: top.name, ...nameFieldsOf(top), lineupId: top.lineupId, avgPlace: top.avgPlace, rounds: top.rounds }
 }
 
 // The stage played last: the last one in playing order (stageOrder) with a round that counts

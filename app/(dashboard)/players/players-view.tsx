@@ -1,7 +1,7 @@
 "use client"
 
 import { BASE_PATH } from "@/lib/base-path"
-import { allNames, type NameChange } from "@/lib/player-names"
+import { allNames, shownName, type NameChange } from "@/lib/player-names"
 import { NameHistoryDialog } from "./name-history-dialog"
 import { STATUS_LABEL, StatusHistoryDialog, StatusMoveDialog, statusSummary } from "./status-dialogs"
 import { Fragment, useEffect, useRef, useState, useTransition } from "react"
@@ -35,6 +35,8 @@ interface Player {
   slug?: string | null
   tmId: string
   name: string
+  // What the team calls the player, shown instead of the gamertag (docs/adr/009-spitznamen.md)
+  nickname?: string | null
   country?: string | null
   createdAt: Date
   // Result of the last comparison with trackmania.io and the values the user chose to ignore
@@ -171,7 +173,10 @@ export function PlayersView({ players: initial, users, canManage }: Props) {
   const linkedUserIds = new Set(players.flatMap((p) => (p.user ? [p.user.id] : [])))
   // --- Quick search: narrows every tab to the players whose current or a former name fits ---
   const [filter, setFilter] = useState("")
-  const found = filter.trim() ? searchPlayers(players.map((p) => ({ ...p, allNames: allNames(p) })), filter) : players
+  // Without a search in the order of the names shown, so a nickname stands where it is looked for
+  const found = filter.trim()
+    ? searchPlayers(players.map((p) => ({ ...p, allNames: allNames(p) })), filter)
+    : [...players].sort((a, b) => shownName(a).localeCompare(shownName(b)))
   const members = found.filter((p) => currentStatus(p) === "MEMBER")
   const trials = found.filter((p) => currentStatus(p) === "TRIAL")
   const guests = found.filter((p) => currentStatus(p) === "GUEST")
@@ -652,7 +657,7 @@ export function PlayersView({ players: initial, users, canManage }: Props) {
                     <span className="flex items-center gap-2 whitespace-nowrap">
                       {/* The flag says the country; managers change it right there */}
                       {canManage ? <CountryFlagPicker player={player} onChange={(country) => handleCountry(player.id, country)} /> : <PlayerAvatar player={player} />}
-                      <Link href={playerPath(player)} className="hover:text-brand-ink hover:underline">{player.name}</Link>
+                      <Link href={playerPath(player)} className="hover:text-brand-ink hover:underline">{shownName(player)}</Link>
                       <button
                         type="button"
                         onClick={() => setNameDialog({ playerId: player.id })}
@@ -662,9 +667,12 @@ export function PlayersView({ players: initial, users, canManage }: Props) {
                         <Pencil size={11} />
                       </button>
                     </span>
-                    {allNames(player).length > 1 && (
+                    {(player.nickname || allNames(player).length > 1) && (
                       <p className="mt-0.5 text-[11px] font-normal text-fg-subtle">
-                        formerly: {allNames(player).filter((n) => n !== player.name).join(", ")}
+                        {[
+                          player.nickname && player.name,
+                          allNames(player).length > 1 && `formerly: ${allNames(player).filter((n) => n !== player.name).join(", ")}`,
+                        ].filter(Boolean).join(" · ")}
                       </p>
                     )}
                     {nameHint(player) && (
@@ -911,7 +919,7 @@ export function PlayersView({ players: initial, users, canManage }: Props) {
           onClose={() => setNameDialog(null)}
           onChanged={(history) =>
             setPlayers((p) =>
-              p.map((pl) => (pl.id === namePlayer.id ? { ...pl, ...history } : pl)).sort((a, b) => a.name.localeCompare(b.name))
+              p.map((pl) => (pl.id === namePlayer.id ? { ...pl, ...history } : pl))
             )
           }
         />

@@ -26,6 +26,8 @@ import { formatDay, formatDayMonth } from "@/lib/player-status"
 import { cn, formatLabel } from "@/lib/utils"
 import type { Format } from "@/types"
 import { SeatInput } from "./seat-input"
+import { PlayerName } from "@/components/player-name"
+import { shownName } from "@/lib/player-names"
 
 // Dates arrive as strings from the server
 type Plan = Omit<LoadedPlan, "publishedAt" | "matches"> & {
@@ -72,7 +74,10 @@ export function MatchdayPlanView({ initial, apiPath, title, links, dayFormats, d
   const answerOf = (playerId: string) => plan.answers[playerId]?.answer ?? undefined
   const answers = Object.fromEntries(plan.kader.map((p) => [p.id, answerOf(p.id)]))
   const playerOf = (playerId: string) => plan.kader.find((p) => p.id === playerId)
-  const nameOf = (playerId: string) => playerOf(playerId)?.name ?? "Unknown"
+  const nameOf = (playerId: string) => {
+    const player = playerOf(playerId)
+    return player ? shownName(player) : "Unknown"
+  }
   const dotOf = (playerId: string) => (answers[playerId] ? DOT[answers[playerId]] : "bg-fg-subtle")
   const hints = planHints(variant.seats, plan.matches, answers, plan.absences)
 
@@ -261,9 +266,9 @@ export function MatchdayPlanView({ initial, apiPath, title, links, dayFormats, d
                       <div className={cn("flex min-w-0 flex-1 items-center gap-1.5 text-sm font-medium", isOut ? "text-fg-subtle line-through" : "text-fg")}>
                         <PlayerAvatar player={player} className="h-4 w-4 text-[9px]" />
                         <span className={cn("h-2 w-2 shrink-0 rounded-full", dotOf(player.id))} />
-                        <span className="truncate">{player.name}</span>
+                        <span className="truncate"><PlayerName name={player.name} nickname={player.nickname} /></span>
                       </div>
-                      <div className="flex shrink-0 gap-1" role="group" aria-label={`Answer of ${player.name}`}>
+                      <div className="flex shrink-0 gap-1" role="group" aria-label={`Answer of ${shownName(player)}`}>
                         {ANSWERS.map((a) => {
                           const on = entry?.answer === a.value
                           return (
@@ -286,7 +291,7 @@ export function MatchdayPlanView({ initial, apiPath, title, links, dayFormats, d
                         {!entry?.note && noteOpen !== player.id && (
                           <button
                             type="button"
-                            aria-label={`Add a note on ${player.name}`}
+                            aria-label={`Add a note on ${shownName(player)}`}
                             title="Add a note"
                             onClick={() => setNoteOpen(player.id)}
                             className="rounded-full border border-transparent px-1.5 py-1 text-fg-subtle hover:text-fg md:py-0.5"
@@ -299,7 +304,7 @@ export function MatchdayPlanView({ initial, apiPath, title, links, dayFormats, d
                     {(entry?.note || noteOpen === player.id) && (
                       <Input
                         key={`${player.id}:${entry?.note ?? ""}`}
-                        aria-label={`Note on ${player.name}`}
+                        aria-label={`Note on ${shownName(player)}`}
                         placeholder="Note, e.g. only until 22:00"
                         defaultValue={entry?.note ?? ""}
                         autoFocus={noteOpen === player.id}
