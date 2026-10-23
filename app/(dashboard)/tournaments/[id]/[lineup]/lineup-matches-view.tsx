@@ -9,7 +9,7 @@ import { GuestBadge } from "@/components/guest-badge"
 import { TrialBadge } from "@/components/trial-badge"
 import { PlayerAvatar } from "@/components/player-avatar"
 import { useSyncedState } from "@/lib/use-synced-state"
-import { formatDay } from "@/lib/player-status"
+import { formatDay, localTodayKey } from "@/lib/player-status"
 import Link from "next/link"
 import { useRouter, useSearchParams } from "next/navigation"
 import { useState } from "react"
@@ -22,7 +22,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { buildAggregates, matchesOfFormats, matchesOfStages } from "@/lib/format-stats"
 import { buildMapAggregates } from "@/lib/map-stats"
 import { matchTag, nextMatchNumber, sortMatches } from "@/lib/match-order"
-import { sortStages, stageDate, stageName, suggestStage, type StageRef } from "@/lib/stages"
+import { planningStage, sortStages, stageDate, stageName, suggestStage, type StageRef } from "@/lib/stages"
 import { useIdListParam } from "@/lib/use-id-list-param"
 import { StatsFilter } from "@/components/stats-filter"
 import { StageHeading } from "@/components/stage-heading"
@@ -145,6 +145,8 @@ export function LineupMatchesView({ lineup, rules, guestTmIds, trialTmIds, profi
   // The match day planning links here with ?addMatch=<stage>: the dialog opens for that stage
   const addMatchFor = useSearchParams().get("addMatch")
   const openingStage = canEdit ? stages.find((st) => st.id === addMatchFor) : undefined
+  // The planning opens on the next match day; it switches between the days itself
+  const planStage = canPlan ? planningStage(stages, new Date(startDate), localTodayKey()) : undefined
   const dayOf = (stage: StageRef | undefined) => (stage ? stageDate(stage, stages, new Date(startDate)).toISOString().slice(0, 10) : "")
   const [opponentValue, setOpponentValue] = useState<OpponentValue>({ name: "" })
   const [showAddMatch, setShowAddMatch] = useState(!!openingStage)
@@ -231,28 +233,24 @@ export function LineupMatchesView({ lineup, rules, guestTmIds, trialTmIds, profi
               {points !== null && <span title="Points from the group stage"> · {points} pts</span>}
             </p>
           </div>
-          {canEdit && (
-            <Button onClick={() => openAddMatch()} className="shrink-0">
-              <Plus size={16} />
-              Add Match
-            </Button>
+          {(canEdit || planStage) && (
+            <div className="flex flex-wrap items-center gap-2">
+              {planStage && (
+                <Link href={planPath(tournament, lineup, planStage)} className="inline-flex min-h-10 shrink-0 items-center justify-center gap-2 rounded-md border border-line-strong bg-surface px-4 py-2 text-sm font-medium text-fg transition-colors hover:border-fg-subtle hover:bg-raised max-md:min-h-11">
+                  <ClipboardList size={16} />
+                  Plan
+                </Link>
+              )}
+              {canEdit && (
+                <Button onClick={() => openAddMatch()} className="shrink-0">
+                  <Plus size={16} />
+                  Add Match
+                </Button>
+              )}
+            </div>
           )}
         </div>
       </div>
-
-      {canPlan && (
-        <div className="flex flex-wrap items-center gap-2 text-sm">
-          <span className="inline-flex items-center gap-1.5 text-fg-muted">
-            <ClipboardList size={14} />
-            Plan
-          </span>
-          {stages.filter((st) => st.type !== "SEEDING").map((st) => (
-            <Link key={st.id} href={planPath(tournament, lineup, st)} className="rounded-full border border-line bg-raised px-3 py-1 text-fg-soft hover:border-line-strong hover:text-fg">
-              {stageName(st, stages)}
-            </Link>
-          ))}
-        </div>
-      )}
 
       {/* From 1536px on stats and matches stand on the left, the players on the right */}
       <div className="page-columns">

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { planStageChanges, sortStages, stageDate, stageName, stagePlanOf, suggestStage, type StageType } from "./stages"
+import { planningStage, planStageChanges, sortStages, stageDate, stageName, stagePlanOf, suggestStage, type StageType } from "./stages"
 
 const stage = (type: StageType, number: number, matchCount = 0) => ({ id: `${type}-${number}`, type, number, matchCount })
 
@@ -91,5 +91,20 @@ describe("suggestStage", () => {
 
   it("is the last stage once the lineup has played in all of them", () => {
     expect(suggestStage(standard, standard.map((s) => s.id))?.id).toBe("PLAYOFF-1")
+  })
+})
+
+describe("planningStage", () => {
+  const start = new Date("2026-06-07")
+
+  it("opens the next match day from today on, leaving out the seeding", () => {
+    expect(planningStage(standard, start, "2026-06-01")?.id).toBe("GROUP-1")
+    expect(planningStage(standard, start, "2026-06-14")?.id).toBe("GROUP-1")
+    expect(planningStage(standard, start, "2026-06-15")?.id).toBe("GROUP-2")
+  })
+
+  it("stays on the last day once all are over, and has nothing to open without match days", () => {
+    expect(planningStage(standard, start, "2026-07-30")?.id).toBe("PLAYOFF-1")
+    expect(planningStage([stage("SEEDING", 1)], start, "2026-06-01")).toBeUndefined()
   })
 })

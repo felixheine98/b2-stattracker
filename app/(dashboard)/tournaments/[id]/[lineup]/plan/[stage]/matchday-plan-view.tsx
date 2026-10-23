@@ -40,6 +40,8 @@ interface Props {
   links: { tournament: string; lineup: string; addMatch: string; match: Record<string, string> }
   // The formats of the competition, for the day lineup
   dayFormats: Format[]
+  // Every match day and playoff day to switch to, in order
+  days: Array<{ id: string; name: string; day: string; href: string; current: boolean }>
 }
 
 const ANSWERS: Array<{ value: MatchdayAnswer; label: string; on: string }> = [
@@ -58,7 +60,7 @@ const DOT: Record<MatchdayAnswer, string> = {
 
 const DAY = "__day"
 
-export function MatchdayPlanView({ initial, apiPath, title, links, dayFormats }: Props) {
+export function MatchdayPlanView({ initial, apiPath, title, links, dayFormats, days }: Props) {
   const [plan, setPlan] = useState<Plan>(initial)
   const [error, setError] = useState("")
   const [busy, setBusy] = useState(false)
@@ -220,6 +222,21 @@ export function MatchdayPlanView({ initial, apiPath, title, links, dayFormats }:
             </Button>
           </div>
         </div>
+        <nav aria-label="Match days" className="mt-4 flex flex-wrap gap-2">
+          {days.map((d) => (
+            <Link
+              key={d.id}
+              href={d.href}
+              aria-current={d.current ? "page" : undefined}
+              className={cn(
+                "rounded-full border px-3 py-1 text-sm transition-colors",
+                d.current ? "border-brand bg-brand/15 text-brand-ink" : "border-line bg-raised text-fg-soft hover:border-line-strong hover:text-fg"
+              )}
+            >
+              {d.name} <span className={cn("text-xs", d.current ? "text-brand-ink/80" : "text-fg-subtle")}>{formatDay(d.day)}</span>
+            </Link>
+          ))}
+        </nav>
         {error && <p className="mt-3 text-sm text-danger">{error}</p>}
       </div>
 
