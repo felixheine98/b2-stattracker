@@ -9,23 +9,13 @@ Ideen, die noch kein Todo sind: [ideen.md](ideen.md)
 
 ## Teilweise erledigt
 
-- [ ] Lineup-Planung pro Match Day ([Entscheidung](docs/adr/008-matchday-planung.md), [Glossar](docs/matchday-planung-glossar.md)); hinter `MATCHDAY_PLANNING`, in Production aus
+- [ ] Lineup-Planung pro Match Day ([Entscheidung](docs/adr/008-matchday-planung.md), [Glossar](docs/matchday-planung-glossar.md)); hinter `MATCHDAY_PLANNING`, in Production aus (code seit 23.10.2026 auf main)
   - [x] schritt 1: geplante Matches ohne Ergebnis in allen Auswertungen, upcoming auf Turnierseite und Dashboard (in Dev geprüft 23.10.2026)
-  - [ ] schritt 2: planungsseite pro spieltag (kader, tagesbesetzung per drag & drop und eingabe, hinweise, finalisieren, veröffentlichter stand am match) (gebaut, Felix prüft in Dev)
+  - [x] schritt 2: planungsseite pro spieltag (kader, tagesbesetzung per drag & drop und eingabe, hinweise, finalisieren, veröffentlichter stand am match) (in Dev geprüft 23.10.2026)
   - [x] schritt 3: vorbelegung der rundeneingabe (fahrer + map des spieltags), planabweichung im csv- und ecm-import (nur hinweis), „geplant“ am match (in Dev geprüft 23.10.2026)
-  - [ ] schritt 3: vorbelegung der sub-matches
+  - [x] schritt 3: vorbelegung der sub-matches (in Dev geprüft 23.10.2026)
   - [ ] schritt 4: discord (lineup-channel, bot erkennt markierten ping, abruf durch lineup-manager)
   - [ ] entscheiden, ob die matchday-planung in production aktiviert wird
-
-- [ ] Spitznamen statt Gamertags überall anzeigen, Gamertag beim Hover ([Entscheidung](docs/adr/009-spitznamen.md))
-  - [x] gebaut, in Dev geprüft (23.10.2026)
-  - [ ] in Production übernehmen
-
-- [ ] Design/UI/UX Verbesserungen ([Rennleitstand-Entwurf](docs/redesign-rennleitstand.md))
-  - [x] In Dev: B2-Farben, Typografie, Navigation, gemeinsame Felder/Buttons/Dialoge, Listen und Stats auf allen Seiten
-  - [x] Ergebnisleiste auf Match und Dashboard, Turnierliste als Zeilen, ruhigere Kennzahlen, Planungsansicht
-  - [x] Felix hat den Entwurf in Dev geprüft (23.10.2026)
-  - [ ] Nach Freigabe Production übernehmen
 
 - [ ] Discord-Reaktionen in der Comp-Planung ([Anbindung](docs/discord-planning.md))
   - [x] Abruf, Emoji-Zuordnung, Account-Verknüpfung und Übernahme mit Vorschau
@@ -59,6 +49,13 @@ Ideen, die noch kein Todo sind: [ideen.md](ideen.md)
 - [ ] spieler-profil: seeding-bereich mit seeding-stats (erst entscheiden, wie seeding-daten ins system kommen)
 
 ## Erledigt
+
+- [x] Spitznamen statt Gamertags überall anzeigen, Gamertag beim Hover, in Production seit 23.10.2026 ([Entscheidung](docs/adr/009-spitznamen.md))
+- [x] Design/UI/UX Verbesserungen ([Rennleitstand-Entwurf](docs/redesign-rennleitstand.md))
+  - [x] In Dev: B2-Farben, Typografie, Navigation, gemeinsame Felder/Buttons/Dialoge, Listen und Stats auf allen Seiten
+  - [x] Ergebnisleiste auf Match und Dashboard, Turnierliste als Zeilen, ruhigere Kennzahlen, Planungsansicht
+  - [x] Felix hat den Entwurf in Dev geprüft (23.10.2026)
+  - [x] In Production seit 23.10.2026
 
 - [x] tournaments seite bei mehreren comps: bleibt eine einfache liste der turniere, anordnung geprüft
 
