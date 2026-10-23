@@ -119,7 +119,7 @@ services:
       REACTION_TIMES_DIR: /bot/times
       # Channels with announcements: their reactions are written down from the post on, not only after the first fetch
       REACTION_TIMES_CHANNELS: ${REACTION_TIMES_CHANNELS:-940049796633341983}
-      # Matchday pings that mark the bot (docs/adr/008): dev only, like MATCHDAY_PLANNING
+      # Matchday pings that mark the bot and announcements it posts (docs/adr/008), with MATCHDAY_PLANNING
       ANNOUNCEMENTS: "on"
     volumes:
       - ../b2-member/data:/bot/data:ro

@@ -46,12 +46,12 @@ Felix is not yet sure about the format rules per competition (match rules, hints
 - Felix explicitly approved merging all local work into `main` on 18.10.2026. The format-rule code is now included in `main`, but remains disabled in production until he explicitly approves activating this feature.
 - Switched off, the app behaves as before: no rule fields or template controls, no hints or points, no rules required for new competitions. Stored rules and templates stay in the database.
 
-## Matchday planning stays dev-only
+## Matchday planning is live
 
-The lineup planning per match day (`docs/adr/008-matchday-planung.md`) must not reach production until Felix explicitly approves activating it; a general approval to deploy other changes does not cover it.
+Felix explicitly approved activating the lineup planning per match day (`docs/adr/008-matchday-planung.md`) in production on 23.10.2026, including its Discord part (the bot posts announcements).
 
-- `lib/features.ts` (`matchdayPlanningEnabled`) switches it on only where `MATCHDAY_PLANNING=on` is set (`docker-compose.dev.yml`) and always off when `NODE_ENV === "production"`. Preserve this condition; do not set `MATCHDAY_PLANNING` in `docker-compose.yml`.
-- Switched off, the app behaves as before.
+- `lib/features.ts` (`matchdayPlanningEnabled`) switches it on where `MATCHDAY_PLANNING=on` is set, in `docker-compose.yml` and `docker-compose.dev.yml`; the bots run with `ANNOUNCEMENTS=on` in both.
+- This approval covers the matchday planning only. The format rules per competition (`MATCH_RULES`) stay dev-only.
 
 # Mobile
 

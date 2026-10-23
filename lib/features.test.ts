@@ -32,7 +32,9 @@ describe("matchdayPlanningEnabled", () => {
     expect(matchdayPlanningEnabled({ NODE_ENV: "development" })).toBe(false)
   })
 
-  it("is always off in production, even when switched on", () => {
-    expect(matchdayPlanningEnabled({ NODE_ENV: "production", MATCHDAY_PLANNING: "on" })).toBe(false)
+  // Felix switched it on for production on 23.10.2026
+  it("is on in production too when switched on there", () => {
+    expect(matchdayPlanningEnabled({ NODE_ENV: "production", MATCHDAY_PLANNING: "on" })).toBe(true)
+    expect(matchdayPlanningEnabled({ NODE_ENV: "production" })).toBe(false)
   })
 })

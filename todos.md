@@ -9,14 +9,6 @@ Ideen, die noch kein Todo sind: [ideen.md](ideen.md)
 
 ## Teilweise erledigt
 
-- [ ] Lineup-Planung pro Match Day ([Entscheidung](docs/adr/008-matchday-planung.md), [Glossar](docs/matchday-planung-glossar.md)); hinter `MATCHDAY_PLANNING`, in Production aus (code seit 23.10.2026 auf main)
-  - [x] schritt 1: geplante Matches ohne Ergebnis in allen Auswertungen, upcoming auf Turnierseite und Dashboard (in Dev geprüft 23.10.2026)
-  - [x] schritt 2: planungsseite pro spieltag (kader, tagesbesetzung per drag & drop und eingabe, hinweise, finalisieren, veröffentlichter stand am match) (in Dev geprüft 23.10.2026)
-  - [x] schritt 3: vorbelegung der rundeneingabe (fahrer + map des spieltags), planabweichung im csv- und ecm-import (nur hinweis), „geplant“ am match (in Dev geprüft 23.10.2026)
-  - [x] schritt 3: vorbelegung der sub-matches (in Dev geprüft 23.10.2026)
-  - [x] schritt 4: discord (lineup-channel, bot erkennt markierten ping oder postet das announcement mit wählbaren emojis und rollen-/spieler-erwähnungen, abruf übernimmt sofort, änderungen aufklappbar) (in Dev geprüft 23.10.2026 in einem Test-Channel)
-  - [ ] entscheiden, ob die matchday-planung in production aktiviert wird
-
 - [ ] Discord-Reaktionen in der Comp-Planung ([Anbindung](docs/discord-planning.md))
   - [x] Abruf, Emoji-Zuordnung, Account-Verknüpfung und Übernahme mit Vorschau
   - [x] In der laufenden Dev-App eingebunden, separater lesender Discord-Prozess
@@ -35,6 +27,13 @@ Ideen, die noch kein Todo sind: [ideen.md](ideen.md)
 
 ## Unter Beobachtung
 
+- [ ] Lineup-Planung pro Match Day ([Entscheidung](docs/adr/008-matchday-planung.md), [Glossar](docs/matchday-planung-glossar.md)); hinter `MATCHDAY_PLANNING`, in Production seit 23.10.2026
+  - [x] schritt 1: geplante Matches ohne Ergebnis in allen Auswertungen, upcoming auf Turnierseite und Dashboard (in Dev geprüft 23.10.2026)
+  - [x] schritt 2: planungsseite pro spieltag (kader, tagesbesetzung per drag & drop und eingabe, hinweise, finalisieren, veröffentlichter stand am match) (in Dev geprüft 23.10.2026)
+  - [x] schritt 3: vorbelegung der rundeneingabe (fahrer + map des spieltags), planabweichung im csv- und ecm-import (nur hinweis), „geplant“ am match (in Dev geprüft 23.10.2026)
+  - [x] schritt 3: vorbelegung der sub-matches (in Dev geprüft 23.10.2026)
+  - [x] schritt 4: discord (lineup-channel, bot erkennt markierten ping oder postet das announcement mit wählbaren emojis und rollen-/spieler-erwähnungen, abruf übernimmt sofort, änderungen aufklappbar) (in Dev geprüft 23.10.2026 in einem Test-Channel)
+  - [x] in production aktiviert (Felix, 23.10.2026), mit `ANNOUNCEMENTS=on` im Prod-Bot
 - [ ] best performer pro match/week/tourney
   - [x] pro tourney und pro abschnitt (week) auf dem dashboard, nach Ø platz
   - [x] pro match: zeile im kopf der match-seite; zählt nur, wer mindestens halb so viele runden wie der fahrer mit den meisten gefahren ist, bei gleichstand entscheidet die rundenzahl

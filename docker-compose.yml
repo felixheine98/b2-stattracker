@@ -62,6 +62,8 @@ services:
       TMIO_USER_AGENT: ${TMIO_USER_AGENT:-}
       DISCORD_BOT_URL: http://discord-bot:3080
       DISCORD_BOT_API_TOKEN: ${DISCORD_BOT_PROD_API_TOKEN:?DISCORD_BOT_PROD_API_TOKEN is required}
+      # Lineup planning per match day (docs/adr/008), switched on by Felix on 23.10.2026
+      MATCHDAY_PLANNING: "on"
 
     depends_on:
       db:
@@ -76,7 +78,8 @@ services:
       retries: 3
       start_period: 30s
 
-  # Only reads messages and reactions; the member directory bot keeps running separately.
+  # Reads messages and reactions and writes only the matchday announcement it is asked to post
+  # (ANNOUNCEMENTS, docs/adr/008); the member directory bot keeps running separately.
   discord-bot:
     build:
       context: ${DISCORD_BOT_SOURCE:-../b2-member}
@@ -101,6 +104,8 @@ services:
       REACTION_TIMES_DIR: /bot/times
       # Channels with announcements: their reactions are written down from the post on, not only after the first fetch
       REACTION_TIMES_CHANNELS: ${REACTION_TIMES_CHANNELS:-940049796633341983}
+      # Matchday pings that mark the bot and announcements it posts (docs/adr/008), with MATCHDAY_PLANNING
+      ANNOUNCEMENTS: "on"
     volumes:
       - ../b2-member/data:/bot/data:ro
       - reaction_times:/bot/times
