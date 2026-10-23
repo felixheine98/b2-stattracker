@@ -22,7 +22,7 @@ import {
   type Seats,
 } from "@/lib/matchday-plan"
 import type { LoadedPlan } from "@/lib/matchday-plan-db"
-import { formatDay } from "@/lib/player-status"
+import { formatDay, formatDayMonth } from "@/lib/player-status"
 import { cn, formatLabel } from "@/lib/utils"
 import type { Format } from "@/types"
 import { SeatInput } from "./seat-input"
@@ -234,7 +234,7 @@ export function MatchdayPlanView({ initial, apiPath, title, links, dayFormats, d
                 d.current ? "border-brand bg-brand/15 text-brand-ink" : "border-line bg-raised text-fg-soft hover:border-line-strong hover:text-fg"
               )}
             >
-              {d.name} <span className={cn("text-xs", d.current ? "text-brand-ink/80" : "text-fg-subtle")}>{formatDay(d.day)}</span>
+              {d.name} <span className={cn("text-xs", d.current ? "text-brand-ink/80" : "text-fg-subtle")}>{formatDayMonth(d.day)}</span>
             </Link>
           ))}
         </nav>

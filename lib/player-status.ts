@@ -101,3 +101,9 @@ export function formatDay(date: Date | string): string {
   const [year, month, day] = dayKey(date).split("-")
   return `${day}.${month}.${year}`
 }
+
+// A day where the year goes without saying, e.g. on the match day tabs
+export function formatDayMonth(date: Date | string): string {
+  const [, month, day] = dayKey(date).split("-")
+  return `${day}.${month}.`
+}
