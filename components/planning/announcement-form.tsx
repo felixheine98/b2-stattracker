@@ -2,16 +2,18 @@
 
 import { useRef, useState } from "react"
 import Image from "next/image"
-import { Plus, X } from "lucide-react"
+import { AtSign, Plus, Users, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Select } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
 import { announcementText, checkEmojis, emojiLegend, insertAt, searchEmojis, type EmojiChoice, type ServerEmoji } from "@/lib/matchday-discord"
+import { compRoles, playerMention, roleMention, searchRoles, toDiscordMentions, type Mention, type ServerRole } from "@/lib/discord-mentions"
 import type { MatchdayAnswer } from "@/lib/matchday-plan"
 
 // The announcement the bot posts (docs/adr/008): which emojis it sets and what each means, chosen
-// by clicking instead of copying, and the text, which offers to name them.
+// by clicking instead of copying, and the text, which offers to name them and to mention roles and
+// players. The text shows mentions as @names; they become Discord's mentions when posting.
 
 const ANSWERS: Array<{ value: MatchdayAnswer; label: string }> = [
   { value: "FIX", label: "Fix" },
@@ -30,7 +32,18 @@ export function EmojiView({ choice, size = 18 }: { choice: { key: string; text: 
   return <span style={{ fontSize: size * 0.9 }} className="leading-none">{choice.text}</span>
 }
 
-interface Props {
+// What the announcement can mention
+export interface Mentionable {
+  roles: ServerRole[]
+  // Whether the bot may ping roles that are not mentionable in the lineup channel
+  mentionAll: boolean
+  rolesError?: string
+  comp: string
+  lineup: string
+  players: Array<{ id: string; name: string; discordUserId: string }>
+}
+
+interface Props extends Mentionable {
   stage: string
   day: string
   server: ServerEmoji[]
@@ -40,11 +53,16 @@ interface Props {
   onCancel: () => void
 }
 
-export function AnnouncementForm({ stage, day, server, lastUsed, busy, onPost, onCancel }: Props) {
+export function AnnouncementForm({ stage, day, server, lastUsed, busy, onPost, onCancel, roles, mentionAll, rolesError, comp, lineup, players }: Props) {
   const [choices, setChoices] = useState<EmojiChoice[]>(lastUsed)
   const [text, setText] = useState(() => announcementText(stage, new Date(day), lastUsed))
   const [picking, setPicking] = useState(false)
   const [query, setQuery] = useState("")
+  // The mention picker open below the text, and the mentions inserted so far
+  const [mentioning, setMentioning] = useState<"role" | "player" | null>(null)
+  const [roleQuery, setRoleQuery] = useState("")
+  const [allRoles, setAllRoles] = useState(false)
+  const [mentions, setMentions] = useState<Mention[]>([])
   const field = useRef<HTMLTextAreaElement>(null)
   const problem = checkEmojis(choices)
 
@@ -72,10 +90,19 @@ export function AnnouncementForm({ stage, day, server, lastUsed, busy, onPost, o
     requestAnimationFrame(() => { el.focus(); el.setSelectionRange(next.cursor, next.cursor) })
   }
 
+  function mention(added: Mention[]) {
+    insert(added.map((m) => m.label).join(" ") + " ")
+    setMentions((old) => [...old, ...added.filter((m) => !old.some((o) => o.label === m.label))])
+    setMentioning(null)
+    setRoleQuery("")
+  }
+
   const found = picking ? searchEmojis(query, server) : []
+  const forComp = compRoles(roles, comp, lineup)
+  const shownRoles = roleQuery.trim() || allRoles || forComp.length === 0 ? searchRoles(roleQuery, roles) : forComp
 
   return (
-    <form className="space-y-3" onSubmit={(e) => { e.preventDefault(); if (!problem) onPost(text, choices) }}>
+    <form className="space-y-3" onSubmit={(e) => { e.preventDefault(); if (!problem) onPost(toDiscordMentions(text, mentions), choices) }}>
       <div className="space-y-1.5">
         <p className="text-xs text-fg-soft">The emojis the bot sets under it, and what a reaction with each means:</p>
         {choices.map((choice, i) => (
@@ -132,7 +159,68 @@ export function AnnouncementForm({ stage, day, server, lastUsed, busy, onPost, o
           className="rounded-md border border-line bg-raised px-2 py-1.5 text-xs text-fg-soft hover:border-line-strong hover:text-fg">
           Insert legend
         </button>
+        <button type="button" disabled={busy} onClick={() => setMentioning(mentioning === "role" ? null : "role")}
+          className="flex items-center gap-1 rounded-md border border-line bg-raised px-2 py-1.5 text-xs text-fg-soft hover:border-line-strong hover:text-fg">
+          <AtSign size={12} /> Role
+        </button>
+        <button type="button" disabled={busy} onClick={() => setMentioning(mentioning === "player" ? null : "player")}
+          className="flex items-center gap-1 rounded-md border border-line bg-raised px-2 py-1.5 text-xs text-fg-soft hover:border-line-strong hover:text-fg">
+          <Users size={12} /> Players
+        </button>
       </div>
+
+      {mentioning === "role" && (
+        <div className="space-y-2 rounded-lg border border-line p-2">
+          <div className="flex gap-2">
+            <Input autoFocus aria-label="Find a role" placeholder="Find a role…" value={roleQuery} onChange={(e) => setRoleQuery(e.target.value)} className="h-8 text-sm" />
+            <Button type="button" size="sm" variant="ghost" onClick={() => { setMentioning(null); setRoleQuery("") }}>Done</Button>
+          </div>
+          {rolesError ? <p className="text-xs text-danger">{rolesError}</p> : (
+            <>
+              {!roleQuery.trim() && forComp.length > 0 && (
+                <p className="text-xs text-fg-muted">
+                  {allRoles ? "All roles" : `Roles for ${comp}`} ·{" "}
+                  <button type="button" className="underline-offset-2 hover:underline" onClick={() => setAllRoles(!allRoles)}>{allRoles ? `only ${comp}` : "all roles"}</button>
+                </p>
+              )}
+              <div className="flex max-h-40 flex-wrap gap-1 overflow-y-auto">
+                {shownRoles.map((role) => (
+                  <button key={role.id} type="button" onClick={() => mention([roleMention(role)])}
+                    title={!role.mentionable && !mentionAll ? "Does not ping: the bot may not mention this role in the lineup channel" : undefined}
+                    className={`flex items-center gap-1.5 rounded-md border border-line px-2 py-1 text-xs hover:border-line-strong hover:bg-raised ${!role.mentionable && !mentionAll ? "text-fg-subtle" : "text-fg-soft"}`}>
+                    <span className="h-2 w-2 shrink-0 rounded-full bg-fg-subtle" style={role.color ? { background: role.color } : undefined} />
+                    @{role.name}
+                  </button>
+                ))}
+                {shownRoles.length === 0 && <p className="px-1 py-2 text-xs text-fg-muted">No role found.</p>}
+              </div>
+              {!mentionAll && shownRoles.some((r) => !r.mentionable) && (
+                <p className="text-xs text-fg-muted">Greyed roles do not ping: they are not mentionable, and the bot may not mention all roles in the lineup channel (Discord permission „Mention @everyone, @here and All Roles“).</p>
+              )}
+            </>
+          )}
+        </div>
+      )}
+
+      {mentioning === "player" && (
+        <div className="space-y-2 rounded-lg border border-line p-2">
+          {players.length === 0 ? <p className="text-xs text-fg-muted">No player of the kader has a linked Discord account.</p> : (
+            <div className="flex max-h-40 flex-wrap gap-1 overflow-y-auto">
+              <button type="button" onClick={() => mention(players.map((p) => playerMention(p.name, p.discordUserId)))}
+                className="rounded-md border border-line-strong px-2 py-1 text-xs font-medium text-fg-soft hover:bg-raised">
+                Whole kader ({players.length})
+              </button>
+              {players.map((p) => (
+                <button key={p.id} type="button" onClick={() => mention([playerMention(p.name, p.discordUserId)])}
+                  className="rounded-md border border-line px-2 py-1 text-xs text-fg-soft hover:border-line-strong hover:bg-raised">
+                  @{p.name}
+                </button>
+              ))}
+            </div>
+          )}
+          <Button type="button" size="sm" variant="ghost" onClick={() => setMentioning(null)}>Done</Button>
+        </div>
+      )}
 
       {problem && <p className="text-xs text-danger">{problem}</p>}
       <div className="flex flex-wrap gap-2">

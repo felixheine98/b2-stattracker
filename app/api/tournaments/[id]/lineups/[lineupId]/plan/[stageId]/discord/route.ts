@@ -2,12 +2,13 @@ import { Prisma } from "@prisma/client"
 import { NextResponse } from "next/server"
 import { z } from "zod"
 import { db } from "@/lib/db"
-import { fetchAnnouncements, fetchReactions, fetchServerEmojis, postAnnouncement, signReactionSnapshot, verifyReactionSnapshot } from "@/lib/discord-bot"
+import { fetchAnnouncements, fetchReactions, fetchServerEmojis, fetchServerRoles, postAnnouncement, signReactionSnapshot, verifyReactionSnapshot } from "@/lib/discord-bot"
 import { answersRevision, checkEmojis, emojiMapping, lastUsedEmojis, matchdayReactionPreview, withDefaultMapping, parseChannelLink, suggestAnnouncement } from "@/lib/matchday-discord"
 import type { MatchdayAnswer } from "@/lib/matchday-plan"
 import type { ReactionSnapshot } from "@/lib/discord-planning"
 import { planAccess, type PlanParams } from "@/lib/matchday-plan-access"
 import { loadPlan, type MatchdayDiscordSettings } from "@/lib/matchday-plan-db"
+import { shownName } from "@/lib/player-names"
 import { sortStages, stageDate } from "@/lib/stages"
 
 // Discord for the matchday planning (docs/adr/008): the lineup channel, the marked ping of the match
@@ -76,7 +77,15 @@ export async function POST(req: Request, ctx: PlanParams) {
       // The server's own emojis to choose from, and the ones the lineup's latest announcement had
       const plans = await db.matchdayPlan.findMany({ where: { lineupId: lineup.id }, select: { discordSettings: true } })
       const lastUsed = lastUsedEmojis(plans.map((p) => (p.discordSettings ?? {}) as MatchdayDiscordSettings))
-      return NextResponse.json({ server: await fetchServerEmojis(), lastUsed })
+      // What the text can mention: the server's roles (the page offers the comp's first) and the
+      // kader's players with a linked account. Without the roles an announcement can still be written.
+      const [server, roles, linked] = await Promise.all([
+        fetchServerEmojis(),
+        fetchServerRoles(channelId).catch((error: Error) => ({ roles: [], mentionAll: false, rolesError: error.message })),
+        db.player.findMany({ where: { id: { in: plan.kader.map((p) => p.id) }, discordUserId: { not: null } }, select: { id: true, name: true, nickname: true, discordUserId: true }, orderBy: { name: "asc" } }),
+      ])
+      const players = linked.map((p) => ({ id: p.id, name: shownName(p), discordUserId: p.discordUserId! }))
+      return NextResponse.json({ server, lastUsed, ...roles, comp: lineup.tournament.name, lineup: lineup.name, players })
     }
     if (input.action === "post") {
       const wrong = checkEmojis(input.emojis)

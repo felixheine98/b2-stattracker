@@ -2,6 +2,7 @@ import { z } from "zod"
 import { createHmac, timingSafeEqual } from "node:crypto"
 import type { ReactionSnapshot } from "./discord-planning"
 import type { TrackedMessage } from "./reaction-log"
+import type { ServerRole } from "./discord-mentions"
 import type { ServerEmoji } from "./matchday-discord"
 
 export const reactionSnapshotSchema = z.object({
@@ -129,6 +130,22 @@ const serverEmojisSchema = z.object({ emojis: z.array(z.object({
 })).max(5000) })
 
 // The server's own emojis, to choose the reactions of an announcement from
+const serverRolesSchema = z.object({
+  roles: z.array(z.object({ id: z.string().regex(/^\d{1,20}$/), name: z.string().max(100), mentionable: z.boolean(), color: z.string().max(20).nullable() })).max(1000),
+  mentionAll: z.boolean(),
+})
+
+// The server's roles to mention, and whether the bot may ping the ones not mentionable in the channel
+export async function fetchServerRoles(channelId: string, config: BotConfig = botConfig()): Promise<{ roles: ServerRole[]; mentionAll: boolean }> {
+  if (!config.url || !config.token) throw new Error("The Discord bot connection is not configured.")
+  if (!/^\d{1,20}$/.test(channelId)) throw new Error("Invalid channel.")
+  const url = new URL("/roles", config.url)
+  url.searchParams.set("channelId", channelId)
+  const response = await fetch(url, { headers: { Authorization: `Bearer ${config.token}` }, cache: "no-store", signal: AbortSignal.timeout(30000), redirect: "error" })
+  if (!response.ok) throw new Error("The bot could not list the server roles.")
+  return serverRolesSchema.parse(await response.json())
+}
+
 export async function fetchServerEmojis(config: BotConfig = botConfig()): Promise<ServerEmoji[]> {
   if (!config.url || !config.token) throw new Error("The Discord bot connection is not configured.")
   const response = await fetch(new URL("/emojis", config.url), { headers: { Authorization: `Bearer ${config.token}` }, cache: "no-store", signal: AbortSignal.timeout(30000), redirect: "error" })

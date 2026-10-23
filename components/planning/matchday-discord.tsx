@@ -9,7 +9,7 @@ import { Select } from "@/components/ui/select"
 import { BASE_PATH } from "@/lib/base-path"
 import { formatTime, formatTimeShort, previewSummary, type ReactionSnapshot } from "@/lib/discord-planning"
 import { matchdayReactionPreview, withDefaultMapping, type EmojiChoice, type ServerEmoji } from "@/lib/matchday-discord"
-import { AnnouncementForm } from "./announcement-form"
+import { AnnouncementForm, type Mentionable } from "./announcement-form"
 import type { MatchdayAnswer } from "@/lib/matchday-plan"
 import type { MatchdayDiscordSettings } from "@/lib/matchday-plan-db"
 import { shownName } from "@/lib/player-names"
@@ -62,7 +62,7 @@ interface Props {
 
 export function MatchdayDiscord({ apiPath, channelId: initialChannel, settings, kader, answers, revision, onApplied, stage, day }: Props) {
   // The announcement being written: the server's emojis and the lineup's last ones; null while none is
-  const [writing, setWriting] = useState<{ server: ServerEmoji[]; lastUsed: EmojiChoice[] } | null>(null)
+  const [writing, setWriting] = useState<({ server: ServerEmoji[]; lastUsed: EmojiChoice[] } & Mentionable) | null>(null)
   const [channelId, setChannelId] = useState(initialChannel)
   const [editingChannel, setEditingChannel] = useState(!initialChannel)
   const [channelLink, setChannelLink] = useState("")
@@ -184,7 +184,7 @@ export function MatchdayDiscord({ apiPath, channelId: initialChannel, settings, 
       )}
 
       {writing && (
-        <AnnouncementForm stage={stage} day={day} server={writing.server} lastUsed={writing.lastUsed} busy={busy} onPost={post} onCancel={() => setWriting(null)} />
+        <AnnouncementForm {...writing} stage={stage} day={day} busy={busy} onPost={post} onCancel={() => setWriting(null)} />
       )}
 
       {channelId && !editingChannel && !pings && !writing && (

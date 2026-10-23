@@ -3,13 +3,17 @@ import { PrismaClient } from "@prisma/client"
 import { execFileSync } from "node:child_process"
 
 // The route runs against a temporary PostgreSQL schema; who is signed in and what the bot answers is given by the test
-const state = vi.hoisted(() => ({ client: undefined as unknown, session: null as unknown, snapshot: null as unknown, announcements: [] as unknown[], posted: [] as unknown[] }))
+const state = vi.hoisted(() => ({ client: undefined as unknown, session: null as unknown, snapshot: null as unknown, announcements: [] as unknown[], posted: [] as unknown[], rolesDown: false }))
 vi.mock("@/lib/db", () => ({ get db() { return state.client } }))
 vi.mock("@/lib/auth", () => ({ auth: async () => state.session }))
 vi.mock("@/lib/discord-bot", async (original) => ({
   ...(await original<typeof import("@/lib/discord-bot")>()),
   fetchReactions: async () => state.snapshot,
   fetchAnnouncements: async () => state.announcements,
+  fetchServerRoles: async (channelId: string) => {
+    if (state.rolesDown) throw new Error("The bot could not list the server roles.")
+    return { roles: [{ id: "601", name: "Comp A", mentionable: false, color: null }], mentionAll: channelId === "22" }
+  },
   fetchServerEmojis: async () => [{ key: "custom:501", name: "b2fix", text: "<:b2fix:501>", imageUrl: "https://cdn.discordapp.com/emojis/501.png" }],
   postAnnouncement: async (channelId: string, text: string, emojis: string[]) => {
     state.posted.push({ channelId, text, emojis })
@@ -124,6 +128,12 @@ describe.skipIf(process.env.DB_TESTS !== "1")("Discord for the matchday planning
     const first = await (await post({ action: "emojis" }, ids.stage2)).json()
     expect(first.server).toHaveLength(1)
     expect(first.lastUsed.map((e: { text: string }) => e.text)).toEqual(["✅", "❌"])
+    // What can be mentioned: the server's roles for the comp and lineup, and the kader's linked players
+    expect(first).toMatchObject({ roles: [{ id: "601", name: "Comp A" }], mentionAll: true, comp: "Comp", lineup: "A", players: [{ name: "Anna", discordUserId: "101" }, { name: "Ben", discordUserId: "102" }] })
+    // Without the roles the announcement can still be written
+    state.rolesDown = true
+    expect(await (await post({ action: "emojis" }, ids.stage2)).json()).toMatchObject({ roles: [], rolesError: "The bot could not list the server roles." })
+    state.rolesDown = false
     expect((await post({ action: "post", text: "", emojis }, ids.stage2)).status).toBe(400)
     expect((await post({ action: "post", text: "Who?", emojis: [{ key: "custom:501", text: "<:b2fix:999>", answer: "FIX" }] }, ids.stage2)).status).toBe(400)
     expect((await post({ action: "post", text: "Who is there?", emojis }, ids.stage2)).status).toBe(200)

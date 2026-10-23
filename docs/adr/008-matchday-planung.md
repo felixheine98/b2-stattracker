@@ -69,6 +69,8 @@ Bestätigt (23.10.2026), Vorgabe von Felix, ersetzt für die Matchday-Planung �
 
 Bestätigt (23.10.2026), Vorgabe von Felix: Standard sind nur ✅ = Fix und ❌ = Out. Jede andere Antwort (Partly, Maybe) oder ein anderes Emoji legt man selbst als eigenen Emoji-Slot an. Das gilt für die Vorbelegung beim Posten, wenn das Lineup noch kein Announcement hatte, und beim Abruf: ✅ und ❌ zählen ohne Zuordnung als Fix und Out, sofern der Match Day sie nicht anders zugeordnet hat; nur andere Emojis brauchen eine Bedeutung.
 
+Bestätigt (23.10.2026), Vorgabe von Felix: Im Announcement lassen sich Rollen und Spieler per Klick erwähnen. „Role“ bietet zuerst die Rollen an, die ein Wort mit dem Namen der Comp teilen (die mit einem Wort des Lineup-Namens zuerst, z. B. „Vertigo Rising“ für B2 Rising in Vertigo S1), umschaltbar auf alle Rollen, mit Suche. „Players“ bietet die Spieler des Kaders mit verknüpftem Discord-Konto an, einzeln oder den ganzen Kader. Der Text zeigt die Erwähnungen als @Name; erst beim Posten werden sie zu Discords Erwähnungen. Nicht erwähnbare Rollen pingen nur, wenn der Bot im Lineup-Channel „Alle Rollen erwähnen“ darf; der Bot meldet das (`/roles?channelId=`), die App graut sie sonst aus und erklärt es.
+
 Später (Todo): Der Discord-Bot postet die finalisierte Besetzung in den passenden Channel.
 
 Bestätigt (22.10.2026): Die Planung liegt auf der Lineup-Seite, pro Stage: Lineup-Manager (und Admins/Manager) sehen bei jeder Stage einen Knopf „Plan“, der zur Seite `/tournaments/[comp]/[lineup]/plan/[stage]` führt (Verfügbarkeit, Varianten, Tagesbesetzung, Matches der Stage).

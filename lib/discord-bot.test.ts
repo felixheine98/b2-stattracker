@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest"
-import { fetchAnnouncements, fetchServerEmojis, postAnnouncement, fetchReactions, fetchTrackedMessages, removeTrackedMessage, signReactionSnapshot, verifyReactionSnapshot } from "./discord-bot"
+import { fetchAnnouncements, fetchServerEmojis, fetchServerRoles, postAnnouncement, fetchReactions, fetchTrackedMessages, removeTrackedMessage, signReactionSnapshot, verifyReactionSnapshot } from "./discord-bot"
 
 const snapshot = { messageUrl: "https://discord.com/channels/111/222/333", fetchedAt: "2026-10-15T12:00:00Z", users: [], reactions: [] }
 
@@ -77,5 +77,14 @@ describe("Discord bot boundary", () => {
     expect(await fetchServerEmojis(config)).toEqual([emoji])
     expect(String(fetch.mock.calls[0][0])).toBe("http://bot:3080/emojis")
     await expect(fetchServerEmojis(config)).rejects.toThrow()
+  })
+  it("lists the server's roles for the lineup channel and refuses ones that cannot be mentioned", async () => {
+    const role = { id: "601", name: "Vertigo Main", mentionable: false, color: "#ff8800" }
+    const fetch = vi.fn().mockResolvedValueOnce(Response.json({ roles: [role], mentionAll: true })).mockResolvedValueOnce(Response.json({ roles: [{ ...role, id: "x" }], mentionAll: true }))
+    vi.stubGlobal("fetch", fetch)
+    const config = { url: "http://bot:3080", token: "secret" }
+    expect(await fetchServerRoles("222", config)).toEqual({ roles: [role], mentionAll: true })
+    expect(String(fetch.mock.calls[0][0])).toBe("http://bot:3080/roles?channelId=222")
+    await expect(fetchServerRoles("222", config)).rejects.toThrow()
   })
 })
