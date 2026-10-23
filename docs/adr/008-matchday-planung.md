@@ -65,6 +65,8 @@ Bestätigt (23.10.2026), Vorgabe von Felix: Bisher schreibt ein Manager den Ping
 
 Bestätigt (23.10.2026), Vorgabe von Felix: Die Emojis sind nicht immer dieselben. Vor dem Posten werden sie in Zeilen „Emoji → Bedeutung“ gewählt (Fix, Partly, Maybe, Out; mehrere Emojis für eine Antwort möglich, höchstens 10), per Klick aus den eigenen Emojis des Servers (vom Bot mit Bild geliefert) und einer Auswahl gängiger Emojis mit Suche, ohne Kopieren. Vorbelegt ist die Auswahl des zuletzt geposteten Announcements des Lineups, sonst ✅ 🕗 ❔ ❌. Solange der Text der vorgeschlagene ist, folgt seine Legende der Auswahl; Knöpfe fügen die gewählten Emojis oder die Legende an der Cursor-Stelle ein.
 
+Bestätigt (23.10.2026), Vorgabe von Felix, ersetzt für die Matchday-Planung „erst nach Abruf und Vorschau“: Abgerufen wird weiter nur per Knopf, ohne Hintergrund-Synchronisation. „Fetch reactions“ übernimmt die eindeutigen Antworten aber sofort (Aktion `sync`, in einer serialisierbaren Transaktion gegen die aktuellen Antworten); die Liste der Änderungen ist danach aufklappbar („Show changes“). Eine Vorschau bleibt nur, wo eine Entscheidung fehlt: Hat ein Emoji noch keine Bedeutung, wird nichts übernommen, bis sie gewählt ist; Spieler mit widersprüchlichen Reaktionen bleiben zum Auflösen stehen, alle anderen sind schon übernommen. Die Comp-Planung behält die Vorschau.
+
 Später (Todo): Der Discord-Bot postet die finalisierte Besetzung in den passenden Channel.
 
 Bestätigt (22.10.2026): Die Planung liegt auf der Lineup-Seite, pro Stage: Lineup-Manager (und Admins/Manager) sehen bei jeder Stage einen Knopf „Plan“, der zur Seite `/tournaments/[comp]/[lineup]/plan/[stage]` führt (Verfügbarkeit, Varianten, Tagesbesetzung, Matches der Stage).

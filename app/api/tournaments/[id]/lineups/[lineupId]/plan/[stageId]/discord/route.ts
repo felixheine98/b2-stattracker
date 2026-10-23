@@ -5,12 +5,14 @@ import { db } from "@/lib/db"
 import { fetchAnnouncements, fetchReactions, fetchServerEmojis, postAnnouncement, signReactionSnapshot, verifyReactionSnapshot } from "@/lib/discord-bot"
 import { answersRevision, checkEmojis, emojiMapping, lastUsedEmojis, matchdayReactionPreview, parseChannelLink, suggestAnnouncement } from "@/lib/matchday-discord"
 import type { MatchdayAnswer } from "@/lib/matchday-plan"
+import type { ReactionSnapshot } from "@/lib/discord-planning"
 import { planAccess, type PlanParams } from "@/lib/matchday-plan-access"
 import { loadPlan, type MatchdayDiscordSettings } from "@/lib/matchday-plan-db"
 import { sortStages, stageDate } from "@/lib/stages"
 
 // Discord for the matchday planning (docs/adr/008): the lineup channel, the marked ping of the match
-// day, and its reactions as answers after a preview. Lineup managers fetch and apply, but do not
+// day, and its reactions as answers: taken over at once on fetching, with a preview only where a
+// choice is missing (an emoji without a meaning, a player with two answers). Lineup managers fetch and apply, but do not
 // link Discord accounts; that stays with admins and managers (ADR 006).
 
 const answer = z.union([z.literal(""), z.enum(["FIX", "PARTIAL", "MAYBE", "OUT"])])
@@ -23,6 +25,7 @@ const schema = z.discriminatedUnion("action", [
     emojis: z.array(z.object({ key: z.string().max(40), text: z.string().max(150), answer: z.enum(["FIX", "PARTIAL", "MAYBE", "OUT"]) })).max(20) }),
   z.object({ action: z.literal("settings"), emojiMapping: z.record(z.string().max(200), answer) }),
   z.object({ action: z.literal("fetch") }),
+  z.object({ action: z.literal("sync") }),
   z.object({ action: z.literal("apply"), token: z.string().max(2_000_000), emojiMapping: z.record(z.string().max(200), answer), resolutions: z.record(z.string().max(100), answer) }),
 ])
 
@@ -103,16 +106,46 @@ export async function POST(req: Request, ctx: PlanParams) {
     // The signed preview belongs to this planning only
     const scope = `matchday:${plan.planId}`
 
-    if (input.action === "fetch") {
+    // The preview to choose in: signed for the answers as they are after `answers`
+    const previewFor = (snapshot: ReactionSnapshot, known: Awaited<ReturnType<typeof accounts>>, answers: Record<string, MatchdayAnswer | null>) => {
+      const revision = answersRevision(answers)
+      return {
+        snapshot, ...known, revision, token: signReactionSnapshot({ snapshot, tournamentId: scope, revision }, secret),
+        // Accounts without a link or mark; which of them matter depends on the emoji choice
+        unlinked: snapshot.users.filter((u) => !Object.hasOwn(known.links, u.id) && !known.notAPlayer.includes(u.id)),
+      }
+    }
+
+    if (input.action === "fetch" || input.action === "sync") {
       if (!settings?.messageUrl) throw new ImportError("Choose the announcement of this match day first.")
       const snapshot = await fetchReactions(settings.messageUrl)
       await saveSettings({ fetchedAt: snapshot.fetchedAt })
       const known = await accounts(snapshot.users.map((u) => u.id))
-      const revision = answersRevision(kaderAnswers())
+      const mapping = settings.emojiMapping ?? {}
+      // Without a meaning for every emoji nothing is taken over yet
+      if (input.action === "fetch" || snapshot.reactions.some((r) => !Object.hasOwn(mapping, r.key))) {
+        return NextResponse.json({ ...previewFor(snapshot, known, kaderAnswers()), ...(input.action === "sync" && { applied: null }) })
+      }
+      const result = await db.$transaction(async (tx) => {
+        // The answers as they are now, so one set by hand in the meantime is not overwritten blindly
+        const current = await tx.matchdayPlanAnswer.findMany({ where: { planId: plan.planId }, select: { playerId: true, answer: true } })
+        const kader = plan.kader.map((p) => ({ playerId: p.id, answer: (current.find((a) => a.playerId === p.id)?.answer as MatchdayAnswer | undefined) ?? null }))
+        const { rows, unlinked } = matchdayReactionPreview(snapshot, mapping, known.links, known.notAPlayer, kader, {})
+        const changes = rows.filter((r) => r.kind === "change" && r.after)
+        for (const row of changes) {
+          const reactedAt = row.times[row.after!]
+          const data = { answer: row.after!, answeredAt: reactedAt ? new Date(reactedAt) : null }
+          await tx.matchdayPlanAnswer.upsert({ where: { planId_playerId: { planId: plan.planId, playerId: row.playerId } }, create: { planId: plan.planId, playerId: row.playerId, ...data }, update: data })
+        }
+        const after = Object.fromEntries(kader.map((p) => [p.playerId, changes.find((c) => c.playerId === p.playerId)?.after ?? p.answer]))
+        return { rows, unlinked, changes, after }
+      }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable })
       return NextResponse.json({
-        snapshot, ...known, revision, token: signReactionSnapshot({ snapshot, tournamentId: scope, revision }, secret),
-        // Accounts without a link or mark; which of them matter depends on the emoji choice
-        unlinked: snapshot.users.filter((u) => !Object.hasOwn(known.links, u.id) && !known.notAPlayer.includes(u.id)),
+        ...previewFor(snapshot, known, result.after),
+        applied: result.changes.map((r) => ({ playerId: r.playerId, before: r.before, after: r.after, time: r.times[r.after!] ?? null })),
+        // Players who reacted with two answers stay to be resolved through the preview
+        conflicts: result.rows.filter((r) => r.kind === "conflict"),
+        unlinked: result.unlinked,
       })
     }
 

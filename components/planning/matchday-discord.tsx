@@ -15,7 +15,8 @@ import type { MatchdayDiscordSettings } from "@/lib/matchday-plan-db"
 import { shownName } from "@/lib/player-names"
 
 // The matchday announcement of a lineup (docs/adr/008): the lineup channel once, the marked ping of
-// the match day, and its reactions as answers after a preview. Accounts are not linked here.
+// the match day, and its reactions as answers: taken over at once on fetching, with the list of
+// changes to look at. A preview stays only where a choice is missing. Accounts are not linked here.
 
 interface Ping {
   messageUrl: string
@@ -33,6 +34,14 @@ interface Loaded {
 }
 
 type Mapping = Record<string, MatchdayAnswer | "">
+
+// What a fetch took over at once
+interface Synced {
+  applied: Array<{ playerId: string; before: MatchdayAnswer | null; after: MatchdayAnswer; time: string | null }>
+  unlinked: Array<{ id: string; name: string }>
+  // The fetch, to open as a preview for changing what the emojis mean
+  loaded: Loaded
+}
 
 const LABEL: Record<MatchdayAnswer, string> = { FIX: "Fix", PARTIAL: "Partly", MAYBE: "Maybe", OUT: "Out" }
 
@@ -67,6 +76,8 @@ export function MatchdayDiscord({ apiPath, channelId: initialChannel, settings, 
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState("")
   const [success, setSuccess] = useState("")
+  const [synced, setSynced] = useState<Synced | null>(null)
+  const [showChanges, setShowChanges] = useState(false)
 
   async function call(body: Record<string, unknown>) {
     const response = await fetch(`${BASE_PATH}${apiPath}/discord`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) })
@@ -76,7 +87,7 @@ export function MatchdayDiscord({ apiPath, channelId: initialChannel, settings, 
   }
 
   async function run(work: () => Promise<void>) {
-    setBusy(true); setError(""); setSuccess("")
+    setBusy(true); setError(""); setSuccess(""); setSynced(null); setShowChanges(false)
     try { await work() } catch (e) { setError(e instanceof Error ? e.message : "Discord request failed.") } finally { setBusy(false) }
   }
 
@@ -106,9 +117,15 @@ export function MatchdayDiscord({ apiPath, channelId: initialChannel, settings, 
     setMessageUrl(url); setPings(null); setLoaded(null)
   })
 
+  // Fetching takes over every clear answer at once; only new emojis or players with two answers
+  // leave a preview to choose in
   const read = () => run(async () => {
-    const data = await call({ action: "fetch" })
-    setLoaded(data); setFetchedAt(data.snapshot.fetchedAt); setResolutions({})
+    const data = await call({ action: "sync" })
+    setFetchedAt(data.snapshot.fetchedAt); setResolutions({}); setEditingEmojis(false)
+    if (data.applied === null) { setLoaded(data); return }
+    await onApplied()
+    setSynced({ applied: data.applied, unlinked: data.unlinked, loaded: data })
+    setLoaded(data.conflicts.length > 0 ? data : null)
   })
 
   // Saved at once, so the choice is there next time even without applying anything
@@ -224,6 +241,31 @@ export function MatchdayDiscord({ apiPath, channelId: initialChannel, settings, 
 
       {error && <p role="alert" className="text-sm text-danger">{error}</p>}
       {success && <p role="status" className="text-sm text-fg-soft">{success}</p>}
+
+      {synced && (
+        <div className="space-y-2">
+          <p role="status" className="text-sm text-fg-soft">
+            {synced.applied.length === 0 ? "No answers changed." : `${synced.applied.length} ${synced.applied.length === 1 ? "answer" : "answers"} updated.`}
+            {synced.applied.length > 0 && <> <button type="button" className="text-xs text-fg-muted underline-offset-2 hover:underline" onClick={() => setShowChanges((v) => !v)}>{showChanges ? "Hide changes" : "Show changes"}</button></>}
+            {!loaded && synced.loaded.snapshot.reactions.length > 0 && <> · <button type="button" className="text-xs text-fg-muted underline-offset-2 hover:underline" onClick={() => { setLoaded(synced.loaded); setEditingEmojis(true) }}>emojis</button></>}
+          </p>
+          {showChanges && (
+            <ul className="space-y-1 rounded-lg border border-line px-3 py-2 text-sm text-fg-soft">
+              {synced.applied.map((c) => (
+                <li key={c.playerId}>
+                  <span className="font-medium">{nameOf(c.playerId)}</span>: {label(c.before)} → {label(c.after)}
+                  {c.time && <span className="text-xs text-fg-muted"> · {formatTimeShort(c.time)}</span>}
+                </li>
+              ))}
+            </ul>
+          )}
+          {!loaded && synced.unlinked.length > 0 && (
+            <p className="text-xs text-fg-muted">
+              Not imported, the Discord account is not linked to a player: {synced.unlinked.map((u) => u.name).join(", ")}. An admin or manager has to link {synced.unlinked.length === 1 ? "it" : "them"} under Discord accounts.
+            </p>
+          )}
+        </div>
+      )}
 
       {loaded && preview && (
         <div className="space-y-3">

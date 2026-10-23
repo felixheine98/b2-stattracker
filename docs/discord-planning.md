@@ -191,12 +191,14 @@ Bereich „Discord“, wenn die App einen Bot kennt (`DISCORD_BOT_URL`):
    Match Day zu; die Emojis bedeuten schon ihre Antwort. Weiter mit Schritt 4.
 3. Alternativ: Wer den wöchentlichen Ping selbst postet, erwähnt darin den Bot (oder seine Rolle). „Find announcement“
    listet diese Pings und hebt den vorgeschlagenen hervor; „Use this“ ordnet ihn dem Match Day zu.
-4. „Fetch reactions“, Emojis auf Fix/Partly/Maybe/Out oder Ignore setzen (pro Match Day gespeichert),
-   Vorschau prüfen, „Apply“. Nur verknüpfte Konten des Kaders werden übernommen; nicht verknüpfte
+4. „Fetch reactions“ übernimmt die eindeutigen Antworten sofort, „Show changes“ zeigt die Liste.
+   Hat ein Emoji noch keine Bedeutung, erscheint stattdessen die Vorschau: Emoji auf
+   Fix/Partly/Maybe/Out oder Ignore setzen (pro Match Day gespeichert), dann „Apply“. Spieler mit
+   widersprüchlichen Reaktionen bleiben in der Vorschau zum Auflösen stehen. Nur verknüpfte Konten des Kaders werden übernommen; nicht verknüpfte
    erscheinen als Hinweis, verknüpfen bleibt bei Admins und Managern („Discord accounts“).
 
 Route: `/api/tournaments/[id]/lineups/[lineupId]/plan/[stageId]/discord` (Aktionen `channel`,
-`announcements`, `choose`, `emojis`, `post`, `settings`, `fetch`, `apply`), für Lineup-Manager, Admins und Manager,
+`announcements`, `choose`, `emojis`, `post`, `settings`, `fetch`, `sync`, `apply`), für Lineup-Manager, Admins und Manager,
 nur mit `MATCHDAY_PLANNING=on`. Der Bot braucht dafür `ANNOUNCEMENTS=on` (Intent `GuildMessages`,
 nicht privilegiert) und in den Lineup-Channels Lesezugriff samt Nachrichtenhistorie, zum Posten
 außerdem „Nachrichten senden“ und „Reaktionen hinzufügen“.

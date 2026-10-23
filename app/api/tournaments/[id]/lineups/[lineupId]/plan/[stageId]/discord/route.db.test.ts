@@ -135,4 +135,35 @@ describe.skipIf(process.env.DB_TESTS !== "1")("Discord for the matchday planning
     state.session = { user: { id: ids.other, role: "PLAYER" } }
     expect((await post({ action: "post", text: "Who is there?", emojis }, ids.stage2)).status).toBe(403)
   })
+
+  it("takes the reactions over at once on fetching, keeps who reacted twice to be resolved and waits for emojis without a meaning", async () => {
+    state.session = { user: { id: ids.manager, role: "PLAYER" } }
+    await client.matchdayPlan.update({ where: { lineupId_stageId: { lineupId: ids.lineup, stageId: ids.stage } }, data: { discordSettings: { messageUrl: ping("10", "").messageUrl, emojiMapping: { "unicode:✅": "FIX", "unicode:🕗": "PARTIAL", "unicode:❌": "OUT" } } } })
+    await client.matchdayPlanAnswer.deleteMany({ where: { plan: { lineupId: ids.lineup, stageId: ids.stage } } })
+    state.snapshot = {
+      messageUrl: ping("10", "").messageUrl, fetchedAt: new Date().toISOString(),
+      users: [{ id: "101", name: "Anna" }, { id: "102", name: "Ben" }, { id: "150", name: "Guest" }],
+      reactions: [
+        { key: "unicode:✅", label: "✅", userIds: ["101", "102", "150"], reactedAt: { "101": "2026-10-12T18:05:00.000Z" } },
+        { key: "unicode:❌", label: "❌", userIds: ["102"] },
+      ],
+    }
+    const synced = await (await post({ action: "sync" })).json()
+    // Anna is taken over at once; Ben reacted with Fix and Out and waits
+    expect(synced.applied).toEqual([{ playerId: ids.anna, before: null, after: "FIX", time: "2026-10-12T18:05:00.000Z" }])
+    expect(synced.conflicts.map((r: { playerId: string }) => r.playerId)).toEqual([ids.ben])
+    expect(synced.unlinked).toEqual([{ id: "150", name: "Guest" }])
+    expect(await answers()).toEqual({ [ids.anna]: { answer: "FIX", answeredAt: "2026-10-12T18:05:00.000Z" } })
+    // Resolving Ben goes through the preview the sync handed over
+    const resolved = await post({ action: "apply", token: synced.token, emojiMapping: { "unicode:✅": "FIX", "unicode:🕗": "PARTIAL", "unicode:❌": "OUT" }, resolutions: { [ids.ben]: "OUT" } })
+    expect(resolved.status).toBe(200)
+    expect((await answers())[ids.ben]).toEqual({ answer: "OUT", answeredAt: null })
+
+    // A reaction with an emoji nobody gave a meaning yet: nothing is taken over before it has one
+    state.snapshot = { ...(state.snapshot as object), reactions: [{ key: "unicode:🎉", label: "🎉", userIds: ["101"] }] }
+    const waiting = await (await post({ action: "sync" })).json()
+    expect(waiting.applied).toBeNull()
+    expect(waiting.snapshot.reactions.map((r: { key: string }) => r.key)).toEqual(["unicode:🎉"])
+    expect((await answers())[ids.anna].answer).toBe("FIX")
+  })
 })
