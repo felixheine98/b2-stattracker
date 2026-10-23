@@ -93,7 +93,8 @@ services:
       retries: 3
       start_period: 180s
 
-  # Read-only Discord client: no command registration, member updates or message writes.
+  # Discord client without command registration or member updates; it writes only the matchday
+  # announcement it is asked to post (ANNOUNCEMENTS, docs/adr/008).
   discord-bot:
     build:
       context: ${DISCORD_BOT_SOURCE:-../b2-member}

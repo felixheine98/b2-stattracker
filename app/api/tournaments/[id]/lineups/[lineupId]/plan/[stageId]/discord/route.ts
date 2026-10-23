@@ -2,8 +2,8 @@ import { Prisma } from "@prisma/client"
 import { NextResponse } from "next/server"
 import { z } from "zod"
 import { db } from "@/lib/db"
-import { fetchAnnouncements, fetchReactions, signReactionSnapshot, verifyReactionSnapshot } from "@/lib/discord-bot"
-import { answersRevision, matchdayReactionPreview, parseChannelLink, suggestAnnouncement } from "@/lib/matchday-discord"
+import { fetchAnnouncements, fetchReactions, postAnnouncement, signReactionSnapshot, verifyReactionSnapshot } from "@/lib/discord-bot"
+import { ANNOUNCEMENT_EMOJIS, announcementMapping, answersRevision, matchdayReactionPreview, parseChannelLink, suggestAnnouncement } from "@/lib/matchday-discord"
 import type { MatchdayAnswer } from "@/lib/matchday-plan"
 import { planAccess, type PlanParams } from "@/lib/matchday-plan-access"
 import { loadPlan, type MatchdayDiscordSettings } from "@/lib/matchday-plan-db"
@@ -18,6 +18,7 @@ const schema = z.discriminatedUnion("action", [
   z.object({ action: z.literal("channel"), link: z.string().max(300) }),
   z.object({ action: z.literal("announcements") }),
   z.object({ action: z.literal("choose"), messageUrl: z.string().max(300) }),
+  z.object({ action: z.literal("post"), text: z.string().trim().min(1).max(2000) }),
   z.object({ action: z.literal("settings"), emojiMapping: z.record(z.string().max(200), answer) }),
   z.object({ action: z.literal("fetch") }),
   z.object({ action: z.literal("apply"), token: z.string().max(2_000_000), emojiMapping: z.record(z.string().max(200), answer), resolutions: z.record(z.string().max(100), answer) }),
@@ -65,6 +66,13 @@ export async function POST(req: Request, ctx: PlanParams) {
       if (!link || link[2] !== channelId) throw new ImportError("Choose a message in the lineup's channel.")
       await saveSettings({ messageUrl: `https://discord.com/channels/${link[1]}/${link[2]}/${link[3]}` })
       return NextResponse.json({ ok: true })
+    }
+    if (input.action === "post") {
+      // The bot posts it with its emojis, so what they mean is known from the start; a new
+      // announcement starts without a fetch
+      const posted = await postAnnouncement(channelId, input.text, ANNOUNCEMENT_EMOJIS.map((e) => e.emoji))
+      await db.matchdayPlan.update({ where: { id: plan.planId }, data: { discordSettings: { messageUrl: posted.messageUrl, emojiMapping: announcementMapping() } } })
+      return NextResponse.json({ messageUrl: posted.messageUrl, emojiMapping: announcementMapping() })
     }
     if (input.action === "settings") {
       await saveSettings({ emojiMapping: input.emojiMapping })

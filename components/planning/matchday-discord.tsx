@@ -6,9 +6,10 @@ import { ExternalLink, MessageCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Select } from "@/components/ui/select"
+import { Textarea } from "@/components/ui/textarea"
 import { BASE_PATH } from "@/lib/base-path"
 import { formatTime, formatTimeShort, previewSummary, type ReactionSnapshot } from "@/lib/discord-planning"
-import { matchdayReactionPreview } from "@/lib/matchday-discord"
+import { announcementText, matchdayReactionPreview } from "@/lib/matchday-discord"
 import type { MatchdayAnswer } from "@/lib/matchday-plan"
 import type { MatchdayDiscordSettings } from "@/lib/matchday-plan-db"
 import { shownName } from "@/lib/player-names"
@@ -45,9 +46,14 @@ interface Props {
   revision: number
   // Loads the planning again after answers were applied
   onApplied: () => Promise<void>
+  // The match day, for the text of an announcement the bot posts
+  stage: string
+  day: string
 }
 
-export function MatchdayDiscord({ apiPath, channelId: initialChannel, settings, kader, answers, revision, onApplied }: Props) {
+export function MatchdayDiscord({ apiPath, channelId: initialChannel, settings, kader, answers, revision, onApplied, stage, day }: Props) {
+  // The text of an announcement being written, null while none is
+  const [draft, setDraft] = useState<string | null>(null)
   const [channelId, setChannelId] = useState(initialChannel)
   const [editingChannel, setEditingChannel] = useState(!initialChannel)
   const [channelLink, setChannelLink] = useState("")
@@ -77,7 +83,13 @@ export function MatchdayDiscord({ apiPath, channelId: initialChannel, settings, 
   const saveChannel = () => run(async () => {
     const data = await call({ action: "channel", link: channelLink })
     setChannelId(data.channelId); setEditingChannel(false); setChannelLink(""); setPings(null)
-    await findPings()
+  })
+
+  // The bot posts the announcement with its emojis; it is this match day's at once
+  const postDraft = () => run(async () => {
+    const data = await call({ action: "post", text: draft })
+    setMessageUrl(data.messageUrl); setMapping(data.emojiMapping); setFetchedAt(""); setDraft(null); setPings(null); setLoaded(null)
+    setSuccess("The bot posted the announcement. Reactions to it come with their time.")
   })
 
   async function findPings() {
@@ -149,10 +161,25 @@ export function MatchdayDiscord({ apiPath, channelId: initialChannel, settings, 
         </form>
       )}
 
-      {channelId && !editingChannel && !pings && (
+      {draft !== null && (
+        <form className="space-y-2" onSubmit={(e) => { e.preventDefault(); void postDraft() }}>
+          <label className="block text-xs text-fg-soft">
+            The bot posts this in the lineup channel and sets the emojis under it. Mention a role or players to ping them.
+            <Textarea className="mt-1" rows={3} value={draft} maxLength={2000} required disabled={busy} onChange={(e) => setDraft(e.target.value)} />
+          </label>
+          <div className="flex flex-wrap gap-2">
+            <Button type="submit" size="sm" disabled={busy || !draft.trim()}>{busy ? "Posting…" : "Post"}</Button>
+            <Button type="button" size="sm" variant="ghost" disabled={busy} onClick={() => setDraft(null)}>Cancel</Button>
+          </div>
+        </form>
+      )}
+
+      {channelId && !editingChannel && !pings && draft === null && (
         <div className="flex flex-wrap items-center gap-2">
-          {messageUrl && (
+          {messageUrl ? (
             <Button size="sm" variant="outline" disabled={busy} onClick={read}>{busy ? "Working…" : "Fetch reactions"}</Button>
+          ) : (
+            <Button size="sm" disabled={busy} onClick={() => setDraft(announcementText(stage, new Date(day)))}>Post announcement</Button>
           )}
           <Button size="sm" variant={messageUrl ? "ghost" : "outline"} disabled={busy} onClick={() => run(findPings)}>
             {messageUrl ? "Other announcement" : "Find announcement"}
@@ -192,7 +219,10 @@ export function MatchdayDiscord({ apiPath, channelId: initialChannel, settings, 
               </div>
             )
           })}
-          <Button size="sm" variant="ghost" disabled={busy} onClick={() => setPings(null)}>Cancel</Button>
+          <div className="flex flex-wrap gap-2">
+            <Button size="sm" variant="outline" disabled={busy} onClick={() => { setPings(null); setDraft(announcementText(stage, new Date(day))) }}>Post a new announcement</Button>
+            <Button size="sm" variant="ghost" disabled={busy} onClick={() => setPings(null)}>Cancel</Button>
+          </div>
         </div>
       )}
 

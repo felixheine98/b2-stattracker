@@ -108,3 +108,17 @@ export async function fetchAnnouncements(channelId: string, config: BotConfig = 
   if (announcements.some(a => a.channelId !== channelId)) throw new Error("The bot returned messages of a different channel.")
   return announcements
 }
+
+// The bot posts the matchday announcement in the lineup channel and sets the emojis under it
+export async function postAnnouncement(channelId: string, text: string, emojis: string[], config: BotConfig = botConfig()): Promise<BotAnnouncement> {
+  if (!/^\d{1,20}$/.test(channelId)) throw new Error("Invalid channel.")
+  if (!config.url || !config.token) throw new Error("The Discord bot connection is not configured.")
+  const response = await fetch(new URL("/announcements", config.url), {
+    method: "POST", headers: { Authorization: `Bearer ${config.token}`, "Content-Type": "application/json" },
+    body: JSON.stringify({ channelId, text, emojis }), cache: "no-store", signal: AbortSignal.timeout(30000), redirect: "error",
+  })
+  if (!response.ok) throw new Error("The bot could not post in the lineup channel. Check its permission to send messages and add reactions there.")
+  const posted = announcementsSchema.shape.announcements.element.parse(await response.json())
+  if (posted.channelId !== channelId) throw new Error("The bot posted in a different channel.")
+  return posted
+}

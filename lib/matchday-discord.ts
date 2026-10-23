@@ -50,3 +50,24 @@ export function answersRevision(answers: Record<string, MatchdayAnswer | null | 
   for (let i = 0; i < text.length; i++) hash = Math.imul(hash ^ text.charCodeAt(i), 0x01000193)
   return hash >>> 0
 }
+
+// The emojis the bot sets under the announcement it posts, one per answer
+export const ANNOUNCEMENT_EMOJIS: ReadonlyArray<{ emoji: string; answer: MatchdayAnswer; label: string }> = [
+  { emoji: "✅", answer: "FIX", label: "Fix" },
+  { emoji: "🕗", answer: "PARTIAL", label: "Partly" },
+  { emoji: "❔", answer: "MAYBE", label: "Maybe" },
+  { emoji: "❌", answer: "OUT", label: "Out" },
+]
+
+// What the emojis of a posted announcement mean, keyed the way a reaction snapshot names them
+export const announcementMapping = (): Record<string, MatchdayAnswer> =>
+  Object.fromEntries(ANNOUNCEMENT_EMOJIS.map((e) => [`unicode:${e.emoji}`, e.answer]))
+
+const weekday = new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/Berlin", weekday: "short" })
+const dayMonth = new Intl.DateTimeFormat("de-DE", { timeZone: "Europe/Berlin", day: "2-digit", month: "2-digit" })
+
+// The text the planning offers for the announcement, to be changed before posting
+export function announcementText(stage: string, day: Date): string {
+  const legend = ANNOUNCEMENT_EMOJIS.map((e) => `${e.emoji} ${e.label}`).join(" · ")
+  return `Who is there for ${stage} on ${weekday.format(day)} ${dayMonth.format(day)}?\n${legend}`
+}

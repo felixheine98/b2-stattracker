@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest"
-import { fetchAnnouncements, fetchReactions, fetchTrackedMessages, removeTrackedMessage, signReactionSnapshot, verifyReactionSnapshot } from "./discord-bot"
+import { fetchAnnouncements, postAnnouncement, fetchReactions, fetchTrackedMessages, removeTrackedMessage, signReactionSnapshot, verifyReactionSnapshot } from "./discord-bot"
 
 const snapshot = { messageUrl: "https://discord.com/channels/111/222/333", fetchedAt: "2026-10-15T12:00:00Z", users: [], reactions: [] }
 
@@ -58,5 +58,15 @@ describe("Discord bot boundary", () => {
     expect(fetch.mock.calls[0][1].headers).toEqual({ Authorization: "Bearer secret" })
     await expect(fetchAnnouncements("222", config)).rejects.toThrow()
     await expect(fetchAnnouncements("bad", config)).rejects.toThrow()
+  })
+  it("asks the bot to post an announcement in the lineup channel and checks what it posted", async () => {
+    const posted = { messageUrl: "https://discord.com/channels/111/222/70", messageId: "70", channelId: "222", postedAt: "2026-10-20T18:00:00.000Z", author: "B2 Bot", text: "Who?" }
+    const fetch = vi.fn().mockResolvedValueOnce(Response.json(posted, { status: 201 })).mockResolvedValueOnce(Response.json({ ...posted, channelId: "999" }, { status: 201 }))
+    vi.stubGlobal("fetch", fetch)
+    const config = { url: "http://bot:3080", token: "secret" }
+    expect(await postAnnouncement("222", "Who?", ["✅", "❌"], config)).toEqual(posted)
+    expect(String(fetch.mock.calls[0][0])).toBe("http://bot:3080/announcements")
+    expect(fetch.mock.calls[0][1]).toMatchObject({ method: "POST", body: JSON.stringify({ channelId: "222", text: "Who?", emojis: ["✅", "❌"] }) })
+    await expect(postAnnouncement("222", "Who?", ["✅"], config)).rejects.toThrow()
   })
 })

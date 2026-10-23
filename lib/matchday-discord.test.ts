@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { answersRevision, matchdayReactionPreview, parseChannelLink, suggestAnnouncement } from "./matchday-discord"
+import { ANNOUNCEMENT_EMOJIS, announcementMapping, announcementText, answersRevision, matchdayReactionPreview, parseChannelLink, suggestAnnouncement } from "./matchday-discord"
 
 const ping = (id: string, postedAt: string) => ({ messageUrl: `https://discord.com/channels/1/2/${id}`, postedAt })
 
@@ -79,5 +79,16 @@ describe("answersRevision", () => {
     expect(answersRevision({ ...answers, ben: "MAYBE" })).not.toBe(answersRevision(answers))
     expect(answersRevision({ ...answers, dora: "FIX" })).not.toBe(answersRevision(answers))
     expect(Number.isInteger(answersRevision(answers)) && answersRevision(answers) >= 0).toBe(true)
+  })
+})
+
+describe("the announcement the bot posts", () => {
+  it("sets one emoji per answer, which reads back the way a snapshot names it", () => {
+    expect(ANNOUNCEMENT_EMOJIS.map((e) => e.answer)).toEqual(["FIX", "PARTIAL", "MAYBE", "OUT"])
+    expect(announcementMapping()).toEqual({ "unicode:✅": "FIX", "unicode:🕗": "PARTIAL", "unicode:❔": "MAYBE", "unicode:❌": "OUT" })
+  })
+
+  it("asks by default who is there on the match day and says what each emoji means", () => {
+    expect(announcementText("Match Day 2", new Date("2026-10-28T00:00:00.000Z"))).toBe("Who is there for Match Day 2 on Wed 28.10.?\n✅ Fix · 🕗 Partly · ❔ Maybe · ❌ Out")
   })
 })

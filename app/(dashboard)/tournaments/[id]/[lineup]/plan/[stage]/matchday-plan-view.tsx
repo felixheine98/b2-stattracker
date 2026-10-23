@@ -275,6 +275,8 @@ export function MatchdayPlanView({ initial, apiPath, title, links, dayFormats, d
                 answers={Object.fromEntries(plan.kader.map((p) => [p.id, answerOf(p.id) ?? null]))}
                 revision={answersRevision(Object.fromEntries(plan.kader.map((p) => [p.id, answerOf(p.id) ?? null])))}
                 onApplied={reload}
+                stage={title.stage}
+                day={plan.matches.find((m) => m.date)?.date?.toString() ?? title.day}
               />
             </div>
           )}

@@ -3,13 +3,17 @@ import { PrismaClient } from "@prisma/client"
 import { execFileSync } from "node:child_process"
 
 // The route runs against a temporary PostgreSQL schema; who is signed in and what the bot answers is given by the test
-const state = vi.hoisted(() => ({ client: undefined as unknown, session: null as unknown, snapshot: null as unknown, announcements: [] as unknown[] }))
+const state = vi.hoisted(() => ({ client: undefined as unknown, session: null as unknown, snapshot: null as unknown, announcements: [] as unknown[], posted: [] as unknown[] }))
 vi.mock("@/lib/db", () => ({ get db() { return state.client } }))
 vi.mock("@/lib/auth", () => ({ auth: async () => state.session }))
 vi.mock("@/lib/discord-bot", async (original) => ({
   ...(await original<typeof import("@/lib/discord-bot")>()),
   fetchReactions: async () => state.snapshot,
   fetchAnnouncements: async () => state.announcements,
+  postAnnouncement: async (channelId: string, text: string, emojis: string[]) => {
+    state.posted.push({ channelId, text, emojis })
+    return { messageUrl: `https://discord.com/channels/1/${channelId}/77`, messageId: "77", channelId, postedAt: "2026-10-20T18:00:00.000Z", author: "B2 Bot", text }
+  },
 }))
 import { POST } from "./route"
 import { PATCH } from "../route"
@@ -111,5 +115,16 @@ describe.skipIf(process.env.DB_TESTS !== "1")("Discord for the matchday planning
     state.session = { user: { id: ids.manager, role: "PLAYER" } }
     const fetched = await (await post({ action: "fetch" })).json()
     expect((await post({ action: "apply", token: fetched.token, emojiMapping: { "unicode:✅": "FIX", "unicode:🕗": "PARTIAL" }, resolutions: {} }, ids.stage2)).status).toBe(400)
+  })
+
+  it("lets the bot post the announcement in the lineup channel and takes it with its emojis already meaning their answers", async () => {
+    state.session = { user: { id: ids.manager, role: "PLAYER" } }
+    expect((await post({ action: "post", text: "" }, ids.stage2)).status).toBe(400)
+    expect((await post({ action: "post", text: "Who is there?" }, ids.stage2)).status).toBe(200)
+    expect(state.posted).toEqual([{ channelId: "22", text: "Who is there?", emojis: ["✅", "🕗", "❔", "❌"] }])
+    const plan = await client.matchdayPlan.findFirstOrThrow({ where: { lineupId: ids.lineup, stageId: ids.stage2 } })
+    expect(plan.discordSettings).toEqual({ messageUrl: "https://discord.com/channels/1/22/77", emojiMapping: { "unicode:✅": "FIX", "unicode:🕗": "PARTIAL", "unicode:❔": "MAYBE", "unicode:❌": "OUT" } })
+    state.session = { user: { id: ids.other, role: "PLAYER" } }
+    expect((await post({ action: "post", text: "Who is there?" }, ids.stage2)).status).toBe(403)
   })
 })
