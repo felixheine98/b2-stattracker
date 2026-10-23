@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { ANNOUNCEMENT_EMOJIS, announcementLegend, announcementMapping, insertAt, announcementText, answersRevision, matchdayReactionPreview, parseChannelLink, suggestAnnouncement } from "./matchday-discord"
+import { DEFAULT_EMOJIS, announcementText, checkEmojis, emojiLegend, emojiMapping, insertAt, lastUsedEmojis, searchEmojis, answersRevision, matchdayReactionPreview, parseChannelLink, suggestAnnouncement } from "./matchday-discord"
 
 const ping = (id: string, postedAt: string) => ({ messageUrl: `https://discord.com/channels/1/2/${id}`, postedAt })
 
@@ -82,14 +82,48 @@ describe("answersRevision", () => {
   })
 })
 
-describe("the announcement the bot posts", () => {
-  it("sets one emoji per answer, which reads back the way a snapshot names it", () => {
-    expect(ANNOUNCEMENT_EMOJIS.map((e) => e.answer)).toEqual(["FIX", "PARTIAL", "MAYBE", "OUT"])
-    expect(announcementMapping()).toEqual({ "unicode:✅": "FIX", "unicode:🕗": "PARTIAL", "unicode:❔": "MAYBE", "unicode:❌": "OUT" })
+describe("the emojis of an announcement the bot posts", () => {
+  const custom = { key: "custom:501", text: "<:b2fix:501>", answer: "FIX" as const }
+
+  it("start with one emoji per answer, which read back the way a snapshot names them", () => {
+    expect(DEFAULT_EMOJIS.map((e) => [e.text, e.answer])).toEqual([["✅", "FIX"], ["🕗", "PARTIAL"], ["❔", "MAYBE"], ["❌", "OUT"]])
+    expect(emojiMapping(DEFAULT_EMOJIS)).toEqual({ "unicode:✅": "FIX", "unicode:🕗": "PARTIAL", "unicode:❔": "MAYBE", "unicode:❌": "OUT" })
   })
 
-  it("asks by default who is there on the match day and says what each emoji means", () => {
-    expect(announcementText("Match Day 2", new Date("2026-10-28T00:00:00.000Z"))).toBe("Who is there for Match Day 2 on Wed 28.10.?\n✅ Fix · 🕗 Partly · ❔ Maybe · ❌ Out")
+  it("can be any emojis, the server's own too, and several for one answer", () => {
+    const choices = [custom, { key: "unicode:👍", text: "👍", answer: "FIX" as const }, { key: "unicode:🚫", text: "🚫", answer: "OUT" as const }]
+    expect(emojiMapping(choices)).toEqual({ "custom:501": "FIX", "unicode:👍": "FIX", "unicode:🚫": "OUT" })
+    expect(emojiLegend(choices)).toBe("<:b2fix:501> Fix · 👍 Fix · 🚫 Out")
+    expect(checkEmojis(choices)).toBeNull()
+  })
+
+  it("refuse no emoji, too many, the same emoji twice and a key that does not match the emoji", () => {
+    expect(checkEmojis([])).toMatch(/at least one/i)
+    expect(checkEmojis(Array.from({ length: 11 }, (_, i) => ({ key: `custom:${500 + i}`, text: `<:e${i}:${500 + i}>`, answer: "FIX" as const })))).toMatch(/at most 10/i)
+    expect(checkEmojis([DEFAULT_EMOJIS[0], { ...DEFAULT_EMOJIS[0], answer: "OUT" }])).toMatch(/twice/i)
+    expect(checkEmojis([{ key: "custom:501", text: "<:b2fix:999>", answer: "FIX" }])).toMatch(/emoji/i)
+    expect(checkEmojis([{ key: "unicode:✅", text: "❌", answer: "FIX" }])).toMatch(/emoji/i)
+  })
+
+  it("offer the emojis the lineup used last, otherwise the default ones", () => {
+    const mine = [custom]
+    expect(lastUsedEmojis([{ emojis: DEFAULT_EMOJIS, postedAt: "2026-10-13T18:00:00.000Z" }, { emojis: mine, postedAt: "2026-10-20T18:00:00.000Z" }, {}])).toEqual(mine)
+    expect(lastUsedEmojis([{}])).toEqual(DEFAULT_EMOJIS)
+  })
+
+  it("ask by default who is there on the match day and say what each emoji means", () => {
+    expect(announcementText("Match Day 2", new Date("2026-10-28T00:00:00.000Z"), DEFAULT_EMOJIS)).toBe("Who is there for Match Day 2 on Wed 28.10.?\n✅ Fix · 🕗 Partly · ❔ Maybe · ❌ Out")
+  })
+})
+
+describe("searchEmojis", () => {
+  const server = [{ key: "custom:501", text: "<:b2fix:501>", name: "b2fix", imageUrl: "https://cdn.discordapp.com/emojis/501.png" }]
+
+  it("finds the server's own emojis and common ones by name, the server's first", () => {
+    expect(searchEmojis("fix", server).map((e) => e.key)).toEqual(["custom:501", "unicode:✅"])
+    expect(searchEmojis("b2", server).map((e) => e.key)).toEqual(["custom:501"])
+    expect(searchEmojis("thumb", server).map((e) => e.text)).toContain("👍")
+    expect(searchEmojis("", server)[0].key).toBe("custom:501")
   })
 })
 
@@ -97,6 +131,6 @@ describe("insertAt", () => {
   it("puts the text where the cursor is, replacing a selection, and moves the cursor behind it", () => {
     expect(insertAt("Who is there?", 13, 13, " ✅")).toEqual({ text: "Who is there? ✅", cursor: 15 })
     expect(insertAt("Fix: X", 5, 6, "✅")).toEqual({ text: "Fix: ✅", cursor: 6 })
-    expect(insertAt("", 0, 0, announcementLegend())).toEqual({ text: "✅ Fix · 🕗 Partly · ❔ Maybe · ❌ Out", cursor: announcementLegend().length })
+    expect(insertAt("ab", 1, 1, "<:b2fix:501>")).toEqual({ text: "a<:b2fix:501>b", cursor: 13 })
   })
 })

@@ -3,6 +3,7 @@ import type { Prisma } from "@prisma/client"
 import { db } from "./db"
 import { LINEUP_ACCESS_SELECT } from "./lineup-access-db"
 import { matchLineup, type MatchdayAnswer, type PlanVariant } from "./matchday-plan"
+import type { EmojiChoice } from "./matchday-discord"
 import { sortMatches } from "./match-order"
 import type { Format } from "@/types"
 
@@ -60,6 +61,9 @@ export interface MatchdayDiscordSettings {
   messageUrl?: string
   emojiMapping?: Record<string, MatchdayAnswer | "">
   fetchedAt?: string
+  // For an announcement the bot posted: its emojis in order, and when it went out
+  emojis?: EmojiChoice[]
+  postedAt?: string
 }
 
 // The map of every format on a match day

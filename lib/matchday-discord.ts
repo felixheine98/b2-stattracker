@@ -51,27 +51,85 @@ export function answersRevision(answers: Record<string, MatchdayAnswer | null | 
   return hash >>> 0
 }
 
-// The emojis the bot sets under the announcement it posts, one per answer
-export const ANNOUNCEMENT_EMOJIS: ReadonlyArray<{ emoji: string; answer: MatchdayAnswer; label: string }> = [
-  { emoji: "✅", answer: "FIX", label: "Fix" },
-  { emoji: "🕗", answer: "PARTIAL", label: "Partly" },
-  { emoji: "❔", answer: "MAYBE", label: "Maybe" },
-  { emoji: "❌", answer: "OUT", label: "Out" },
+// An emoji the bot sets under the announcement it posts, and the answer it stands for. `key` names it
+// the way a reaction snapshot does ("unicode:✅", "custom:<id>"), `text` is how it is written in a
+// message and given to the bot to react with ("✅", "<:name:id>").
+export interface EmojiChoice {
+  key: string
+  text: string
+  answer: MatchdayAnswer
+}
+
+const LABEL: Record<MatchdayAnswer, string> = { FIX: "Fix", PARTIAL: "Partly", MAYBE: "Maybe", OUT: "Out" }
+
+export const DEFAULT_EMOJIS: readonly EmojiChoice[] = [
+  { key: "unicode:✅", text: "✅", answer: "FIX" },
+  { key: "unicode:🕗", text: "🕗", answer: "PARTIAL" },
+  { key: "unicode:❔", text: "❔", answer: "MAYBE" },
+  { key: "unicode:❌", text: "❌", answer: "OUT" },
 ]
 
-// What the emojis of a posted announcement mean, keyed the way a reaction snapshot names them
-export const announcementMapping = (): Record<string, MatchdayAnswer> =>
-  Object.fromEntries(ANNOUNCEMENT_EMOJIS.map((e) => [`unicode:${e.emoji}`, e.answer]))
+// What the emojis of a posted announcement mean
+export const emojiMapping = (choices: readonly EmojiChoice[]): Record<string, MatchdayAnswer> =>
+  Object.fromEntries(choices.map((e) => [e.key, e.answer]))
+
+// What each emoji means, as the announcement says it
+export const emojiLegend = (choices: readonly EmojiChoice[]): string => choices.map((e) => `${e.text} ${LABEL[e.answer]}`).join(" · ")
+
+const CUSTOM = /^<a?:\w{2,32}:(\d{1,20})>$/
+
+// What is wrong with the emojis of an announcement, or null
+export function checkEmojis(choices: readonly EmojiChoice[]): string | null {
+  if (choices.length === 0) return "Choose at least one emoji."
+  if (choices.length > 10) return "Choose at most 10 emojis."
+  if (new Set(choices.map((e) => e.key)).size !== choices.length) return "An emoji is chosen twice."
+  for (const e of choices) {
+    const custom = e.text.match(CUSTOM)
+    const fits = custom ? e.key === `custom:${custom[1]}` : e.key === `unicode:${e.text}` && e.text.length > 0 && e.text.length <= 16 && !/[\s<>:]/.test(e.text)
+    if (!fits || !(e.answer in LABEL)) return "An emoji cannot be read. Choose it again."
+  }
+  return null
+}
+
+// The emojis of the lineup's latest posted announcement, otherwise the default ones
+export function lastUsedEmojis(settings: Array<{ emojis?: readonly EmojiChoice[]; postedAt?: string }>): EmojiChoice[] {
+  const posted = settings.filter((s) => s.emojis?.length && s.postedAt).sort((a, b) => b.postedAt!.localeCompare(a.postedAt!))
+  return [...(posted[0]?.emojis ?? DEFAULT_EMOJIS)]
+}
 
 const weekday = new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/Berlin", weekday: "short" })
 const dayMonth = new Intl.DateTimeFormat("de-DE", { timeZone: "Europe/Berlin", day: "2-digit", month: "2-digit" })
 
-// What each emoji means, as the announcement says it
-export const announcementLegend = (): string => ANNOUNCEMENT_EMOJIS.map((e) => `${e.emoji} ${e.label}`).join(" · ")
-
 // The text the planning offers for the announcement, to be changed before posting
-export function announcementText(stage: string, day: Date): string {
-  return `Who is there for ${stage} on ${weekday.format(day)} ${dayMonth.format(day)}?\n${announcementLegend()}`
+export function announcementText(stage: string, day: Date, choices: readonly EmojiChoice[]): string {
+  return `Who is there for ${stage} on ${weekday.format(day)} ${dayMonth.format(day)}?\n${emojiLegend(choices)}`
+}
+
+// One of the server's own emojis, as the bot lists them
+export interface ServerEmoji {
+  key: string
+  text: string
+  name: string
+  imageUrl: string
+}
+
+// Common emojis to choose from without copying them, with words to find them by
+const COMMON: Array<[string, string]> = [
+  ["✅", "check yes fix done"], ["✔️", "check mark yes"], ["☑️", "ballot check yes"], ["👍", "thumbs up yes"], ["👌", "ok"], ["💪", "strong muscle"],
+  ["🟢", "green circle yes"], ["🟩", "green square yes"], ["💚", "green heart"], ["🔥", "fire"], ["⭐", "star"], ["🏁", "race flag finish"], ["🏎️", "race car"],
+  ["🕗", "clock eight partly late time"], ["🕘", "clock nine time"], ["🕙", "clock ten time"], ["⏰", "alarm clock time late"], ["⏳", "hourglass time partly"], ["🌗", "half moon partly"],
+  ["🟡", "yellow circle partly maybe"], ["🟨", "yellow square maybe"], ["🟠", "orange circle partly"],
+  ["❔", "question maybe"], ["❓", "question red maybe"], ["🤔", "thinking maybe"], ["🤷", "shrug maybe"], ["🔵", "blue circle maybe"],
+  ["❌", "cross no out"], ["✖️", "multiply no out"], ["🚫", "no entry prohibited out"], ["⛔", "no entry out"], ["👎", "thumbs down no out"], ["🔴", "red circle no out"], ["🟥", "red square no out"], ["😴", "sleeping out"],
+  ["1️⃣", "one first match"], ["2️⃣", "two second match"], ["3️⃣", "three third match"], ["4️⃣", "four fourth match"], ["5️⃣", "five fifth match"],
+  ["🅰️", "a letter"], ["🅱️", "b letter"], ["🎮", "game controller"], ["🏆", "trophy cup"], ["🎉", "party"],
+]
+
+// The emojis whose name holds the typed text: the server's own first, then common ones
+export function searchEmojis(query: string, server: ServerEmoji[]): Array<{ key: string; text: string; name: string; imageUrl?: string }> {
+  const text = query.trim().toLowerCase()
+  const common = COMMON.map(([emoji, name]) => ({ key: `unicode:${emoji}`, text: emoji, name }))
+  return [...server, ...common].filter((e) => !text || e.name.toLowerCase().includes(text))
 }
 
 // Text inserted at the cursor of a text field, in place of what is selected; the cursor goes behind it

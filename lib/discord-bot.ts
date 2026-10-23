@@ -2,6 +2,7 @@ import { z } from "zod"
 import { createHmac, timingSafeEqual } from "node:crypto"
 import type { ReactionSnapshot } from "./discord-planning"
 import type { TrackedMessage } from "./reaction-log"
+import type { ServerEmoji } from "./matchday-discord"
 
 export const reactionSnapshotSchema = z.object({
   messageUrl: z.string(), fetchedAt: z.string().datetime(),
@@ -121,4 +122,18 @@ export async function postAnnouncement(channelId: string, text: string, emojis: 
   const posted = announcementsSchema.shape.announcements.element.parse(await response.json())
   if (posted.channelId !== channelId) throw new Error("The bot posted in a different channel.")
   return posted
+}
+
+const serverEmojisSchema = z.object({ emojis: z.array(z.object({
+  key: z.string().regex(/^custom:\d{1,20}$/), name: z.string().max(100), text: z.string().max(150), imageUrl: z.string().url(),
+})).max(5000) })
+
+// The server's own emojis, to choose the reactions of an announcement from
+export async function fetchServerEmojis(config: BotConfig = botConfig()): Promise<ServerEmoji[]> {
+  if (!config.url || !config.token) throw new Error("The Discord bot connection is not configured.")
+  const response = await fetch(new URL("/emojis", config.url), { headers: { Authorization: `Bearer ${config.token}` }, cache: "no-store", signal: AbortSignal.timeout(30000), redirect: "error" })
+  if (!response.ok) throw new Error("The bot could not list the server emojis.")
+  const { emojis } = serverEmojisSchema.parse(await response.json())
+  if (emojis.some(e => e.text.match(/^<a?:\w{2,32}:(\d{1,20})>$/)?.[1] !== e.key.slice(7))) throw new Error("The bot returned an emoji that cannot be read.")
+  return emojis
 }

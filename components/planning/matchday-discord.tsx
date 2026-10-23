@@ -1,15 +1,15 @@
 "use client"
 
-import { useRef, useState } from "react"
+import { useState } from "react"
 import Image from "next/image"
 import { ExternalLink, MessageCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Select } from "@/components/ui/select"
-import { Textarea } from "@/components/ui/textarea"
 import { BASE_PATH } from "@/lib/base-path"
 import { formatTime, formatTimeShort, previewSummary, type ReactionSnapshot } from "@/lib/discord-planning"
-import { ANNOUNCEMENT_EMOJIS, announcementLegend, announcementText, insertAt, matchdayReactionPreview } from "@/lib/matchday-discord"
+import { matchdayReactionPreview, type EmojiChoice, type ServerEmoji } from "@/lib/matchday-discord"
+import { AnnouncementForm } from "./announcement-form"
 import type { MatchdayAnswer } from "@/lib/matchday-plan"
 import type { MatchdayDiscordSettings } from "@/lib/matchday-plan-db"
 import { shownName } from "@/lib/player-names"
@@ -52,18 +52,8 @@ interface Props {
 }
 
 export function MatchdayDiscord({ apiPath, channelId: initialChannel, settings, kader, answers, revision, onApplied, stage, day }: Props) {
-  // The text of an announcement being written, null while none is
-  const [draft, setDraft] = useState<string | null>(null)
-  const draftField = useRef<HTMLTextAreaElement>(null)
-
-  // An emoji or the legend at the cursor, without copying it from somewhere
-  function insert(text: string) {
-    const field = draftField.current
-    if (!field || draft === null) return
-    const next = insertAt(draft, field.selectionStart, field.selectionEnd, text)
-    setDraft(next.text)
-    requestAnimationFrame(() => { field.focus(); field.setSelectionRange(next.cursor, next.cursor) })
-  }
+  // The announcement being written: the server's emojis and the lineup's last ones; null while none is
+  const [writing, setWriting] = useState<{ server: ServerEmoji[]; lastUsed: EmojiChoice[] } | null>(null)
   const [channelId, setChannelId] = useState(initialChannel)
   const [editingChannel, setEditingChannel] = useState(!initialChannel)
   const [channelLink, setChannelLink] = useState("")
@@ -96,9 +86,14 @@ export function MatchdayDiscord({ apiPath, channelId: initialChannel, settings, 
   })
 
   // The bot posts the announcement with its emojis; it is this match day's at once
-  const postDraft = () => run(async () => {
-    const data = await call({ action: "post", text: draft })
-    setMessageUrl(data.messageUrl); setMapping(data.emojiMapping); setFetchedAt(""); setDraft(null); setPings(null); setLoaded(null)
+  const write = () => run(async () => {
+    setPings(null)
+    setWriting(await call({ action: "emojis" }))
+  })
+
+  const post = (text: string, emojis: EmojiChoice[]) => run(async () => {
+    const data = await call({ action: "post", text, emojis })
+    setMessageUrl(data.messageUrl); setMapping(data.emojiMapping); setFetchedAt(""); setWriting(null); setLoaded(null)
     setSuccess("The bot posted the announcement. Reactions to it come with their time.")
   })
 
@@ -171,38 +166,16 @@ export function MatchdayDiscord({ apiPath, channelId: initialChannel, settings, 
         </form>
       )}
 
-      {draft !== null && (
-        <form className="space-y-2" onSubmit={(e) => { e.preventDefault(); void postDraft() }}>
-          <label className="block text-xs text-fg-soft">
-            The bot posts this in the lineup channel and sets the emojis under it. Mention a role or players to ping them.
-            <Textarea ref={draftField} className="mt-1" rows={3} value={draft} maxLength={2000} required disabled={busy} onChange={(e) => setDraft(e.target.value)} />
-          </label>
-          <div className="flex flex-wrap items-center gap-1.5" role="group" aria-label="Insert">
-            {ANNOUNCEMENT_EMOJIS.map((e) => (
-              <button key={e.emoji} type="button" title={`Insert ${e.emoji} (${e.label})`} aria-label={`Insert ${e.label} emoji`} disabled={busy}
-                onClick={() => insert(e.emoji)}
-                className="rounded-md border border-line bg-raised px-2 py-1 text-base leading-none hover:border-line-strong">
-                {e.emoji}
-              </button>
-            ))}
-            <button type="button" disabled={busy} onClick={() => insert(announcementLegend())}
-              className="rounded-md border border-line bg-raised px-2 py-1.5 text-xs text-fg-soft hover:border-line-strong hover:text-fg">
-              Insert legend
-            </button>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <Button type="submit" size="sm" disabled={busy || !draft.trim()}>{busy ? "Posting…" : "Post"}</Button>
-            <Button type="button" size="sm" variant="ghost" disabled={busy} onClick={() => setDraft(null)}>Cancel</Button>
-          </div>
-        </form>
+      {writing && (
+        <AnnouncementForm stage={stage} day={day} server={writing.server} lastUsed={writing.lastUsed} busy={busy} onPost={post} onCancel={() => setWriting(null)} />
       )}
 
-      {channelId && !editingChannel && !pings && draft === null && (
+      {channelId && !editingChannel && !pings && !writing && (
         <div className="flex flex-wrap items-center gap-2">
           {messageUrl ? (
             <Button size="sm" variant="outline" disabled={busy} onClick={read}>{busy ? "Working…" : "Fetch reactions"}</Button>
           ) : (
-            <Button size="sm" disabled={busy} onClick={() => setDraft(announcementText(stage, new Date(day)))}>Post announcement</Button>
+            <Button size="sm" disabled={busy} onClick={write}>Post announcement</Button>
           )}
           <Button size="sm" variant={messageUrl ? "ghost" : "outline"} disabled={busy} onClick={() => run(findPings)}>
             {messageUrl ? "Other announcement" : "Find announcement"}
@@ -243,7 +216,7 @@ export function MatchdayDiscord({ apiPath, channelId: initialChannel, settings, 
             )
           })}
           <div className="flex flex-wrap gap-2">
-            <Button size="sm" variant="outline" disabled={busy} onClick={() => { setPings(null); setDraft(announcementText(stage, new Date(day))) }}>Post a new announcement</Button>
+            <Button size="sm" variant="outline" disabled={busy} onClick={write}>Post a new announcement</Button>
             <Button size="sm" variant="ghost" disabled={busy} onClick={() => setPings(null)}>Cancel</Button>
           </div>
         </div>

@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest"
-import { fetchAnnouncements, postAnnouncement, fetchReactions, fetchTrackedMessages, removeTrackedMessage, signReactionSnapshot, verifyReactionSnapshot } from "./discord-bot"
+import { fetchAnnouncements, fetchServerEmojis, postAnnouncement, fetchReactions, fetchTrackedMessages, removeTrackedMessage, signReactionSnapshot, verifyReactionSnapshot } from "./discord-bot"
 
 const snapshot = { messageUrl: "https://discord.com/channels/111/222/333", fetchedAt: "2026-10-15T12:00:00Z", users: [], reactions: [] }
 
@@ -68,5 +68,14 @@ describe("Discord bot boundary", () => {
     expect(String(fetch.mock.calls[0][0])).toBe("http://bot:3080/announcements")
     expect(fetch.mock.calls[0][1]).toMatchObject({ method: "POST", body: JSON.stringify({ channelId: "222", text: "Who?", emojis: ["✅", "❌"] }) })
     await expect(postAnnouncement("222", "Who?", ["✅"], config)).rejects.toThrow()
+  })
+  it("lists the server's own emojis and refuses ones the bot made up", async () => {
+    const emoji = { key: "custom:501", name: "b2fix", text: "<:b2fix:501>", imageUrl: "https://cdn.discordapp.com/emojis/501.png" }
+    const fetch = vi.fn().mockResolvedValueOnce(Response.json({ emojis: [emoji] })).mockResolvedValueOnce(Response.json({ emojis: [{ ...emoji, text: "<:b2fix:999>" }] }))
+    vi.stubGlobal("fetch", fetch)
+    const config = { url: "http://bot:3080", token: "secret" }
+    expect(await fetchServerEmojis(config)).toEqual([emoji])
+    expect(String(fetch.mock.calls[0][0])).toBe("http://bot:3080/emojis")
+    await expect(fetchServerEmojis(config)).rejects.toThrow()
   })
 })

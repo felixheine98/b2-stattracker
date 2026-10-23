@@ -10,6 +10,7 @@ vi.mock("@/lib/discord-bot", async (original) => ({
   ...(await original<typeof import("@/lib/discord-bot")>()),
   fetchReactions: async () => state.snapshot,
   fetchAnnouncements: async () => state.announcements,
+  fetchServerEmojis: async () => [{ key: "custom:501", name: "b2fix", text: "<:b2fix:501>", imageUrl: "https://cdn.discordapp.com/emojis/501.png" }],
   postAnnouncement: async (channelId: string, text: string, emojis: string[]) => {
     state.posted.push({ channelId, text, emojis })
     return { messageUrl: `https://discord.com/channels/1/${channelId}/77`, messageId: "77", channelId, postedAt: "2026-10-20T18:00:00.000Z", author: "B2 Bot", text }
@@ -117,14 +118,21 @@ describe.skipIf(process.env.DB_TESTS !== "1")("Discord for the matchday planning
     expect((await post({ action: "apply", token: fetched.token, emojiMapping: { "unicode:✅": "FIX", "unicode:🕗": "PARTIAL" }, resolutions: {} }, ids.stage2)).status).toBe(400)
   })
 
-  it("lets the bot post the announcement in the lineup channel and takes it with its emojis already meaning their answers", async () => {
+  it("lets the bot post the announcement with the chosen emojis, which mean their answers from the start, and offers them next time", async () => {
     state.session = { user: { id: ids.manager, role: "PLAYER" } }
-    expect((await post({ action: "post", text: "" }, ids.stage2)).status).toBe(400)
-    expect((await post({ action: "post", text: "Who is there?" }, ids.stage2)).status).toBe(200)
-    expect(state.posted).toEqual([{ channelId: "22", text: "Who is there?", emojis: ["✅", "🕗", "❔", "❌"] }])
+    const emojis = [{ key: "custom:501", text: "<:b2fix:501>", answer: "FIX" }, { key: "unicode:🚫", text: "🚫", answer: "OUT" }]
+    const first = await (await post({ action: "emojis" }, ids.stage2)).json()
+    expect(first.server).toHaveLength(1)
+    expect(first.lastUsed.map((e: { text: string }) => e.text)).toEqual(["✅", "🕗", "❔", "❌"])
+    expect((await post({ action: "post", text: "", emojis }, ids.stage2)).status).toBe(400)
+    expect((await post({ action: "post", text: "Who?", emojis: [{ key: "custom:501", text: "<:b2fix:999>", answer: "FIX" }] }, ids.stage2)).status).toBe(400)
+    expect((await post({ action: "post", text: "Who is there?", emojis }, ids.stage2)).status).toBe(200)
+    expect(state.posted).toEqual([{ channelId: "22", text: "Who is there?", emojis: ["<:b2fix:501>", "🚫"] }])
     const plan = await client.matchdayPlan.findFirstOrThrow({ where: { lineupId: ids.lineup, stageId: ids.stage2 } })
-    expect(plan.discordSettings).toEqual({ messageUrl: "https://discord.com/channels/1/22/77", emojiMapping: { "unicode:✅": "FIX", "unicode:🕗": "PARTIAL", "unicode:❔": "MAYBE", "unicode:❌": "OUT" } })
+    expect(plan.discordSettings).toEqual({ messageUrl: "https://discord.com/channels/1/22/77", emojiMapping: { "custom:501": "FIX", "unicode:🚫": "OUT" }, emojis, postedAt: "2026-10-20T18:00:00.000Z" })
+    // Another match day of the lineup starts with these emojis
+    expect((await (await post({ action: "emojis" })).json()).lastUsed).toEqual(emojis)
     state.session = { user: { id: ids.other, role: "PLAYER" } }
-    expect((await post({ action: "post", text: "Who is there?" }, ids.stage2)).status).toBe(403)
+    expect((await post({ action: "post", text: "Who is there?", emojis }, ids.stage2)).status).toBe(403)
   })
 })

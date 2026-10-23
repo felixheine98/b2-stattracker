@@ -185,9 +185,10 @@ Die Matchday-Planung (`/tournaments/[comp]/[lineup]/plan/[stage]`) hat über dem
 Bereich „Discord“, wenn die App einen Bot kennt (`DISCORD_BOT_URL`):
 
 1. Einmal pro Lineup den Link zum Lineup-Channel eintragen (Channel oder eine Nachricht darin).
-2. „Post announcement“: Der Bot postet den (änderbaren) Text in den Lineup-Channel, setzt ✅ 🕗 ❔ ❌
-   darunter und ordnet die Nachricht dem Match Day zu; die Emojis bedeuten schon Fix, Partly,
-   Maybe, Out. Weiter mit Schritt 4.
+2. „Post announcement“: Emojis und ihre Bedeutung wählen (Server-Emojis und gängige Emojis per
+   Klick, vorbelegt mit denen des letzten Announcements des Lineups, sonst ✅ 🕗 ❔ ❌), Text prüfen.
+   Der Bot postet in den Lineup-Channel, setzt die Emojis darunter und ordnet die Nachricht dem
+   Match Day zu; die Emojis bedeuten schon ihre Antwort. Weiter mit Schritt 4.
 3. Alternativ: Wer den wöchentlichen Ping selbst postet, erwähnt darin den Bot (oder seine Rolle). „Find announcement“
    listet diese Pings und hebt den vorgeschlagenen hervor; „Use this“ ordnet ihn dem Match Day zu.
 4. „Fetch reactions“, Emojis auf Fix/Partly/Maybe/Out oder Ignore setzen (pro Match Day gespeichert),
@@ -195,7 +196,7 @@ Bereich „Discord“, wenn die App einen Bot kennt (`DISCORD_BOT_URL`):
    erscheinen als Hinweis, verknüpfen bleibt bei Admins und Managern („Discord accounts“).
 
 Route: `/api/tournaments/[id]/lineups/[lineupId]/plan/[stageId]/discord` (Aktionen `channel`,
-`announcements`, `choose`, `post`, `settings`, `fetch`, `apply`), für Lineup-Manager, Admins und Manager,
+`announcements`, `choose`, `emojis`, `post`, `settings`, `fetch`, `apply`), für Lineup-Manager, Admins und Manager,
 nur mit `MATCHDAY_PLANNING=on`. Der Bot braucht dafür `ANNOUNCEMENTS=on` (Intent `GuildMessages`,
 nicht privilegiert) und in den Lineup-Channels Lesezugriff samt Nachrichtenhistorie, zum Posten
 außerdem „Nachrichten senden“ und „Reaktionen hinzufügen“.
