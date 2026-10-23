@@ -103,6 +103,9 @@ model Player {
   slug      String?  @unique
   // Name the player has "from the beginning"; later renames are PlayerNameChange rows
   initialName String
+  // What the team calls the player (e.g. "Dennis" for DMR_GameBros); shown instead of the
+  // gamertag everywhere, with the gamertag on hover (docs/adr/009-spitznamen.md)
+  nickname  String?
   country   String?
   // Result of the last comparison with trackmania.io; null name after a check = not found
   tmioName             String?

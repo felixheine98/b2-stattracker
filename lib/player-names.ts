@@ -57,8 +57,9 @@ export function planNameFrom(
 
 // Loaded tournament data with the names valid on the given day: players (objects with id, tmId
 // and name) and results of our players (playerId and playerName) get that name, plus today's
-// name as currentName. Everything else is passed through; the input is not modified.
-export function applyCompNames<T>(data: T, players: Array<{ id: string } & PlayerNameInfo>, date: Date | string): T {
+// name as currentName, every name and the nickname. Everything else is passed through; the
+// input is not modified.
+export function applyCompNames<T>(data: T, players: Array<{ id: string; nickname?: string | null } & PlayerNameInfo>, date: Date | string): T {
   const byId = new Map(players.map((p) => [p.id, p]))
 
   const walk = (value: unknown): unknown => {
@@ -72,14 +73,40 @@ export function applyCompNames<T>(data: T, players: Array<{ id: string } & Playe
       out.name = nameAt(player, date)
       out.currentName = currentName(player)
       out.allNames = allNames(player)
+      out.nickname = player.nickname ?? null
     }
     const resultOf = typeof out.playerId === "string" && typeof out.playerName === "string" ? byId.get(out.playerId) : undefined
     if (resultOf) {
       out.playerName = nameAt(resultOf, date)
       out.currentName = currentName(resultOf)
+      out.allNames = allNames(resultOf)
+      out.nickname = resultOf.nickname ?? null
     }
     return out
   }
 
   return walk(data) as T
+}
+
+// A name as it is shown: the nickname the team knows a player by (e.g. "Dennis" for
+// DMR_GameBros) where one is set, otherwise the gamertag
+export interface ShownNameInfo {
+  name: string
+  nickname?: string | null
+  currentName?: string | null
+  allNames?: string[]
+}
+
+export function shownName(player: ShownNameInfo): string {
+  return player.nickname || player.name
+}
+
+// The hover text of a shown name: behind a nickname the gamertag and any other names,
+// behind an old gamertag today's one; null when there is nothing to add
+export function nameHint(player: ShownNameInfo): string | null {
+  if (player.nickname) {
+    const others = (player.allNames ?? []).filter((n) => n !== player.name)
+    return others.length > 0 ? `${player.name} · other names: ${others.join(", ")}` : player.name
+  }
+  return player.currentName && player.currentName !== player.name ? `today: ${player.currentName}` : null
 }

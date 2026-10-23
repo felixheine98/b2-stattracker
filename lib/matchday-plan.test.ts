@@ -138,6 +138,12 @@ describe("seatSuggestions", () => {
     const answers = { a: "MAYBE", b: "FIX", c: "OUT", d: "PARTIAL" } as const
     expect(names(seatSuggestions("", players, answers, ["m"]))).toEqual(["BlinG.xoxo", "DrTilt.", "Agent.TM"])
   })
+
+  it("finds a player by the nickname as well as by the gamertag", () => {
+    const kader = [...players, { id: "e", name: "Existenzminimum", nickname: "Philip" }]
+    expect(names(seatSuggestions("phil", kader, {}, []))).toEqual(["Existenzminimum"])
+    expect(names(seatSuggestions("existenz", kader, {}, []))).toEqual(["Existenzminimum"])
+  })
 })
 
 describe("planDeviations", () => {

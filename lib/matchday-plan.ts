@@ -62,7 +62,7 @@ export function placePlayer(seats: Seats, format: Format, index: number, playerI
 // The players offered while typing into a place: names containing the typed text, those starting
 // with it first, then available players before maybe and unanswered ones. Players who are out or
 // already drive the format are not offered.
-export function seatSuggestions<P extends { id: string; name: string }>(
+export function seatSuggestions<P extends { id: string; name: string; nickname?: string | null }>(
   query: string,
   kader: P[],
   answers: Record<string, MatchdayAnswer | undefined>,
@@ -70,9 +70,11 @@ export function seatSuggestions<P extends { id: string; name: string }>(
 ): P[] {
   const text = query.trim().toLowerCase()
   const { top, below } = planPool(kader, answers)
-  const rank = (p: P) => (p.name.toLowerCase().startsWith(text) ? 0 : 1)
+  // Found by the gamertag as well as by the nickname
+  const names = (p: P) => [p.name, ...(p.nickname ? [p.nickname] : [])].map((n) => n.toLowerCase())
+  const rank = (p: P) => (names(p).some((n) => n.startsWith(text)) ? 0 : 1)
   return [...top, ...below]
-    .filter((p) => !taken.includes(p.id) && p.name.toLowerCase().includes(text))
+    .filter((p) => !taken.includes(p.id) && names(p).some((n) => n.includes(text)))
     .sort((a, b) => rank(a) - rank(b))
 }
 

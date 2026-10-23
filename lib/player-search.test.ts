@@ -23,4 +23,9 @@ describe("searchPlayers", () => {
     const renamed = [...players, { id: "rain", name: "raiin.wav", allNames: ["Raiiinnnn", "raiin.wav"] }]
     expect(searchPlayers(renamed, "raiii").map((p) => p.name)).toEqual(["raiin.wav"])
   })
+
+  it("also finds a player by the nickname the team gave them", () => {
+    const nicknamed = [...players, { id: "dennis", name: "DMR_GameBros", nickname: "Dennis" }]
+    expect(searchPlayers(nicknamed, "denn").map((p) => p.id)).toEqual(["dennis"])
+  })
 })

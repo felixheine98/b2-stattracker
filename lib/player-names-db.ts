@@ -20,6 +20,6 @@ export async function syncPlayerName(playerId: string) {
 
 // Loaded data of a tournament with every player named as on the tournament's start day
 export async function withCompNames<T>(data: T, tournament: { startDate?: Date | null; createdAt: Date }): Promise<T> {
-  const players = await db.player.findMany({ select: { id: true, initialName: true, nameChanges: true } })
+  const players = await db.player.findMany({ select: { id: true, initialName: true, nickname: true, nameChanges: true } })
   return applyCompNames(data, players, tournamentReferenceDate(tournament))
 }
