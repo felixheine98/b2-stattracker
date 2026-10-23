@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useRef, useState } from "react"
 import Image from "next/image"
 import { ExternalLink, MessageCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -9,7 +9,7 @@ import { Select } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
 import { BASE_PATH } from "@/lib/base-path"
 import { formatTime, formatTimeShort, previewSummary, type ReactionSnapshot } from "@/lib/discord-planning"
-import { announcementText, matchdayReactionPreview } from "@/lib/matchday-discord"
+import { ANNOUNCEMENT_EMOJIS, announcementLegend, announcementText, insertAt, matchdayReactionPreview } from "@/lib/matchday-discord"
 import type { MatchdayAnswer } from "@/lib/matchday-plan"
 import type { MatchdayDiscordSettings } from "@/lib/matchday-plan-db"
 import { shownName } from "@/lib/player-names"
@@ -54,6 +54,16 @@ interface Props {
 export function MatchdayDiscord({ apiPath, channelId: initialChannel, settings, kader, answers, revision, onApplied, stage, day }: Props) {
   // The text of an announcement being written, null while none is
   const [draft, setDraft] = useState<string | null>(null)
+  const draftField = useRef<HTMLTextAreaElement>(null)
+
+  // An emoji or the legend at the cursor, without copying it from somewhere
+  function insert(text: string) {
+    const field = draftField.current
+    if (!field || draft === null) return
+    const next = insertAt(draft, field.selectionStart, field.selectionEnd, text)
+    setDraft(next.text)
+    requestAnimationFrame(() => { field.focus(); field.setSelectionRange(next.cursor, next.cursor) })
+  }
   const [channelId, setChannelId] = useState(initialChannel)
   const [editingChannel, setEditingChannel] = useState(!initialChannel)
   const [channelLink, setChannelLink] = useState("")
@@ -165,8 +175,21 @@ export function MatchdayDiscord({ apiPath, channelId: initialChannel, settings, 
         <form className="space-y-2" onSubmit={(e) => { e.preventDefault(); void postDraft() }}>
           <label className="block text-xs text-fg-soft">
             The bot posts this in the lineup channel and sets the emojis under it. Mention a role or players to ping them.
-            <Textarea className="mt-1" rows={3} value={draft} maxLength={2000} required disabled={busy} onChange={(e) => setDraft(e.target.value)} />
+            <Textarea ref={draftField} className="mt-1" rows={3} value={draft} maxLength={2000} required disabled={busy} onChange={(e) => setDraft(e.target.value)} />
           </label>
+          <div className="flex flex-wrap items-center gap-1.5" role="group" aria-label="Insert">
+            {ANNOUNCEMENT_EMOJIS.map((e) => (
+              <button key={e.emoji} type="button" title={`Insert ${e.emoji} (${e.label})`} aria-label={`Insert ${e.label} emoji`} disabled={busy}
+                onClick={() => insert(e.emoji)}
+                className="rounded-md border border-line bg-raised px-2 py-1 text-base leading-none hover:border-line-strong">
+                {e.emoji}
+              </button>
+            ))}
+            <button type="button" disabled={busy} onClick={() => insert(announcementLegend())}
+              className="rounded-md border border-line bg-raised px-2 py-1.5 text-xs text-fg-soft hover:border-line-strong hover:text-fg">
+              Insert legend
+            </button>
+          </div>
           <div className="flex flex-wrap gap-2">
             <Button type="submit" size="sm" disabled={busy || !draft.trim()}>{busy ? "Posting…" : "Post"}</Button>
             <Button type="button" size="sm" variant="ghost" disabled={busy} onClick={() => setDraft(null)}>Cancel</Button>

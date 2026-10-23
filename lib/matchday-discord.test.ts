@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { ANNOUNCEMENT_EMOJIS, announcementMapping, announcementText, answersRevision, matchdayReactionPreview, parseChannelLink, suggestAnnouncement } from "./matchday-discord"
+import { ANNOUNCEMENT_EMOJIS, announcementLegend, announcementMapping, insertAt, announcementText, answersRevision, matchdayReactionPreview, parseChannelLink, suggestAnnouncement } from "./matchday-discord"
 
 const ping = (id: string, postedAt: string) => ({ messageUrl: `https://discord.com/channels/1/2/${id}`, postedAt })
 
@@ -90,5 +90,13 @@ describe("the announcement the bot posts", () => {
 
   it("asks by default who is there on the match day and says what each emoji means", () => {
     expect(announcementText("Match Day 2", new Date("2026-10-28T00:00:00.000Z"))).toBe("Who is there for Match Day 2 on Wed 28.10.?\n✅ Fix · 🕗 Partly · ❔ Maybe · ❌ Out")
+  })
+})
+
+describe("insertAt", () => {
+  it("puts the text where the cursor is, replacing a selection, and moves the cursor behind it", () => {
+    expect(insertAt("Who is there?", 13, 13, " ✅")).toEqual({ text: "Who is there? ✅", cursor: 15 })
+    expect(insertAt("Fix: X", 5, 6, "✅")).toEqual({ text: "Fix: ✅", cursor: 6 })
+    expect(insertAt("", 0, 0, announcementLegend())).toEqual({ text: "✅ Fix · 🕗 Partly · ❔ Maybe · ❌ Out", cursor: announcementLegend().length })
   })
 })

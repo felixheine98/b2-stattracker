@@ -66,8 +66,15 @@ export const announcementMapping = (): Record<string, MatchdayAnswer> =>
 const weekday = new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/Berlin", weekday: "short" })
 const dayMonth = new Intl.DateTimeFormat("de-DE", { timeZone: "Europe/Berlin", day: "2-digit", month: "2-digit" })
 
+// What each emoji means, as the announcement says it
+export const announcementLegend = (): string => ANNOUNCEMENT_EMOJIS.map((e) => `${e.emoji} ${e.label}`).join(" · ")
+
 // The text the planning offers for the announcement, to be changed before posting
 export function announcementText(stage: string, day: Date): string {
-  const legend = ANNOUNCEMENT_EMOJIS.map((e) => `${e.emoji} ${e.label}`).join(" · ")
-  return `Who is there for ${stage} on ${weekday.format(day)} ${dayMonth.format(day)}?\n${legend}`
+  return `Who is there for ${stage} on ${weekday.format(day)} ${dayMonth.format(day)}?\n${announcementLegend()}`
+}
+
+// Text inserted at the cursor of a text field, in place of what is selected; the cursor goes behind it
+export function insertAt(text: string, start: number, end: number, insert: string): { text: string; cursor: number } {
+  return { text: text.slice(0, start) + insert + text.slice(end), cursor: start + insert.length }
 }
