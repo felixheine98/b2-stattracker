@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { useState } from "react"
-import { AlertTriangle, ArrowLeft, CheckCircle2, ClipboardList, Copy, Pencil, Plus, Trash2, Users } from "lucide-react"
+import { AlertTriangle, ArrowLeft, CheckCircle2, ClipboardList, Copy, Pencil, Plus, StickyNote, Trash2, Users } from "lucide-react"
 import { PlayerAvatar } from "@/components/player-avatar"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -64,6 +64,8 @@ export function MatchdayPlanView({ initial, apiPath, title, links, dayFormats, d
   const [plan, setPlan] = useState<Plan>(initial)
   const [error, setError] = useState("")
   const [busy, setBusy] = useState(false)
+  // The kader stays one line per player; a note field only opens when there is a note or one is being written
+  const [noteOpen, setNoteOpen] = useState<string | null>(null)
   const [variantId, setVariantId] = useState(initial.publishedVariantId ?? initial.variants[0]?.id)
   const variant = plan.variants.find((v) => v.id === variantId) ?? plan.variants[0]
 
@@ -256,7 +258,7 @@ export function MatchdayPlanView({ initial, apiPath, title, links, dayFormats, d
                 const isOut = entry?.answer === "OUT"
                 const placed = dayFormatsOf(player.id)
                 return (
-                  <div key={player.id} className="space-y-2 px-3 py-2.5">
+                  <div key={player.id} className="space-y-1.5 px-3 py-2">
                     <div className="flex flex-wrap items-center gap-2">
                       <div className={cn("flex min-w-0 flex-1 items-center gap-1.5 text-sm font-medium", isOut ? "text-fg-subtle line-through" : "text-fg")}>
                         <PlayerAvatar player={player} className="h-4 w-4 text-[9px]" />
@@ -284,19 +286,35 @@ export function MatchdayPlanView({ initial, apiPath, title, links, dayFormats, d
                             </button>
                           )
                         })}
+                        {!entry?.note && noteOpen !== player.id && (
+                          <button
+                            type="button"
+                            aria-label={`Add a note on ${player.name}`}
+                            title="Add a note"
+                            onClick={() => setNoteOpen(player.id)}
+                            className="rounded-full border border-transparent px-1.5 py-1 text-fg-subtle hover:text-fg md:py-0.5"
+                          >
+                            <StickyNote size={13} />
+                          </button>
+                        )}
                       </div>
                     </div>
-                    <Input
-                      key={`${player.id}:${entry?.note ?? ""}`}
-                      aria-label={`Note on ${player.name}`}
-                      placeholder="Note, e.g. only until 22:00"
-                      defaultValue={entry?.note ?? ""}
-                      className="h-8 border-dashed text-xs"
-                      onBlur={(e) => {
-                        const note = e.target.value.trim()
-                        if (note !== (entry?.note ?? "")) void send({ action: "answer", playerId: player.id, answer: entry?.answer ?? null, note })
-                      }}
-                    />
+                    {(entry?.note || noteOpen === player.id) && (
+                      <Input
+                        key={`${player.id}:${entry?.note ?? ""}`}
+                        aria-label={`Note on ${player.name}`}
+                        placeholder="Note, e.g. only until 22:00"
+                        defaultValue={entry?.note ?? ""}
+                        autoFocus={noteOpen === player.id}
+                        className="h-7 border-dashed text-xs"
+                        onKeyDown={(e) => { if (e.key === "Enter") e.currentTarget.blur() }}
+                        onBlur={(e) => {
+                          setNoteOpen(null)
+                          const note = e.target.value.trim()
+                          if (note !== (entry?.note ?? "")) void send({ action: "answer", playerId: player.id, answer: entry?.answer ?? null, note })
+                        }}
+                      />
+                    )}
                     {entry?.answer === "PARTIAL" && plan.matches.length > 0 && (
                       <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-fg-muted">
                         <span>Not there for:</span>
