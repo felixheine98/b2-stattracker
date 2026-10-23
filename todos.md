@@ -14,7 +14,7 @@ Ideen, die noch kein Todo sind: [ideen.md](ideen.md)
   - [x] schritt 2: planungsseite pro spieltag (kader, tagesbesetzung per drag & drop und eingabe, hinweise, finalisieren, veröffentlichter stand am match) (in Dev geprüft 23.10.2026)
   - [x] schritt 3: vorbelegung der rundeneingabe (fahrer + map des spieltags), planabweichung im csv- und ecm-import (nur hinweis), „geplant“ am match (in Dev geprüft 23.10.2026)
   - [x] schritt 3: vorbelegung der sub-matches (in Dev geprüft 23.10.2026)
-  - [ ] schritt 4: discord (lineup-channel, bot erkennt markierten ping, abruf durch lineup-manager)
+  - [ ] schritt 4: discord (lineup-channel, bot erkennt markierten ping, abruf durch lineup-manager) (gebaut, Felix prüft in Dev mit einem echten Ping)
   - [ ] entscheiden, ob die matchday-planung in production aktiviert wird
 
 - [ ] Discord-Reaktionen in der Comp-Planung ([Anbindung](docs/discord-planning.md))

@@ -38,6 +38,7 @@ export async function loadPlan(lineupId: string, stageId: string) {
     }),
     db.stage.findUniqueOrThrow({ where: { id: stageId }, select: { maps: true } }),
   ])
+  const { discordChannelId } = await db.tournamentLineup.findUniqueOrThrow({ where: { id: lineupId }, select: { discordChannelId: true } })
   return {
     planId: plan.id,
     kader: kader.map((s) => s.player),
@@ -49,7 +50,16 @@ export async function loadPlan(lineupId: string, stageId: string) {
     publishedVariantId: plan.publishedVariantId,
     publishedAt: plan.publishedAt,
     maps: (stage.maps ?? {}) as StageMaps,
+    discordSettings: plan.discordSettings as MatchdayDiscordSettings | null,
+    discordChannelId,
   }
+}
+
+// The matchday announcement and how its emojis read (docs/adr/008)
+export interface MatchdayDiscordSettings {
+  messageUrl?: string
+  emojiMapping?: Record<string, MatchdayAnswer | "">
+  fetchedAt?: string
 }
 
 // The map of every format on a match day

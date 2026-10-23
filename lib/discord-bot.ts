@@ -88,3 +88,23 @@ export async function removeTrackedMessage(messageId: string, config: BotConfig 
   const response = await fetch(new URL(`/tracked/${messageId}`, config.url), { method: "DELETE", headers: { Authorization: `Bearer ${config.token}` }, cache: "no-store", signal: AbortSignal.timeout(30000), redirect: "error" })
   if (!response.ok && response.status !== 404) throw new Error("The bot could not remove the message.")
 }
+
+const announcementsSchema = z.object({ announcements: z.array(z.object({
+  messageUrl: z.string(), messageId: z.string(), channelId: z.string(), postedAt: z.string().datetime(),
+  author: z.string().max(200).nullable(), text: z.string().max(1000),
+})).max(100) })
+
+export type BotAnnouncement = z.infer<typeof announcementsSchema>["announcements"][number]
+
+// The pings in a lineup channel that mark the bot, newest first (docs/adr/008)
+export async function fetchAnnouncements(channelId: string, config: BotConfig = botConfig()): Promise<BotAnnouncement[]> {
+  if (!/^\d{1,20}$/.test(channelId)) throw new Error("Invalid channel.")
+  if (!config.url || !config.token) throw new Error("The Discord bot connection is not configured.")
+  const url = new URL("/announcements", config.url)
+  url.search = new URLSearchParams({ channelId }).toString()
+  const response = await fetch(url, { headers: { Authorization: `Bearer ${config.token}` }, cache: "no-store", signal: AbortSignal.timeout(30000), redirect: "error" })
+  if (!response.ok) throw new Error("The bot could not read the lineup channel. Check the link and its channel permissions.")
+  const { announcements } = announcementsSchema.parse(await response.json())
+  if (announcements.some(a => a.channelId !== channelId)) throw new Error("The bot returned messages of a different channel.")
+  return announcements
+}

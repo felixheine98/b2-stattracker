@@ -403,6 +403,8 @@ model MatchdayPlan {
   published          Json?
   publishedVariantId String?
   publishedAt        DateTime?
+  // The matchday announcement, its emoji-to-answer choices and the last fetch: { messageUrl, emojiMapping, fetchedAt }
+  discordSettings    Json?
   createdAt          DateTime         @default(now())
   updatedAt          DateTime         @updatedAt
 
@@ -475,6 +477,8 @@ model TournamentLineup {
   tournament   Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
   name         String
   slug         String?
+  // The lineup's own Discord channel, where the weekly matchday ping marks the bot (docs/adr/008)
+  discordChannelId String?
   createdAt    DateTime   @default(now())
 
   slots    TournamentLineupSlot[]

@@ -36,6 +36,7 @@ export default async function MatchdayPlanPage({ params }: Props) {
       apiPath={`/api/tournaments/${tournament.id}/lineups/${lineup.id}/plan/${stageId}`}
       title={{ lineup: lineup.name, tournament: lineup.tournament.name, stage: stageName(stage, stages), day: stageDate(stage, stages, start).toISOString() }}
       links={{ tournament: tournamentPath(tournament), lineup: lineupPath(tournament, found), addMatch: `${lineupPath(tournament, found)}?addMatch=${stageId}`, match: Object.fromEntries(plan.matches.map((m) => [m.id, `${lineupPath(tournament, found)}/${m.slug ?? m.id}`])) }}
+      discord={!!process.env.DISCORD_BOT_URL}
       dayFormats={[...new Set(lineup.tournament.formats.filter((f) => f !== "TIME_ATTACK_10"))]}
       days={stages.filter((s) => s.type !== "SEEDING").map((s) => ({ id: s.id, name: stageName(s, stages), day: stageDate(s, stages, start).toISOString(), href: planPath(tournament, found, s), current: s.id === stageId }))}
     />

@@ -28,6 +28,8 @@ import type { Format } from "@/types"
 import { SeatInput } from "./seat-input"
 import { PlayerName } from "@/components/player-name"
 import { shownName } from "@/lib/player-names"
+import { MatchdayDiscord } from "@/components/planning/matchday-discord"
+import { answersRevision } from "@/lib/matchday-discord"
 
 // Dates arrive as strings from the server
 type Plan = Omit<LoadedPlan, "publishedAt" | "matches"> & {
@@ -42,6 +44,8 @@ interface Props {
   links: { tournament: string; lineup: string; addMatch: string; match: Record<string, string> }
   // The formats of the competition, for the day lineup
   dayFormats: Format[]
+  // Whether the answers can come from the lineup channel's Discord ping
+  discord: boolean
   // Every match day and playoff day to switch to, in order
   days: Array<{ id: string; name: string; day: string; href: string; current: boolean }>
 }
@@ -62,7 +66,7 @@ const DOT: Record<MatchdayAnswer, string> = {
 
 const DAY = "__day"
 
-export function MatchdayPlanView({ initial, apiPath, title, links, dayFormats, days }: Props) {
+export function MatchdayPlanView({ initial, apiPath, title, links, dayFormats, days, discord }: Props) {
   const [plan, setPlan] = useState<Plan>(initial)
   const [error, setError] = useState("")
   const [busy, setBusy] = useState(false)
@@ -97,6 +101,12 @@ export function MatchdayPlanView({ initial, apiPath, title, links, dayFormats, d
     }
     setPlan(data)
     return data as Plan
+  }
+
+  // The planning as it is now, after answers came in from Discord
+  async function reload() {
+    const res = await fetch(`${BASE_PATH}${apiPath}`, { cache: "no-store" })
+    if (res.ok) setPlan(await res.json())
   }
 
   // Changes the seats of the shown variant at once and saves them
@@ -255,6 +265,19 @@ export function MatchdayPlanView({ initial, apiPath, title, links, dayFormats, d
             Kader
           </h2>
           <p className="mb-3 text-xs text-fg-subtle">Set who is there, then type the players into the places of the lineup.</p>
+          {discord && (
+            <div className="mb-3">
+              <MatchdayDiscord
+                apiPath={apiPath}
+                channelId={plan.discordChannelId}
+                settings={plan.discordSettings}
+                kader={plan.kader}
+                answers={Object.fromEntries(plan.kader.map((p) => [p.id, answerOf(p.id) ?? null]))}
+                revision={answersRevision(Object.fromEntries(plan.kader.map((p) => [p.id, answerOf(p.id) ?? null])))}
+                onApplied={reload}
+              />
+            </div>
+          )}
           <Card>
             <CardContent className="divide-y divide-line p-0">
               {plan.kader.map((player) => {

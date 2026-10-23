@@ -21,6 +21,13 @@ describe("describeTracked", () => {
     expect(rows[2].link).toBeNull()
   })
 
+  it("keeps every message of a lineup channel as used by its lineup, the marked matchday pings", () => {
+    const rows = describeTracked("1", tracked, [...plannings, { name: "B2 Blue (lineup channel)", channelId: "2" }])
+    expect(rows.find(r => r.messageId === "10")).toMatchObject({ usedBy: "EMC S8", expiresAt: null })
+    expect(rows.find(r => r.messageId === "11")).toMatchObject({ usedBy: "B2 Blue (lineup channel)", expiresAt: null })
+    expect(rows.find(r => r.messageId === "12")?.usedBy).toBeNull()
+  })
+
   it("reads the message from links of other Discord hosts too", () => {
     expect(describeTracked("1", [tracked[0]], [{ name: "X", messageUrl: "https://ptb.discord.com/channels/1/2/10" }])[0].usedBy).toBe("X")
   })

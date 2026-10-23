@@ -29,9 +29,15 @@ export interface TrackedRow extends TrackedMessage {
 // A message nobody assigned to a comp is forgotten a week after tracking began
 export const UNUSED_KEEP_MS = 7 * 24 * 3600 * 1000
 
+// What claims tracked messages: a comp by its announcement, or a lineup by its channel (every marked
+// matchday ping in there, docs/adr/008); a message's own claim goes before its channel's
+export type TrackedClaim = { name: string; messageUrl: string } | { name: string; channelId: string }
+
 // Latest activity first; messages nobody reacted to since come last
-export function describeTracked(guildId: string, tracked: TrackedMessage[], plannings: Array<{ name: string; messageUrl: string }>): TrackedRow[] {
+export function describeTracked(guildId: string, tracked: TrackedMessage[], plannings: TrackedClaim[]): TrackedRow[] {
+  const channels = new Map(plannings.flatMap(p => ("channelId" in p ? [[p.channelId, p.name] as const] : [])))
   const announcements = new Map(plannings.flatMap(p => {
+    if (!("messageUrl" in p)) return []
     const id = p.messageUrl.match(/\/channels\/\d+\/\d+\/(\d+)$/)?.[1]
     return id ? [[id, p.name] as const] : []
   }))
@@ -39,7 +45,7 @@ export function describeTracked(guildId: string, tracked: TrackedMessage[], plan
     .map(t => ({
       ...t,
       link: t.channelId ? `https://discord.com/channels/${guildId}/${t.channelId}/${t.messageId}` : null,
-      usedBy: announcements.get(t.messageId) ?? null,
+      usedBy: announcements.get(t.messageId) ?? (t.channelId ? channels.get(t.channelId) : undefined) ?? null,
     }))
     .map(t => ({ ...t, expiresAt: t.usedBy ? null : new Date(new Date(t.trackedAt).getTime() + UNUSED_KEEP_MS).toISOString() }))
     .sort((a, b) => (b.lastAt ?? "").localeCompare(a.lastAt ?? ""))
@@ -53,7 +59,7 @@ export const expiredMessages = (rows: TrackedRow[], now: Date): string[] =>
 // removed, so no message is taken for unused only because the announcements could not be looked up.
 export async function removeExpiredMessages(deps: {
   list: () => Promise<{ guildId: string; messages: TrackedMessage[] }>
-  plannings: () => Promise<Array<{ name: string; messageUrl: string }>>
+  plannings: () => Promise<TrackedClaim[]>
   remove: (messageId: string) => Promise<void>
   now?: () => Date
 }): Promise<string[]> {

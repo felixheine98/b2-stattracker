@@ -59,6 +59,8 @@ Bestätigt (22.10.2026): Umsetzung in vier Schritten, jeder für sich in Dev pr�
 3. Übergang zum Ergebnis: Vorbelegung der Sub-Matches, Planabweichung im Import, „geplant“ am Match.
 4. Discord: Lineup-Channel, Bot erkennt den markierten Ping, Abruf und Übernahme durch Lineup-Manager.
 
+Umgesetzt (23.10.2026), Schritt 4: Der Lineup-Channel wird im Bereich „Discord“ der Planungsseite einmal pro Lineup als Link hinterlegt (Channel oder eine Nachricht darin), von Lineup-Managern, Admins und Managern. Ein Ping zählt als markiert, wenn er den Bot oder dessen eigene Rolle erwähnt; der Bot erfasst ihn beim Posten und liefert die markierten Pings unter den letzten 100 Nachrichten des Channels (`/announcements`). Vorgeschlagen wird der jüngste markierte Ping, der vor dem Ende des Match Days gepostet wurde (erstes Match mit Datum, sonst die Woche der Stage) und noch keinem anderen Match Day des Lineups zugeordnet ist; bestätigt Felix am 23.10.2026. Bot-Seite hinter `ANNOUNCEMENTS=on`, nur in `docker-compose.dev.yml`. Erfasste Nachrichten in einem hinterlegten Lineup-Channel gelten als zugewiesen und verfallen nicht nach einer Woche. Ob eine Vorschau veraltet ist, erkennt die App an einem Stand der Antworten des Kaders (`answersRevision`), weil die Matchday-Planung keine Revision hat.
+
 Später (Todo): Der Discord-Bot postet die finalisierte Besetzung in den passenden Channel.
 
 Bestätigt (22.10.2026): Die Planung liegt auf der Lineup-Seite, pro Stage: Lineup-Manager (und Admins/Manager) sehen bei jeder Stage einen Knopf „Plan“, der zur Seite `/tournaments/[comp]/[lineup]/plan/[stage]` führt (Verfügbarkeit, Varianten, Tagesbesetzung, Matches der Stage).

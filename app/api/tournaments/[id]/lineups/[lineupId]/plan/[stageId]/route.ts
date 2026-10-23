@@ -2,26 +2,9 @@ import type { Prisma } from "@prisma/client"
 import { NextResponse } from "next/server"
 import { z } from "zod"
 import { db } from "@/lib/db"
-import { matchdayPlanningEnabled } from "@/lib/features"
-import { mayEditLineup, sessionUser } from "@/lib/lineup-access-db"
 import { publishedSnapshot } from "@/lib/matchday-plan"
-import { emptyVariant, findPlanLineup, loadPlan } from "@/lib/matchday-plan-db"
-
-interface Params {
-  params: Promise<{ id: string; lineupId: string; stageId: string }>
-}
-
-// Who may plan: the lineup's managers (until a week after the tournament) and admins and managers
-async function access({ params }: Params): Promise<{ ok: false; response: NextResponse } | { ok: true; lineup: NonNullable<Awaited<ReturnType<typeof findPlanLineup>>>; stageId: string }> {
-  if (!matchdayPlanningEnabled()) return { ok: false, response: NextResponse.json({ error: "Not found" }, { status: 404 }) }
-  const user = await sessionUser()
-  if (!user) return { ok: false, response: NextResponse.json({ error: "Unauthorized" }, { status: 401 }) }
-  const { id, lineupId, stageId } = await params
-  const lineup = await findPlanLineup(id, lineupId, stageId)
-  if (!lineup) return { ok: false, response: NextResponse.json({ error: "Not found" }, { status: 404 }) }
-  if (!mayEditLineup(user, lineup)) return { ok: false, response: NextResponse.json({ error: "Forbidden" }, { status: 403 }) }
-  return { ok: true, lineup, stageId }
-}
+import { planAccess as access, type PlanParams as Params } from "@/lib/matchday-plan-access"
+import { emptyVariant, loadPlan } from "@/lib/matchday-plan-db"
 
 export async function GET(_req: Request, ctx: Params) {
   const found = await access(ctx)

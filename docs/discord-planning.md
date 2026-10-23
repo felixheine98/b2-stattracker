@@ -178,3 +178,22 @@ läuft, nativer Member-Bot neu gestartet und angemeldet. Echter Discord-Leseabru
 aus dem Produktions-App-Container über die neue API: HTTP 200. Öffentliche
 Login-Seite erreichbar, ursprüngliches B2-Logo und Favicon aktiv. Datenbanksicherung
 und vorheriges Produktionsimage wurden vor dem Austausch aufbewahrt.
+
+## Matchday-Announcements (ADR 008, nur Dev)
+
+Die Matchday-Planung (`/tournaments/[comp]/[lineup]/plan/[stage]`) hat über dem Kader einen
+Bereich „Discord“, wenn die App einen Bot kennt (`DISCORD_BOT_URL`):
+
+1. Einmal pro Lineup den Link zum Lineup-Channel eintragen (Channel oder eine Nachricht darin).
+2. Wer den wöchentlichen Ping postet, erwähnt darin den Bot (oder seine Rolle). „Find announcement“
+   listet diese Pings und hebt den vorgeschlagenen hervor; „Use this“ ordnet ihn dem Match Day zu.
+3. „Fetch reactions“, Emojis auf Fix/Partly/Maybe/Out oder Ignore setzen (pro Match Day gespeichert),
+   Vorschau prüfen, „Apply“. Nur verknüpfte Konten des Kaders werden übernommen; nicht verknüpfte
+   erscheinen als Hinweis, verknüpfen bleibt bei Admins und Managern („Discord accounts“).
+
+Route: `/api/tournaments/[id]/lineups/[lineupId]/plan/[stageId]/discord` (Aktionen `channel`,
+`announcements`, `choose`, `settings`, `fetch`, `apply`), für Lineup-Manager, Admins und Manager,
+nur mit `MATCHDAY_PLANNING=on`. Der Bot braucht dafür `ANNOUNCEMENTS=on` (Intent `GuildMessages`,
+nicht privilegiert) und Lesezugriff samt Nachrichtenhistorie auf die Lineup-Channels.
+Migration `20261023010000_add_matchday_discord`: `TournamentLineup.discordChannelId`,
+`MatchdayPlan.discordSettings`.

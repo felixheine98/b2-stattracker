@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest"
-import { fetchReactions, fetchTrackedMessages, removeTrackedMessage, signReactionSnapshot, verifyReactionSnapshot } from "./discord-bot"
+import { fetchAnnouncements, fetchReactions, fetchTrackedMessages, removeTrackedMessage, signReactionSnapshot, verifyReactionSnapshot } from "./discord-bot"
 
 const snapshot = { messageUrl: "https://discord.com/channels/111/222/333", fetchedAt: "2026-10-15T12:00:00Z", users: [], reactions: [] }
 
@@ -47,5 +47,16 @@ describe("Discord bot boundary", () => {
     // Already gone is as good as removed
     await expect(removeTrackedMessage("444", config)).resolves.toBeUndefined()
     await expect(removeTrackedMessage("not-an-id", config)).rejects.toThrow("message ID")
+  })
+  it("asks the bot for the marked pings of a channel and refuses pings from another channel", async () => {
+    const ping = { messageUrl: "https://discord.com/channels/111/222/333", messageId: "333", channelId: "222", postedAt: "2026-10-20T18:00:00.000Z", author: "Boss", text: "<@900> Match Day 2" }
+    const fetch = vi.fn().mockResolvedValueOnce(Response.json({ announcements: [ping] })).mockResolvedValueOnce(Response.json({ announcements: [{ ...ping, channelId: "999" }] }))
+    vi.stubGlobal("fetch", fetch)
+    const config = { url: "http://bot:3080", token: "secret" }
+    expect(await fetchAnnouncements("222", config)).toEqual([ping])
+    expect(String(fetch.mock.calls[0][0])).toBe("http://bot:3080/announcements?channelId=222")
+    expect(fetch.mock.calls[0][1].headers).toEqual({ Authorization: "Bearer secret" })
+    await expect(fetchAnnouncements("222", config)).rejects.toThrow()
+    await expect(fetchAnnouncements("bad", config)).rejects.toThrow()
   })
 })
