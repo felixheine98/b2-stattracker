@@ -2,6 +2,7 @@
 
 import { GuestBadge } from "@/components/guest-badge"
 import { Input } from "@/components/ui/input"
+import { shownName } from "@/lib/player-names"
 import { searchPlayers } from "@/lib/player-search"
 import { cn } from "@/lib/utils"
 import { Search } from "lucide-react"
@@ -9,7 +10,7 @@ import { useState } from "react"
 
 interface Props {
   // Players that can still be picked
-  players: Array<{ id: string; name: string; tmId: string }>
+  players: Array<{ id: string; name: string; tmId: string; nickname?: string | null; allNames?: string[] }>
   isGuest: (tmId: string) => boolean
   onPick: (id: string) => void
   placeholder?: string
@@ -69,7 +70,8 @@ export function PlayerSearch({ players, isGuest, onPick, placeholder = "Find a p
                 i === active && "bg-brand/10"
               )}
             >
-              {p.name}
+              {shownName(p)}
+              {p.nickname && <span className="text-xs text-fg-subtle">{p.name}</span>}
               {isGuest(p.tmId) && <GuestBadge />}
             </button>
           ))}

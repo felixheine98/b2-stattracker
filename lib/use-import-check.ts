@@ -2,20 +2,26 @@
 
 import { BASE_PATH } from "./base-path"
 import { dateHint, type DateCheck, type ImportHint, type ImportSides } from "./import-check"
+import type { Format } from "@/types"
 import { useEffect, useState } from "react"
 
 interface Loaded {
   key: string
   hints: ImportHint[]
   date: DateCheck | null
+  // Where the import differs from the finalised lineup of the match day; needs no confirming
+  planDeviations: string[]
   failed?: boolean
 }
+
+// Our drivers per sub-match, for comparing with the finalised lineup (docs/adr/008)
+export type DrivenPerFormat = Array<{ format: Format; drivers: Array<{ tmId: string; name: string }> }>
 
 // The check of an import against its match, for the preview of an import dialog (see
 // lib/import-check.ts). sides is what the dialog would save, null while there is nothing to
 // import. The server is asked anew whenever the sides change; a hint has to be confirmed
 // before saving, and a new set of hints asks for it again.
-export function useImportCheck(tournamentId: string, matchId: string, sides: ImportSides | null) {
+export function useImportCheck(tournamentId: string, matchId: string, sides: (ImportSides & { driven?: DrivenPerFormat }) | null) {
   const key = sides ? JSON.stringify(sides) : ""
   const [loaded, setLoaded] = useState<Loaded | null>(null)
   const [confirmedFor, setConfirmedFor] = useState<string | null>(null)
@@ -36,7 +42,7 @@ export function useImportCheck(tournamentId: string, matchId: string, sides: Imp
       if (controller.signal.aborted) return
       const data = res?.ok ? await res.json().catch(() => null) : null
       // A check that cannot be loaded does not stand in the way of the import
-      setLoaded(data ? { key, hints: data.hints, date: data.date } : { key, hints: [], date: null, failed: true })
+      setLoaded(data ? { key, hints: data.hints, date: data.date, planDeviations: data.planDeviations ?? [] } : { key, hints: [], date: null, planDeviations: [], failed: true })
     }, 300)
     return () => {
       clearTimeout(timer)
@@ -60,6 +66,7 @@ export function useImportCheck(tournamentId: string, matchId: string, sides: Imp
     loading: !!key && !current,
     failed: !!current?.failed,
     hints,
+    planDeviations: current?.planDeviations ?? [],
     dateOffer,
     takeDate,
     setTakeDate: setDateChoice,

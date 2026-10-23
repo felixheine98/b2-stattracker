@@ -66,6 +66,8 @@ services:
       TMIO_USER_AGENT: ${TMIO_USER_AGENT:-}
       # Format rules per competition (docs/adr/005): "on" or "off". Dev only; production ignores it.
       MATCH_RULES: "on"
+      # Lineup planning per match day (docs/adr/008): "on" or "off". Dev only; production ignores it.
+      MATCHDAY_PLANNING: "on"
       # Comparison page of old stats screenshots (docs/adr/007): "on" or "off". Dev only; production
       # ignores it. The screenshots are read from the local Discord export, mounted read-only.
       SUMMARY_COMPARE: "on"

@@ -23,7 +23,7 @@ export function StatsFilter({ groups, className }: { groups: Group[]; className?
 
   const chip = (on: boolean) =>
     cn(
-      "rounded-full border px-3.5 py-2 text-sm transition-colors",
+      "rounded-md min-h-11 border px-3.5 py-2 text-sm transition-colors",
       on ? "border-brand/40 bg-brand/15 text-brand-ink" : "border-line text-fg-muted"
     )
 
@@ -70,7 +70,7 @@ export function StatsFilter({ groups, className }: { groups: Group[]; className?
           <div className="absolute inset-x-0 bottom-0 max-h-[85dvh] space-y-4 overflow-y-auto rounded-t-2xl border-t border-line-strong bg-surface p-4 pb-[calc(1rem+env(safe-area-inset-bottom))]">
             {groups.map((g) => (
               <div key={g.label} className="space-y-2">
-                <h3 className="text-xs font-semibold uppercase tracking-wider text-fg-muted">{g.label}</h3>
+                <h3 className="text-sm font-semibold text-fg">{g.label}</h3>
                 <div className="flex flex-wrap gap-2">
                   <button type="button" aria-pressed={g.selected.length === 0} onClick={() => g.onChange([])} className={chip(g.selected.length === 0)}>
                     All

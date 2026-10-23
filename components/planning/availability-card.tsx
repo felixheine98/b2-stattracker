@@ -63,7 +63,7 @@ export function AvailabilityCard({ tournament, playerId, answer, inactive, note,
   }
 
   return (
-    <Card className={current === "OPEN" ? "border-brand/50" : ""}>
+    <Card className={current === "OPEN" ? "border-info/40 border-l-4 border-l-info" : ""}>
       <CardContent className="space-y-3 py-4">
         <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
           <p className="text-base font-semibold text-fg">

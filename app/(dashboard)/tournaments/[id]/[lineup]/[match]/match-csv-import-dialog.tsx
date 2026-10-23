@@ -110,7 +110,12 @@ export function MatchCsvImportDialog({ tournamentId, matchId, subMatches, ruleSe
   const imported = importing.flatMap((i) => plans[i].rounds)
   const side = (ours: boolean) => [...new Map(imported.flatMap((r) => r.results.filter((x) => x.isOurTeam === ours).map((x) => [x.tmId, { tmId: x.tmId, name: x.name }] as const))).values()]
   const times = imported.map((r) => r.time).filter((t) => t > 0)
-  const check = useImportCheck(tournamentId, matchId, roundCount > 0 ? { ours: side(true), foreign: side(false), firstRoundTime: times.length > 0 ? Math.min(...times) : null } : null)
+  // Our drivers of every sub-match, compared with the finalised lineup of its format
+  const driven = importing.map((i) => ({
+    format: subMatches.find((sm) => sm.id === targets[i])!.format,
+    drivers: [...new Map(plans[i].rounds.flatMap((r) => r.results.filter((x) => x.isOurTeam).map((x) => [x.tmId, { tmId: x.tmId, name: x.name }] as const))).values()],
+  }))
+  const check = useImportCheck(tournamentId, matchId, roundCount > 0 ? { ours: side(true), foreign: side(false), firstRoundTime: times.length > 0 ? Math.min(...times) : null, driven } : null)
 
   async function handleSave() {
     setError("")
@@ -212,7 +217,7 @@ export function MatchCsvImportDialog({ tournamentId, matchId, subMatches, ruleSe
                   <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                     {sides.map((side) => (
                       <div key={side.label}>
-                        <p className={cn("mb-1 text-[11px] font-semibold uppercase tracking-wider", side.label === "Us" ? "text-brand-ink" : "text-fg-subtle")}>{side.label}</p>
+                        <p className={cn("mb-1 text-[11px] font-semibold ", side.label === "Us" ? "text-brand-ink" : "text-fg-subtle")}>{side.label}</p>
                         <div className="flex flex-wrap gap-1.5">
                           {side.list.length === 0 && <span className="text-xs text-fg-subtle">nobody</span>}
                           {side.list.map((d) => {

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { currentStatus, guestTmIdsAt, inTeam, mayGetLogin, selectable, statusAt, suggestedStatus, trialTmIdsAt, type PlayerStatusInfo } from "./player-status"
+import { currentStatus, formatDayMonth, guestTmIdsAt, inTeam, mayGetLogin, selectable, statusAt, suggestedStatus, trialTmIdsAt, type PlayerStatusInfo } from "./player-status"
 
 // Not with us before the trial, then on trial, then a member
 const player: PlayerStatusInfo = {
@@ -74,5 +74,11 @@ describe("mayGetLogin", () => {
     expect(mayGetLogin("TRIAL")).toBe(true)
     expect(mayGetLogin("GUEST")).toBe(false)
     expect(mayGetLogin("FORMER")).toBe(false)
+  })
+})
+
+describe("formatDayMonth", () => {
+  it("shows a day without its year", () => {
+    expect(formatDayMonth("2026-10-28")).toBe("28.10.")
   })
 })

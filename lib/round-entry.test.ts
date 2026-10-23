@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { entryPositions, entryState } from "./round-entry"
+import { entryPositions, entryState, prefillRoundEntry } from "./round-entry"
 
 // All examples are 2v2: four places, our two players typed in
 describe("entryState", () => {
@@ -37,5 +37,23 @@ describe("entryPositions", () => {
   it("keeps typed placements and puts our DNFs right behind the finishers", () => {
     expect(entryPositions([1, "dnf"], 1, 2)).toEqual({ positions: [1, 3], dnf: [false, true] })
     expect(entryPositions(["dnf", "dnf"], 0, 2)).toEqual({ positions: [3, 4], dnf: [true, true] })
+  })
+})
+
+describe("prefillRoundEntry", () => {
+  it("starts a sub-match without rounds with the finalised drivers and the map of the match day", () => {
+    const entry = prefillRoundEntry(null, { playerIds: ["anna", "ben"], map: "Palmo" }, ["anna", "ben", "cleo"], 2)
+    expect(entry).toEqual({ playerIds: ["anna", "ben"], track: "Palmo" })
+  })
+
+  it("keeps what the rounds hold once there are any, whatever the plan says", () => {
+    const entry = prefillRoundEntry({ playerIds: ["cleo", "ben"], track: "Heat" }, { playerIds: ["anna", "ben"], map: "Palmo" }, ["anna", "ben", "cleo"], 2)
+    expect(entry).toEqual({ playerIds: ["cleo", "ben"], track: "Heat" })
+    expect(prefillRoundEntry({ playerIds: ["cleo", "ben"], track: null }, { playerIds: ["anna", "ben"], map: "Palmo" }, [], 2).track).toBe("")
+  })
+
+  it("without a plan takes the lineup of the sub-match only when it holds exactly as many players as drive", () => {
+    expect(prefillRoundEntry(null, null, ["anna", "ben"], 2)).toEqual({ playerIds: ["anna", "ben"], track: "" })
+    expect(prefillRoundEntry(null, null, ["anna", "ben", "cleo"], 2)).toEqual({ playerIds: [], track: "" })
   })
 })

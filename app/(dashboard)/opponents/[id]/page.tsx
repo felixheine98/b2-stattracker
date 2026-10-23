@@ -5,6 +5,7 @@ import { canManage } from "@/lib/roles"
 import { mayMaintainOpponent } from "@/lib/opponents-access-db"
 import { opponentMatchInclude, rosterInclude } from "@/lib/opponents-db"
 import { relatedLineupIds } from "@/lib/opponents"
+import { shapeSummaries, summaryInclude } from "@/lib/summary"
 import { OpponentProfile } from "@/components/opponents/opponent-profile"
 import type { HistoryMatch, LineupData, OpponentChoices, TeamData } from "@/components/opponents/types"
 export default async function OpponentPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ kind?: string }> }) {
@@ -20,7 +21,12 @@ export default async function OpponentPage({ params, searchParams }: { params: P
   const entity = lineup ?? team
   if (!entity) notFound()
   const ids = lineup ? relatedLineupIds(lineup.id, lineups) : lineups.filter(l => l.teamId === team!.id).map(l => l.id)
-  const matches = await db.match.findMany({ where: { opponentLineupId: { in: ids } }, include: opponentMatchInclude, orderBy: [{ date: "desc" }, { createdAt: "desc" }] })
+  // With summaries, so a match taken over from a screenshot is not mistaken for a planned one
+  const matches = await db.match.findMany({
+    where: { opponentLineupId: { in: ids } },
+    include: { ...opponentMatchInclude, subMatches: { ...opponentMatchInclude.subMatches, include: { ...opponentMatchInclude.subMatches.include, ...summaryInclude } } },
+    orderBy: [{ date: "desc" }, { createdAt: "desc" }],
+  }).then(shapeSummaries)
   const canEdit = !!session && await mayMaintainOpponent(session.user, lineup?.tournamentId)
   const role = (session?.user as { role?: string })?.role
   return <OpponentProfile kind={lineup ? "lineup" : "team"} entity={entity as unknown as TeamData | LineupData} choices={{ teams, lineups, tournaments, players } as unknown as OpponentChoices} matches={matches as HistoryMatch[]} relatedIds={ids} canEdit={canEdit} canAssign={canManage(role)} isAdmin={role === "ADMIN"} />

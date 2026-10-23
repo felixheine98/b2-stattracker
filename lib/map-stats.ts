@@ -5,12 +5,12 @@ import type { Format } from "@prisma/client"
 import { FORMAT_ORDER, type StatsMatch } from "./format-stats"
 import { addGap, emptyPace, finishTime, paceMs, roundBest, type PaceSum } from "./pace"
 import { roundPlacements, roundScore } from "./round-score"
+import { nameFieldsOf, type NameFields } from "./player-names"
 import { playerRecord } from "./summary"
 
-export interface MapPlayerAggregate {
+export interface MapPlayerAggregate extends NameFields {
   tmId: string
   name: string
-  currentName?: string
   rounds: number
   placementSum: number
   // Fastest time on the map; null without a finished round
@@ -93,7 +93,7 @@ export function buildMapAggregates(matches: StatsMatch[], stageOrder: string[]):
         else agg.mapDrawn++
         for (const sp of summary.players) {
           if (!agg.players.has(sp.tmId)) {
-            agg.players.set(sp.tmId, { tmId: sp.tmId, name: sp.playerName, currentName: sp.currentName, rounds: 0, placementSum: 0, bestMs: null, pace: emptyPace(), dnfs: 0, roundsWon: 0, roundsLost: 0 })
+            agg.players.set(sp.tmId, { tmId: sp.tmId, name: sp.playerName, ...nameFieldsOf(sp), rounds: 0, placementSum: 0, bestMs: null, pace: emptyPace(), dnfs: 0, roundsWon: 0, roundsLost: 0 })
           }
           const p = agg.players.get(sp.tmId)!
           const { won, lost } = playerRecord(summary, sp)
@@ -124,7 +124,7 @@ export function buildMapAggregates(matches: StatsMatch[], stageOrder: string[]):
         round.results.forEach((r, idx) => {
           if (!r.isOurTeam) return
           if (!agg.players.has(r.tmId)) {
-            agg.players.set(r.tmId, { tmId: r.tmId, name: r.playerName, currentName: r.currentName, rounds: 0, placementSum: 0, bestMs: null, pace: emptyPace(), dnfs: 0, roundsWon: 0, roundsLost: 0 })
+            agg.players.set(r.tmId, { tmId: r.tmId, name: r.playerName, ...nameFieldsOf(r), rounds: 0, placementSum: 0, bestMs: null, pace: emptyPace(), dnfs: 0, roundsWon: 0, roundsLost: 0 })
           }
           const p = agg.players.get(r.tmId)!
           p.rounds++

@@ -103,6 +103,9 @@ model Player {
   slug      String?  @unique
   // Name the player has "from the beginning"; later renames are PlayerNameChange rows
   initialName String
+  // What the team calls the player (e.g. "Dennis" for DMR_GameBros); shown instead of the
+  // gamertag everywhere, with the gamertag on hover (docs/adr/009-spitznamen.md)
+  nickname  String?
   country   String?
   // Result of the last comparison with trackmania.io; null name after a check = not found
   tmioName             String?
@@ -133,6 +136,8 @@ model Player {
   opponentIdentities    OpponentIdentity[]
   tfhDrivers            TfhDriver[]
   tfhIdentities         TfhIdentity[]
+  matchdayAnswers  MatchdayPlanAnswer[]
+  matchdayAbsences MatchdayPlanAbsence[]
 }
 
 // A switch between team member and guest, valid from the given day on
@@ -379,6 +384,74 @@ enum StageType {
 
 // A tournament is divided into stages: an optional seeding, the match days of the group
 // phase and the playoffs. Names and dates are derived (see lib/stages.ts).
+// Lineup planning per match day (docs/adr/008): one planning per lineup and stage. Only the lineup's
+// managers (and admins and managers) see it; players see the published lineups at the matches.
+enum MatchdayAnswer {
+  FIX
+  PARTIAL
+  MAYBE
+  OUT
+}
+
+model MatchdayPlan {
+  id                 String           @id @default(cuid())
+  lineupId           String
+  lineup             TournamentLineup @relation(fields: [lineupId], references: [id], onDelete: Cascade)
+  stageId            String
+  stage              Stage            @relation(fields: [stageId], references: [id], onDelete: Cascade)
+  // The finalised lineups, shaped like a variant's seats (see lib/matchday-plan.ts); null until finalised
+  published          Json?
+  publishedVariantId String?
+  publishedAt        DateTime?
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
+
+  answers  MatchdayPlanAnswer[]
+  absences MatchdayPlanAbsence[]
+  variants MatchdayVariant[]
+
+  @@unique([lineupId, stageId])
+}
+
+// A player's answer for the match day; a planning starts without any
+model MatchdayPlanAnswer {
+  id         String          @id @default(cuid())
+  planId     String
+  plan       MatchdayPlan    @relation(fields: [planId], references: [id], onDelete: Cascade)
+  playerId   String
+  player     Player          @relation(fields: [playerId], references: [id], onDelete: Cascade)
+  answer     MatchdayAnswer?
+  note       String?
+  // When the answer was given on Discord; an answer set by hand clears it
+  answeredAt DateTime?
+  updatedAt  DateTime        @updatedAt
+
+  @@unique([planId, playerId])
+}
+
+// A player who is not there for one match of the match day
+model MatchdayPlanAbsence {
+  id       String       @id @default(cuid())
+  planId   String
+  plan     MatchdayPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
+  playerId String
+  player   Player       @relation(fields: [playerId], references: [id], onDelete: Cascade)
+  matchId  String
+  match    Match        @relation(fields: [matchId], references: [id], onDelete: Cascade)
+
+  @@unique([planId, playerId, matchId])
+}
+
+model MatchdayVariant {
+  id        String       @id @default(cuid())
+  planId    String
+  plan      MatchdayPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
+  name      String
+  // Day lineup and the matches' own lineups: { day: {FORMAT: [playerId|null]}, matches: {matchId: {...}} }
+  seats     Json
+  createdAt DateTime     @default(now())
+}
+
 model Stage {
   id           String     @id @default(cuid())
   tournamentId String
@@ -386,11 +459,14 @@ model Stage {
   type         StageType
   // Position among the stages of the same type, starting at 1
   number       Int
+  // The map of every format on this match day, e.g. {"ROUND_1V1": "Heat"} (docs/adr/008-matchday-planung.md)
+  maps         Json?
   createdAt    DateTime   @default(now())
 
   matches Match[]
 
   @@unique([tournamentId, type, number])
+  matchdayPlans MatchdayPlan[]
 }
 
 model TournamentLineup {
@@ -407,6 +483,7 @@ model TournamentLineup {
   tfhTeam  TfhTeam?
 
   @@unique([tournamentId, slug])
+  matchdayPlans MatchdayPlan[]
 }
 
 // An account responsible for a lineup. A player account in here is a "lineup manager": it may
@@ -465,6 +542,7 @@ model Match {
   confirmations MatchConfirmation[]
 
   @@unique([tournamentLineupId, slug])
+  matchdayAbsences MatchdayPlanAbsence[]
 }
 
 model OpponentTeam {

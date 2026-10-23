@@ -61,4 +61,14 @@ describe.skipIf(process.env.DB_TESTS !== "1")("PATCH /api/players/[id] with Post
     expect(await stored(player.id)).toBe(false)
     expect((await patch("no-such-player", { inactive: true })).status).toBe(404)
   })
+
+  it("stores the nickname without surrounding spaces and removes it when emptied", async () => {
+    const player = await newPlayer()
+    as("MANAGER")
+    const named = await patch(player.id, { nickname: "  Dennis " })
+    expect(named.status).toBe(200)
+    expect(await named.json()).toMatchObject({ nickname: "Dennis" })
+    expect((await patch(player.id, { nickname: "" })).status).toBe(200)
+    expect((await client.player.findUniqueOrThrow({ where: { id: player.id } })).nickname).toBeNull()
+  })
 })

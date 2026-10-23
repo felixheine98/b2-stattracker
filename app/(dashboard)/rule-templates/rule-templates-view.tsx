@@ -102,7 +102,7 @@ export function RuleTemplatesView({ templates: initial }: { templates: RuleTempl
         </Link>
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h1 className="text-2xl font-bold text-fg">Rule templates</h1>
+            <h1 className="text-fg page-title">Rule templates</h1>
             <p className="text-fg-muted text-sm mt-0.5">Format sequence and match rules to start a tournament from. A tournament keeps its own copy.</p>
           </div>
           <Button onClick={() => open(null)}>

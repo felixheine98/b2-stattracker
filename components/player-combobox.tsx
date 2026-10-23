@@ -2,6 +2,7 @@
 
 import { useId, useRef, useState } from "react"
 import { ChevronDown } from "lucide-react"
+import { shownName } from "@/lib/player-names"
 import { searchPlayers } from "@/lib/player-search"
 import { cn } from "@/lib/utils"
 
@@ -10,7 +11,7 @@ interface Option { value: string; label: string; hint?: string }
 interface Props {
   value: string
   onChange: (value: string) => void
-  players: Array<{ id: string; name: string; allNames?: string[]; hint?: string }>
+  players: Array<{ id: string; name: string; allNames?: string[]; nickname?: string | null; hint?: string }>
   // Fixed choices above the players, e.g. "Not a player"; their value must not be a player id
   extra?: Option[]
   placeholder?: string
@@ -27,10 +28,12 @@ export function PlayerCombobox({ value, onChange, players, extra = [], placehold
   const [active, setActive] = useState(0)
   const input = useRef<HTMLInputElement>(null)
   const listId = useId()
-  const all: Option[] = [...extra, ...players.map(p => ({ value: p.id, label: p.name, hint: p.hint }))]
+  // A nickname is the label, with the gamertag beside it
+  const optionOf = (p: Props["players"][number]): Option => ({ value: p.id, label: shownName(p), hint: [p.nickname && p.name, p.hint].filter(Boolean).join(" · ") || undefined })
+  const all: Option[] = [...extra, ...players.map(optionOf)]
   const selected = all.find(o => o.value === value)
   const options: Option[] = query.trim()
-    ? searchPlayers(players, query).map(p => ({ value: p.id, label: p.name, hint: p.hint }))
+    ? searchPlayers(players, query).map(optionOf)
     : all
 
   function show() { setOpen(true); setQuery(""); setActive(Math.max(0, all.findIndex(o => o.value === value))) }
@@ -67,11 +70,11 @@ export function PlayerCombobox({ value, onChange, players, extra = [], placehold
         onBlur={() => { setOpen(false); setQuery("") }}
         onChange={e => { setQuery(e.target.value); setActive(0); setOpen(true) }}
         onKeyDown={handleKeyDown}
-        className="flex h-9 w-full rounded-md border border-line-strong bg-raised py-1 pl-3 pr-8 text-sm text-fg placeholder:text-fg-subtle focus:border-transparent focus:outline-none focus:ring-2 focus:ring-brand disabled:cursor-not-allowed disabled:opacity-50"
+        className="flex h-10 w-full rounded-md border border-line-strong bg-surface py-1 pl-3 pr-8 text-sm text-fg placeholder:text-fg-subtle focus:border-transparent focus:outline-none focus:ring-2 focus:ring-info disabled:cursor-not-allowed disabled:opacity-50"
       />
       <button type="button" tabIndex={-1} aria-label="Show all players" disabled={disabled}
         onMouseDown={e => { e.preventDefault(); if (open) setOpen(false); else input.current?.focus() }}
-        className="absolute right-0 top-0 flex h-9 w-8 items-center justify-center text-fg-subtle hover:text-fg disabled:opacity-50">
+        className="absolute right-0 top-0 flex h-10 w-8 items-center justify-center text-fg-subtle hover:text-fg disabled:opacity-50">
         <ChevronDown size={14} />
       </button>
       {open && (

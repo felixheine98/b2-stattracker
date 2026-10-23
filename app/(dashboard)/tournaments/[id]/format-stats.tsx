@@ -95,10 +95,10 @@ export function FormatStatsTable({ agg, isGuest, isTrial, lineupName, profilePat
                 <td className="sticky left-0 z-[1] bg-table-cell py-1.5 pl-3 pr-4 text-fg font-medium whitespace-nowrap max-md:shadow-[1px_0_0_var(--border)]">
                   {profilePath?.(p.tmId) ? (
                     <Link href={profilePath(p.tmId)!} className="hover:text-brand-ink">
-                      <PlayerName name={p.name} currentName={p.currentName} />
+                      <PlayerName name={p.name} nickname={p.nickname} currentName={p.currentName} allNames={p.allNames} />
                     </Link>
                   ) : (
-                    <PlayerName name={p.name} currentName={p.currentName} />
+                    <PlayerName name={p.name} nickname={p.nickname} currentName={p.currentName} allNames={p.allNames} />
                   )}
                   {isGuest(p.tmId) && <GuestBadge className="ml-1.5" />}
 {isTrial(p.tmId) && <TrialBadge className="ml-1.5" />}
@@ -106,10 +106,10 @@ export function FormatStatsTable({ agg, isGuest, isTrial, lineupName, profilePat
                 {lineupName && <td className="py-1.5 px-3 text-fg-soft whitespace-nowrap">{lineupName(p.tmId) ?? "—"}</td>}
                 <td className="py-1.5 px-3 text-right text-fg-soft">{p.roundsPlayed}</td>
                 <td className="py-1.5 px-3 text-right text-fg-soft">{p.placementSum}</td>
-                <td className="py-1.5 px-3 text-right text-fg-soft font-mono">
+                <td className="py-1.5 px-3 text-right text-fg-soft tabular-nums">
                   {p.roundsPlayed > 0 ? (p.placementSum / p.roundsPlayed).toFixed(3) : "—"}
                 </td>
-                <td className="py-1.5 px-3 text-right text-fg-soft font-mono">
+                <td className="py-1.5 px-3 text-right text-fg-soft tabular-nums">
                   <PacePct pct={pacePct(p.pace)} ms={paceMs(p.pace)} />
                 </td>
                 <td className="py-1.5 px-3 text-right text-fg-soft">{p.dnfs}</td>

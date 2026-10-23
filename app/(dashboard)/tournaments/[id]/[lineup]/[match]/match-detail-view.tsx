@@ -1,5 +1,6 @@
 "use client"
 
+import { ResultBoard } from "@/components/result-board"
 import { MatchOpponentPanel } from "@/components/opponents/match-opponent-panel"
 import { BASE_PATH } from "@/lib/base-path"
 import { lineupPath, matchPath, tournamentPath } from "@/lib/paths"
@@ -9,7 +10,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { cn, formatLabel, formatLabelLong, formatTime, teamSize } from "@/lib/utils"
 import type { Format } from "@prisma/client"
-import { ArrowLeft, BarChart2, ChevronDown, ChevronUp, Clock, Download, ExternalLink, Grid3x3, ListChecks, Trash2, TriangleAlert, Trophy, Upload, Users } from "lucide-react"
+import { ArrowLeft, BarChart2, ChevronDown, ChevronUp, ClipboardList, Clock, Download, ExternalLink, Grid3x3, ListChecks, Trash2, TriangleAlert, Trophy, Upload, Users } from "lucide-react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useSyncedState } from "@/lib/use-synced-state"
@@ -27,6 +28,7 @@ import { matchTag } from "@/lib/match-order"
 import { EcmImportDialog } from "./ecm-import-dialog"
 import { MatchCsvImportDialog } from "./match-csv-import-dialog"
 import { RoundEntryDialog } from "./round-entry-dialog"
+import { nameFieldsOf, type NameFields } from "@/lib/player-names"
 import type { SubMatchSummary } from "@/lib/summary"
 
 export interface Player {
@@ -36,6 +38,7 @@ export interface Player {
   name: string
   currentName?: string
   allNames?: string[]
+  nickname?: string | null
   country?: string | null
   // No longer with the team: not offered for picking
   former?: boolean
@@ -46,6 +49,8 @@ interface RoundResult {
   tmId: string
   playerName: string
   currentName?: string
+  allNames?: string[]
+  nickname?: string | null
   timeMs: number | null
   dnf?: boolean
   isOurTeam: boolean
@@ -118,11 +123,11 @@ function SubMatchStatsTable({ sm, number, isGuest, isTrial }: { sm: SubMatch; nu
   const teamStats = useMemo(() => computeStats(sm.rounds), [sm.rounds])
 
   const rows = useMemo(() => {
-    const playerMap = new Map<string, { id: string | null; tmId: string; name: string; currentName?: string }>()
+    const playerMap = new Map<string, NameFields & { id: string | null; tmId: string; name: string }>()
     for (const round of sm.rounds) {
       for (const r of round.results) {
         if (r.isOurTeam && !playerMap.has(r.tmId)) {
-          playerMap.set(r.tmId, { id: r.playerId ?? null, tmId: r.tmId, name: r.playerName, currentName: r.currentName })
+          playerMap.set(r.tmId, { id: r.playerId ?? null, tmId: r.tmId, name: r.playerName, ...nameFieldsOf(r) })
         }
       }
     }
@@ -151,7 +156,7 @@ function SubMatchStatsTable({ sm, number, isGuest, isTrial }: { sm: SubMatch; nu
       return {
         tmId: p.tmId,
         name: p.name,
-        currentName: p.currentName,
+        ...nameFieldsOf(p),
         roundsPlayed,
         placementSum,
         avg: roundsPlayed > 0 ? placementSum / roundsPlayed : 0,
@@ -243,19 +248,19 @@ function SubMatchStatsTable({ sm, number, isGuest, isTrial }: { sm: SubMatch; nu
           {sorted.map((row) => (
             <tr key={row.tmId} className="border-b border-table-rule hover:bg-table-hover">
               <td className="sticky left-0 z-[1] bg-table-cell py-1.5 pl-3 pr-4 text-fg font-medium whitespace-nowrap max-md:shadow-[1px_0_0_var(--border)]">
-                <PlayerName name={row.name} currentName={row.currentName} />
+                <PlayerName name={row.name} nickname={row.nickname} currentName={row.currentName} allNames={row.allNames} />
                 {isGuest(row.tmId) && <GuestBadge className="ml-1.5" />}
 {isTrial(row.tmId) && <TrialBadge className="ml-1.5" />}
               </td>
               <td className="py-1.5 px-2 text-right text-fg-soft">{row.roundsPlayed}</td>
               <td className="py-1.5 px-2 text-right text-fg-soft">{row.placementSum}</td>
-              <td className="py-1.5 px-2 text-right text-fg-soft font-mono">
+              <td className="py-1.5 px-2 text-right text-fg-soft tabular-nums">
                 {row.avg > 0 ? row.avg.toFixed(3) : "—"}
               </td>
               <td className="py-1.5 px-2 text-right text-fg-soft">{row.dnfs}</td>
-              <td className="py-1.5 px-2 text-right text-brand-ink font-mono">{row.bestTime != null ? formatTime(row.bestTime) : "—"}</td>
-              <td className="py-1.5 px-2 text-right text-fg-soft font-mono">{row.medianTime != null ? formatTime(Math.round(row.medianTime)) : "—"}</td>
-              <td className="py-1.5 px-2 text-right text-fg-soft font-mono">{row.avgTime != null ? formatTime(Math.round(row.avgTime)) : "—"}</td>
+              <td className="py-1.5 px-2 text-right text-brand-ink tabular-nums">{row.bestTime != null ? formatTime(row.bestTime) : "—"}</td>
+              <td className="py-1.5 px-2 text-right text-fg-soft tabular-nums">{row.medianTime != null ? formatTime(Math.round(row.medianTime)) : "—"}</td>
+              <td className="py-1.5 px-2 text-right text-fg-soft tabular-nums">{row.avgTime != null ? formatTime(Math.round(row.avgTime)) : "—"}</td>
             </tr>
           ))}
         </tbody>
@@ -317,13 +322,13 @@ function SummaryStatsTable({ sm, summary, number, isGuest, isTrial }: { sm: SubM
             {rows.map((row) => (
               <tr key={row.tmId} className="border-b border-table-rule hover:bg-table-hover">
                 <td className="sticky left-0 z-[1] bg-table-cell py-1.5 pl-3 pr-4 text-fg font-medium whitespace-nowrap max-md:shadow-[1px_0_0_var(--border)]">
-                  <PlayerName name={row.playerName} currentName={row.currentName} />
+                  <PlayerName name={row.playerName} nickname={row.nickname} currentName={row.currentName} allNames={row.allNames} />
                   {isGuest(row.tmId) && <GuestBadge className="ml-1.5" />}
                   {isTrial(row.tmId) && <TrialBadge className="ml-1.5" />}
                 </td>
                 <td className="py-1.5 px-2 text-right text-fg-soft">{row.rounds}</td>
                 <td className="py-1.5 px-2 text-right text-fg-soft">{inPoints ? (row.points ?? "—") : row.placementSum}</td>
-                <td className="py-1.5 px-2 text-right text-fg-soft font-mono">
+                <td className="py-1.5 px-2 text-right text-fg-soft tabular-nums">
                   {inPoints ? (row.points !== null && row.points !== undefined ? (row.points / row.rounds).toFixed(3) : "—") : (row.placementSum! / row.rounds).toFixed(3)}
                 </td>
               </tr>
@@ -351,15 +356,22 @@ interface Props {
   canManage: boolean
   // Open the eCM import dialog right away (the import page sends people here with the data)
   autoEcmImport?: boolean
+  // The lineup finalised in the match day planning; null without one or while it is switched off
+  plannedLineup?: { publishedAt: Date | string | null; formats: Array<{ format: Format; map: string | null; players: Array<{ id: string; name: string; nickname?: string | null; country: string | null } | null> }> } | null
 }
 
-export function MatchDetailView({ match: initialMatch, ruleSet, allPlayers, guestTmIds, trialTmIds, canEdit, canManage, autoEcmImport = false }: Props) {
+export function MatchDetailView({ match: initialMatch, ruleSet, allPlayers, guestTmIds, trialTmIds, canEdit, canManage, autoEcmImport = false, plannedLineup = null }: Props) {
   const router = useRouter()
   const guests = new Set(guestTmIds)
   const isGuest = (tmId: string) => guests.has(tmId.toLowerCase())
   const isTrial = (tmId: string) => trialTmIds.includes(tmId.toLowerCase())
   const [subMatches, setSubMatches] = useSyncedState(initialMatch.subMatches)
   const matchLineup = initialMatch.tournamentLineup ?? null
+  // The finalised drivers and the map of a format, which the round entry starts with
+  const plannedOf = (format: Format) => {
+    const planned = plannedLineup?.formats.find((f) => f.format === format)
+    return planned ? { playerIds: planned.players.flatMap((p) => (p ? [p.id] : [])), map: planned.map } : null
+  }
   const [ecmUrl, setEcmUrl] = useState(initialMatch.ecmUrl ?? null)
   // In playing order
   const stages = sortStages(initialMatch.tournament.stages)
@@ -505,7 +517,7 @@ export function MatchDetailView({ match: initialMatch, ruleSet, allPlayers, gues
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="min-w-0 flex-1 basis-full lg:basis-0">
             <div className="flex items-center gap-2 mb-1 flex-wrap">
-              <h1 className="text-2xl font-bold text-fg">{matchTitle}</h1>
+              <h1 className="text-fg page-title">{matchTitle}</h1>
               {matchTag(initialMatch) && <Badge variant="default">{matchTag(initialMatch)}</Badge>}
               {/* A match can be moved between match days and playoffs, but never into or out of the seeding */}
               {canEdit && !isSeeding ? (
@@ -570,7 +582,7 @@ export function MatchDetailView({ match: initialMatch, ruleSet, allPlayers, gues
                       className="inline-flex items-center gap-1.5 rounded-full bg-raised border border-line px-2.5 py-1 text-xs text-fg-soft"
                     >
                       <PlayerAvatar player={slot.player} className="h-4 w-4 text-[9px]" />
-                      <PlayerName name={slot.player.name} currentName={slot.player.currentName} />
+                      <PlayerName name={slot.player.name} nickname={slot.player.nickname} currentName={slot.player.currentName} allNames={slot.player.allNames} />
                       {isGuest(slot.player.tmId) && <GuestBadge />}
 {isTrial(slot.player.tmId) && <TrialBadge />}
                     </span>
@@ -601,33 +613,59 @@ export function MatchDetailView({ match: initialMatch, ruleSet, allPlayers, gues
               <p className="mt-3 flex flex-wrap items-center gap-x-1.5 text-sm text-fg-muted">
                 <Trophy size={13} className="shrink-0 text-brand-ink" />
                 Best performer:
-                <span className="font-medium text-fg"><PlayerName name={performer.name} currentName={performer.currentName} /></span>
+                <span className="font-medium text-fg"><PlayerName name={performer.name} nickname={performer.nickname} currentName={performer.currentName} allNames={performer.allNames} /></span>
                 <span className="text-xs text-fg-subtle">avg place {performer.avgPlace.toFixed(2)} · {performer.rounds} rounds</span>
               </p>
             )}
           </div>
           <div className="flex w-full flex-wrap items-center justify-end gap-3 sm:ml-auto sm:w-auto">
-            {report.outcome && (
-              <Card className="shrink-0">
-                <CardContent className="py-2 px-4">
-                  <div className="text-center">
-                    <p className="text-2xl font-bold text-fg">
-                      <Wdl won={report.won} drawn={report.drawn} lost={report.lost} unit="Sub-Matches" />
-                    </p>
-                    <p className="text-xs text-fg-subtle">sub-match score{points !== null && ` · ${points} ${points === 1 ? "pt" : "pts"}`}</p>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
             {!isSeeding && <MatchOpponentPanel competitionId={initialMatch.tournament.id} matchId={initialMatch.id} canEdit={canEdit} results={subMatches} hints={closingHints(subMatches, report)} />}
           </div>
         </div>
       </div>
 
+      {!isSeeding && (
+        <ResultBoard
+          team={matchLineup?.name ?? "B2"}
+          opponent={initialMatch.opponent ?? "Opponent"}
+          score={report.outcome ? <Wdl won={report.won} drawn={report.drawn} lost={report.lost} unit="Sub-matches" /> : "—"}
+          detail={<>Sub-matches · {closed ? "Closed" : "Open"}{points !== null && ` · ${points} ${points === 1 ? "pt" : "pts"}`}</>}
+          context={initialMatch.tournament.name}
+        />
+      )}
+
+      {plannedLineup && (
+        <div>
+          <h2 className="section-title mb-3 flex items-center gap-2">
+            <ClipboardList size={14} />
+            Planned lineup
+          </h2>
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-3">
+            {plannedLineup.formats.map(({ format, map, players }, i) => (
+              <div key={i} className="space-y-1.5 rounded-lg border border-line bg-surface px-3 py-2.5 text-sm">
+                <p className="font-semibold text-fg">
+                  {formatLabel(format)}
+                  {map && <span className="font-normal text-fg-muted"> · {map}</span>}
+                </p>
+                <p className="flex flex-wrap gap-x-3 gap-y-1 text-fg-soft">
+                  {players.map((p, j) => (
+                    <span key={j} className="inline-flex items-center gap-1">
+                      {p && <PlayerAvatar player={p} className="h-4 w-4 text-[9px]" />}
+                      {p ? <PlayerName name={p.name} nickname={p.nickname} /> : "—"}
+                    </span>
+                  ))}
+                </p>
+              </div>
+            ))}
+          </div>
+          {plannedLineup.publishedAt && <p className="mt-1.5 text-xs text-fg-subtle">Finalised {formatDay(plannedLineup.publishedAt)}</p>}
+        </div>
+      )}
+
       {/* Player stats, one table per sub-match */}
       {subMatches.some((sm) => sm.rounds.length > 0 || sm.summary) && (
         <div>
-          <h2 className="text-sm font-semibold text-fg-muted uppercase tracking-wider mb-3 flex items-center gap-2">
+          <h2 className="section-title mb-3 flex items-center gap-2">
             <BarChart2 size={14} />
             Stats
           </h2>
@@ -650,7 +688,7 @@ export function MatchDetailView({ match: initialMatch, ruleSet, allPlayers, gues
           const summaryResult = sm.summary ? summaryState(sm.summary) : null
 
           return (
-            <div key={sm.id} className="rounded-xl border border-line overflow-hidden">
+            <div key={sm.id} className="rounded-xl border border-line bg-surface overflow-hidden">
               {/* Sub-match header */}
               <button
                 type="button"
@@ -714,13 +752,13 @@ export function MatchDetailView({ match: initialMatch, ruleSet, allPlayers, gues
                       {stats.bestOurTime && (
                         <div>
                           <p className="text-xs text-fg-muted">Our best time</p>
-                          <p className="text-brand-ink font-mono font-medium">{formatTime(stats.bestOurTime)}</p>
+                          <p className="text-brand-ink tabular-nums font-medium">{formatTime(stats.bestOurTime)}</p>
                         </div>
                       )}
                       {stats.bestOpponentTime && (
                         <div>
                           <p className="text-xs text-fg-muted">Opponent best</p>
-                          <p className="text-fg-soft font-mono">{formatTime(stats.bestOpponentTime)}</p>
+                          <p className="text-fg-soft tabular-nums">{formatTime(stats.bestOpponentTime)}</p>
                         </div>
                       )}
                     </div>
@@ -753,7 +791,7 @@ export function MatchDetailView({ match: initialMatch, ruleSet, allPlayers, gues
                         onClick={() => toggleRounds(sm.id)}
                         className="w-full flex items-center justify-between rounded-lg border border-line bg-surface px-4 py-2.5 text-left hover:bg-raised transition-colors"
                       >
-                        <span className="text-xs font-semibold text-fg-muted uppercase tracking-wider">
+                        <span className="text-xs font-semibold text-fg-muted ">
                           Round Results
                           <span className="ml-2 font-normal normal-case tracking-normal text-fg-subtle">
                             {totalRounds} round{totalRounds !== 1 ? "s" : ""}
@@ -799,7 +837,7 @@ export function MatchDetailView({ match: initialMatch, ruleSet, allPlayers, gues
                                 {score?.outcome === "W" && <Badge variant="primary">WIN</Badge>}
                                 {score?.outcome === "L" && <Badge variant="red">LOSS</Badge>}
                                 {score?.outcome === "D" && <Badge variant="default">DRAW</Badge>}
-                                {score && <span className="text-xs font-mono text-fg-muted" title="Points: us – opponent">{score.ours}–{score.theirs}</span>}
+                                {score && <span className="text-xs tabular-nums text-fg-muted" title="Points: us – opponent">{score.ours}–{score.theirs}</span>}
                               </div>
                               {/* Phones: one list in finishing order, our players highlighted */}
                               <ol className="space-y-1 md:hidden">
@@ -813,13 +851,13 @@ export function MatchDetailView({ match: initialMatch, ruleSet, allPlayers, gues
                                         r.isOurTeam ? "bg-brand/10 text-fg" : "text-fg-muted"
                                       )}
                                     >
-                                      <span className={`w-6 shrink-0 text-xs font-bold font-mono ${rankColor(rank)}`}>#{rank}</span>
+                                      <span className={`w-6 shrink-0 text-xs font-bold tabular-nums ${rankColor(rank)}`}>#{rank}</span>
                                       <span className="min-w-0 flex-1 truncate">
-                                        {r.isOurTeam ? <PlayerName name={r.playerName} currentName={r.currentName} /> : r.playerName}
+                                        {r.isOurTeam ? <PlayerName name={r.playerName} nickname={r.nickname} currentName={r.currentName} allNames={r.allNames} /> : r.playerName}
                                         {r.isOurTeam && isGuest(r.tmId) && <GuestBadge className="ml-1.5" />}
 {r.isOurTeam && isTrial(r.tmId) && <TrialBadge className="ml-1.5" />}
                                       </span>
-                                      <span className={`shrink-0 font-mono text-xs ${rankColor(rank)}`}>
+                                      <span className={`shrink-0 tabular-nums text-xs ${rankColor(rank)}`}>
                                         {r.dnf ? "DNF" : r.timeMs != null ? formatTime(r.timeMs) : "—"}
                                       </span>
                                     </li>
@@ -837,15 +875,15 @@ export function MatchDetailView({ match: initialMatch, ruleSet, allPlayers, gues
                                       const rank = rankMap.get(r.id) ?? 0
                                       return (
                                         <div key={r.id} className="flex items-center gap-2 text-sm">
-                                          <span className={`w-5 shrink-0 text-xs font-bold font-mono ${rankColor(rank)}`}>
+                                          <span className={`w-5 shrink-0 text-xs font-bold tabular-nums ${rankColor(rank)}`}>
                                             #{rank}
                                           </span>
                                           <span className="text-fg flex-1 truncate">
-                                            <PlayerName name={r.playerName} currentName={r.currentName} />
+                                            <PlayerName name={r.playerName} nickname={r.nickname} currentName={r.currentName} allNames={r.allNames} />
                                             {isGuest(r.tmId) && <GuestBadge className="ml-1.5" />}
 {isTrial(r.tmId) && <TrialBadge className="ml-1.5" />}
                                           </span>
-                                          <span className={`font-mono shrink-0 ${rankColor(rank)}`}>
+                                          <span className={`tabular-nums shrink-0 ${rankColor(rank)}`}>
                                             {r.dnf ? "DNF" : r.timeMs != null ? formatTime(r.timeMs) : "—"}
                                           </span>
                                         </div>
@@ -860,11 +898,11 @@ export function MatchDetailView({ match: initialMatch, ruleSet, allPlayers, gues
                                       const rank = rankMap.get(r.id) ?? 0
                                       return (
                                         <div key={r.id} className="flex items-center gap-2 text-sm">
-                                          <span className={`w-5 shrink-0 text-xs font-bold font-mono ${rankColor(rank)}`}>
+                                          <span className={`w-5 shrink-0 text-xs font-bold tabular-nums ${rankColor(rank)}`}>
                                             #{rank}
                                           </span>
                                           <span className="text-fg-muted flex-1 truncate">{r.playerName}</span>
-                                          <span className={`font-mono shrink-0 ${rankColor(rank)}`}>
+                                          <span className={`tabular-nums shrink-0 ${rankColor(rank)}`}>
                                             {r.dnf ? "DNF" : r.timeMs != null ? formatTime(r.timeMs) : "—"}
                                           </span>
                                         </div>
@@ -918,6 +956,7 @@ export function MatchDetailView({ match: initialMatch, ruleSet, allPlayers, gues
           key={roundEntrySubMatch.id}
           subMatch={roundEntrySubMatch}
           pool={(roundEntrySubMatch.lineup ?? matchLineup)?.slots.map((s) => s.player) ?? []}
+          planned={plannedOf(roundEntrySubMatch.format)}
           allPlayers={allPlayers}
           isGuest={isGuest}
           onClose={() => setRoundEntryId(null)}

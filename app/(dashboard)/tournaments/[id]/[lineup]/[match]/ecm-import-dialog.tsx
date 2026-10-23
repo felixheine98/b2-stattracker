@@ -176,6 +176,11 @@ export function EcmImportDialog({ tournamentId, matchId, subMatches, ruleSet, al
         ours: neededNames.flatMap((n) => { const p = profileOf(n); return p ? [{ tmId: p.tmId, name: p.name }] : [] }),
         foreign: foreignNames.flatMap((n) => { const p = autoMatch(n); return p ? [{ tmId: p.tmId, name: p.name }] : [] }),
         firstRoundTime: null,
+        // Our drivers of every set, compared with the finalised lineup of its sub-match's format
+        driven: analyses.flatMap((a, i) => {
+          const format = subMatches.find((sm) => sm.id === targets[i])?.format
+          return selected[i] && format ? [{ format, drivers: a.ourNames.flatMap((n) => { const p = profileOf(n); return p ? [{ tmId: p.tmId, name: p.name }] : [] }) }] : []
+        }),
         ...(otherTeam && { teams: { own: payload.teams[ourTeam].name, opponent: otherTeam.name } }),
       }
     : null)
@@ -287,7 +292,7 @@ export function EcmImportDialog({ tournamentId, matchId, subMatches, ruleSet, al
           )}
 
           <div className="space-y-1.5">
-            <p className="text-xs font-semibold uppercase tracking-wider text-fg-muted">Sets</p>
+            <p className="text-sm font-semibold text-fg">Sets</p>
             {payload.sets.map((set, i) => {
               const a = analyses[i]
               const targetFormat = selected[i] ? subMatches.find((sm) => sm.id === targets[i])?.format : undefined
@@ -343,7 +348,7 @@ export function EcmImportDialog({ tournamentId, matchId, subMatches, ruleSet, al
 
           {neededNames.length > 0 && (
             <div className="space-y-1.5">
-              <p className="text-xs font-semibold uppercase tracking-wider text-fg-muted">Assign players</p>
+              <p className="text-sm font-semibold text-fg">Assign players</p>
               <div className="grid grid-cols-1 gap-x-4 sm:grid-cols-2 gap-y-1.5">
                 {neededNames.map((name) => (
                   <label key={name} className="flex items-center justify-between gap-2 text-sm text-fg-soft">
@@ -375,7 +380,7 @@ export function EcmImportDialog({ tournamentId, matchId, subMatches, ruleSet, al
 
           {canManage && nameDiffs.length > 0 && startDay <= localTodayKey() && (
             <div className="space-y-1">
-              <p className="text-xs font-semibold uppercase tracking-wider text-fg-muted">Differing names</p>
+              <p className="text-sm font-semibold text-fg">Differing names</p>
               {nameDiffs.map(({ ecmName, player }) => (
                 <p key={ecmName} className="flex flex-wrap items-center gap-x-2 text-xs text-bronze">
                   eCM: {ecmName} · with you in this tournament: {player.name}

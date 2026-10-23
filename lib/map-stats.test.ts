@@ -37,6 +37,13 @@ describe("buildMapAggregates", () => {
     expect(b.players.get("ben")).toMatchObject({ rounds: 1, bestMs: null, dnfs: 1, roundsLost: 1 })
   })
 
+  it("keeps the nickname and the other names of a player for the name shown", () => {
+    const named = round("A", "anna:60", "opp1:61")
+    Object.assign(named.results[0], { nickname: "Annie", currentName: "anna2", allNames: ["anna", "anna2"] })
+    const [a] = buildMapAggregates([match([sub("ROUND_1V1", named)])], ["md1"])
+    expect(a.players.get("anna")).toMatchObject({ name: "anna", nickname: "Annie", currentName: "anna2", allNames: ["anna", "anna2"] })
+  })
+
   it("averages the gap to the fastest time of each round in milliseconds, without DNFs", () => {
     const [a] = buildMapAggregates([
       match([sub("ROUND_1V1", round("A", "opp1:60", "anna:61"), round("A", "anna:60", "opp1:63"), round("A", "opp1:60", "anna:!"))]),

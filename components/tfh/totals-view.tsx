@@ -7,9 +7,10 @@ import { playerPath, tournamentPath } from "@/lib/paths"
 import { formatTfhDuration } from "@/lib/tfh-profile"
 import { rankTfhTotals, splitTfhByKind, type TfhTotalMetric } from "@/lib/tfh-ranking"
 import { SortHeader } from "./sort-header"
+import { PlayerName } from "@/components/player-name"
 
 interface Result { playerId: string; raceId: string; kind: string; checkpoints: number | null; playTimeSeconds: number | null; finishes: number; cpm: number | null }
-interface Player { id: string; slug: string | null; name: string }
+interface Player { id: string; slug: string | null; name: string; nickname?: string | null }
 // Newest first, as the page loads them
 interface Race { id: string; name: string; kind: string; tournament: { id: string; slug: string | null } }
 
@@ -65,8 +66,8 @@ function Totals({ results, players, races }: Props) {
                 <tr key={row.playerId} className="border-t border-table-rule">
                   <td className={first}>
                     <span className="flex items-center gap-2">
-                      <span className="w-5 shrink-0 text-right font-mono text-xs text-fg-subtle">{row.rank ?? "–"}</span>
-                      {player ? <Link href={playerPath(player)} className="block max-w-40 truncate text-brand-ink hover:underline sm:max-w-64">{player.name}</Link> : "—"}
+                      <span className="w-5 shrink-0 text-right tabular-nums text-xs text-fg-subtle">{row.rank ?? "–"}</span>
+                      {player ? <Link href={playerPath(player)} className="block max-w-40 truncate text-brand-ink hover:underline sm:max-w-64"><PlayerName name={player.name} nickname={player.nickname} /></Link> : "—"}
                     </span>
                   </td>
                   {editions.map(r => {
@@ -109,7 +110,7 @@ export function TfhTotalsView({ results, players, races }: Props) {
       <Link href="/tournaments?style=endurance" className="inline-flex items-center gap-2 text-sm text-fg-muted"><ArrowLeft size={14} />Endurance tournaments</Link>
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
-          <h1 className="break-words text-2xl font-bold">TFH endurance: B2 drivers</h1>
+          <h1 className="break-words page-title">TFH endurance: B2 drivers</h1>
           <p className="mt-1 text-sm text-fg-muted">{drivers} drivers over {races.length} archived {races.length === 1 ? "edition" : "editions"}</p>
         </div>
         {groups.length > 1 && (

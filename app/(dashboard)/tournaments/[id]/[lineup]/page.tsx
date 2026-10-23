@@ -12,6 +12,8 @@ import { LineupMatchesView } from "./lineup-matches-view"
 import { getTfhRace } from "@/lib/tfh-db"
 import { TfhRaceView } from "@/components/tfh/race-view"
 import { compRulesOf, rulesInclude } from "@/lib/match-rules-db"
+import { matchdayPlanningEnabled } from "@/lib/features"
+import { isPlanned } from "@/lib/upcoming"
 
 interface Props {
   params: Promise<{ id: string; lineup: string }>
@@ -89,6 +91,8 @@ export default async function LineupMatchesPage({ params }: Props) {
       canEdit={canEdit}
       // Responsible for the lineup, but the week after the tournament's end is over
       editExpired={responsible && !canEdit}
+      plannedMatchIds={matchdayPlanningEnabled() ? named.matches.filter(isPlanned).map((m) => m.id) : []}
+      canPlan={matchdayPlanningEnabled() && canEdit}
     />
   )
 }

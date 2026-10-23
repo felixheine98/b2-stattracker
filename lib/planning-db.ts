@@ -4,6 +4,7 @@ import { withCompNames } from "@/lib/player-names-db"
 import type { VariantData } from "@/lib/planning-variants"
 import { inTeam, selectable, statusAt, tournamentReferenceDate } from "@/lib/player-status"
 import type { ImportAnswer } from "@/lib/discord-planning"
+import { nameFieldsOf, type NameFields } from "@/lib/player-names"
 
 // The planning of a tournament, and whether it can still be changed: once the tournament
 // has lineups it is a read-only archive.
@@ -98,13 +99,14 @@ export async function buildPlanningState(tournamentId: string, viewer: PlanningV
         planning: { include: { levels: { orderBy: { createdAt: "asc" } }, entries: true } },
       },
     }),
-    db.player.findMany({ where: { isOpponentOnly: false }, select: { id: true, tmId: true, name: true, country: true, inactive: true, initialStatus: true, statusChanges: true } }),
+    db.player.findMany({ where: { isOpponentOnly: false }, select: { id: true, tmId: true, name: true, nickname: true, country: true, inactive: true, initialStatus: true, statusChanges: true } }),
   ])
   if (!tournament?.planning) return null
 
   const named = await withCompNames(players, tournament)
   const rows = planningRows(named, tournament.planning.entries, tournamentReferenceDate(tournament)).map((row) => ({
-    player: { id: row.player.id, tmId: row.player.tmId, name: row.player.name, country: row.player.country },
+    // withCompNames added today's name and every name besides the nickname
+    player: { id: row.player.id, tmId: row.player.tmId, name: row.player.name, ...nameFieldsOf(row.player as NameFields), country: row.player.country },
     answer: row.answer,
     // Without an own answer the player counts as inactive, not as open
     inactive: row.player.inactive,

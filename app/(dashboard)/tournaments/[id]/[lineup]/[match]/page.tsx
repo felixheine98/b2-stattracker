@@ -11,6 +11,8 @@ import { withCompNames } from "@/lib/player-names-db"
 import { ruleSetFor } from "@/lib/match-rules"
 import { compRulesOf, rulesInclude } from "@/lib/match-rules-db"
 import { MatchDetailView } from "./match-detail-view"
+import { matchdayPlanningEnabled } from "@/lib/features"
+import { publishedLineupOf } from "@/lib/matchday-plan-db"
 
 interface Props {
   params: Promise<{ id: string; lineup: string; match: string }>
@@ -85,5 +87,10 @@ export default async function MatchDetailPage({ params, searchParams }: Props) {
   // Former players are still needed to recognise imported results, but are not offered for picking
   const named = await withCompNames({ match: shapeSummaries([match])[0], allPlayers: allPlayers.map((p) => ({ ...p, former: !selectable(p) })) }, match.tournament)
 
-  return <MatchDetailView match={named.match} ruleSet={ruleSetFor(compRulesOf(match.tournament), match.stage.type)} allPlayers={named.allPlayers} guestTmIds={guestTmIds} trialTmIds={trialTmIds} autoEcmImport={autoEcmImport} canEdit={canEdit} canManage={canManage(user?.role)} />
+  // The lineup finalised in the match day planning (docs/adr/008)
+  const plannedLineup = matchdayPlanningEnabled() && match.stage.type !== "SEEDING"
+    ? await publishedLineupOf({ id: match.id, tournamentLineupId: match.tournamentLineupId, stageId: match.stage.id, formats: [...new Set([...match.subMatches].sort((a, b) => a.order - b.order).map((sm) => sm.format))] })
+    : null
+
+  return <MatchDetailView plannedLineup={plannedLineup} match={named.match} ruleSet={ruleSetFor(compRulesOf(match.tournament), match.stage.type)} allPlayers={named.allPlayers} guestTmIds={guestTmIds} trialTmIds={trialTmIds} autoEcmImport={autoEcmImport} canEdit={canEdit} canManage={canManage(user?.role)} />
 }

@@ -18,7 +18,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import { Dialog, DialogTitle } from "@/components/ui/dialog"
 import { Badge } from "@/components/ui/badge"
 import { Select } from "@/components/ui/select"
@@ -113,7 +113,7 @@ export function TournamentsView({ tournaments: initial, style, canManage, isAdmi
     <div className="space-y-6 page-wide">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-fg">Tournaments</h1>
+          <h1 className="text-fg page-title">Tournaments</h1>
           <p className="text-fg-muted text-sm mt-0.5">{shown.length} tournament{shown.length !== 1 ? "s" : ""}{style ? ` · ${styleLabel(style)}` : ""}</p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -122,7 +122,7 @@ export function TournamentsView({ tournaments: initial, style, canManage, isAdmi
         {canManage && (
           <Button onClick={openForm}>
             <Plus size={16} />
-            New Tournament
+            New tournament
           </Button>
         )}
         </div>
@@ -136,7 +136,7 @@ export function TournamentsView({ tournaments: initial, style, canManage, isAdmi
               href={s ? `/tournaments?style=${styleParam(s)}` : "/tournaments"}
               aria-current={s === style ? "page" : undefined}
               className={cn(
-                "rounded-full border px-3 py-1 text-sm font-medium transition-colors",
+                "rounded-md border px-3 py-2 text-sm font-medium transition-colors",
                 s === style ? "border-brand/30 bg-brand/15 text-brand-ink" : "border-line-strong text-fg-muted hover:bg-raised hover:text-fg"
               )}
             >
@@ -178,38 +178,22 @@ export function TournamentsView({ tournaments: initial, style, canManage, isAdmi
           {group.year}
           <span className="h-px flex-1 bg-line" />
         </h2>
-        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+        <div className="overflow-hidden rounded-xl border border-line bg-surface divide-y divide-line">
           {group.tournaments.map((t) => (
-            <Link key={t.id} href={tournamentPath(t)}>
-              <Card className="h-full hover:border-line-strong transition-colors cursor-pointer">
-                <CardHeader>
-                  <div className="flex items-start justify-between gap-2">
-                    <CardTitle className="text-base">{t.name}</CardTitle>
-                    <div className="flex flex-wrap gap-1 justify-end shrink-0">
-                      <Badge variant="purple">{styleLabel(t.style)}</Badge>
-                      {t.formats.slice(0, 3).map((f, i) => (
-                        <Badge key={i} variant={formatBadgeVariant(f)}>
-                          {formatLabel(f)}
-                        </Badge>
-                      ))}
-                      {t.formats.length > 3 && (
-                        <Badge variant="default">+{t.formats.length - 3}</Badge>
-                      )}
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex items-center justify-between text-sm text-fg-subtle">
-                    <span>{t.tfhRace ? `${t.tfhRace._count.teams} teams` : `${t._count.matches} match${t._count.matches !== 1 ? "es" : ""}`}</span>
-                    <div className="flex items-center gap-1">
-                      {t.startDate && (
-                        <span>{formatDay(t.startDate)}</span>
-                      )}
-                      <ChevronRight size={14} />
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+            <Link key={t.id} href={tournamentPath(t)} className="flex flex-wrap items-center gap-x-5 gap-y-3 p-4 transition-colors hover:bg-raised sm:flex-nowrap sm:px-5 sm:py-5">
+              <div className="min-w-0 flex-1 basis-full sm:basis-auto">
+                <h3 className="break-words text-lg font-semibold text-fg">{t.name}</h3>
+                <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-fg-muted">
+                  {t.startDate && <span>{formatDay(t.startDate)}{t.endDate && ` – ${formatDay(t.endDate)}`}</span>}
+                  <span>{t.tfhRace ? `${t.tfhRace._count.teams} teams` : `${t._count.matches} match${t._count.matches !== 1 ? "es" : ""}`}</span>
+                </div>
+              </div>
+              <div className="flex min-w-0 flex-wrap items-center gap-1.5">
+                <Badge>{styleLabel(t.style)}</Badge>
+                {t.formats.slice(0, 3).map((f, i) => <Badge key={i} variant={formatBadgeVariant(f)}>{formatLabel(f)}</Badge>)}
+                {t.formats.length > 3 && <Badge>+{t.formats.length - 3}</Badge>}
+              </div>
+              <ChevronRight size={18} className="ml-auto shrink-0 text-fg-subtle" />
             </Link>
           ))}
         </div>
@@ -219,7 +203,7 @@ export function TournamentsView({ tournaments: initial, style, canManage, isAdmi
       )}
 
       <Dialog open={canManage && showForm} onClose={() => setShowForm(false)} className="max-w-lg">
-        <DialogTitle>New Tournament</DialogTitle>
+        <DialogTitle>New tournament</DialogTitle>
         <form onSubmit={handleCreate} className="space-y-4">
           <div className="space-y-1.5">
             <Label htmlFor="name">Name</Label>
@@ -259,7 +243,7 @@ export function TournamentsView({ tournaments: initial, style, canManage, isAdmi
           {error && <p className="text-sm text-danger">{error}</p>}
           <div className="dialog-footer flex gap-2 justify-end pt-1">
             <Button variant="ghost" type="button" onClick={() => setShowForm(false)}>Cancel</Button>
-            <Button type="submit" disabled={loading}>{loading ? "Creating…" : "Create Tournament"}</Button>
+            <Button type="submit" disabled={loading}>{loading ? "Creating…" : "Create tournament"}</Button>
           </div>
         </form>
       </Dialog>

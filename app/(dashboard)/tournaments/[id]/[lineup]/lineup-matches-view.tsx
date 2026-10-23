@@ -3,15 +3,15 @@
 import { OpponentPicker, type OpponentValue } from "@/components/opponents/opponent-picker"
 import { Badge } from "@/components/ui/badge"
 import { BASE_PATH } from "@/lib/base-path"
-import { matchPath, tournamentPath } from "@/lib/paths"
+import { matchPath, planPath, tournamentPath } from "@/lib/paths"
 import { PlayerName } from "@/components/player-name"
 import { GuestBadge } from "@/components/guest-badge"
 import { TrialBadge } from "@/components/trial-badge"
 import { PlayerAvatar } from "@/components/player-avatar"
 import { useSyncedState } from "@/lib/use-synced-state"
-import { formatDay } from "@/lib/player-status"
+import { formatDay, localTodayKey } from "@/lib/player-status"
 import Link from "next/link"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogTitle } from "@/components/ui/dialog"
@@ -22,14 +22,14 @@ import { Card, CardContent } from "@/components/ui/card"
 import { buildAggregates, matchesOfFormats, matchesOfStages } from "@/lib/format-stats"
 import { buildMapAggregates } from "@/lib/map-stats"
 import { matchTag, nextMatchNumber, sortMatches } from "@/lib/match-order"
-import { sortStages, stageDate, stageName, suggestStage, type StageRef } from "@/lib/stages"
+import { planningStage, sortStages, stageDate, stageName, suggestStage, type StageRef } from "@/lib/stages"
 import { useIdListParam } from "@/lib/use-id-list-param"
 import { StatsFilter } from "@/components/stats-filter"
 import { StageHeading } from "@/components/stage-heading"
 import { Select } from "@/components/ui/select"
 import { FormatStatsTable } from "../format-stats"
 import { MapOverviewTable, MapStatsTable, StatsViewToggle } from "../map-stats"
-import { ArrowLeft, Swords, Users, ChevronDown, ChevronRight, Calendar, BarChart2, Plus, Trash2, ShieldCheck } from "lucide-react"
+import { ArrowLeft, ClipboardList, Swords, Users, ChevronDown, ChevronRight, Calendar, BarChart2, Plus, Trash2, ShieldCheck } from "lucide-react"
 import { cn, formatLabel } from "@/lib/utils"
 import type { Format } from "@prisma/client"
 import { lineupPoints, type CompRules } from "@/lib/match-rules"
@@ -77,6 +77,8 @@ interface Player {
   id: string
   name: string
   currentName?: string
+  allNames?: string[]
+  nickname?: string | null
   tmId: string
   country?: string | null
 }
@@ -105,9 +107,13 @@ interface Props {
   // May add matches and maintain results of this lineup (managers, and whoever is responsible for it)
   canEdit: boolean
   editExpired?: boolean
+  // Matches set up ahead without a result yet (docs/adr/008); empty while the planning is switched off
+  plannedMatchIds: string[]
+  // Whether the signed-in user may plan the match days of this lineup (planning switched on and canEdit)
+  canPlan: boolean
 }
 
-export function LineupMatchesView({ lineup, rules, guestTmIds, trialTmIds, profilePaths, canManage, canEdit, editExpired }: Props) {
+export function LineupMatchesView({ lineup, rules, guestTmIds, trialTmIds, profilePaths, canManage, canEdit, editExpired, plannedMatchIds, canPlan }: Props) {
   const profilePath = (tmId: string) => profilePaths[tmId.toLowerCase()]
   const responsiblePlayerIds = new Set(lineup.managers.map((m) => m.user.playerId))
   const guests = new Set(guestTmIds)
@@ -138,11 +144,17 @@ export function LineupMatchesView({ lineup, rules, guestTmIds, trialTmIds, profi
   const mapAggregates = buildMapAggregates(statsSelection, stages.map((st) => st.id))
 
   // --- Add match dialog state ---
+  // The match day planning links here with ?addMatch=<stage>: the dialog opens for that stage
+  const addMatchFor = useSearchParams().get("addMatch")
+  const openingStage = canEdit ? stages.find((st) => st.id === addMatchFor) : undefined
+  // The planning opens on the next match day; it switches between the days itself
+  const planStage = canPlan ? planningStage(stages, new Date(startDate), localTodayKey()) : undefined
+  const dayOf = (stage: StageRef | undefined) => (stage ? stageDate(stage, stages, new Date(startDate)).toISOString().slice(0, 10) : "")
   const [opponentValue, setOpponentValue] = useState<OpponentValue>({ name: "" })
-  const [showAddMatch, setShowAddMatch] = useState(false)
-  const [stageId, setStageId] = useState("")
-  const [matchDate, setMatchDate] = useState("")
-  const [matchNumber, setMatchNumber] = useState("")
+  const [showAddMatch, setShowAddMatch] = useState(!!openingStage)
+  const [stageId, setStageId] = useState(openingStage?.id ?? "")
+  const [matchDate, setMatchDate] = useState(dayOf(openingStage))
+  const [matchNumber, setMatchNumber] = useState(openingStage ? String(nextMatchNumber(lineup.matches)) : "")
   const isSeeding = stages.find((st) => st.id === stageId)?.type === "SEEDING"
   const [matchError, setMatchError] = useState("")
   const [matchLoading, setMatchLoading] = useState(false)
@@ -152,7 +164,7 @@ export function LineupMatchesView({ lineup, rules, guestTmIds, trialTmIds, profi
   function selectStage(id: string) {
     const stage = stages.find((st) => st.id === id)
     setStageId(id)
-    setMatchDate(stage ? stageDate(stage, stages, new Date(startDate)).toISOString().slice(0, 10) : "")
+    setMatchDate(dayOf(stage))
   }
 
   function openAddMatch() {
@@ -217,17 +229,27 @@ export function LineupMatchesView({ lineup, rules, guestTmIds, trialTmIds, profi
         </Link>
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="min-w-0">
-            <h1 className="text-2xl font-bold text-fg mb-1">{lineup.name}</h1>
+            <h1 className="text-fg mb-1 page-title">{lineup.name}</h1>
             <p className="text-xs text-fg-subtle">
               Lineup · {tournament.name}
               {points !== null && <span title="Points from the group stage"> · {points} pts</span>}
             </p>
           </div>
-          {canEdit && (
-            <Button onClick={openAddMatch} className="shrink-0">
-              <Plus size={16} />
-              Add Match
-            </Button>
+          {(canEdit || planStage) && (
+            <div className="flex flex-wrap items-center gap-2">
+              {planStage && (
+                <Link href={planPath(tournament, lineup, planStage)} className="inline-flex min-h-10 shrink-0 items-center justify-center gap-2 rounded-md border border-line-strong bg-surface px-4 py-2 text-sm font-medium text-fg transition-colors hover:border-fg-subtle hover:bg-raised max-md:min-h-11">
+                  <ClipboardList size={16} />
+                  Plan
+                </Link>
+              )}
+              {canEdit && (
+                <Button onClick={() => openAddMatch()} className="shrink-0">
+                  <Plus size={16} />
+                  Add Match
+                </Button>
+              )}
+            </div>
           )}
         </div>
       </div>
@@ -236,7 +258,7 @@ export function LineupMatchesView({ lineup, rules, guestTmIds, trialTmIds, profi
       <div className="page-columns">
       {/* Players */}
       <div>
-        <h2 className="text-sm font-semibold text-fg-muted uppercase tracking-wider mb-3 flex items-center gap-2">
+        <h2 className="text-sm font-semibold text-fg-muted  mb-3 flex items-center gap-2">
           <Users size={14} />
           Players ({lineup.slots.length})
         </h2>
@@ -254,7 +276,7 @@ export function LineupMatchesView({ lineup, rules, guestTmIds, trialTmIds, profi
             >
               <PlayerAvatar player={slot.player} className="h-5 w-5 text-[10px]" />
               <Link href={profilePath(slot.player.tmId) ?? "/players"} className="hover:text-brand-ink">
-                <PlayerName name={slot.player.name} currentName={slot.player.currentName} />
+                <PlayerName name={slot.player.name} nickname={slot.player.nickname} currentName={slot.player.currentName} allNames={slot.player.allNames} />
               </Link>
               {isGuest(slot.player.tmId) && <GuestBadge />}
 {isTrial(slot.player.tmId) && <TrialBadge />}
@@ -288,7 +310,7 @@ export function LineupMatchesView({ lineup, rules, guestTmIds, trialTmIds, profi
       {hasStats && (
         <div>
           <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-            <h2 className="text-sm font-semibold text-fg-muted uppercase tracking-wider flex items-center gap-2">
+            <h2 className="text-sm font-semibold text-fg-muted  flex items-center gap-2">
               <BarChart2 size={14} />
               Overall stats
             </h2>
@@ -311,7 +333,7 @@ export function LineupMatchesView({ lineup, rules, guestTmIds, trialTmIds, profi
             <p className="text-sm text-fg-subtle">No data for this selection.</p>
           ) : (
             <div className="mb-4 space-y-2">
-              <h3 className="text-xs font-semibold uppercase tracking-wider text-fg-subtle">Maps at a glance</h3>
+              <h3 className="text-xs font-semibold  text-fg-subtle">Maps at a glance</h3>
               <MapOverviewTable maps={mapAggregates} />
             </div>
           )}
@@ -334,7 +356,7 @@ export function LineupMatchesView({ lineup, rules, guestTmIds, trialTmIds, profi
       {/* Matches */}
       <div>
         {matches.length === 0 ? (
-          <h2 className="mb-3 text-sm font-semibold text-fg-muted uppercase tracking-wider flex items-center gap-2">
+          <h2 className="mb-3 text-sm font-semibold text-fg-muted  flex items-center gap-2">
             <Swords size={14} />
             Matches (0)
           </h2>
@@ -345,7 +367,7 @@ export function LineupMatchesView({ lineup, rules, guestTmIds, trialTmIds, profi
             aria-expanded={showMatches}
             className="flex w-full items-center justify-between gap-3 rounded-xl border border-line bg-surface px-4 py-3 text-left hover:bg-raised/50"
           >
-            <h2 className="text-sm font-semibold text-fg-muted uppercase tracking-wider flex items-center gap-2">
+            <h2 className="text-sm font-semibold text-fg-muted  flex items-center gap-2">
               <Swords size={14} />
               Matches ({matches.length})
             </h2>
@@ -381,7 +403,7 @@ export function LineupMatchesView({ lineup, rules, guestTmIds, trialTmIds, profi
                               <div className="min-w-0">
                                 <div className="flex items-center gap-2 flex-wrap">
                                   <p className="text-sm font-medium text-fg">
-                                    {matchTag(match) && <span className="mr-2 font-mono text-xs text-brand-ink">{matchTag(match)}</span>}
+                                    {matchTag(match) && <span className="mr-2 tabular-nums text-xs text-brand-ink">{matchTag(match)}</span>}
                                     {match.stage.type === "SEEDING" ? "Seeding" : match.opponent ?? "Unknown opponent"}
                                   </p>
                                 </div>
@@ -392,7 +414,11 @@ export function LineupMatchesView({ lineup, rules, guestTmIds, trialTmIds, profi
                                       {formatDay(match.date)}
                                     </span>
                                   )}
-                                  <span>{match._count.subMatches} sub-match{match._count.subMatches !== 1 ? "es" : ""}</span>
+                                  {plannedMatchIds.includes(match.id) ? (
+                                    <Badge variant="secondary">upcoming</Badge>
+                                  ) : (
+                                    <span>{match._count.subMatches} sub-match{match._count.subMatches !== 1 ? "es" : ""}</span>
+                                  )}
                                 </div>
                               </div>
                             </div>
@@ -435,7 +461,7 @@ export function LineupMatchesView({ lineup, rules, guestTmIds, trialTmIds, profi
               <span className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-xs text-fg-muted">
                 {lineup.slots.map((s) => (
                   <span key={s.id} className="inline-flex items-center gap-1">
-                    {s.player.name}
+                    <PlayerName name={s.player.name} nickname={s.player.nickname} currentName={s.player.currentName} allNames={s.player.allNames} />
                     {isGuest(s.player.tmId) && <GuestBadge />}
 {isTrial(s.player.tmId) && <TrialBadge />}
                   </span>

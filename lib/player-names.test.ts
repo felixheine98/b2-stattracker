@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { allNames, applyCompNames, currentName, nameAt, planNameFrom } from "./player-names"
+import { allNames, applyCompNames, currentName, nameAt, nameHint, planNameFrom, shownName } from "./player-names"
 
 const change = (name: string, effectiveFrom: string) => ({ id: `${name}-${effectiveFrom}`, name, effectiveFrom })
 // Was "Raiiinnnn" from the beginning, "raiin" from 1 July, "raiin.wav" from 1 September (given out of order)
@@ -83,5 +83,30 @@ describe("applyCompNames", () => {
     expect(named.date).toBe(loaded.date)
     expect(named.results[1]).toEqual({ id: "r2", playerId: null, playerName: "Opponent" })
     expect(loaded.slots[0].player.name).toBe("raiin.wav")
+  })
+
+  it("passes on the nickname to players and their results", () => {
+    const named = applyCompNames(loaded, [{ ...players[0], nickname: "Rain" }], "2026-06-07")
+    expect(named.slots[0].player).toMatchObject({ name: "Raiiinnnn", nickname: "Rain" })
+    expect(named.results[0]).toMatchObject({ playerName: "Raiiinnnn", nickname: "Rain", allNames: ["Raiiinnnn", "raiin", "raiin.wav"] })
+  })
+})
+
+describe("shownName", () => {
+  it("is the nickname where the team gave one, otherwise the gamertag", () => {
+    expect(shownName({ name: "DMR_GameBros", nickname: "Dennis" })).toBe("Dennis")
+    expect(shownName({ name: "DMR_GameBros", nickname: null })).toBe("DMR_GameBros")
+  })
+})
+
+describe("nameHint", () => {
+  it("names the gamertag and the other names behind a nickname", () => {
+    expect(nameHint({ name: "raiin", nickname: "Rain", allNames: ["Raiiinnnn", "raiin", "raiin.wav"] })).toBe("raiin · other names: Raiiinnnn, raiin.wav")
+    expect(nameHint({ name: "DMR_GameBros", nickname: "Dennis", allNames: ["DMR_GameBros"] })).toBe("DMR_GameBros")
+  })
+
+  it("names today's gamertag behind an old one when there is no nickname", () => {
+    expect(nameHint({ name: "Raiiinnnn", currentName: "raiin.wav" })).toBe("today: raiin.wav")
+    expect(nameHint({ name: "raiin.wav", currentName: "raiin.wav" })).toBeNull()
   })
 })

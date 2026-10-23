@@ -42,6 +42,7 @@ import { StageHeading } from "@/components/stage-heading"
 import { StagePlanFields } from "@/components/stage-plan-fields"
 import { FormatStatsTable } from "./format-stats"
 import { MapStatsTable, StatsViewToggle } from "./map-stats"
+import { shownName } from "@/lib/player-names"
 
 interface Player {
   id: string
@@ -50,6 +51,7 @@ interface Player {
   name: string
   currentName?: string
   allNames?: string[]
+  nickname?: string | null
   country?: string | null
 }
 
@@ -131,13 +133,15 @@ interface Props {
   lineupPoints: Record<string, number>
   // Whether the format rules are switched on (lib/features.ts)
   matchRules: boolean
+  // Matches set up ahead without a result yet (docs/adr/008); empty while the planning is switched off
+  plannedMatchIds: string[]
 }
 
 function formatBadgeVariant(format: Format): "primary" | "secondary" {
   return format === "TIME_ATTACK_10" ? "primary" : "secondary"
 }
 
-export function TournamentDetailView({ tournament: initial, players, statsMatches, users, ownLineupId, hasPlanning, planningCard, canManage, lineupPoints, matchRules }: Props) {
+export function TournamentDetailView({ tournament: initial, players, statsMatches, users, ownLineupId, hasPlanning, planningCard, canManage, lineupPoints, matchRules, plannedMatchIds }: Props) {
   const [planningStarting, setPlanningStarting] = useState(false)
 
   async function startPlanning() {
@@ -393,7 +397,7 @@ export function TournamentDetailView({ tournament: initial, players, statsMatche
         </Link>
         <div className="flex items-start justify-between gap-4">
           <div className="min-w-0">
-            <h1 className="text-2xl font-bold text-fg mb-1">{tournament.name}</h1>
+            <h1 className="text-fg mb-1 page-title">{tournament.name}</h1>
             <div className="flex flex-wrap gap-1 mb-1">
               <Link href={`/tournaments?style=${styleParam(tournament.style)}`}>
                 <Badge variant="purple">{styleLabel(tournament.style)}</Badge>
@@ -538,7 +542,7 @@ export function TournamentDetailView({ tournament: initial, players, statsMatche
                             )}
                           >
                             <PlayerAvatar player={slot.player} className="h-3.5 w-3.5 text-[9px]" />
-                            <PlayerName name={slot.player.name} currentName={slot.player.currentName} />
+                            <PlayerName name={slot.player.name} nickname={slot.player.nickname} currentName={slot.player.currentName} allNames={slot.player.allNames} />
                             {isGuest(slot.player.tmId) && <GuestBadge />}
 {isTrial(slot.player.tmId) && <TrialBadge />}
                           </span>
@@ -578,7 +582,7 @@ export function TournamentDetailView({ tournament: initial, players, statsMatche
         return (
           <div>
             <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-              <h2 className="text-sm font-semibold text-fg-muted uppercase tracking-wider flex items-center gap-2">
+              <h2 className="text-sm font-semibold text-fg-muted  flex items-center gap-2">
                 <BarChart2 size={14} />
                 Overall stats
               </h2>
@@ -621,7 +625,7 @@ export function TournamentDetailView({ tournament: initial, players, statsMatche
       {/* Matches section */}
       <div>
         {matches.length === 0 ? (
-          <h2 className="mb-3 text-sm font-semibold text-fg-muted uppercase tracking-wider">Matches (0)</h2>
+          <h2 className="mb-3 text-sm font-semibold text-fg-muted ">Matches (0)</h2>
         ) : (
           <button
             type="button"
@@ -629,7 +633,7 @@ export function TournamentDetailView({ tournament: initial, players, statsMatche
             aria-expanded={showMatches}
             className="flex w-full items-center justify-between gap-3 rounded-xl border border-line bg-surface px-4 py-3 text-left hover:bg-raised/50"
           >
-            <h2 className="text-sm font-semibold text-fg-muted uppercase tracking-wider">Matches ({matches.length})</h2>
+            <h2 className="section-title">Matches ({matches.length})</h2>
             <ChevronDown size={16} className={cn("shrink-0 text-fg-muted transition-transform", showMatches && "rotate-180")} />
           </button>
         )}
@@ -674,9 +678,13 @@ export function TournamentDetailView({ tournament: initial, players, statsMatche
                                     {match.date && (
                                       <span>{formatDay(match.date)}</span>
                                     )}
-                                    <span>
-                                      {match._count.subMatches} sub-match{match._count.subMatches !== 1 ? "es" : ""}
-                                    </span>
+                                    {plannedMatchIds.includes(match.id) ? (
+                                      <Badge variant="secondary">upcoming</Badge>
+                                    ) : (
+                                      <span>
+                                        {match._count.subMatches} sub-match{match._count.subMatches !== 1 ? "es" : ""}
+                                      </span>
+                                    )}
                                   </div>
                                 </div>
                               </div>
@@ -818,13 +826,13 @@ export function TournamentDetailView({ tournament: initial, players, statsMatche
                       key={id}
                       className="inline-flex items-center gap-1.5 rounded-full border border-brand/30 bg-brand/10 py-0.5 pl-2.5 pr-1.5 text-xs text-fg"
                     >
-                      {player.name}
+                      <PlayerName name={player.name} nickname={player.nickname} currentName={player.currentName} allNames={player.allNames} />
                       {isGuest(player.tmId) && <GuestBadge />}
 {isTrial(player.tmId) && <TrialBadge />}
                       <button
                         type="button"
                         onClick={() => setLineupPlayerIds((ids) => ids.filter((x) => x !== id))}
-                        aria-label={`Remove ${player.name}`}
+                        aria-label={`Remove ${shownName(player)}`}
                         className="text-fg-muted hover:text-danger"
                       >
                         <X size={12} />
@@ -858,7 +866,7 @@ export function TournamentDetailView({ tournament: initial, players, statsMatche
                 {playerGroups.map((group) => (
                   <div key={group.label ?? "members"} className="space-y-2">
                     {group.label && (
-                      <p className="border-t border-line pt-2 text-[10px] font-semibold uppercase tracking-wider text-fg-subtle">
+                      <p className="border-t border-line pt-2 text-[10px] font-semibold  text-fg-subtle">
                         {group.label}
                       </p>
                     )}
@@ -872,7 +880,7 @@ export function TournamentDetailView({ tournament: initial, players, statsMatche
                     return (
                       <div key={p.id} className="flex items-center gap-3 opacity-50" title={`Already in lineup ${otherLineup.name}`}>
                         <input type="checkbox" disabled className="h-4 w-4" />
-                        <span className="text-sm text-fg-muted">{p.name}</span>
+                        <span className="text-sm text-fg-muted"><PlayerName name={p.name} nickname={p.nickname} currentName={p.currentName} allNames={p.allNames} /></span>
                         {isGuest(p.tmId) && <GuestBadge />}
 {isTrial(p.tmId) && <TrialBadge />}
                         <span className="text-xs text-fg-muted ml-auto">in {otherLineup.name}</span>
@@ -891,7 +899,7 @@ export function TournamentDetailView({ tournament: initial, players, statsMatche
                         }
                         className="h-4 w-4 accent-brand"
                       />
-                      <span className="text-sm text-fg group-hover:text-white">{p.name}</span>
+                      <span className="text-sm text-fg group-hover:text-white"><PlayerName name={p.name} nickname={p.nickname} currentName={p.currentName} allNames={p.allNames} /></span>
                       {isGuest(p.tmId) && <GuestBadge />}
 {isTrial(p.tmId) && <TrialBadge />}
                       <span className="text-xs text-fg-subtle font-mono ml-auto">{p.tmId.slice(0, 8)}…</span>

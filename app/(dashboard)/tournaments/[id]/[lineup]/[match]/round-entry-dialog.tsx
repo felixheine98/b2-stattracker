@@ -7,12 +7,13 @@ import { GuestBadge } from "@/components/guest-badge"
 import { Dialog, DialogTitle } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { roundPlacements } from "@/lib/round-score"
-import { entryPositions, entryState, type Cell, type EntryState } from "@/lib/round-entry"
+import { entryPositions, entryState, prefillRoundEntry, type Cell, type EntryState } from "@/lib/round-entry"
 import { cn, formatLabel, formatTime, parseTime, teamSize } from "@/lib/utils"
 import { ArrowDown, ArrowRight, Delete, Hash, Timer } from "lucide-react"
 import { useIsMobile } from "@/lib/use-is-mobile"
 import { useEffect, useMemo, useState } from "react"
 import type { Player, Round, SubMatch } from "./match-detail-view"
+import { PlayerName } from "@/components/player-name"
 
 // One round: playerId -> placement or DNF, plus how many opponents did not finish under OPPONENT_DNFS
 type Column = Record<string, Cell>
@@ -24,6 +25,8 @@ interface Props {
   subMatch: SubMatch
   // Players offered by default (sub-match or match lineup)
   pool: Player[]
+  // The finalised lineup of the match day for this format, which a sub-match without rounds starts with
+  planned?: { playerIds: string[]; map: string | null } | null
   allPlayers: Player[]
   isGuest: (tmId: string) => boolean
   onClose: () => void
@@ -73,7 +76,7 @@ function placementColor(position: number): string {
   return "text-fg-muted"
 }
 
-export function RoundEntryDialog({ subMatch, pool, allPlayers, isGuest, onClose, onSaved }: Props) {
+export function RoundEntryDialog({ subMatch, pool, planned = null, allPlayers, isGuest, onClose, onSaved }: Props) {
   const size = teamSize(subMatch.format) ?? 1
   const maxPosition = size * 2
 
@@ -94,15 +97,16 @@ export function RoundEntryDialog({ subMatch, pool, allPlayers, isGuest, onClose,
       })
       return column
     })
-    if (ids.length === 0 && pool.length === size) ids.push(...pool.map((p) => p.id))
-    return { ids, columns: normalize(columns), times }
+    const saved = subMatch.rounds.length > 0 ? { playerIds: ids, track: subMatch.rounds[0].track ?? null } : null
+    const start = prefillRoundEntry(saved, planned, pool.map((p) => p.id), size)
+    return { ids: start.playerIds, track: start.track, columns: normalize(columns), times }
   })
 
   const [playerIds, setPlayerIds] = useState(initial.ids)
   const [columns, setColumns] = useState(initial.columns)
   const [times, setTimes] = useState(initial.times)
   const [mode, setMode] = useState<Mode>("positions")
-  const [track, setTrack] = useState(subMatch.rounds[0]?.track ?? "")
+  const [track, setTrack] = useState(initial.track)
   const [direction, setDirection] = useState<Direction>("round")
   const [showAllPlayers, setShowAllPlayers] = useState(pool.length === 0)
   const [dirty, setDirty] = useState(false)
@@ -417,7 +421,7 @@ export function RoundEntryDialog({ subMatch, pool, allPlayers, isGuest, onClose,
                         : "border-line text-fg-muted hover:border-line-strong hover:text-fg"
                     )}
                   >
-                    {player.name}
+                    <PlayerName name={player.name} nickname={player.nickname} currentName={player.currentName} allNames={player.allNames} />
                     {isGuest(player.tmId) && <GuestBadge className="ml-1.5" />}
                   </button>
                 )
@@ -588,7 +592,7 @@ export function RoundEntryDialog({ subMatch, pool, allPlayers, isGuest, onClose,
                     </tr>
                   )}
                   <tr>
-                    <td className="sticky left-0 z-10 bg-surface pr-3 text-[10px] uppercase tracking-wider text-fg-subtle">
+                    <td className="sticky left-0 z-10 bg-surface pr-3 text-[10px]  text-fg-subtle">
                       Points
                     </td>
                     {states.map((state, c) => (

@@ -38,8 +38,12 @@ describe("opponent statistics", () => {
   })
   it("counts only completed matches in our match balance, but actual opponent rounds independently", () => {
     const stats = opponentStats([match, { ...match, id: "closed", closedAt: new Date(), confirmedOutcome: "W" }])
-    expect(stats.balance).toEqual({ won: 1, drawn: 0, lost: 0, open: 1 })
+    expect(stats.balance).toEqual({ won: 1, drawn: 0, lost: 0, open: 1, upcoming: 0 })
     expect(stats.players[0]).toMatchObject({ playerId: "opp", played: 2, won: 2, lost: 0, points: 4, avgPlace: 1, measured: 2 })
+  })
+  it("counts a planned match without rounds as upcoming, not as open", () => {
+    const planned = { ...match, id: "planned", subMatches: [] }
+    expect(opponentStats([match, planned]).balance).toEqual({ won: 0, drawn: 0, lost: 0, open: 1, upcoming: 1 })
   })
   it("separates formats, competitions and maps and excludes unknown map times and DNF times", () => {
     const other = { ...match, id: "other", tournamentId: "d", subMatches: [{ format: "ROUND_2V2", rounds: [{ track: "Map", results }] }] }

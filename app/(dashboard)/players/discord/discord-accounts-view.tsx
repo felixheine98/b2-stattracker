@@ -10,6 +10,7 @@ import { PlayerCombobox } from "@/components/player-combobox"
 import { BASE_PATH } from "@/lib/base-path"
 import { cn } from "@/lib/utils"
 import type { PlayerStatus } from "@/lib/player-status"
+import { shownName } from "@/lib/player-names"
 
 interface Account {
   id: string
@@ -22,7 +23,7 @@ interface Account {
   notAPlayer: boolean
   suggestion: string | null
 }
-interface Player { id: string; name: string; allNames: string[]; status: PlayerStatus; discordUserId: string | null }
+interface Player { id: string; name: string; nickname: string | null; allNames: string[]; status: PlayerStatus; discordUserId: string | null }
 
 type Tab = "open" | "linked" | "ignored"
 
@@ -60,7 +61,7 @@ export function DiscordAccountsView({ accounts, players, error }: { accounts: Ac
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="min-w-0">
           <Link href="/players" className="mb-1 inline-flex items-center gap-1 text-sm text-fg-muted hover:text-fg"><ArrowLeft size={14} /> Players</Link>
-          <h1 className="text-2xl font-bold text-fg">Discord accounts</h1>
+          <h1 className="text-fg page-title">Discord accounts</h1>
           <p className="mt-0.5 text-sm text-fg-muted">Link each account to its player once. Reaction imports then recognise it by its Discord ID, also after renames.</p>
         </div>
         {tab === "open" && suggested.length > 0 && (
@@ -104,15 +105,15 @@ export function DiscordAccountsView({ accounts, players, error }: { accounts: Ac
                 </p>
                 <p className="truncate text-xs text-fg-muted">
                   {a.username && `@${a.username}`}{a.directoryName && a.directoryName !== a.name && ` · team list: ${a.directoryName}`}
-                  {tab === "linked" && a.playerId && <> · <span className="text-fg-soft">{byId.get(a.playerId)?.name}</span></>}
+                  {tab === "linked" && a.playerId && <> · <span className="text-fg-soft">{byId.get(a.playerId) && shownName(byId.get(a.playerId)!)}</span></>}
                 </p>
               </div>
               {tab === "open" && <>
                 <div className="min-w-0 md:w-64">
                   <PlayerCombobox aria-label={`Player for ${a.name}`} value={chosen} disabled={busy} onChange={value => setChoices(old => ({ ...old, [a.id]: value }))}
-                    players={players.map(p => ({ id: p.id, name: p.name, allNames: p.allNames, hint: p.discordUserId ? "has an account" : undefined }))} />
+                    players={players.map(p => ({ id: p.id, name: p.name, nickname: p.nickname, allNames: p.allNames, hint: p.discordUserId ? "has an account" : undefined }))} />
                   {chosen && chosen === a.suggestion && !choices[a.id] && <p className="mt-1 text-xs text-fg-subtle">Suggested by name</p>}
-                  {replaces && <p className="mt-1 text-xs text-danger">Replaces {replaces.name}&apos;s current account</p>}
+                  {replaces && <p className="mt-1 text-xs text-danger">Replaces {shownName(replaces)}&apos;s current account</p>}
                 </div>
                 <div className="flex flex-wrap gap-2">
                   <Button size="sm" disabled={busy || !chosen} onClick={() => link([{ discordUserId: a.id, playerId: chosen }])}><Check size={14} /> Link</Button>
@@ -129,7 +130,7 @@ export function DiscordAccountsView({ accounts, players, error }: { accounts: Ac
       {withoutAccount.length > 0 && (
         <section className="space-y-2">
           <h2 className="text-sm font-semibold text-fg">Members and trials without a Discord account ({withoutAccount.length})</h2>
-          <p className="text-sm text-fg-muted">{withoutAccount.map(p => p.name).join(", ")}</p>
+          <p className="text-sm text-fg-muted">{withoutAccount.map(p => shownName(p)).join(", ")}</p>
         </section>
       )}
     </div>

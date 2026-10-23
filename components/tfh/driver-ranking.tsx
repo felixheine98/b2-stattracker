@@ -8,6 +8,7 @@ import { formatTfhDuration } from "@/lib/tfh-profile"
 import { rankTfhDrivers, type TfhMetric } from "@/lib/tfh-ranking"
 import { formatTime } from "@/lib/utils"
 import { SortHeader } from "./sort-header"
+import { shownName } from "@/lib/player-names"
 
 type Race = NonNullable<Awaited<ReturnType<typeof getTfhRace>>>
 
@@ -57,8 +58,8 @@ export function TfhDriverRanking({ race }: { race: Race }) {
               <tr key={d.id} className="border-t border-table-rule">
                 <td className={first}>
                   <span className="flex items-center gap-2">
-                    <span className="w-5 shrink-0 text-right font-mono text-fg-subtle">{rank ?? "–"}</span>
-                    <Link href={playerPath(d.player)} title={`Current profile: ${d.player.name}`} className="block max-w-32 truncate text-brand-ink hover:underline sm:max-w-40">{d.sourceName}</Link>
+                    <span className="w-5 shrink-0 text-right tabular-nums text-fg-subtle">{rank ?? "–"}</span>
+                    <Link href={playerPath(d.player)} title={`Current profile: ${shownName(d.player)}`} className="block max-w-32 truncate text-brand-ink hover:underline sm:max-w-40">{d.sourceName}</Link>
                   </span>
                 </td>
                 <td className="px-3 py-2 text-left text-fg-muted">
@@ -69,8 +70,8 @@ export function TfhDriverRanking({ race }: { race: Race }) {
                 <td className={cell}>{d.cpm?.toFixed(3) ?? "—"}</td>
                 <td className={cell}>{d.checkpoints ?? "—"}</td>
                 <td className={cell}>{formatTfhDuration(d.playTimeSeconds)}</td>
-                <td className={`${cell} font-mono`}>{time(d.bestLapMs)}</td>
-                <td className={`${cell} font-mono`}>{time(d.averageLapMs)}</td>
+                <td className={`${cell} tabular-nums`}>{time(d.bestLapMs)}</td>
+                <td className={`${cell} tabular-nums`}>{time(d.averageLapMs)}</td>
                 <td className={cell}>{d.finishes.length}</td>
               </tr>
             ))}

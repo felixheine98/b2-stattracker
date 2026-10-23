@@ -9,8 +9,9 @@ interface Params {
   params: Promise<{ id: string }>
 }
 
-// Link or unlink a user account to this player profile, set the player's country, or mark the
-// player as inactive (does not drive competitions as a rule, see lib/planning.ts)
+// Link or unlink a user account to this player profile, set the player's country or nickname
+// (docs/adr/009-spitznamen.md), or mark the player as inactive (does not drive competitions as
+// a rule, see lib/planning.ts)
 export async function PATCH(req: Request, { params }: Params) {
   const session = await auth()
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
@@ -18,8 +19,10 @@ export async function PATCH(req: Request, { params }: Params) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 })
 
   const { id } = await params
-  const body = await req.json() as { userId?: string | null; country?: string | null; inactive?: unknown }
+  const body = await req.json() as { userId?: string | null; country?: string | null; inactive?: unknown; nickname?: unknown }
   const { userId, country, inactive } = body
+  // An emptied nickname removes it
+  const nickname = typeof body.nickname === "string" ? body.nickname.trim() || null : body.nickname
 
   // Validate everything before writing, so a rejected request changes nothing
   const target = await db.player.findUnique({ where: { id }, include: { statusChanges: true, user: { select: { id: true } } } })
@@ -30,6 +33,9 @@ export async function PATCH(req: Request, { params }: Params) {
 
   if (inactive !== undefined && typeof inactive !== "boolean")
     return NextResponse.json({ error: "Inactive is either on or off" }, { status: 400 })
+
+  if (nickname !== undefined && nickname !== null && typeof nickname !== "string")
+    return NextResponse.json({ error: "The nickname is a text" }, { status: 400 })
 
   if (userId) {
     // Members and trials can link a new login; other statuses keep an existing link.
@@ -46,6 +52,7 @@ export async function PATCH(req: Request, { params }: Params) {
   await db.$transaction([
     ...(country !== undefined ? [db.player.update({ where: { id }, data: { country } })] : []),
     ...(inactive !== undefined ? [db.player.update({ where: { id }, data: { inactive } })] : []),
+    ...(nickname !== undefined ? [db.player.update({ where: { id }, data: { nickname } })] : []),
     // Clear any existing link to this player first
     ...(userId !== undefined ? [db.user.updateMany({ where: { playerId: id }, data: { playerId: null } })] : []),
     ...(userId ? [db.user.update({ where: { id: userId }, data: { playerId: id } })] : []),

@@ -11,9 +11,11 @@ import { cn } from "@/lib/utils"
 import { AlertTriangle, Check, Copy, Plus, ThumbsUp, Trash2, X } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
+import { PlayerName } from "@/components/player-name"
+import type { NameFields } from "@/lib/player-names"
 
 export interface BoardRow {
-  player: { id: string; tmId: string; name: string }
+  player: NameFields & { id: string; tmId: string; name: string }
   answer: Answer
   guest: boolean
 }
@@ -264,7 +266,7 @@ export function VariantsBoard({ tournamentId, tournamentHref, rows, levels, vari
               )}
             >
               <span className={cn("h-2 w-2 shrink-0 rounded-full", dotColor(row.answer))} />
-              <span className="truncate">{row.player.name}</span>
+              <span className="truncate"><PlayerName name={row.player.name} nickname={row.player.nickname} currentName={row.player.currentName} allNames={row.player.allNames} /></span>
               {out && <AlertTriangle size={11} className="shrink-0" />}
               {holder && <span className="shrink-0 rounded bg-info px-1 text-[10px] font-semibold text-canvas">{holder.name}</span>}
               {/* The note belongs to the player in this variant and stays wherever they are moved */}
@@ -274,7 +276,7 @@ export function VariantsBoard({ tournamentId, tournamentHref, rows, levels, vari
         }
 
         return (
-          <section key={variant.id} className={cn("space-y-4 rounded-xl border p-5", adopted ? "border-brand/60" : "border-line")}>
+          <section key={variant.id} className={cn("space-y-4 rounded-xl border bg-surface p-4 sm:p-5", adopted ? "border-brand/60" : "border-line")}>
             <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5">
               {archived ? (
                 <h3 className="text-base font-semibold text-fg">{variant.name}</h3>
@@ -342,7 +344,7 @@ export function VariantsBoard({ tournamentId, tournamentHref, rows, levels, vari
             {/* The tapped player: where to put them, and the note on them in this variant */}
             {picked && !archived && (
               <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 rounded-lg bg-brand/10 px-2.5 py-1.5 text-xs text-brand-ink">
-                <span><strong>{picked.player.name}</strong> selected – tap where to put them</span>
+                <span><strong><PlayerName name={picked.player.name} nickname={picked.player.nickname} currentName={picked.player.currentName} allNames={picked.player.allNames} /></strong> selected – tap where to put them</span>
                 <SavingInput
                   key={picked.player.id}
                   value={variant.playerNotes[picked.player.id] ?? ""}
@@ -357,7 +359,7 @@ export function VariantsBoard({ tournamentId, tournamentHref, rows, levels, vari
             )}
 
             <div className={cn(area(POOL), "flex min-h-14 flex-wrap items-center gap-2")} {...dropProps(POOL)}>
-              <span className="mr-1 text-[11px] font-semibold uppercase tracking-wider text-fg-subtle">Not placed {board.pool.length}</span>
+              <span className="mr-1 text-xs font-medium text-fg-muted">Player pool {board.pool.length}</span>
               {board.pool.map((row) => chip(row))}
             </div>
 

@@ -1,12 +1,19 @@
+import { ResultBoard } from "@/components/result-board"
+import { BrandLogo } from "@/components/brand-logo"
+import { OpponentLogo } from "@/components/opponents/opponent-logo"
+import { Wdl } from "@/components/wdl"
 import { AvailabilityCard } from "@/components/planning/availability-card"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
 import { auth } from "@/lib/auth"
+import { PlayerName } from "@/components/player-name"
 import { bestPerformer, dashboardTournaments, latestStageId, lineupRecords, overallRecord, type LineupRecord, type Performer } from "@/lib/dashboard"
 import { styleLabel } from "@/lib/comp-styles"
 import { db } from "@/lib/db"
 import { shapeSummaries, summaryInclude } from "@/lib/summary"
 import { matchTag } from "@/lib/match-order"
+import { matchdayPlanningEnabled } from "@/lib/features"
+import { isPlanned, upcomingMatches } from "@/lib/upcoming"
 import { formatGapSeconds } from "@/lib/pace"
 import { PacePct } from "@/components/pace-pct"
 import { lineupPath, matchPath, playerPath, tournamentPath } from "@/lib/paths"
@@ -15,20 +22,20 @@ import { buildProfile } from "@/lib/player-profile"
 import { currentStatus, formatDay } from "@/lib/player-status"
 import { sortStages, stageName } from "@/lib/stages"
 import { cn, formatLabel } from "@/lib/utils"
-import { ChevronRight, Star, Swords, Trophy, Users } from "lucide-react"
+import { CalendarClock, ChevronRight, Star, Swords, Trophy, Users } from "lucide-react"
 import Link from "next/link"
 
-const HEADING = "text-sm font-semibold text-fg-muted uppercase tracking-wider mb-3"
+const HEADING = "section-title mb-3"
 
 function Tile({ label, value, hint, icon }: { label: string; value: React.ReactNode; hint?: React.ReactNode; icon?: React.ReactNode }) {
   return (
-    <div className="rounded-xl border border-line bg-surface px-4 py-3">
+    <div className="metric-tile">
       <p className="flex items-center justify-between text-xs text-fg-muted">
         {label}
         {icon}
       </p>
-      <p className="mt-0.5 font-mono text-xl font-semibold text-fg">{value}</p>
-      {hint && <p className="mt-0.5 text-xs text-fg-subtle">{hint}</p>}
+      <p className="metric-value text-fg">{value}</p>
+      {hint && <p className="mt-0.5 text-xs text-fg-muted">{hint}</p>}
     </div>
   )
 }
@@ -46,7 +53,7 @@ export default async function DashboardPage() {
 
   const [self, players, tournaments, recent, matches] = await Promise.all([
     userId ? db.user.findUnique({ where: { id: userId }, select: { playerId: true } }) : null,
-    db.player.findMany({ where: { isOpponentOnly: false }, select: { id: true, slug: true, tmId: true, name: true, initialStatus: true, statusChanges: true } }),
+    db.player.findMany({ where: { isOpponentOnly: false }, select: { id: true, slug: true, tmId: true, name: true, nickname: true, initialStatus: true, statusChanges: true } }),
     db.tournament.findMany({
       where: { tfhRace: { is: null } },
       select: {
@@ -67,6 +74,7 @@ export default async function DashboardPage() {
       select: {
         id: true, slug: true, date: true, createdAt: true, opponent: true, number: true, label: true, closedAt: true, confirmedOutcome: true,
         tournamentId: true, tournamentLineupId: true,
+        opponentLineup: { select: { logo: true, team: { select: { logo: true } } } },
         stage: { select: { id: true, type: true, number: true } },
         subMatches: {
           orderBy: { order: "asc" },
@@ -103,11 +111,20 @@ export default async function DashboardPage() {
     ...(shown.last ? [{ tournament: shown.last, heading: "Last Tournament" }] : []),
   ]
 
+  // Matches of the current tournaments that are set up but not played yet (docs/adr/008)
+  const upcoming = matchdayPlanningEnabled()
+    ? upcomingMatches(matches.filter((m) => shown.current.some((t) => t.id === m.tournamentId))).slice(0, 6).flatMap((match) => {
+        const tournament = shown.current.find((t) => t.id === match.tournamentId)!
+        const lineup = tournament.tournamentLineups.find((l) => l.id === match.tournamentLineupId)
+        return lineup ? [{ match, tournament, lineup }] : []
+      })
+    : []
+
   return (
     <div className="space-y-6 page-wide">
       <div>
-        <h1 className="text-2xl font-bold text-fg">Welcome back, {session?.user?.name}</h1>
-        <p className="text-fg-muted text-sm mt-0.5">Here is how the team is doing.</p>
+        <h1 className="text-fg page-title">Welcome back, {session?.user?.name}</h1>
+        <p className="text-fg-muted text-sm mt-0.5">Your results, lineups and next competition.</p>
       </div>
 
       {/* From 1536px on the tournaments stand on the left, the rest on the right */}
@@ -123,22 +140,32 @@ export default async function DashboardPage() {
         </div>
       )}
 
-      <div>
-        <h2 className={HEADING}>Overall</h2>
-        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4 2xl:grid-cols-2">
-          <Tile label="Members" value={memberCount} icon={<Users size={15} className="text-brand-ink" />} />
-          <Tile label="Round tournaments" value={tournaments.length} icon={<Trophy size={15} className="text-brand-ink" />} />
-          <Tile
-            label="Matches"
-            value={matches.length}
-            hint={`${overall.matchesWon} W · ${overall.matchesDrawn} D · ${overall.matchesLost} L`}
-            icon={<Swords size={15} className="text-brand-ink" />}
-          />
-          <Tile label="Round win rate" value={winRate(overall.roundsWon, overall.roundsLost)} hint={`${overall.roundsWon} W – ${overall.roundsLost} L`} />
-        </div>
-      </div>
-
       <div className="page-main space-y-6">
+      {upcoming.length > 0 && (
+        <section>
+          <h2 className={HEADING}>Next Matches</h2>
+          <div className="overflow-hidden rounded-lg border border-line">
+            {upcoming.map(({ match, tournament, lineup }) => (
+              <Link
+                key={match.id}
+                href={matchPath(tournament, lineup, match)}
+                className="flex flex-wrap items-center gap-x-3 gap-y-0.5 border-b border-line px-3 py-2.5 text-sm last:border-0 hover:bg-raised"
+              >
+                <CalendarClock size={15} className="shrink-0 text-brand-ink" />
+                <span className="w-24 shrink-0 tabular-nums text-fg-soft">{match.date ? formatDay(match.date) : "date open"}</span>
+                <span className="min-w-0 flex-1 truncate">
+                  <span className="font-medium text-fg">{lineup.name}</span>
+                  <span className="text-fg-muted"> vs {match.opponent ?? "opponent open"}</span>
+                </span>
+                <span className="w-full text-xs text-fg-subtle sm:w-auto">
+                  {[tournament.name, stageName(match.stage, tournament.stages), matchTag(match)].filter(Boolean).join(" · ")}
+                </span>
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
+
       {blocks.map(({ tournament, heading }) => {
         const own = matches.filter((m) => m.tournamentId === tournament.id)
         const stages = sortStages(tournament.stages)
@@ -173,7 +200,7 @@ export default async function DashboardPage() {
             <Card>
               <CardContent className="space-y-5 pt-5">
                 <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
-                  <Link href={tournamentPath(tournament)} className="flex items-center gap-2 text-lg font-semibold text-fg hover:text-brand-ink">
+                  <Link href={tournamentPath(tournament)} className="flex min-w-0 items-center gap-2 text-xl font-semibold text-fg hover:text-brand-ink">
                     <Trophy size={17} className="shrink-0 text-brand-ink" />
                     <span className="break-words">{tournament.name}</span>
                   </Link>
@@ -182,6 +209,25 @@ export default async function DashboardPage() {
                     {tournament.endDate ? ` – ${formatDay(tournament.endDate)}` : ""}
                   </span>
                 </div>
+
+                {records.length === 1 && records.map((record) => {
+                  const last = lastMatchOf(record)
+                  const lineup = lineups.find((l) => l.id === record.lineupId)
+                  const opponentLogo = last?.match.opponentLineup?.logo ?? last?.match.opponentLineup?.team?.logo
+                  return last && lineup && record.lastMatch ? (
+                    <Link key={record.lineupId} href={last.path} className="block rounded-xl focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-info">
+                      <ResultBoard
+                        team={lineup.name}
+                        opponent={record.lastMatch.opponent ?? "Opponent"}
+                        teamLogo={<BrandLogo className="h-10 w-10 object-contain" />}
+                        opponentLogo={opponentLogo ? <OpponentLogo name={record.lastMatch.opponent ?? "Opponent"} logo={opponentLogo} /> : undefined}
+                        score={<Wdl won={record.lastMatch.mapsWon} drawn={0} lost={record.lastMatch.mapsLost} unit="Maps" />}
+                        detail={<>Maps · {record.lastMatch.confirmed ? "Confirmed" : "Open"}</>}
+                        context="Last match"
+                      />
+                    </Link>
+                  ) : null
+                })}
 
                 {/* One row per lineup; on phones each row stacks into a small card */}
                 <div className="overflow-hidden rounded-lg border border-line">
@@ -195,6 +241,7 @@ export default async function DashboardPage() {
                   {records.map((record) => {
                     const lineup = lineups.find((l) => l.id === record.lineupId)!
                     const last = lastMatchOf(record)
+                    const opponentLogo = last?.match.opponentLineup?.logo ?? last?.match.opponentLineup?.team?.logo
                     const outcome = record.lastMatch?.outcome ? OUTCOME[record.lastMatch.outcome] : null
                     return (
                       <div
@@ -208,23 +255,24 @@ export default async function DashboardPage() {
                           <Link href={lineupPath(tournament, lineup)} className="truncate font-medium text-fg hover:text-brand-ink">{lineup.name}</Link>
                           {record.lineupId === ownLineupId && <span className="shrink-0 text-xs text-brand-ink">your lineup</span>}
                         </span>
-                        <span className="font-mono text-fg md:text-right">
+                        <span className="tabular-nums text-fg md:text-right">
                           <span className="mr-1.5 font-sans text-xs text-fg-subtle md:hidden">Matches</span>
                           {record.matchesWon}–{record.matchesDrawn}–{record.matchesLost}
                         </span>
-                        <span className="font-mono text-fg-soft md:text-right">
+                        <span className="tabular-nums text-fg-soft md:text-right">
                           <span className="mr-1.5 font-sans text-xs text-fg-subtle md:hidden">Maps</span>
                           {record.mapsWon}–{record.mapsLost}
                         </span>
-                        <span className="font-mono text-fg-soft md:text-right">
+                        <span className="tabular-nums text-fg-soft md:text-right">
                           <span className="mr-1.5 font-sans text-xs text-fg-subtle md:hidden">Rounds</span>
                           {record.roundsWon}–{record.roundsLost}
                         </span>
                         <span className="col-span-3 min-w-0 text-xs md:col-span-1 md:text-sm">
                           {last && record.lastMatch ? (
                             <Link href={last.path} className="flex min-w-0 items-center gap-1.5 text-fg-soft hover:text-fg">
-                              {outcome && <span className={cn("font-mono font-bold", outcome.className)}>{outcome.label}</span>}
-                              <span className="font-mono">{record.lastMatch.mapsWon}–{record.lastMatch.mapsLost}</span>
+                              {opponentLogo && <OpponentLogo name={record.lastMatch.opponent ?? "Opponent"} logo={opponentLogo} size={24} />}
+                              {outcome && <span className={cn("tabular-nums font-bold", outcome.className)}>{outcome.label}</span>}
+                              <span className="tabular-nums">{record.lastMatch.mapsWon}–{record.lastMatch.mapsLost}</span>
                               <span className="truncate">vs {record.lastMatch.opponent ?? "Unknown"}</span>
                               {matchTag(last.match) && <span className="shrink-0 text-fg-subtle">{matchTag(last.match)}</span>}
                               {!record.lastMatch.confirmed && <span className="shrink-0 text-bronze">open</span>}
@@ -250,18 +298,18 @@ export default async function DashboardPage() {
                         <div key={title} className="flex items-center gap-3 rounded-lg border border-line bg-canvas px-3 py-2.5">
                           <Star size={18} className="shrink-0 text-brand-ink" />
                           <div className="min-w-0 flex-1">
-                            <p className="text-[11px] font-semibold uppercase tracking-wider text-fg-subtle">{title}</p>
+                            <p className="text-[11px] font-semibold  text-fg-subtle">{title}</p>
                             <p className="truncate text-sm">
                               {player ? (
-                                <Link href={playerPath(player)} className="font-semibold text-fg hover:text-brand-ink">{player.name}</Link>
+                                <Link href={playerPath(player)} className="font-semibold text-fg hover:text-brand-ink"><PlayerName name={player.name} nickname={player.nickname} /></Link>
                               ) : (
-                                <span className="font-semibold text-fg">{performer.name}</span>
+                                <span className="font-semibold text-fg"><PlayerName name={performer.name} nickname={performer.nickname} currentName={performer.currentName} allNames={performer.allNames} /></span>
                               )}
                               {lineup && <span className="text-fg-muted"> · {lineup.name}</span>}
                             </p>
                           </div>
                           <div className="shrink-0 text-right">
-                            <p className="font-mono text-sm font-semibold text-fg">{performer.avgPlace.toFixed(2)}</p>
+                            <p className="tabular-nums text-sm font-semibold text-fg">{performer.avgPlace.toFixed(2)}</p>
                             <p className="text-xs text-fg-subtle">avg place · {performer.rounds} rounds</p>
                           </div>
                         </div>
@@ -281,7 +329,7 @@ export default async function DashboardPage() {
                         </Link>
                       )}
                     </div>
-                    <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+                    <div className="metric-strip">
                       <Tile label="Rounds" value={mine.total.roundsPlayed} />
                       <Tile
                         label="Avg place"
@@ -312,7 +360,7 @@ export default async function DashboardPage() {
       {recent.length > 0 && (
         <section>
           <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-            <h2 className="text-sm font-semibold text-fg-muted uppercase tracking-wider">Recent Tournaments</h2>
+            <h2 className="section-title">Recent Tournaments</h2>
             <Link href="/tournaments" className="inline-flex items-center gap-1 text-sm text-brand-ink hover:underline">
               All tournaments
               <ChevronRight size={14} />
@@ -332,6 +380,21 @@ export default async function DashboardPage() {
         </section>
       )}
       </div>
+      <div>
+        <h2 className={HEADING}>Overall</h2>
+        <div className="metric-strip">
+          <Tile label="Members" value={memberCount} icon={<Users size={15} className="text-brand-ink" />} />
+          <Tile label="Round tournaments" value={tournaments.length} icon={<Trophy size={15} className="text-brand-ink" />} />
+          <Tile
+            label="Matches"
+            value={matches.filter((m) => !isPlanned(m)).length}
+            hint={`${overall.matchesWon} W · ${overall.matchesDrawn} D · ${overall.matchesLost} L`}
+            icon={<Swords size={15} className="text-brand-ink" />}
+          />
+          <Tile label="Round win rate" value={winRate(overall.roundsWon, overall.roundsLost)} hint={`${overall.roundsWon} W – ${overall.roundsLost} L`} />
+        </div>
+      </div>
+
       </div>
     </div>
   )

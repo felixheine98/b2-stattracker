@@ -31,7 +31,7 @@ export function PillSelect({ options, selected, onChange, className }: Props) {
 
   const pill = (active: boolean) =>
     cn(
-      "whitespace-nowrap rounded-md px-3 py-1 text-xs font-medium transition-colors",
+      "whitespace-nowrap rounded-md max-md:min-h-11 px-3 py-1 text-xs font-medium transition-colors",
       active ? "bg-brand/15 text-brand-ink" : "text-fg-muted hover:text-fg"
     )
   return (
@@ -51,7 +51,7 @@ export function PillSelect({ options, selected, onChange, className }: Props) {
         role="checkbox"
         aria-checked={multi}
         onClick={() => setMulti(!multi)}
-        className={cn("inline-flex items-center gap-1.5 text-xs transition-colors", multi ? "text-fg-soft" : "text-fg-subtle hover:text-fg-muted")}
+        className={cn("inline-flex max-md:min-h-11 items-center gap-1.5 text-xs transition-colors", multi ? "text-fg-soft" : "text-fg-subtle hover:text-fg-muted")}
       >
         <span
           className={cn(

@@ -20,6 +20,7 @@ import type { PlanningState } from "@/lib/planning-db"
 import type { Activity } from "@/lib/planning-presence"
 import { usePlanningLive } from "@/lib/use-planning-live"
 import { useLayoutEffect, useRef, useState } from "react"
+import { PlayerName } from "@/components/player-name"
 
 interface Props {
   initial: PlanningState
@@ -83,7 +84,7 @@ export function PlanningView({ initial, ownPlayerId, userId, canManage }: Props)
     <div className="min-w-0 md:w-52 md:shrink-0">
       <div className="flex min-w-0 items-center gap-2">
         <PlayerAvatar player={row.player} />
-        <span className="truncate text-sm font-medium text-fg">{row.player.name}</span>
+        <span className="truncate text-sm font-medium text-fg"><PlayerName name={row.player.name} nickname={row.player.nickname} currentName={row.player.currentName} allNames={row.player.allNames} /></span>
         {row.guest && <GuestBadge />}
         {row.answer === "INACTIVE" && (
           <span title="Does not drive competitions as a rule. An answer for this tournament still counts." className="shrink-0 rounded-full border border-violet/40 bg-violet/15 px-1.5 py-px text-[10px] font-medium leading-4 text-violet">
@@ -140,7 +141,7 @@ export function PlanningView({ initial, ownPlayerId, userId, canManage }: Props)
           {tournament.name}
         </Link>
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <h1 className="text-2xl font-bold text-fg">Planning</h1>
+          <h1 className="text-fg page-title">Lineup planning</h1>
           {presence.length > 0 && (
             <p className="flex flex-wrap items-center gap-1.5 text-xs text-fg-muted">
               here right now:
@@ -165,7 +166,7 @@ export function PlanningView({ initial, ownPlayerId, userId, canManage }: Props)
       {canManage && !archived && tab === "availability" && <DiscordImport state={state} mutate={mutate} />}
 
       {variants && (
-        <div className="inline-flex rounded-lg border border-line p-1" role="tablist">
+        <div className="planning-tabs" role="tablist">
           {([
             ["availability", "Availability"],
             ["variants", `Lineups (${variants.length})`],
@@ -204,42 +205,11 @@ export function PlanningView({ initial, ownPlayerId, userId, canManage }: Props)
       ) : (
         // From 1536px on the list stands on the left, what only managers need on the right
         <div className="page-columns">
-      {canManage && !archived && (
-        <div className="space-y-2 rounded-xl border border-line p-4">
-          <h2 className="text-xs font-semibold uppercase tracking-wider text-fg-muted">Extra levels</h2>
-          <p className="text-xs text-fg-subtle">
-            Next to “Available”, “Maybe” and “Not available”, for this planning only – e.g. “stand-in only”.
-          </p>
-          <div className="flex flex-wrap items-center gap-2">
-            {levels.map((l) => (
-              <span key={l.id} className="inline-flex items-center gap-1.5 rounded-full border border-bronze/40 bg-bronze/15 py-1 pl-3 pr-2 text-xs text-bronze">
-                {l.name}
-                <button
-                  type="button"
-                  onClick={() => { if (confirm(`Remove the level “${l.name}”? Whoever chose it is without an answer again.`)) call(`/levels/${l.id}`, "DELETE") }}
-                  aria-label={`Remove ${l.name}`}
-                  className="hover:text-danger"
-                >
-                  <X size={12} />
-                </button>
-              </span>
-            ))}
-            <form onSubmit={addLevel} className="flex items-center gap-2">
-              <Input value={levelName} onChange={(e) => setLevelName(e.target.value)} placeholder="New level" maxLength={30} className="h-8 w-36 text-xs" />
-              <Button type="submit" size="sm" variant="outline" disabled={!levelName.trim()}>
-                <Plus size={14} />
-                Add
-              </Button>
-            </form>
-          </div>
-        </div>
-      )}
-
       {error && <p className="text-sm text-danger">{error}</p>}
 
       <div className="page-main">
         <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-          <h2 className="text-xs font-semibold uppercase tracking-wider text-fg-muted">Availability</h2>
+          <h2 className="section-title">Availability</h2>
           <div className="inline-flex rounded-lg border border-line p-0.5" role="tablist" aria-label="Layout of the list">
             {([["groups", "Groups"], ["list", "List"]] as const).map(([value, label]) => (
               <button
@@ -292,7 +262,7 @@ export function PlanningView({ initial, ownPlayerId, userId, canManage }: Props)
             <div className="grid grid-cols-1 items-start gap-3 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 min-[1800px]:grid-cols-5">
               {groups.map((group) => (
                 <section key={group.answer} className="overflow-hidden rounded-xl border border-line bg-surface">
-                  <h3 className={cn("flex items-center justify-between border-b px-3 py-2 text-xs font-semibold uppercase tracking-wider", answerColor(group.answer))}>
+                  <h3 className={cn("flex items-center justify-between border-b px-3 py-2 text-xs font-semibold ", answerColor(group.answer))}>
                     {group.label}
                     <span className="font-mono">{group.rows.length}</span>
                   </h3>
@@ -309,10 +279,10 @@ export function PlanningView({ initial, ownPlayerId, userId, canManage }: Props)
                             onClick={() => setEditing(editing === row.player.id ? null : row.player.id)}
                             aria-expanded={editable ? editing === row.player.id : undefined}
                             title={editable ? "Change answer" : undefined}
-                            className={cn("flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm", editable && "hover:bg-raised", own && "bg-brand/5")}
+                            className={cn("flex min-h-9 max-md:min-h-11 w-full items-center gap-2 px-3 py-1.5 text-left text-sm", editable && "hover:bg-raised", own && "bg-brand/5")}
                           >
                             <PlayerAvatar player={row.player} className="h-5 w-5 text-[10px]" />
-                            <span className="min-w-0 truncate text-fg">{row.player.name}</span>
+                            <span className="min-w-0 truncate text-fg"><PlayerName name={row.player.name} nickname={row.player.nickname} currentName={row.player.currentName} allNames={row.player.allNames} /></span>
                             {row.guest && <GuestBadge />}
                             {own && <span className="text-xs text-brand-ink">you</span>}
                             {row.answeredAt && <time dateTime={row.answeredAt} className="ml-auto shrink-0 text-xs text-fg-muted" title={`Reacted on Discord ${formatTime(row.answeredAt)}`}>{formatTimeShort(row.answeredAt)}</time>}
@@ -340,9 +310,40 @@ export function PlanningView({ initial, ownPlayerId, userId, canManage }: Props)
         )}
       </div>
 
+      {canManage && !archived && (
+        <div className="space-y-3 work-panel p-4">
+          <h2 className="section-title">Extra levels</h2>
+          <p className="text-xs text-fg-subtle">
+            Next to “Available”, “Maybe” and “Not available”, for this planning only – e.g. “stand-in only”.
+          </p>
+          <div className="flex flex-wrap items-center gap-2">
+            {levels.map((l) => (
+              <span key={l.id} className="inline-flex items-center gap-1.5 rounded-full border border-bronze/40 bg-bronze/15 py-1 pl-3 pr-2 text-xs text-bronze">
+                {l.name}
+                <button
+                  type="button"
+                  onClick={() => { if (confirm(`Remove the level “${l.name}”? Whoever chose it is without an answer again.`)) call(`/levels/${l.id}`, "DELETE") }}
+                  aria-label={`Remove ${l.name}`}
+                  className="hover:text-danger"
+                >
+                  <X size={12} />
+                </button>
+              </span>
+            ))}
+            <form onSubmit={addLevel} className="flex items-center gap-2">
+              <Input value={levelName} onChange={(e) => setLevelName(e.target.value)} placeholder="New level" maxLength={30} className="h-8 w-36 text-xs" />
+              <Button type="submit" size="sm" variant="outline" disabled={!levelName.trim()}>
+                <Plus size={14} />
+                Add
+              </Button>
+            </form>
+          </div>
+        </div>
+      )}
+
       {canManage && !archived && addable.length > 0 && (
         <div className="space-y-1.5">
-          <h2 className="text-xs font-semibold uppercase tracking-wider text-fg-muted">Add a guest</h2>
+          <h2 className="section-title">Add a guest</h2>
           <PlayerSearch
             players={addable}
             isGuest={() => true}

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { matchRulesEnabled, summaryCompareEnabled } from "./features"
+import { matchdayPlanningEnabled, matchRulesEnabled, summaryCompareEnabled } from "./features"
 
 describe("matchRulesEnabled", () => {
   it("is on only when switched on", () => {
@@ -22,5 +22,17 @@ describe("summaryCompareEnabled", () => {
 
   it("is always off in production, even when switched on", () => {
     expect(summaryCompareEnabled({ NODE_ENV: "production", SUMMARY_COMPARE: "on", SUMMARY_SCREENSHOTS_DIR: "/screenshots" })).toBe(false)
+  })
+})
+
+describe("matchdayPlanningEnabled", () => {
+  it("is on only when switched on", () => {
+    expect(matchdayPlanningEnabled({ NODE_ENV: "development", MATCHDAY_PLANNING: "on" })).toBe(true)
+    expect(matchdayPlanningEnabled({ NODE_ENV: "development", MATCHDAY_PLANNING: "off" })).toBe(false)
+    expect(matchdayPlanningEnabled({ NODE_ENV: "development" })).toBe(false)
+  })
+
+  it("is always off in production, even when switched on", () => {
+    expect(matchdayPlanningEnabled({ NODE_ENV: "production", MATCHDAY_PLANNING: "on" })).toBe(false)
   })
 })

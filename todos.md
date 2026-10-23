@@ -6,9 +6,26 @@ Ideen, die noch kein Todo sind: [ideen.md](ideen.md)
 
 - [ ] seeding formate für import/anlegen prüfen (Liste der alten Seeding-Screenshots aus Discord folgt nach der Übernahme, [ADR 007](docs/adr/007-zusammengefasste-ergebnisse.md))
 - [ ] Alte Comp-Stats aus Discord-Screenshots übernehmen ([Entscheidung](docs/adr/007-zusammengefasste-ergebnisse.md), [Glossar](docs/zusammengefasste-ergebnisse-glossar.md)); Abgleich mit Felix pro Comp
-- [ ] Design/UI/UX Verbesserungen
 
 ## Teilweise erledigt
+
+- [ ] Lineup-Planung pro Match Day ([Entscheidung](docs/adr/008-matchday-planung.md), [Glossar](docs/matchday-planung-glossar.md)); hinter `MATCHDAY_PLANNING`, in Production aus
+  - [x] schritt 1: geplante Matches ohne Ergebnis in allen Auswertungen, upcoming auf Turnierseite und Dashboard (in Dev geprüft 23.10.2026)
+  - [ ] schritt 2: planungsseite pro spieltag (kader, tagesbesetzung per drag & drop und eingabe, hinweise, finalisieren, veröffentlichter stand am match) (gebaut, Felix prüft in Dev)
+  - [x] schritt 3: vorbelegung der rundeneingabe (fahrer + map des spieltags), planabweichung im csv- und ecm-import (nur hinweis), „geplant“ am match (in Dev geprüft 23.10.2026)
+  - [ ] schritt 3: vorbelegung der sub-matches
+  - [ ] schritt 4: discord (lineup-channel, bot erkennt markierten ping, abruf durch lineup-manager)
+  - [ ] entscheiden, ob die matchday-planung in production aktiviert wird
+
+- [ ] Spitznamen statt Gamertags überall anzeigen, Gamertag beim Hover ([Entscheidung](docs/adr/009-spitznamen.md))
+  - [x] gebaut, in Dev geprüft (23.10.2026)
+  - [ ] in Production übernehmen
+
+- [ ] Design/UI/UX Verbesserungen ([Rennleitstand-Entwurf](docs/redesign-rennleitstand.md))
+  - [x] In Dev: B2-Farben, Typografie, Navigation, gemeinsame Felder/Buttons/Dialoge, Listen und Stats auf allen Seiten
+  - [x] Ergebnisleiste auf Match und Dashboard, Turnierliste als Zeilen, ruhigere Kennzahlen, Planungsansicht
+  - [x] Felix hat den Entwurf in Dev geprüft (23.10.2026)
+  - [ ] Nach Freigabe Production übernehmen
 
 - [ ] Discord-Reaktionen in der Comp-Planung ([Anbindung](docs/discord-planning.md))
   - [x] Abruf, Emoji-Zuordnung, Account-Verknüpfung und Übernahme mit Vorschau
@@ -38,6 +55,7 @@ Ideen, die noch kein Todo sind: [ideen.md](ideen.md)
 
 ## Low Prio
 
+- [ ] Discord-Bot postet die finalisierte Matchday-Besetzung in den passenden Channel ([Matchday-Planung](docs/adr/008-matchday-planung.md))
 - [ ] spieler-profil: seeding-bereich mit seeding-stats (erst entscheiden, wie seeding-daten ins system kommen)
 
 ## Erledigt

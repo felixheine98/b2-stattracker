@@ -22,3 +22,8 @@ export function matchPath(tournament: Addressable, lineup: Addressable, match: A
 export function playerPath(player: Addressable): string {
   return `/players/${part(player)}`
 }
+
+// The lineup planning of a lineup for one stage (docs/adr/008)
+export function planPath(tournament: Addressable, lineup: Addressable, stage: { id: string }): string {
+  return `${lineupPath(tournament, lineup)}/plan/${stage.id}`
+}
