@@ -186,7 +186,6 @@ export function MatchdayPlanView({ initial, apiPath, title, links, dayFormats, d
   const formatWithMap = (format: Format) => (plan.maps[format] ? `${formatLabel(format)} · ${plan.maps[format]}` : formatLabel(format))
 
   // The formats a player drives on the day
-  const dayFormatsOf = (playerId: string) => dayFormats.filter((f) => dayLineup[f]!.includes(playerId))
 
   const dayLineup = matchLineup({ day: variant.seats.day, matches: {} }, { id: DAY, formats: dayFormats })
 
@@ -256,7 +255,6 @@ export function MatchdayPlanView({ initial, apiPath, title, links, dayFormats, d
               {plan.kader.map((player) => {
                 const entry = plan.answers[player.id]
                 const isOut = entry?.answer === "OUT"
-                const placed = dayFormatsOf(player.id)
                 return (
                   <div key={player.id} className="space-y-1.5 px-3 py-2">
                     <div className="flex flex-wrap items-center gap-2">
@@ -264,7 +262,6 @@ export function MatchdayPlanView({ initial, apiPath, title, links, dayFormats, d
                         <PlayerAvatar player={player} className="h-4 w-4 text-[9px]" />
                         <span className={cn("h-2 w-2 shrink-0 rounded-full", dotOf(player.id))} />
                         <span className="truncate">{player.name}</span>
-                        {placed.length > 0 && <span className="ml-auto shrink-0 text-[10px] font-normal text-fg-subtle">{placed.map(formatLabel).join(" ")}</span>}
                       </div>
                       <div className="flex shrink-0 gap-1" role="group" aria-label={`Answer of ${player.name}`}>
                         {ANSWERS.map((a) => {
