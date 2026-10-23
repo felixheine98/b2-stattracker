@@ -29,6 +29,7 @@ import { EcmImportDialog } from "./ecm-import-dialog"
 import { MatchCsvImportDialog } from "./match-csv-import-dialog"
 import { RoundEntryDialog } from "./round-entry-dialog"
 import { nameFieldsOf, type NameFields } from "@/lib/player-names"
+import { useOwnRow } from "@/components/own-player"
 import type { SubMatchSummary } from "@/lib/summary"
 
 export interface Player {
@@ -117,6 +118,7 @@ type SortCol = "name" | "played" | "placementSum" | "avg" | "dnfs" | "bestTime" 
 
 // Player stats of one sub-match; the result is part of the heading instead of repeating in every row
 function SubMatchStatsTable({ sm, number, isGuest, isTrial }: { sm: SubMatch; number: number; isGuest: (tmId: string) => boolean; isTrial: (tmId: string) => boolean }) {
+  const ownRow = useOwnRow()
   const [sortCol, setSortCol] = useState<SortCol>("avg")
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc")
 
@@ -246,7 +248,7 @@ function SubMatchStatsTable({ sm, number, isGuest, isTrial }: { sm: SubMatch; nu
             </tr>
           )}
           {sorted.map((row) => (
-            <tr key={row.tmId} className="border-b border-table-rule hover:bg-table-hover">
+            <tr key={row.tmId} className={`border-b border-table-rule hover:bg-table-hover ${ownRow({ tmId: row.tmId })}`}>
               <td className="sticky left-0 z-[1] bg-table-cell py-1.5 pl-3 pr-4 text-fg font-medium whitespace-nowrap max-md:shadow-[1px_0_0_var(--border)]">
                 <PlayerName name={row.name} nickname={row.nickname} currentName={row.currentName} allNames={row.allNames} />
                 {isGuest(row.tmId) && <GuestBadge className="ml-1.5" />}
@@ -287,6 +289,7 @@ function FromSummary({ summary }: { summary: SubMatchSummary }) {
 
 // Player stats of a sub-match taken over from a screenshot: only rounds and places, no times
 function SummaryStatsTable({ sm, summary, number, isGuest, isTrial }: { sm: SubMatch; summary: SubMatchSummary; number: number; isGuest: (tmId: string) => boolean; isTrial: (tmId: string) => boolean }) {
+  const ownRow = useOwnRow()
   const state = summaryState(summary)
   const resultColor = state.outcome === "W" ? "text-brand-ink" : state.outcome === "L" ? "text-danger" : "text-fg-muted"
   // A screenshot with points instead of places (FSM): the sub-match counts for the record only
@@ -320,7 +323,7 @@ function SummaryStatsTable({ sm, summary, number, isGuest, isTrial }: { sm: SubM
           </thead>
           <tbody>
             {rows.map((row) => (
-              <tr key={row.tmId} className="border-b border-table-rule hover:bg-table-hover">
+              <tr key={row.tmId} className={`border-b border-table-rule hover:bg-table-hover ${ownRow({ tmId: row.tmId })}`}>
                 <td className="sticky left-0 z-[1] bg-table-cell py-1.5 pl-3 pr-4 text-fg font-medium whitespace-nowrap max-md:shadow-[1px_0_0_var(--border)]">
                   <PlayerName name={row.playerName} nickname={row.nickname} currentName={row.currentName} allNames={row.allNames} />
                   {isGuest(row.tmId) && <GuestBadge className="ml-1.5" />}
@@ -361,6 +364,7 @@ interface Props {
 }
 
 export function MatchDetailView({ match: initialMatch, ruleSet, allPlayers, guestTmIds, trialTmIds, canEdit, canManage, autoEcmImport = false, plannedLineup = null }: Props) {
+  const ownRow = useOwnRow()
   const router = useRouter()
   const guests = new Set(guestTmIds)
   const isGuest = (tmId: string) => guests.has(tmId.toLowerCase())
@@ -848,7 +852,8 @@ export function MatchDetailView({ match: initialMatch, ruleSet, allPlayers, gues
                                       key={r.id}
                                       className={cn(
                                         "flex items-center gap-2 rounded-md px-2 py-1 text-sm",
-                                        r.isOurTeam ? "bg-brand/10 text-fg" : "text-fg-muted"
+                                        r.isOurTeam ? "bg-brand/10 text-fg" : "text-fg-muted",
+                                        r.isOurTeam && ownRow({ playerId: r.playerId, tmId: r.tmId })
                                       )}
                                     >
                                       <span className={`w-6 shrink-0 text-xs font-bold tabular-nums ${rankColor(rank)}`}>#{rank}</span>
@@ -874,7 +879,7 @@ export function MatchDetailView({ match: initialMatch, ruleSet, allPlayers, gues
                                     {ourResults.map((r) => {
                                       const rank = rankMap.get(r.id) ?? 0
                                       return (
-                                        <div key={r.id} className="flex items-center gap-2 text-sm">
+                                        <div key={r.id} className={cn("flex items-center gap-2 text-sm", ownRow({ playerId: r.playerId, tmId: r.tmId }) && "own-row -mx-1.5 rounded-md px-1.5")}>
                                           <span className={`w-5 shrink-0 text-xs font-bold tabular-nums ${rankColor(rank)}`}>
                                             #{rank}
                                           </span>

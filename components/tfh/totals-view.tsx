@@ -7,6 +7,7 @@ import { playerPath, tournamentPath } from "@/lib/paths"
 import { formatTfhDuration } from "@/lib/tfh-profile"
 import { rankTfhTotals, splitTfhByKind, type TfhTotalMetric } from "@/lib/tfh-ranking"
 import { SortHeader } from "./sort-header"
+import { useOwnRow } from "@/components/own-player"
 import { PlayerName } from "@/components/player-name"
 
 interface Result { playerId: string; raceId: string; kind: string; checkpoints: number | null; playTimeSeconds: number | null; finishes: number; cpm: number | null }
@@ -34,6 +35,7 @@ const COLUMNS: Array<{ metric: TfhTotalMetric; label: string }> = [
 // The drivers of the given results: the CPM of every edition in its own column with the rank among the
 // B2 drivers of that edition, then what adds up over the editions. Ranked by the newest edition at first.
 function Totals({ results, players, races }: Props) {
+  const ownRow = useOwnRow()
   const [metric, setMetric] = useState<TfhTotalMetric>(races[0] ? `cpm:${races[0].id}` : "playTimeSeconds")
   const [order, setOrder] = useState<"best" | "worst">("best")
   const playerById = new Map(players.map(p => [p.id, p]))
@@ -63,7 +65,7 @@ function Totals({ results, players, races }: Props) {
             {rows.map(row => {
               const player = playerById.get(row.playerId)
               return (
-                <tr key={row.playerId} className="border-t border-table-rule">
+                <tr key={row.playerId} className={`border-t border-table-rule ${ownRow(row)}`}>
                   <td className={first}>
                     <span className="flex items-center gap-2">
                       <span className="w-5 shrink-0 text-right tabular-nums text-xs text-fg-subtle">{row.rank ?? "–"}</span>

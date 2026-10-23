@@ -6,6 +6,7 @@ import { stylesInUse } from "@/lib/comp-styles"
 import { redirect } from "next/navigation"
 import { MobileTabBar, MobileTopBar } from "@/components/nav/mobile-nav"
 import { Sidebar } from "@/components/nav/sidebar"
+import { OwnPlayerProvider } from "@/components/own-player"
 import { SearchDialog } from "@/components/search/search-dialog"
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
@@ -17,7 +18,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
   // The profile of the player the account belongs to, if any
   const userId = (session.user as { id?: string }).id
-  const self = userId ? await db.user.findUnique({ where: { id: userId }, select: { playerId: true } }) : null
+  const self = userId ? await db.user.findUnique({ where: { id: userId }, select: { playerId: true, player: { select: { id: true, tmId: true } } } }) : null
   const ownPlayer = self?.playerId ? await resolvePlayer(self.playerId) : null
   const profileHref = ownPlayer ? playerPath(ownPlayer) : null
 
@@ -31,7 +32,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
       <div className="flex min-w-0 flex-1 flex-col">
         <MobileTopBar userName={userName} role={role} profileHref={profileHref} />
         {/* Extra room on the left for the sidebar toggle */}
-        <main className="flex-1 overflow-y-auto overflow-x-hidden app-content bg-canvas p-4 md:p-8 md:pl-16">{children}</main>
+        <main className="flex-1 overflow-y-auto overflow-x-hidden app-content bg-canvas p-4 md:p-8 md:pl-16"><OwnPlayerProvider player={self?.player ?? null}>{children}</OwnPlayerProvider></main>
         <MobileTabBar role={role} profileHref={profileHref} />
       </div>
       <SearchDialog />

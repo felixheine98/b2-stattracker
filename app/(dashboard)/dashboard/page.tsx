@@ -23,6 +23,7 @@ import { currentStatus, formatDay } from "@/lib/player-status"
 import { sortStages, stageName } from "@/lib/stages"
 import { cn, formatLabel } from "@/lib/utils"
 import { CalendarClock, ChevronRight, Star, Swords, Trophy, Users } from "lucide-react"
+import { OwnTag } from "@/components/own-player"
 import Link from "next/link"
 
 const HEADING = "section-title mb-3"
@@ -305,6 +306,7 @@ export default async function DashboardPage() {
                               ) : (
                                 <span className="font-semibold text-fg"><PlayerName name={performer.name} nickname={performer.nickname} currentName={performer.currentName} allNames={performer.allNames} /></span>
                               )}
+                              <OwnTag tmId={performer.tmId} />
                               {lineup && <span className="text-fg-muted"> · {lineup.name}</span>}
                             </p>
                           </div>

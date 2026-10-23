@@ -9,6 +9,7 @@ import { paceMs, pacePct } from "@/lib/pace"
 import { PacePct } from "@/components/pace-pct"
 import Link from "next/link"
 import { useState } from "react"
+import { useOwnRow } from "@/components/own-player"
 import type { FormatAggregate } from "@/lib/format-stats"
 
 interface Props {
@@ -24,6 +25,7 @@ interface Props {
 type SortCol = "name" | "lineup" | "played" | "placementSum" | "avg" | "pace" | "dnfs" | "roundsWon" | "roundsLost"
 
 export function FormatStatsTable({ agg, isGuest, isTrial, lineupName, profilePath }: Props) {
+  const ownRow = useOwnRow()
   // A ranking by default: the best average place first
   const [sortCol, setSortCol] = useState<SortCol>("avg")
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc")
@@ -91,7 +93,7 @@ export function FormatStatsTable({ agg, isGuest, isTrial, lineupName, profilePat
           </thead>
           <tbody>
             {players.map((p) => (
-              <tr key={p.tmId} className="border-b border-table-rule hover:bg-table-hover">
+              <tr key={p.tmId} className={`border-b border-table-rule hover:bg-table-hover ${ownRow({ tmId: p.tmId })}`}>
                 <td className="sticky left-0 z-[1] bg-table-cell py-1.5 pl-3 pr-4 text-fg font-medium whitespace-nowrap max-md:shadow-[1px_0_0_var(--border)]">
                   {profilePath?.(p.tmId) ? (
                     <Link href={profilePath(p.tmId)!} className="hover:text-brand-ink">

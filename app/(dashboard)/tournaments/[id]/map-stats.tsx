@@ -8,6 +8,7 @@ import { mapGapMs, teamAvgMs, type MapAggregate } from "@/lib/map-stats"
 import { formatGapSeconds } from "@/lib/pace"
 import { cn, formatLabel, formatTime } from "@/lib/utils"
 import Link from "next/link"
+import { useOwnRow } from "@/components/own-player"
 import { useState } from "react"
 
 interface Props {
@@ -26,6 +27,7 @@ type SortCol = "name" | "lineup" | "rounds" | "best" | "gap" | "avg" | "dnfs" | 
 
 // Who drives how well on a map: a ranking by average place, or by average gap where places are not shown
 export function MapStatsTable({ agg, isGuest, isTrial, lineupName, profilePath, showPlacement }: Props) {
+  const ownRow = useOwnRow()
   const [sortCol, setSortCol] = useState<SortCol>(showPlacement ? "avg" : "gap")
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc")
 
@@ -93,7 +95,7 @@ export function MapStatsTable({ agg, isGuest, isTrial, lineupName, profilePath, 
           </thead>
           <tbody>
             {players.map((p) => (
-              <tr key={p.tmId} className="border-b border-table-rule hover:bg-table-hover">
+              <tr key={p.tmId} className={`border-b border-table-rule hover:bg-table-hover ${ownRow({ tmId: p.tmId })}`}>
                 <td className="sticky left-0 z-[1] bg-table-cell py-1.5 pl-3 pr-4 text-fg font-medium whitespace-nowrap max-md:shadow-[1px_0_0_var(--border)]">
                   {profilePath?.(p.tmId) ? (
                     <Link href={profilePath(p.tmId)!} className="hover:text-brand-ink">

@@ -15,6 +15,7 @@ import { Select } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/card"
 import { TfhDriverRanking } from "./driver-ranking"
+import { useOwnRow } from "@/components/own-player"
 import { shownName } from "@/lib/player-names"
 
 type Race = NonNullable<Awaited<ReturnType<typeof getTfhRace>>>
@@ -46,6 +47,7 @@ function Finishes({ drivers }: { drivers: Driver[] }) {
 }
 
 export function TfhRaceView({ race, isAdmin, initialLineupId }: { race: Race; isAdmin: boolean; initialLineupId?: string }) {
+  const ownRow = useOwnRow()
   const [search, setSearch] = useState("")
   const [b2Only, setB2Only] = useState(false)
   const ourTeams = race.teams.filter(t => t.isB2 && (!initialLineupId || t.lineupId === initialLineupId))
@@ -65,7 +67,7 @@ export function TfhRaceView({ race, isAdmin, initialLineupId }: { race: Race; is
         <CardContent className="space-y-4">
           <div className="overflow-x-auto rounded-lg border border-line"><table className="w-full bg-table-row text-xs">
             <thead className="bg-table-head text-fg-muted"><tr><th className={first}>Driver</th>{["CP", "Play time", "CPM", "Best lap", "Average lap", "Finishes"].map(h => <th key={h} className={cell}>{h}</th>)}</tr></thead>
-            <tbody>{t.drivers.map(d => <tr key={d.id} className="border-t border-table-rule"><td className={first}><Link href={playerPath(d.player)} title={`Current profile: ${shownName(d.player)}`} className="block max-w-40 truncate text-brand-ink hover:underline">{d.sourceName}</Link></td><td className={cell}>{d.checkpoints ?? "—"}</td><td className={cell}>{formatTfhDuration(d.playTimeSeconds)}</td><td className={cell}>{d.cpm?.toFixed(3) ?? "—"}</td><td className={`${cell} font-mono`}>{time(d.bestLapMs)}</td><td className={`${cell} font-mono`}>{time(d.averageLapMs)}</td><td className={cell}>{d.finishes.length}</td></tr>)}</tbody>
+            <tbody>{t.drivers.map(d => <tr key={d.id} className={`border-t border-table-rule ${ownRow(d.player)}`}><td className={first}><Link href={playerPath(d.player)} title={`Current profile: ${shownName(d.player)}`} className="block max-w-40 truncate text-brand-ink hover:underline">{d.sourceName}</Link></td><td className={cell}>{d.checkpoints ?? "—"}</td><td className={cell}>{formatTfhDuration(d.playTimeSeconds)}</td><td className={cell}>{d.cpm?.toFixed(3) ?? "—"}</td><td className={`${cell} font-mono`}>{time(d.bestLapMs)}</td><td className={`${cell} font-mono`}>{time(d.averageLapMs)}</td><td className={cell}>{d.finishes.length}</td></tr>)}</tbody>
           </table></div>
           <Finishes drivers={t.drivers} />
         </CardContent>

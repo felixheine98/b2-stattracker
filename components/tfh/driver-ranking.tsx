@@ -8,6 +8,7 @@ import { formatTfhDuration } from "@/lib/tfh-profile"
 import { rankTfhDrivers, type TfhMetric } from "@/lib/tfh-ranking"
 import { formatTime } from "@/lib/utils"
 import { SortHeader } from "./sort-header"
+import { useOwnRow } from "@/components/own-player"
 import { shownName } from "@/lib/player-names"
 
 type Race = NonNullable<Awaited<ReturnType<typeof getTfhRace>>>
@@ -27,6 +28,7 @@ const COLUMNS: Array<{ metric: TfhMetric; label: string }> = [
 
 // All B2 drivers of one race in one table, whatever team they drove for
 export function TfhDriverRanking({ race }: { race: Race }) {
+  const ownRow = useOwnRow()
   const [metric, setMetric] = useState<TfhMetric>("cpm")
   const [order, setOrder] = useState<"best" | "worst">("best")
   const rows = rankTfhDrivers(race.teams, metric, order)
@@ -55,7 +57,7 @@ export function TfhDriverRanking({ race }: { race: Race }) {
           </thead>
           <tbody>
             {rows.map(({ driver: d, team: t, rank }) => (
-              <tr key={d.id} className="border-t border-table-rule">
+              <tr key={d.id} className={`border-t border-table-rule ${ownRow(d.player)}`}>
                 <td className={first}>
                   <span className="flex items-center gap-2">
                     <span className="w-5 shrink-0 text-right tabular-nums text-fg-subtle">{rank ?? "–"}</span>

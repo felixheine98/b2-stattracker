@@ -21,6 +21,7 @@ import { Dialog, DialogTitle } from "@/components/ui/dialog"
 import { cn } from "@/lib/utils"
 import { ArrowLeftRight, Check, MessageCircle, History, KeyRound, Link2, Link2Off, Pencil, Plus, RefreshCw, Search, Trash2, User, Wand2, X } from "lucide-react"
 import { searchPlayers } from "@/lib/player-search"
+import { useOwnRow } from "@/components/own-player"
 import { canManage as canManageRole } from "@/lib/roles"
 
 interface UserOption {
@@ -121,6 +122,7 @@ function HintLine({ label, canManage, onAdopt, onDismiss }: { label: string; can
 }
 
 export function PlayersView({ players: initial, users, canManage }: Props) {
+  const ownRow = useOwnRow()
   const router = useRouter()
   const [players, setPlayers] = useSyncedState(initial)
   // The tab lives in the address, so a reload or shared link opens the same tab
@@ -651,7 +653,7 @@ export function PlayersView({ players: initial, users, canManage }: Props) {
                   </tr>
                 )}
                 <tr
-                  className={`border-b border-line last:border-0 ${i % 2 === 0 ? "bg-surface" : "bg-surface/60"} max-md:grid max-md:grid-cols-2 max-md:gap-x-3 max-md:gap-y-3 max-md:rounded-xl max-md:border max-md:bg-surface max-md:p-3.5 max-md:last:border`}
+                  className={`border-b border-line last:border-0 ${i % 2 === 0 ? "bg-surface" : "bg-surface/60"} ${ownRow(player) && "own-row max-md:border-brand/60 max-md:[&>td:first-child]:!bg-none"} max-md:grid max-md:grid-cols-2 max-md:gap-x-3 max-md:gap-y-3 max-md:rounded-xl max-md:border max-md:bg-surface max-md:p-3.5 max-md:last:border`}
                 >
                   <td className="px-3 py-3 @7xl:px-4 font-medium text-fg max-md:order-1 max-md:col-span-2 max-md:block max-md:p-0 max-md:text-base">
                     <span className="flex items-center gap-2 whitespace-nowrap">

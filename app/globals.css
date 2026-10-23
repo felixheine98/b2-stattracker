@@ -401,6 +401,13 @@ html {
 .auth-form > div { border-top: 0; border-radius: 0 0 .75rem .75rem; }
 .auth-brand h1 { font-family: var(--font-heading), sans-serif; font-size: 2.5rem; font-weight: 600; }
 .auth-brand p { color: var(--fg-muted); }
+/* The signed-in player's own row in stats: a light tint in the theme's colour on the row and a stripe
+   on its first cell. Drawn as background images, so they also lie over the opaque sticky first column. */
+.own-row { --own-tint: linear-gradient(color-mix(in srgb, var(--primary) 10%, transparent), color-mix(in srgb, var(--primary) 10%, transparent)); --own-stripe: linear-gradient(to right, var(--primary) 3px, transparent 3px); background-image: var(--own-tint); }
+.own-row:not(tr) { background-image: var(--own-stripe), var(--own-tint); }
+.own-row > td:first-child { background-image: var(--own-stripe); }
+.own-row > td.sticky { background-image: var(--own-tint); }
+.own-row > td.sticky:first-child { background-image: var(--own-stripe), var(--own-tint); }
 @layer base {
   :focus-visible { outline: 2px solid var(--info); outline-offset: 3px; }
   input[type="checkbox"], input[type="radio"] { accent-color: var(--primary-ink); }
