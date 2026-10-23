@@ -44,3 +44,16 @@ export function entryPositions(cells: Cell[], opponentDnfs: number, size: number
     dnf: cells.map((c) => c === "dnf"),
   }
 }
+
+// Who and which map a sub-match starts with in the round entry. saved is what its rounds hold,
+// null while it has none; planned is the finalised lineup of its format (docs/adr/008).
+export function prefillRoundEntry(
+  saved: { playerIds: string[]; track: string | null } | null,
+  planned: { playerIds: string[]; map: string | null } | null,
+  pool: string[],
+  size: number
+): { playerIds: string[]; track: string } {
+  if (saved) return { playerIds: saved.playerIds, track: saved.track ?? "" }
+  if (planned) return { playerIds: planned.playerIds, track: planned.map ?? "" }
+  return { playerIds: pool.length === size ? pool : [], track: "" }
+}

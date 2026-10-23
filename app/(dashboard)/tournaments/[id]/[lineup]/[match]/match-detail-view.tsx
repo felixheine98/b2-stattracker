@@ -363,6 +363,11 @@ export function MatchDetailView({ match: initialMatch, ruleSet, allPlayers, gues
   const isTrial = (tmId: string) => trialTmIds.includes(tmId.toLowerCase())
   const [subMatches, setSubMatches] = useSyncedState(initialMatch.subMatches)
   const matchLineup = initialMatch.tournamentLineup ?? null
+  // The finalised drivers and the map of a format, which the round entry starts with
+  const plannedOf = (format: Format) => {
+    const planned = plannedLineup?.formats.find((f) => f.format === format)
+    return planned ? { playerIds: planned.players.flatMap((p) => (p ? [p.id] : [])), map: planned.map } : null
+  }
   const [ecmUrl, setEcmUrl] = useState(initialMatch.ecmUrl ?? null)
   // In playing order
   const stages = sortStages(initialMatch.tournament.stages)
@@ -947,6 +952,7 @@ export function MatchDetailView({ match: initialMatch, ruleSet, allPlayers, gues
           key={roundEntrySubMatch.id}
           subMatch={roundEntrySubMatch}
           pool={(roundEntrySubMatch.lineup ?? matchLineup)?.slots.map((s) => s.player) ?? []}
+          planned={plannedOf(roundEntrySubMatch.format)}
           allPlayers={allPlayers}
           isGuest={isGuest}
           onClose={() => setRoundEntryId(null)}

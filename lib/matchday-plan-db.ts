@@ -65,7 +65,7 @@ export async function publishedLineupOf(match: { id: string; tournamentLineupId:
   const lineup = matchLineup(plan.published as unknown as PlanVariant, { id: match.id, formats: match.formats })
   const ids = Object.values(lineup).flat().filter((id): id is string => !!id)
   const [players, stage] = await Promise.all([
-    db.player.findMany({ where: { id: { in: ids } }, select: { id: true, name: true, country: true } }),
+    db.player.findMany({ where: { id: { in: ids } }, select: { id: true, name: true, country: true, tmId: true } }),
     db.stage.findUnique({ where: { id: match.stageId }, select: { maps: true } }),
   ])
   const maps = (stage?.maps ?? {}) as StageMaps

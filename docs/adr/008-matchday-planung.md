@@ -30,6 +30,8 @@ Bestätigt (22.10.2026): Finalisieren veröffentlicht einen Stand. Änderungen i
 
 Bestätigt (22.10.2026): Die finalisierte Besetzung belegt beim Anlegen der Sub-Matches die Fahrer vor. Der CSV- und eCM-Import zeigt pro Format, wo anders gefahren wurde als geplant („2v2: geplant Toast, gefahren Ente“); er sperrt nicht. Die Match-Seite zeigt nach dem Spielen weiterhin, was geplant war. Der Hinweis verlangt kein Bestätigen (bestätigt 22.10.2026), weil Abweichungen vom Plan meist gewollt sind; die Bestätigungspflicht anderer Hinweise bleibt unberührt.
 
+Umgesetzt (23.10.2026): Die Vorbelegung wird nicht in die Sub-Matches geschrieben, weil sie meist vor dem Finalisieren angelegt werden. Stattdessen startet die Rundeneingabe eines Sub-Matches ohne Runden mit den finalisierten Fahrern seines Formats und der Map des Spieltags; so veraltet nichts, wenn später eine andere Variante finalisiert wird. Die Mapnamen gelten pro Match Day und Format für alle Lineups (`Stage.maps`).
+
 Bestätigt (22.10.2026): Geplant werden Match Days und Playoffs, beide auf dieselbe Weise (eine Playoff-Stage zählt hier wie ein Match Day). Playoff-Matches, deren Gegner noch nicht feststeht, werden angelegt, sobald sie bekannt sind; bis dahin gilt die Tagesbesetzung. Das Seeding kommt dazu, sobald es korrekt in der App umgesetzt ist (siehe Low-Prio-Todo zu Seeding-Daten).
 
 Bestätigt (22.10.2026): Zur Auswahl steht nur der Kader, abgestuft nach Antwort: FIX und „teilweise“ oben, MAYBE und „keine Antwort“ sichtbar abgesetzt darunter und trotzdem einteilbar; OUT ist nicht einteilbar. Ersatzfahrer von außerhalb des Kaders gibt es in der Planung nicht.

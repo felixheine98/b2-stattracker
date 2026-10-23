@@ -110,7 +110,12 @@ export function MatchCsvImportDialog({ tournamentId, matchId, subMatches, ruleSe
   const imported = importing.flatMap((i) => plans[i].rounds)
   const side = (ours: boolean) => [...new Map(imported.flatMap((r) => r.results.filter((x) => x.isOurTeam === ours).map((x) => [x.tmId, { tmId: x.tmId, name: x.name }] as const))).values()]
   const times = imported.map((r) => r.time).filter((t) => t > 0)
-  const check = useImportCheck(tournamentId, matchId, roundCount > 0 ? { ours: side(true), foreign: side(false), firstRoundTime: times.length > 0 ? Math.min(...times) : null } : null)
+  // Our drivers of every sub-match, compared with the finalised lineup of its format
+  const driven = importing.map((i) => ({
+    format: subMatches.find((sm) => sm.id === targets[i])!.format,
+    drivers: [...new Map(plans[i].rounds.flatMap((r) => r.results.filter((x) => x.isOurTeam).map((x) => [x.tmId, { tmId: x.tmId, name: x.name }] as const))).values()],
+  }))
+  const check = useImportCheck(tournamentId, matchId, roundCount > 0 ? { ours: side(true), foreign: side(false), firstRoundTime: times.length > 0 ? Math.min(...times) : null, driven } : null)
 
   async function handleSave() {
     setError("")

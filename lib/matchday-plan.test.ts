@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
 import type { Seats } from "./matchday-plan"
-import { hasUnpublishedChanges, matchLineup, placePlayer, planHints, planPool, publishedSnapshot, seatSuggestions } from "./matchday-plan"
+import { hasUnpublishedChanges, matchLineup, placePlayer, planDeviations, planHints, planPool, publishedSnapshot, seatSuggestions } from "./matchday-plan"
 
 const kader = ["anna", "ben", "cleo", "dora", "emil"].map((id) => ({ id }))
 
@@ -137,5 +137,29 @@ describe("seatSuggestions", () => {
   it("puts available players before maybe and unanswered ones, and leaves out who is out or already placed", () => {
     const answers = { a: "MAYBE", b: "FIX", c: "OUT", d: "PARTIAL" } as const
     expect(names(seatSuggestions("", players, answers, ["m"]))).toEqual(["BlinG.xoxo", "DrTilt.", "Agent.TM"])
+  })
+})
+
+describe("planDeviations", () => {
+  const toast = { tmId: "TOAST-ID", name: "Toast" }
+  const ente = { tmId: "ente-id", name: "Ente" }
+  const anna = { tmId: "anna-id", name: "Anna" }
+
+  it("names per format who was planned and who drove instead", () => {
+    const deviations = planDeviations({ ROUND_2V2: [anna, toast] }, [{ format: "ROUND_2V2", drivers: [{ tmId: "ente-id", name: "Ente" }, { tmId: "ANNA-ID", name: "Anna" }] }])
+    expect(deviations).toEqual(["2v2: planned Toast, driven Ente"])
+  })
+
+  it("says nothing where the plan was driven, in any order, or where a format had no plan", () => {
+    const deviations = planDeviations({ ROUND_2V2: [anna, toast] }, [
+      { format: "ROUND_2V2", drivers: [toast, anna] },
+      { format: "ROUND_1V1", drivers: [ente] },
+    ])
+    expect(deviations).toEqual([])
+  })
+
+  it("names only the side that differs when the plan left a place open", () => {
+    expect(planDeviations({ ROUND_2V2: [anna] }, [{ format: "ROUND_2V2", drivers: [anna, ente] }])).toEqual(["2v2: also driven Ente"])
+    expect(planDeviations({ ROUND_2V2: [anna, toast] }, [{ format: "ROUND_2V2", drivers: [anna] }])).toEqual(["2v2: planned Toast, not driven"])
   })
 })

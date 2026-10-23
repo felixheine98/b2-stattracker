@@ -9,7 +9,7 @@ Ideen, die noch kein Todo sind: [ideen.md](ideen.md)
 
 - [ ] Lineup-Planung pro Match Day ([Entscheidung](docs/adr/008-matchday-planung.md), [Glossar](docs/matchday-planung-glossar.md)); hinter `MATCHDAY_PLANNING`, in Production aus
   - [ ] schritt 1: geplante Matches ohne Ergebnis in allen Auswertungen, upcoming auf Turnierseite und Dashboard (gebaut, Felix prüft in Dev)
-  - [ ] schritt 2: planung (verfügbarkeit von hand, teilweise/ausnahmen, varianten, tagesbesetzung, abweichungen, hinweise, finalisieren; geplante aufstellung am match) (gebaut, Felix prüft in Dev)
+  - [ ] schritt 3: vorbelegung der rundeneingabe (fahrer + map des spieltags), planabweichung im csv- und ecm-import (nur hinweis), „geplant“ am match (gebaut, Felix prüft in Dev)
   - [ ] schritt 3: vorbelegung der sub-matches, planabweichung im import, „geplant“ am match
   - [ ] schritt 4: discord (lineup-channel, bot erkennt markierten ping, abruf durch lineup-manager)
 

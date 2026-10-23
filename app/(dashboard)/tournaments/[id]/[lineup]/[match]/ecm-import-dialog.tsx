@@ -176,6 +176,11 @@ export function EcmImportDialog({ tournamentId, matchId, subMatches, ruleSet, al
         ours: neededNames.flatMap((n) => { const p = profileOf(n); return p ? [{ tmId: p.tmId, name: p.name }] : [] }),
         foreign: foreignNames.flatMap((n) => { const p = autoMatch(n); return p ? [{ tmId: p.tmId, name: p.name }] : [] }),
         firstRoundTime: null,
+        // Our drivers of every set, compared with the finalised lineup of its sub-match's format
+        driven: analyses.flatMap((a, i) => {
+          const format = subMatches.find((sm) => sm.id === targets[i])?.format
+          return selected[i] && format ? [{ format, drivers: a.ourNames.flatMap((n) => { const p = profileOf(n); return p ? [{ tmId: p.tmId, name: p.name }] : [] }) }] : []
+        }),
         ...(otherTeam && { teams: { own: payload.teams[ourTeam].name, opponent: otherTeam.name } }),
       }
     : null)

@@ -1,5 +1,5 @@
 import type { Format } from "@/types"
-import { teamSize } from "./utils"
+import { formatLabel, teamSize } from "./utils"
 // The lineup planning of one match day (docs/adr/008): who of the lineup is available, and who
 // drives which format in each match. A variant holds a day lineup per format, which every match
 // of the stage follows unless it has a lineup of its own for that format.
@@ -121,4 +121,27 @@ const sameSeats = (a: Seats, b: Seats) => {
 export function hasUnpublishedChanges(snapshot: PlanVariant, variant: PlanVariant, matches: PlanMatch[]): boolean {
   if (!sameSeats(snapshot.day, variant.day)) return true
   return matches.some((m) => !sameSeats(matchLineup(snapshot, m), matchLineup(variant, m)))
+}
+
+export interface PlanDriver {
+  // Trackmania account ID, in any case
+  tmId: string
+  name: string
+}
+
+// Where a match was driven otherwise than finalised, per format, for the preview of an import:
+// "2v2: planned Toast, driven Ente". Only a hint: deviating from the plan is mostly on purpose.
+export function planDeviations(planned: Partial<Record<Format, PlanDriver[]>>, driven: Array<{ format: Format; drivers: PlanDriver[] }>): string[] {
+  const key = (d: PlanDriver) => d.tmId.toLowerCase()
+  const lines = driven.flatMap(({ format, drivers }) => {
+    const plan = planned[format]
+    if (!plan?.length) return []
+    const missing = plan.filter((p) => !drivers.some((d) => key(d) === key(p)))
+    const extra = drivers.filter((d) => !plan.some((p) => key(p) === key(d)))
+    if (missing.length === 0 && extra.length === 0) return []
+    const names = (list: PlanDriver[]) => list.map((d) => d.name).join(", ")
+    const text = missing.length === 0 ? `also driven ${names(extra)}` : extra.length === 0 ? `planned ${names(missing)}, not driven` : `planned ${names(missing)}, driven ${names(extra)}`
+    return [`${formatLabel(format)}: ${text}`]
+  })
+  return [...new Set(lines)]
 }
