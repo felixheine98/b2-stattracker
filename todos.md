@@ -33,7 +33,7 @@ Ideen, die noch kein Todo sind: [ideen.md](ideen.md)
 
 ## Unter Beobachtung
 
-- [x] VOD-Links (meist Twitch) an einzelnen Matches: im „Edit match“-Dialog, auf der Match-Seite als Link mit Icon; einer üblich, mehrere mit Namen möglich (live seit 24.10.2026)
+- [ ] VOD-Links (meist Twitch) an einzelnen Matches: im „Edit match“-Dialog, auf der Match-Seite als Link mit Icon; einer üblich, mehrere mit Namen möglich (live seit 24.10.2026)
 - [ ] Lineup-Planung pro Match Day ([Entscheidung](docs/adr/008-matchday-planung.md), [Glossar](docs/matchday-planung-glossar.md)); hinter `MATCHDAY_PLANNING`, in Production seit 23.10.2026
   - [x] schritt 1: geplante Matches ohne Ergebnis in allen Auswertungen, upcoming auf Turnierseite und Dashboard (in Dev geprüft 23.10.2026)
   - [x] schritt 2: planungsseite pro spieltag (kader, tagesbesetzung per drag & drop und eingabe, hinweise, finalisieren, veröffentlichter stand am match) (in Dev geprüft 23.10.2026)
