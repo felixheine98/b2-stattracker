@@ -64,6 +64,8 @@ services:
       DISCORD_BOT_API_TOKEN: ${DISCORD_BOT_PROD_API_TOKEN:?DISCORD_BOT_PROD_API_TOKEN is required}
       # Lineup planning per match day (docs/adr/008), switched on by Felix on 23.10.2026
       MATCHDAY_PLANNING: "on"
+      # The VOD archive (docs/adr/011) with its privacy page: VOD_ARCHIVE=auto in .env, off without
+      VOD_ARCHIVE: ${VOD_ARCHIVE:-off}
 
     depends_on:
       db:
@@ -127,8 +129,8 @@ services:
       - /tmp:size=64m,mode=1777
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER:?POSTGRES_USER is required}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}@db:5432/${POSTGRES_DB:?POSTGRES_DB is required}
-      # Off until Google has audited the API project (ADR 011); then "auto"
-      VOD_ARCHIVE: "off"
+      # Off unless VOD_ARCHIVE=auto is set in .env (ADR 011), like the app
+      VOD_ARCHIVE: ${VOD_ARCHIVE:-off}
     volumes:
       - vod_work:/work
     depends_on:

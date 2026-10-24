@@ -19,10 +19,12 @@ interface Props {
   role: string
   // Address of the signed-in player's own profile; null for an account without a player
   profileHref: string | null
+  // The privacy policy exists only while the VOD archive is on (lib/features.ts)
+  privacyLink?: boolean
 }
 
 // Phones only: the app name and the user menu at the top of the screen
-export function MobileTopBar({ userName, role, profileHref }: Props) {
+export function MobileTopBar({ userName, role, profileHref, privacyLink = false }: Props) {
   const pathname = usePathname()
   const [open, setOpen] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
@@ -96,7 +98,7 @@ export function MobileTopBar({ userName, role, profileHref }: Props) {
               <LogOut size={16} />
               Sign out
             </button>
-            <Link href="/privacy" onClick={() => setOpen(false)} className="block px-3 pt-1 text-xs text-fg-subtle hover:text-fg">Privacy policy</Link>
+            {privacyLink && <Link href="/privacy" onClick={() => setOpen(false)} className="block px-3 pt-1 text-xs text-fg-subtle hover:text-fg">Privacy policy</Link>}
           </div>
         </>
       )}

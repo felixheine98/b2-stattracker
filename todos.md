@@ -8,12 +8,6 @@ Ideen, die noch kein Todo sind: [ideen.md](ideen.md)
 
 ## Teilweise erledigt
 
-- [ ] VOD-Archiv: Match-Ausschnitte aus Twitch-VODs per Bereichs-Slider auf den Team-YouTube-Kanal sichern ([Entscheidung](docs/adr/011-vod-archiv.md), [Glossar](docs/vod-archiv-glossar.md))
-  - [ ] a: Bereichs-Slider mit Twitch-Player am VOD, Bereich speichern (gebaut, in dev zu prüfen)
-  - [ ] b: Container `vod-worker` mit Warteschlange (yt-dlp, ffmpeg); gebaut, läuft in dev (`manual`), Status am VOD-Knopf; Upload folgt mit c
-  - [ ] c: „YouTube verbinden“ in den Admin-Einstellungen, Upload
-  - [ ] d: Player der Sicherung auf der Match-Seite
-  - [ ] Felix: Google-Cloud-Projekt mit YouTube-API, Audit beantragen
 - [ ] seeding formate für import/anlegen prüfen (Liste der alten Seeding-Screenshots aus Discord folgt nach der Übernahme, [ADR 007](docs/adr/007-zusammengefasste-ergebnisse.md)); als erstes das EMC-Seeding ([Entscheidung](docs/adr/010-seeding-formate.md), [Glossar](docs/seeding-glossar.md)), Ziel: Planung bis zum Seeding von EMC S8 (Start 08.11.2026)
   - [x] fundament: seeding-typ „EMC“ an der comp (zahlen änderbar), seeding-match mit einem sub-match pro fahrt
   - [x] planung: seeding als stage der matchday-planung, raster der fahrten, sperre „keine map zweimal“ (live seit 24.10.2026; map-namen kommen aus dem mastersheet)
@@ -57,6 +51,12 @@ Ideen, die noch kein Todo sind: [ideen.md](ideen.md)
 
 ## Low Prio
 
+- [ ] VOD-Archiv: Match-Ausschnitte aus Twitch-VODs per Bereichs-Slider auf den Team-YouTube-Kanal sichern ([Entscheidung](docs/adr/011-vod-archiv.md), [Glossar](docs/vod-archiv-glossar.md)); pausiert am 24.10.2026 (zu viel Aufwand für den Nutzen), ausgeschaltet über `VOD_ARCHIVE`/`DEV_VOD_ARCHIVE` in `.env` – VOD-Links an Matches bleiben
+  - [ ] a: Bereichs-Slider mit Twitch-Player am VOD, Bereich speichern (gebaut, in dev zu prüfen)
+  - [ ] b: Container `vod-worker` mit Warteschlange (yt-dlp, ffmpeg); gebaut, läuft in dev (`manual`), Status am VOD-Knopf; Upload folgt mit c
+  - [ ] c: „YouTube verbinden“ in den Admin-Einstellungen, Upload
+  - [ ] d: Player der Sicherung auf der Match-Seite
+  - [ ] Felix: Google-Cloud-Projekt mit YouTube-API, Audit beantragen
 - [ ] Discord-Bot postet die finalisierte Matchday-Besetzung in den passenden Channel ([Matchday-Planung](docs/adr/008-matchday-planung.md))
 
 ## Erledigt

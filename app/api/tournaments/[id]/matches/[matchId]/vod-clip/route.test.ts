@@ -15,6 +15,7 @@ describe.skipIf(process.env.DB_TESTS !== "1")("VOD ranges with PostgreSQL", () =
   let client: PrismaClient
   let ids: { comp: string; match: string; admin: string; manager: string; lineupManager: string }
   beforeAll(async () => {
+    vi.stubEnv("VOD_ARCHIVE", "manual")
     const url = new URL(process.env.DATABASE_URL!); url.searchParams.set("schema", schema)
     await root.$executeRawUnsafe(`CREATE SCHEMA "${schema}"`)
     client = new PrismaClient({ datasourceUrl: url.toString() })
@@ -29,7 +30,7 @@ describe.skipIf(process.env.DB_TESTS !== "1")("VOD ranges with PostgreSQL", () =
     const match = await client.match.create({ data: { tournamentId: comp.id, tournamentLineupId: lineup.id, stageId: comp.stages[0].id, vods: [{ url: VOD, label: "Cast" }, { url: "https://clips.twitch.tv/SomeClip", label: null }] } })
     ids = { comp: comp.id, match: match.id, admin: admin.id, manager: manager.id, lineupManager: lineupManager.id }
   }, 30000)
-  afterAll(async () => { await client?.$disconnect(); await root.$executeRawUnsafe(`DROP SCHEMA IF EXISTS "${schema}" CASCADE`); await root.$disconnect() })
+  afterAll(async () => { vi.unstubAllEnvs(); await client?.$disconnect(); await root.$executeRawUnsafe(`DROP SCHEMA IF EXISTS "${schema}" CASCADE`); await root.$disconnect() })
 
   const put = (body: unknown) => PUT(new Request("http://test/vod-clip", { method: "PUT", body: JSON.stringify(body) }), { params: Promise.resolve({ id: ids.comp, matchId: ids.match }) })
   const post = (body: unknown) => POST(new Request("http://test/vod-clip", { method: "POST", body: JSON.stringify(body) }), { params: Promise.resolve({ id: ids.comp, matchId: ids.match }) })
@@ -42,6 +43,15 @@ describe.skipIf(process.env.DB_TESTS !== "1")("VOD ranges with PostgreSQL", () =
     expect((await put({ url: VOD, start: 3750, end: 6490 })).status).toBe(401)
     as(ids.lineupManager, "PLAYER")
     expect((await put({ url: VOD, start: 3750, end: 6490 })).status).toBe(403)
+    expect(await clips()).toEqual([])
+  })
+
+  it("is not there while the VOD archive is switched off", async () => {
+    as(ids.admin, "ADMIN")
+    vi.stubEnv("VOD_ARCHIVE", "off")
+    expect((await put({ url: VOD, start: 3750, end: 6490 })).status).toBe(404)
+    expect((await post({ url: VOD })).status).toBe(404)
+    vi.stubEnv("VOD_ARCHIVE", "manual")
     expect(await clips()).toEqual([])
   })
 

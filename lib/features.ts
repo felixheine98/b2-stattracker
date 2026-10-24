@@ -17,3 +17,10 @@ export function summaryCompareEnabled(env: Env = process.env): boolean {
 export function matchdayPlanningEnabled(env: Env = process.env): boolean {
   return env.MATCHDAY_PLANNING === "on"
 }
+
+// The VOD archive (docs/adr/011): cutting matches out of Twitch VODs for the team's YouTube channel,
+// with the public privacy page Google asks for. On where VOD_ARCHIVE is "auto" or "manual", the
+// worker's modes (lib/vod-queue.ts); VOD links on matches stay either way.
+export function vodArchiveEnabled(env: Env = process.env): boolean {
+  return env.VOD_ARCHIVE === "auto" || env.VOD_ARCHIVE === "manual"
+}

@@ -1,6 +1,5 @@
 "use client"
 
-import Link from "next/link"
 import { useState } from "react"
 import { signIn } from "next-auth/react"
 import { browserSupportsWebAuthn, startAuthentication } from "@simplewebauthn/browser"
@@ -131,9 +130,6 @@ export default function LoginPage() {
       </form>
       <p className="mt-4 text-center text-sm text-fg-subtle">
         No account? Ask an admin or manager to create one.
-      </p>
-      <p className="mt-3 text-center text-xs">
-        <Link href="/privacy" className="text-fg-subtle hover:text-fg">Privacy policy</Link>
       </p>
     </div>
   )

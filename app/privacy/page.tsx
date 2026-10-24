@@ -1,6 +1,8 @@
 import type { Metadata } from "next"
 import Link from "next/link"
+import { notFound } from "next/navigation"
 import { BrandLogo } from "@/components/brand-logo"
+import { vodArchiveEnabled } from "@/lib/features"
 
 export const metadata: Metadata = { title: "Privacy policy · B2 Stats" }
 
@@ -10,6 +12,8 @@ const UPDATED = "24 October 2026"
 
 // Public: Google links here from the sign-in for the team's YouTube channel (docs/adr/011-vod-archiv.md)
 export default function PrivacyPage() {
+  // Only needed for the YouTube connection: gone while the VOD archive is off
+  if (!vodArchiveEnabled()) notFound()
   return (
     <main className="min-h-screen bg-canvas px-4 py-10">
       <article className="page-narrow mx-auto space-y-6 text-sm leading-relaxed text-fg-soft [&_h2]:mt-8 [&_h2]:text-base [&_h2]:font-semibold [&_h2]:text-fg [&_a]:text-brand-ink [&_a]:underline [&_ul]:list-disc [&_ul]:space-y-1 [&_ul]:pl-5">

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import { z } from "zod"
 import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
+import { vodArchiveEnabled } from "@/lib/features"
 import { canManage } from "@/lib/roles"
 import { rangeError, twitchVideoId, vodLinks } from "@/lib/vod"
 
@@ -15,8 +16,10 @@ const schema = z.object({ url: z.string().max(500), start: z.number().int(), end
 
 const bad = (error: string, status = 400) => NextResponse.json({ error }, { status })
 
-// Admins and managers only; the match with its VOD links, or the response to send instead
+// Admins and managers only, while the VOD archive is on; the match with its VOD links, or the
+// response to send instead
 async function access({ params }: Params) {
+  if (!vodArchiveEnabled()) return bad("Not found", 404)
   const session = await auth()
   if (!session) return bad("Unauthorized", 401)
   if (!canManage((session.user as { role?: string }).role)) return bad("Forbidden", 403)

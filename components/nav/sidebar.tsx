@@ -36,9 +36,11 @@ interface SidebarProps {
   profileHref: string | null
   // The styles that have tournaments, listed below "Tournaments" to narrow the list
   styles: CompStyle[]
+  // The privacy policy exists only while the VOD archive is on (lib/features.ts)
+  privacyLink?: boolean
 }
 
-export function Sidebar({ userName, role, profileHref, styles }: SidebarProps) {
+export function Sidebar({ userName, role, profileHref, styles, privacyLink = false }: SidebarProps) {
   const pathname = usePathname()
   const shownStyle = parseStyle(useSearchParams().get("style") ?? undefined)
   // The styles are open while a tournament page is shown, unless opened or closed by hand
@@ -211,7 +213,7 @@ export function Sidebar({ userName, role, profileHref, styles }: SidebarProps) {
           <LogOut size={16} className="shrink-0" />
           {!collapsed && "Sign out"}
         </button>
-        {!collapsed && <Link href="/privacy" className="block px-3 pt-1 text-[11px] text-fg-subtle hover:text-fg">Privacy policy</Link>}
+        {privacyLink && !collapsed && <Link href="/privacy" className="block px-3 pt-1 text-[11px] text-fg-subtle hover:text-fg">Privacy policy</Link>}
       </div>
       {showPassword && <ChangePasswordDialog onClose={() => setShowPassword(false)} />}
       {showTwoFactor && <TwoFactorDialog onClose={() => setShowTwoFactor(false)} />}

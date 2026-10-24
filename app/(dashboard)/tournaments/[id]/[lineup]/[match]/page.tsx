@@ -11,7 +11,7 @@ import { withCompNames } from "@/lib/player-names-db"
 import { ruleSetFor } from "@/lib/match-rules"
 import { compRulesOf, rulesInclude } from "@/lib/match-rules-db"
 import { MatchDetailView } from "./match-detail-view"
-import { matchdayPlanningEnabled } from "@/lib/features"
+import { matchdayPlanningEnabled, vodArchiveEnabled } from "@/lib/features"
 import { publishedLineupOf } from "@/lib/matchday-plan-db"
 import { seedingSettings } from "@/lib/seeding"
 import { SeedingResults } from "@/components/seeding/seeding-results"
@@ -120,5 +120,5 @@ export default async function MatchDetailPage({ params, searchParams }: Props) {
     )
   }
 
-  return <MatchDetailView seedingResults={seedingResults} plannedLineup={plannedLineup} match={named.match} ruleSet={ruleSetFor(compRulesOf(match.tournament), match.stage.type)} allPlayers={named.allPlayers} guestTmIds={guestTmIds} trialTmIds={trialTmIds} autoEcmImport={autoEcmImport} canEdit={canEdit} canManage={canManage(user?.role)} />
+  return <MatchDetailView seedingResults={seedingResults} plannedLineup={plannedLineup} match={named.match} ruleSet={ruleSetFor(compRulesOf(match.tournament), match.stage.type)} allPlayers={named.allPlayers} guestTmIds={guestTmIds} trialTmIds={trialTmIds} autoEcmImport={autoEcmImport} canEdit={canEdit} canManage={canManage(user?.role)} vodArchive={vodArchiveEnabled()} />
 }

@@ -68,6 +68,8 @@ services:
       MATCH_RULES: "on"
       # Lineup planning per match day (docs/adr/008): "on" or "off". Dev only; production ignores it.
       MATCHDAY_PLANNING: "on"
+      # The VOD archive (docs/adr/011) with its privacy page: DEV_VOD_ARCHIVE=manual in .env, off without
+      VOD_ARCHIVE: ${DEV_VOD_ARCHIVE:-off}
       # Comparison page of old stats screenshots (docs/adr/007): "on" or "off". Dev only; production
       # ignores it. The screenshots are read from the local Discord export, mounted read-only.
       SUMMARY_COMPARE: "on"
@@ -142,8 +144,9 @@ services:
       - /tmp:size=64m,mode=1777
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER:?POSTGRES_USER is required}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}@db:5432/${POSTGRES_DB:?POSTGRES_DB is required}
-      # Dev backs up only what an admin asks for by hand, as private videos (ADR 011, question 11)
-      VOD_ARCHIVE: manual
+      # Off unless DEV_VOD_ARCHIVE=manual is set in .env; dev backs up only what an admin asks for
+      # by hand, as private videos (ADR 011, question 11)
+      VOD_ARCHIVE: ${DEV_VOD_ARCHIVE:-off}
     # The source as mounted for next dev, with the dev app's node_modules and Prisma client
     command: ["node", "--disable-warning=MODULE_TYPELESS_PACKAGE_JSON", "worker/vod-worker.ts"]
     volumes:

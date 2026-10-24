@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { matchdayPlanningEnabled, matchRulesEnabled, summaryCompareEnabled } from "./features"
+import { matchdayPlanningEnabled, matchRulesEnabled, summaryCompareEnabled, vodArchiveEnabled } from "./features"
 
 describe("matchRulesEnabled", () => {
   it("is on only when switched on", () => {
@@ -36,5 +36,18 @@ describe("matchdayPlanningEnabled", () => {
   it("is on in production too when switched on there", () => {
     expect(matchdayPlanningEnabled({ NODE_ENV: "production", MATCHDAY_PLANNING: "on" })).toBe(true)
     expect(matchdayPlanningEnabled({ NODE_ENV: "production" })).toBe(false)
+  })
+})
+
+describe("vodArchiveEnabled", () => {
+  it("is on when backups run automatically or by hand", () => {
+    expect(vodArchiveEnabled({ NODE_ENV: "production", VOD_ARCHIVE: "auto" })).toBe(true)
+    expect(vodArchiveEnabled({ NODE_ENV: "development", VOD_ARCHIVE: "manual" })).toBe(true)
+  })
+
+  it("is off unless switched on", () => {
+    expect(vodArchiveEnabled({ NODE_ENV: "production", VOD_ARCHIVE: "off" })).toBe(false)
+    expect(vodArchiveEnabled({ NODE_ENV: "production", VOD_ARCHIVE: "on" })).toBe(false)
+    expect(vodArchiveEnabled({ NODE_ENV: "production" })).toBe(false)
   })
 })

@@ -362,6 +362,8 @@ interface Props {
   canEdit: boolean
   // Admin or manager: may also change players, e.g. take over a name from eCM
   canManage: boolean
+  // The VOD archive is on (lib/features.ts): ranges and backups of Twitch VODs; off, VODs are plain links
+  vodArchive?: boolean
   // Open the eCM import dialog right away (the import page sends people here with the data)
   autoEcmImport?: boolean
   // The lineup finalised in the match day planning; null without one or while it is switched off
@@ -370,7 +372,7 @@ interface Props {
   plannedLineup?: { publishedAt: Date | string | null; formats: Array<{ format: Format; map: string | null; players: Array<{ id: string; name: string; nickname?: string | null; country: string | null } | null> }> } | null
 }
 
-export function MatchDetailView({ match: initialMatch, ruleSet, allPlayers, guestTmIds, trialTmIds, canEdit, canManage, autoEcmImport = false, plannedLineup = null, seedingResults }: Props) {
+export function MatchDetailView({ match: initialMatch, ruleSet, allPlayers, guestTmIds, trialTmIds, canEdit, canManage, vodArchive = false, autoEcmImport = false, plannedLineup = null, seedingResults }: Props) {
   const ownRow = useOwnRow()
   const router = useRouter()
   const guests = new Set(guestTmIds)
@@ -574,7 +576,7 @@ export function MatchDetailView({ match: initialMatch, ruleSet, allPlayers, gues
               </p>
             )}
             {initialMatch.notes && <p className="text-fg-subtle text-sm mt-1 whitespace-pre-line break-words">{initialMatch.notes}</p>}
-            <VodLinks vods={vodLinks(initialMatch.vods)} ranges={Object.fromEntries((initialMatch.vodClips ?? []).map((c) => [c.url, c]))} onSetRange={canManage ? setRangeVod : undefined} onBackUp={canManage ? backUpVod : undefined} />
+            <VodLinks vods={vodLinks(initialMatch.vods)} ranges={vodArchive ? Object.fromEntries((initialMatch.vodClips ?? []).map((c) => [c.url, c])) : {}} onSetRange={vodArchive && canManage ? setRangeVod : undefined} onBackUp={vodArchive && canManage ? backUpVod : undefined} />
             {rangeVod && <VodRangeDialog competitionId={initialMatch.tournament.id} matchId={initialMatch.id} vod={rangeVod} range={initialMatch.vodClips?.find((c) => c.url === rangeVod.url) ?? null} onClose={() => setRangeVod(null)} />}
             {ecmUrl && (
               <a

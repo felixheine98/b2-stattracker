@@ -99,6 +99,8 @@ async function tick() {
 async function main() {
   await mkdir(WORK_DIR, { recursive: true })
   log(`vod-worker started, mode ${mode}`)
+  // Switched off (VOD_ARCHIVE in .env): stays up without touching the queue, so compose keeps it running
+  if (mode === "off") return setInterval(() => {}, 1 << 30)
   for (;;) {
     let busy = false
     try {

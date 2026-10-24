@@ -1,4 +1,6 @@
+import Link from "next/link"
 import { BrandLogo } from "@/components/brand-logo"
+import { vodArchiveEnabled } from "@/lib/features"
 
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -12,7 +14,15 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
           <h1>Back with the team.</h1>
           <p className="mt-2 text-sm">Trackmania results, lineups and team stats.</p>
         </div>
-        <div className="auth-form">{children}</div>
+        <div className="auth-form">
+          {children}
+          {/* Google asks the app's home page to link its privacy policy (docs/adr/011) */}
+          {vodArchiveEnabled() && (
+            <p className="mt-3 text-center text-xs">
+              <Link href="/privacy" className="text-fg-subtle hover:text-fg">Privacy policy</Link>
+            </p>
+          )}
+        </div>
       </div>
     </div>
   )
