@@ -28,5 +28,5 @@ export default async function AdminPage() {
 
   const currentUserId = (session?.user as { id?: string })?.id ?? ""
 
-  return <AdminView users={users.map(({ totpEnabledAt, _count, ...user }) => ({ ...user, twoFactor: !!totpEnabledAt || _count.passkeys > 0 }))} currentUserId={currentUserId} isAdmin={role === "ADMIN"} />
+  return <AdminView users={users.map(({ totpEnabledAt, _count, ...user }) => ({ ...user, twoFactor: !!totpEnabledAt || _count.passkeys > 0 }))} currentUserId={currentUserId} isAdmin={role === "ADMIN"} feedbackEnabled={process.env.APP_FEEDBACK === "on"} />
 }

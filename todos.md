@@ -6,6 +6,13 @@ Ideen, die noch kein Todo sind: [ideen.md](ideen.md)
 
 ## Teilweise erledigt
 
+- [ ] Privates App-Feedback über einen Discord-Channel ([Beschreibung](docs/discord-feedback.md))
+  - [x] Private Kategorieauswahl und Formular, Eingang in PostgreSQL, „Mein Feedback“ mit eigenem Status
+  - [x] Adminübersicht mit Statusfilter und Bearbeitung, Einrichtung der Bot-Nachricht
+  - [x] Dev-App und Dev-Bot neu erstellt, Feedback-Tabellen in Dev angelegt (Freigabe 24.10.2026)
+  - [ ] Channel im Adminbereich einrichten und in Discord prüfen
+  - [x] Gesondert für Production freigegeben und deployt (Felix, 24.10.2026)
+
 - [ ] seeding formate für import/anlegen prüfen (Liste der alten Seeding-Screenshots aus Discord folgt nach der Übernahme, [ADR 007](docs/adr/007-zusammengefasste-ergebnisse.md)); als erstes das EMC-Seeding ([Entscheidung](docs/adr/010-seeding-formate.md), [Glossar](docs/seeding-glossar.md)), Ziel: Planung bis zum Seeding von EMC S8 (Start 08.11.2026)
   - [x] fundament: seeding-typ „EMC“ an der comp (zahlen änderbar), seeding-match mit einem sub-match pro fahrt
   - [x] planung: seeding als stage der matchday-planung, raster der fahrten, sperre „keine map zweimal“ (live seit 24.10.2026; map-namen kommen aus dem mastersheet)

@@ -875,6 +875,32 @@ model TfhImportDraft {
   @@index([expiresAt])
 }
 
+// Private Discord submissions, readable by their author through the bot and by app admins.
+model AppFeedback {
+  id            String   @id @default(cuid())
+  interactionId String   @unique
+  guildId       String
+  channelId     String
+  authorId      String
+  authorName    String
+  category      String
+  title         String
+  text          String
+  status        String   @default("OPEN")
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([guildId, authorId, createdAt, id])
+  @@index([createdAt, id])
+}
+
+model FeedbackPanel {
+  id        String @id @default("discord")
+  guildId   String
+  channelId String
+  messageId String
+}
+
 // The range of a match within one of its Twitch VODs, from which the clip is backed up to YouTube
 // (docs/adr/011-vod-archiv.md); kept apart from Match.vods, so editing the links keeps the ranges
 model VodClip {

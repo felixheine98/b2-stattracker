@@ -75,6 +75,7 @@ services:
       SUMMARY_COMPARE: "on"
       SUMMARY_SCREENSHOTS_DIR: /screenshots
       DISCORD_BOT_URL: http://discord-bot:3080
+      APP_FEEDBACK: "on"
       DISCORD_BOT_API_TOKEN: ${DISCORD_BOT_API_TOKEN:?DISCORD_BOT_API_TOKEN is required}
 
     volumes:
@@ -123,6 +124,9 @@ services:
       REACTION_TIMES_CHANNELS: ${REACTION_TIMES_CHANNELS:-940049796633341983}
       # Matchday pings that mark the bot and announcements it posts (docs/adr/008), with MATCHDAY_PLANNING
       ANNOUNCEMENTS: "on"
+      APP_FEEDBACK: "on"
+      FEEDBACK_NAMESPACE: "stattracker-dev"
+      FEEDBACK_API_URL: http://app:3000${DEV_BASE_PATH:-/stats-dev}/api/internal/feedback
     volumes:
       - ../b2-member/data:/bot/data:ro
       - reaction_times:/bot/times

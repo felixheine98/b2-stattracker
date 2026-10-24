@@ -11,4 +11,9 @@ describe("pages reachable without signing in", () => {
     expect(isPublicPath("/tournaments")).toBe(false)
     expect(isPublicPath("/api/youtube/callback")).toBe(false)
   })
+  it("lets the bot reach only its exact token-protected feedback endpoint", () => {
+    expect(isPublicPath("/api/internal/feedback")).toBe(true)
+    expect(isPublicPath("/api/internal/feedback/anything")).toBe(false)
+    expect(isPublicPath("/api/admin/feedback")).toBe(false)
+  })
 })

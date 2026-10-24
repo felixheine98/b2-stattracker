@@ -61,6 +61,8 @@ services:
       BASE_PATH: ${BASE_PATH:-/b2-stats}
       TMIO_USER_AGENT: ${TMIO_USER_AGENT:-}
       DISCORD_BOT_URL: http://discord-bot:3080
+      # Private app feedback, approved for production by Felix on 24.10.2026
+      APP_FEEDBACK: "on"
       DISCORD_BOT_API_TOKEN: ${DISCORD_BOT_PROD_API_TOKEN:?DISCORD_BOT_PROD_API_TOKEN is required}
       # Lineup planning per match day (docs/adr/008), switched on by Felix on 23.10.2026
       MATCHDAY_PLANNING: "on"
@@ -108,6 +110,9 @@ services:
       REACTION_TIMES_CHANNELS: ${REACTION_TIMES_CHANNELS:-940049796633341983}
       # Matchday pings that mark the bot and announcements it posts (docs/adr/008), with MATCHDAY_PLANNING
       ANNOUNCEMENTS: "on"
+      APP_FEEDBACK: "on"
+      FEEDBACK_NAMESPACE: "stattracker-prod"
+      FEEDBACK_API_URL: http://app:3000${BASE_PATH:-/b2-stats}/api/internal/feedback
     volumes:
       - ../b2-member/data:/bot/data:ro
       - reaction_times:/bot/times

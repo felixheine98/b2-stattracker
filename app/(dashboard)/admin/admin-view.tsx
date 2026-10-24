@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label"
 import { Select } from "@/components/ui/select"
 import { ChevronDown, KeyRound, Plus, Shield, ShieldCheck, Smartphone, Trash2, User } from "lucide-react"
 import { useState } from "react"
+import Link from "next/link"
 import { ResetPasswordDialog } from "./reset-password-dialog"
 
 type Role = "ADMIN" | "MANAGER" | "PLAYER"
@@ -52,9 +53,10 @@ interface Props {
   currentUserId: string
   // Managers see every account but can only create and delete PLAYER accounts
   isAdmin: boolean
+  feedbackEnabled: boolean
 }
 
-export function AdminView({ users: initial, currentUserId, isAdmin }: Props) {
+export function AdminView({ users: initial, currentUserId, isAdmin, feedbackEnabled }: Props) {
   const [users, setUsers] = useSyncedState(initial)
   const [showForm, setShowForm] = useState(false)
   const [error, setError] = useState("")
@@ -130,10 +132,13 @@ export function AdminView({ users: initial, currentUserId, isAdmin }: Props) {
           <h1 className="text-fg page-title">Accounts</h1>
           <p className="text-fg-muted text-sm mt-0.5">{users.length} accounts</p>
         </div>
+        <div className="flex flex-wrap items-center gap-3">
+        {isAdmin && feedbackEnabled && <Link href="/admin/feedback" className="text-sm text-brand-ink hover:underline">App feedback</Link>}
         <Button onClick={() => { setShowForm(true); setError("") }}>
           <Plus size={16} />
           Add User
         </Button>
+        </div>
       </div>
 
       <div className="rounded-xl border border-line overflow-hidden max-md:overflow-visible max-md:border-0">
