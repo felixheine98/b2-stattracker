@@ -11,6 +11,8 @@ import { withCompNames } from "@/lib/player-names-db"
 import { matchdayPlanningEnabled, matchRulesEnabled } from "@/lib/features"
 import { isPlanned } from "@/lib/upcoming"
 import { TournamentDetailView } from "./tournament-detail-view"
+import { loadSeedingStats } from "@/lib/seeding-stats-db"
+import { SeedingStats } from "@/components/seeding/seeding-stats"
 import { getTfhRace } from "@/lib/tfh-db"
 import { TfhRaceView } from "@/components/tfh/race-view"
 import { lineupPoints } from "@/lib/match-rules"
@@ -102,5 +104,6 @@ export default async function TournamentDetailPage({ params }: Props) {
     }),
   )
 
-  return <TournamentDetailView lineupPoints={points} tournament={{ ...named.tournament, ...rulesBodies(rules) }} players={named.players} statsMatches={named.statsMatches} users={users} ownLineupId={ownLineupId} hasPlanning={hasPlanning} planningCard={planningCard} canManage={mayManage} matchRules={matchRulesEnabled()} plannedMatchIds={matchdayPlanningEnabled() ? statsMatches.filter(isPlanned).map((m) => m.id) : []} />
+  const seeding = await loadSeedingStats(id)
+  return <TournamentDetailView seedingStats={seeding && <SeedingStats stats={seeding} />} lineupPoints={points} tournament={{ ...named.tournament, ...rulesBodies(rules) }} players={named.players} statsMatches={named.statsMatches} users={users} ownLineupId={ownLineupId} hasPlanning={hasPlanning} planningCard={planningCard} canManage={mayManage} matchRules={matchRulesEnabled()} plannedMatchIds={matchdayPlanningEnabled() ? statsMatches.filter(isPlanned).map((m) => m.id) : []} />
 }

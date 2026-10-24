@@ -10,7 +10,7 @@ import { MatchRulesFields } from "@/components/match-rules-fields"
 import { RuleTemplateSelect, SaveAsTemplateButton } from "@/components/rule-template-controls"
 import { ruledFormats } from "@/lib/match-rules"
 import { draftOf, playoffBodyOf, playoffDraftOf, rulesBodyOf, type PlayoffRulesBody, type PlayoffRulesDraft, type RulesBody, type RulesDraft } from "@/lib/match-rules-form"
-import { useState } from "react"
+import { useState, type ReactNode } from "react"
 import { useRouter } from "next/navigation"
 import { useSyncedState } from "@/lib/use-synced-state"
 import { PlayerAvatar } from "@/components/player-avatar"
@@ -124,6 +124,8 @@ interface Tournament {
 
 interface Props {
   tournament: Tournament
+  // The seeding stats of a comp with a seeding format (docs/adr/010); null without
+  seedingStats?: ReactNode
   players: PlayerWithStatus[]
   statsMatches: StatsMatch[]
   // All accounts, to pick the people responsible for a lineup (empty unless canManage)
@@ -146,7 +148,7 @@ function formatBadgeVariant(format: Format): "primary" | "secondary" {
   return format === "TIME_ATTACK_10" ? "primary" : "secondary"
 }
 
-export function TournamentDetailView({ tournament: initial, players, statsMatches, users, ownLineupId, hasPlanning, planningCard, canManage, lineupPoints, matchRules, plannedMatchIds }: Props) {
+export function TournamentDetailView({ tournament: initial, players, statsMatches, users, ownLineupId, hasPlanning, planningCard, canManage, lineupPoints, matchRules, plannedMatchIds, seedingStats }: Props) {
   const [planningStarting, setPlanningStarting] = useState(false)
 
   async function startPlanning() {
@@ -578,6 +580,7 @@ export function TournamentDetailView({ tournament: initial, players, statsMatche
 
       {/* Overall stats */}
       <div className={cn("space-y-6", hasStats && "page-main")}>
+      {seedingStats}
       {(() => {
         // Only matches that still exist locally, so deleting a match updates the stats at once
         const existing = statsMatches.filter((sm) => matches.some((m) => m.id === sm.id))

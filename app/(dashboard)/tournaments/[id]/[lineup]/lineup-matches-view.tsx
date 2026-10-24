@@ -12,7 +12,7 @@ import { useSyncedState } from "@/lib/use-synced-state"
 import { formatDay, localTodayKey } from "@/lib/player-status"
 import Link from "next/link"
 import { useRouter, useSearchParams } from "next/navigation"
-import { useState } from "react"
+import { useState, type ReactNode } from "react"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogTitle } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
@@ -84,6 +84,8 @@ interface Player {
 }
 
 interface Props {
+  // The lineup's seeding result and its players' runs, in a comp with a seeding format (docs/adr/010)
+  seedingStats?: ReactNode
   lineup: {
     id: string
     slug?: string | null
@@ -114,7 +116,7 @@ interface Props {
   canPlan: boolean
 }
 
-export function LineupMatchesView({ lineup, rules, guestTmIds, trialTmIds, profilePaths, canManage, canEdit, editExpired, plannedMatchIds, canPlan }: Props) {
+export function LineupMatchesView({ lineup, rules, guestTmIds, trialTmIds, profilePaths, canManage, canEdit, editExpired, plannedMatchIds, canPlan, seedingStats }: Props) {
   const profilePath = (tmId: string) => profilePaths[tmId.toLowerCase()]
   const responsiblePlayerIds = new Set(lineup.managers.map((m) => m.user.playerId))
   const guests = new Set(guestTmIds)
@@ -307,6 +309,7 @@ export function LineupMatchesView({ lineup, rules, guestTmIds, trialTmIds, profi
       </div>
 
       <div className={cn("space-y-6", hasStats && "page-main")}>
+      {seedingStats}
       {/* Aggregate stats */}
       {hasStats && (
         <div>

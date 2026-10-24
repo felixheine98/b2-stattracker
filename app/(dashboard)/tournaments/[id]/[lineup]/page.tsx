@@ -9,6 +9,8 @@ import { lineupPath, playerPath } from "@/lib/paths"
 import { resolveLineup, resolveTournament } from "@/lib/slugs-db"
 import { withCompNames } from "@/lib/player-names-db"
 import { LineupMatchesView } from "./lineup-matches-view"
+import { loadSeedingStats } from "@/lib/seeding-stats-db"
+import { SeedingStats } from "@/components/seeding/seeding-stats"
 import { getTfhRace } from "@/lib/tfh-db"
 import { TfhRaceView } from "@/components/tfh/race-view"
 import { compRulesOf, rulesInclude } from "@/lib/match-rules-db"
@@ -80,8 +82,10 @@ export default async function LineupMatchesPage({ params }: Props) {
   const responsible = !!user?.id && lineup.managers.some((m) => m.user.id === user.id)
   const canEdit = mayEditLineup(user, { managers: lineup.managers.map((m) => ({ userId: m.user.id })), tournament: lineup.tournament })
 
+  const seeding = await loadSeedingStats(tournamentId, lineupId)
   return (
     <LineupMatchesView
+      seedingStats={seeding && <SeedingStats stats={seeding} single />}
       lineup={named}
       rules={compRulesOf(lineup.tournament)}
       guestTmIds={guestTmIds}
