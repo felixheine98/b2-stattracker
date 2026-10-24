@@ -3,13 +3,14 @@ import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
 import { NextResponse } from "next/server"
 import { z } from "zod"
-import { CompStyle, Format } from "@prisma/client"
+import { CompStyle, Format, Prisma } from "@prisma/client"
 import { canManage } from "@/lib/roles"
 import { needsFormats } from "@/lib/comp-styles"
 import { isValidDay } from "@/lib/player-status"
 import { DEFAULT_STAGE_PLAN, planStageChanges } from "@/lib/stages"
 import { ruledFormats, type RuleSet } from "@/lib/match-rules"
 import { matchRulesEnabled } from "@/lib/features"
+import { readSeeding, seedingInput } from "@/lib/seeding"
 import { compRulesOf, playoffRulesSchema, readRuleSet, rulesBodies, rulesInclude, rulesSchema, rulesWrites } from "@/lib/match-rules-db"
 
 export async function GET() {
@@ -35,7 +36,7 @@ const stagesSchema = z.object({
 const createSchema = z.object({
   name: z.string().min(1),
   // May be empty for an endurance race only, see needsFormats
-  formats: z.array(z.nativeEnum(Format)),
+  formats: z.array(z.nativeEnum(Format).refine((f) => f !== "SEEDING_RUN", "A seeding run is not a format of the matches")),
   // Required: every tournament has exactly one style
   style: z.nativeEnum(CompStyle, { message: "Select a style" }),
   description: z.string().nullable().optional(),
@@ -46,6 +47,8 @@ const createSchema = z.object({
   // Required as soon as the tournament has formats that matches are played in
   rules: rulesSchema.optional(),
   playoffRules: playoffRulesSchema.nullable().optional(),
+  // How the seeding is played and scored (docs/adr/010-seeding-formate.md); left out: none
+  seeding: seedingInput.optional(),
 })
 
 export async function POST(req: Request) {
@@ -61,6 +64,9 @@ export async function POST(req: Request) {
   if (needsFormats(parsed.data.style) && parsed.data.formats.length === 0) {
     return NextResponse.json({ error: "Select at least one format" }, { status: 400 })
   }
+
+  const seeding = readSeeding(parsed.data.seeding ?? null)
+  if ("error" in seeding) return NextResponse.json({ error: seeding.error }, { status: 400 })
 
   let ruleSet: RuleSet | null = null, playoffRuleSet: RuleSet | null = null
   // Switched off, rules are neither asked for nor kept
@@ -85,6 +91,8 @@ export async function POST(req: Request) {
       startDate: new Date(parsed.data.startDate),
       endDate: parsed.data.endDate ? new Date(parsed.data.endDate) : null,
       stages: { create: planStageChanges([], parsed.data.stages).create },
+      seedingType: seeding.seedingType,
+      seedingSettings: seeding.seedingSettings ?? Prisma.DbNull,
     },
   })
 

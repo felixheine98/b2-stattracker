@@ -8,6 +8,7 @@ import { z } from "zod"
 import type { Format } from "@prisma/client"
 import { compRulesOf, rulesInclude } from "@/lib/match-rules-db"
 import { nextMatchNumber } from "@/lib/match-order"
+import { seedingRuns, seedingSettings } from "@/lib/seeding"
 import { mayEditLineupById, type SessionUser } from "@/lib/lineup-access-db"
 
 interface Params {
@@ -71,16 +72,21 @@ export async function POST(req: Request, { params }: Params) {
   if (!(await mayEditLineupById(session.user as SessionUser, tl.id))) return NextResponse.json({ error: "Forbidden" }, { status: 403 })
   const lineupPlayerIds = tl.slots.map((s) => s.playerId)
 
-  const subMatchFormats = stage.type === "SEEDING"
-    ? [{ format: "TIME_ATTACK_10" as const, order: 0 }]
-    // The playoffs may have a format sequence of their own
-    : ((stage.type === "PLAYOFF" && compRulesOf(tournament).playoff?.formats as Format[] | undefined) || tournament.formats)
-        .filter((f) => f !== "TIME_ATTACK_10")
-        .map((f, i) => ({ format: f, order: i }))
-
   const lineupCreate = lineupPlayerIds.length > 0
     ? { create: { slots: { create: lineupPlayerIds.map((playerId) => ({ playerId })) } } }
     : undefined
+
+  // A comp with a seeding format plays its seeding as runs, each by one player who is planned later
+  const seeding = stage.type === "SEEDING" ? seedingSettings(tournament.seedingType, tournament.seedingSettings) : null
+  const subMatches = seeding
+    ? seedingRuns(seeding).map((run, order) => ({ format: "SEEDING_RUN" as const, order, seedingRun: { create: run } }))
+    : (stage.type === "SEEDING"
+        ? [{ format: "TIME_ATTACK_10" as const, order: 0 }]
+        // The playoffs may have a format sequence of their own
+        : ((stage.type === "PLAYOFF" && compRulesOf(tournament).playoff?.formats as Format[] | undefined) || tournament.formats)
+            .filter((f) => f !== "TIME_ATTACK_10")
+            .map((f, i) => ({ format: f, order: i }))
+      ).map((sm) => ({ ...sm, lineup: lineupCreate }))
 
   let match
   try {
@@ -101,7 +107,7 @@ export async function POST(req: Request, { params }: Params) {
       label: parsed.data.label || null,
       tournamentLineupId: tl.id,
       subMatches: {
-        create: subMatchFormats.map((sm) => ({ ...sm, lineup: lineupCreate })),
+        create: subMatches,
       },
     },
     include: { _count: { select: { subMatches: true } }, stage: { select: { id: true, type: true } }, subMatches: { include: { rounds: { include: { results: true } } } } },

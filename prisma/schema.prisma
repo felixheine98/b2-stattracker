@@ -29,6 +29,8 @@ enum Format {
   ROUND_4V4
   ROUND_5V5
   TIME_ATTACK_10
+  // One run of ours in a seeding session (docs/adr/010)
+  SEEDING_RUN
 }
 
 model User {
@@ -192,6 +194,10 @@ model Tournament {
   slug        String?   @unique
   formats     Format[]
   style       CompStyle
+  // The seeding format (lib/seeding.ts, docs/adr/010) and the comp's own numbers for it; without one
+  // a seeding match is a single time attack as before
+  seedingType     String?
+  seedingSettings Json?
   description String?
   startDate   DateTime?
   endDate     DateTime?
@@ -657,6 +663,8 @@ model SubMatch {
   rounds Round[]
   // Set instead of rounds for a sub-match taken over from an old stats screenshot
   summary SubMatchSummary?
+  // Set for a run of the seeding (format SEEDING_RUN)
+  seedingRun SeedingRun?
 
   @@unique([matchId, order])
 }
@@ -682,6 +690,19 @@ model SubMatchSummary {
   createdAt   DateTime @default(now())
 
   players SubMatchSummaryPlayer[]
+}
+
+// A run of ours in the seeding (docs/adr/010): which map, time slot and server; who drove is the
+// sub-match's lineup. The score is entered from the final standings, or worked out from rounds.
+model SeedingRun {
+  id         String   @id @default(cuid())
+  subMatchId String   @unique
+  subMatch   SubMatch @relation(fields: [subMatchId], references: [id], onDelete: Cascade)
+  // Index into the stage's maps, the slot over all maps in playing order, and the server
+  map        Int
+  slot       Int
+  server     Int
+  score      Int?
 }
 
 model SubMatchSummaryPlayer {

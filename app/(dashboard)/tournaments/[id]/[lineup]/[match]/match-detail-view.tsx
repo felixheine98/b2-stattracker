@@ -360,10 +360,12 @@ interface Props {
   // Open the eCM import dialog right away (the import page sends people here with the data)
   autoEcmImport?: boolean
   // The lineup finalised in the match day planning; null without one or while it is switched off
+  // Names of the runs of a seeding played in a seeding format, by sub-match id (docs/adr/010)
+  runLabels?: Record<string, string>
   plannedLineup?: { publishedAt: Date | string | null; formats: Array<{ format: Format; map: string | null; players: Array<{ id: string; name: string; nickname?: string | null; country: string | null } | null> }> } | null
 }
 
-export function MatchDetailView({ match: initialMatch, ruleSet, allPlayers, guestTmIds, trialTmIds, canEdit, canManage, autoEcmImport = false, plannedLineup = null }: Props) {
+export function MatchDetailView({ match: initialMatch, ruleSet, allPlayers, guestTmIds, trialTmIds, canEdit, canManage, autoEcmImport = false, plannedLineup = null, runLabels = {} }: Props) {
   const ownRow = useOwnRow()
   const router = useRouter()
   const guests = new Set(guestTmIds)
@@ -704,7 +706,9 @@ export function MatchDetailView({ match: initialMatch, ruleSet, allPlayers, gues
                   <Badge variant={sm.format === "TIME_ATTACK_10" ? "primary" : "secondary"}>
                     {formatLabel(sm.format)}
                   </Badge>
-                  <span className="text-sm text-fg-muted max-md:hidden">{formatLabelLong(sm.format)}</span>
+                  {runLabels[sm.id]
+                    ? <span className="text-sm text-fg">{runLabels[sm.id]}</span>
+                    : <span className="text-sm text-fg-muted max-md:hidden">{formatLabelLong(sm.format)}</span>}
                   {(sm.summary?.track ?? sm.rounds[0]?.track) && <span className="text-sm text-fg">{sm.summary?.track ?? sm.rounds[0].track}</span>}
                   {summaryResult && (
                     <Badge variant={summaryResult.outcome === "W" ? "primary" : summaryResult.outcome === "L" ? "red" : "default"}>

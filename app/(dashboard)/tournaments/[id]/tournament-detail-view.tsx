@@ -40,6 +40,8 @@ import { useIdListParam } from "@/lib/use-id-list-param"
 import { StatsFilter } from "@/components/stats-filter"
 import { StageHeading } from "@/components/stage-heading"
 import { StagePlanFields } from "@/components/stage-plan-fields"
+import { SeedingFields } from "@/components/seeding-fields"
+import { seedingChoiceOf, type SeedingChoice } from "@/lib/seeding"
 import { FormatStatsTable } from "./format-stats"
 import { MapStatsTable, StatsViewToggle } from "./map-stats"
 import { shownName } from "@/lib/player-names"
@@ -110,6 +112,9 @@ interface Tournament {
   endDate?: Date | null
   createdAt: Date
   stages: StageRef[]
+  // How the seeding is played and scored (docs/adr/010); none: one time attack
+  seedingType?: string | null
+  seedingSettings?: unknown
   matches: Match[]
   tournamentLineups: TournamentLineup[]
   // Format rules; a tournament from before the rules has none until they are entered
@@ -198,6 +203,7 @@ export function TournamentDetailView({ tournament: initial, players, statsMatche
     tournament.endDate ? new Date(tournament.endDate).toISOString().split("T")[0] : ""
   )
   const [editStagePlan, setEditStagePlan] = useState(() => stagePlanOf(tournament.stages))
+  const [editSeeding, setEditSeeding] = useState<SeedingChoice>(null)
   const [editRules, setEditRules] = useState<RulesDraft | null>(null)
   const [editPlayoffRules, setEditPlayoffRules] = useState<PlayoffRulesDraft | null>(null)
   const [editError, setEditError] = useState("")
@@ -269,6 +275,7 @@ export function TournamentDetailView({ tournament: initial, players, statsMatche
         startDate: editStartDate,
         endDate: editEndDate || null,
         stages: editStagePlan,
+        seeding: editStagePlan.seeding ? editSeeding : null,
         ...(rules && { rules, playoffRules }),
       }),
     })
@@ -376,6 +383,7 @@ export function TournamentDetailView({ tournament: initial, players, statsMatche
     setEditStartDate(tournament.startDate ? new Date(tournament.startDate).toISOString().split("T")[0] : "")
     setEditEndDate(tournament.endDate ? new Date(tournament.endDate).toISOString().split("T")[0] : "")
     setEditStagePlan(stagePlanOf(tournament.stages))
+    setEditSeeding(seedingChoiceOf(tournament.seedingType, tournament.seedingSettings))
     setEditRules(tournament.rules && draftOf(tournament.rules))
     setEditPlayoffRules(playoffDraftOf(tournament.playoffRules))
     setEditError("")
@@ -754,6 +762,7 @@ export function TournamentDetailView({ tournament: initial, players, statsMatche
             />
           </div>
           <StagePlanFields value={editStagePlan} onChange={setEditStagePlan} />
+          {editStagePlan.seeding && <SeedingFields value={editSeeding} onChange={setEditSeeding} />}
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div className="space-y-1.5">
               <Label htmlFor="edit-start">Start date</Label>

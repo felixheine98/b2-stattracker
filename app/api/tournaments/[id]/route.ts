@@ -4,13 +4,14 @@ import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
 import { NextResponse } from "next/server"
 import { z } from "zod"
-import { CompStyle, Format } from "@prisma/client"
+import { CompStyle, Format, Prisma } from "@prisma/client"
 import { canManage } from "@/lib/roles"
 import { needsFormats } from "@/lib/comp-styles"
 import { isValidDay } from "@/lib/player-status"
 import { planStageChanges, sortStages, stageName } from "@/lib/stages"
 import { ruledFormats, type RuleSet } from "@/lib/match-rules"
 import { matchRulesEnabled } from "@/lib/features"
+import { readSeeding, seedingInput } from "@/lib/seeding"
 import { compRulesOf, playoffRulesSchema, readRuleSet, rulesBodies, rulesInclude, rulesSchema, rulesWrites } from "@/lib/match-rules-db"
 
 interface Params {
@@ -41,7 +42,7 @@ export async function GET(_req: Request, { params }: Params) {
 const patchSchema = z.object({
   name: z.string().min(1).optional(),
   // May be empty for an endurance race only, see needsFormats
-  formats: z.array(z.nativeEnum(Format)).optional(),
+  formats: z.array(z.nativeEnum(Format).refine((f) => f !== "SEEDING_RUN", "A seeding run is not a format of the matches")).optional(),
   // The style can be changed but not removed
   style: z.nativeEnum(CompStyle, { message: "Select a style" }).optional(),
   description: z.string().nullable().optional(),
@@ -60,6 +61,8 @@ const patchSchema = z.object({
   rules: rulesSchema.optional(),
   // Null removes the playoffs' own rule set
   playoffRules: playoffRulesSchema.nullable().optional(),
+  // Null removes the seeding format; left out: unchanged
+  seeding: seedingInput.optional(),
 })
 
 export async function PATCH(req: Request, { params }: Params) {
@@ -76,6 +79,8 @@ export async function PATCH(req: Request, { params }: Params) {
   }
 
   const { name, formats, style, description, startDate, endDate, stages, rules, playoffRules } = parsed.data
+  const seeding = parsed.data.seeding === undefined ? null : readSeeding(parsed.data.seeding)
+  if (seeding && "error" in seeding) return NextResponse.json({ error: seeding.error }, { status: 400 })
 
   if (formats !== undefined || style !== undefined) {
     const current = await db.tournament.findUnique({ where: { id }, select: { style: true, formats: true } })
@@ -127,6 +132,7 @@ export async function PATCH(req: Request, { params }: Params) {
         ...(description !== undefined && { description }),
         ...(startDate !== undefined && { startDate: new Date(startDate) }),
         ...(endDate !== undefined && { endDate: endDate ? new Date(endDate) : null }),
+        ...(seeding && { seedingType: seeding.seedingType, seedingSettings: seeding.seedingSettings ?? Prisma.DbNull }),
       },
     }),
     db.stage.deleteMany({ where: { id: { in: changes.remove } } }),

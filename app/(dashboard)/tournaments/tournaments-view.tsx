@@ -6,6 +6,8 @@ import { FormatBuilder } from "@/components/format-builder"
 import { MatchRulesFields } from "@/components/match-rules-fields"
 import { RuleTemplateSelect, SaveAsTemplateButton } from "@/components/rule-template-controls"
 import { StagePlanFields } from "@/components/stage-plan-fields"
+import { SeedingFields } from "@/components/seeding-fields"
+import type { SeedingChoice } from "@/lib/seeding"
 import { ruledFormats } from "@/lib/match-rules"
 import { draftOf, playoffBodyOf, playoffDraftOf, rulesBodyOf, type PlayoffRulesDraft, type RulesDraft } from "@/lib/match-rules-form"
 import { DEFAULT_STAGE_PLAN } from "@/lib/stages"
@@ -55,6 +57,7 @@ export function TournamentsView({ tournaments: initial, style, canManage, isAdmi
   const [loading, setLoading] = useState(false)
   const [formats, setFormats] = useState<Format[]>([])
   const [stagePlan, setStagePlan] = useState(DEFAULT_STAGE_PLAN)
+  const [seeding, setSeeding] = useState<SeedingChoice>(null)
   const [formStyle, setFormStyle] = useState<CompStyle | "">("")
   // A new tournament with formats always gets rules; nothing is filled in for the user
   const [rules, setRules] = useState<RulesDraft>(() => draftOf(null))
@@ -66,6 +69,7 @@ export function TournamentsView({ tournaments: initial, style, canManage, isAdmi
     setFormats([])
     setFormStyle(style ?? "")
     setStagePlan(DEFAULT_STAGE_PLAN)
+    setSeeding(null)
     setRules(draftOf(null))
     setPlayoffRules(null)
     setError("")
@@ -92,6 +96,7 @@ export function TournamentsView({ tournaments: initial, style, canManage, isAdmi
         startDate: form.get("startDate") || null,
         endDate: form.get("endDate") || null,
         stages: stagePlan,
+        seeding: stagePlan.seeding ? seeding : null,
         ...(matchRules && ruledFormats(formats).length > 0 && { rules: rulesBodyOf(rules), playoffRules: playoffRules && playoffBodyOf(playoffRules) }),
       }),
     })
@@ -230,6 +235,7 @@ export function TournamentsView({ tournaments: initial, style, canManage, isAdmi
             <Textarea id="description" name="description" rows={2} />
           </div>
           <StagePlanFields value={stagePlan} onChange={setStagePlan} />
+          {stagePlan.seeding && <SeedingFields value={seeding} onChange={setSeeding} />}
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div className="space-y-1.5">
               <Label htmlFor="startDate">Start date</Label>

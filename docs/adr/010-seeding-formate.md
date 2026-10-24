@@ -1,6 +1,6 @@
 # Seeding-Formate, zuerst das EMC-Seeding
 
-Status: Entscheidungen 1–13 von Felix am 24.10.2026 bestätigt; gemeinsames Verständnis noch zu bestätigen, Umsetzung steht aus. Begriffe: [Glossar](../seeding-glossar.md)
+Status: Akzeptiert – von Felix am 24.10.2026 bestätigt (Entscheidungen 1–13, gemeinsames Verständnis). Umsetzung läuft. Begriffe: [Glossar](../seeding-glossar.md)
 
 ## Kontext
 
@@ -75,7 +75,7 @@ Bestätigt (24.10.2026), Frage 13 – Platz und Liga: werden auf der Seite des S
 
 - Neu: Seeding-Typen im Code (zuerst „EMC“) und pro Comp der gewählte Typ mit seinen Zahlen (Maps, Zeitfenster je Map, Server, Runden, beste N je Map, Punkteverteilung).
 - Seeding-Matches einer Comp mit Typ bekommen statt des `TIME_ATTACK_10`-Sub-Matches ein Sub-Match pro Fahrt (Map, Zeitfenster, Server, Spieler) mit Score; dazu am Seeding-Match Platz und Liga. Comps ohne Typ bleiben unverändert.
-- Neu zu entscheiden bei der Umsetzung: ein Format-Wert für Fahrt-Sub-Matches (statt der Team-Formate `ROUND_*`), und wo der Score ohne Runden liegt (an `SubMatchSummary` oder einem eigenen Feld).
+- Umgesetzt im Fundament: Fahrt-Sub-Matches haben das Format `SEEDING_RUN` (keine Comp kann es als Match-Format wählen) und eine `SeedingRun` mit Map, Zeitfenster und Server; dort liegt auch der Score (`score`, eigenes Feld statt `SubMatchSummary`). Der Typ einer Comp steht in `Tournament.seedingType`, die Zahlen in `Tournament.seedingSettings`; Typen und Prüfung in `lib/seeding.ts`. Fahrten haben keine Sub-Match-Aufstellung; wie der Spieler einer Fahrt gespeichert wird, klärt der Schritt Planung.
 - Die Matchday-Planung bekommt für Seeding-Stages ein Raster der Fahrten statt der Matches; die Sperre „kein Spieler zweimal dieselbe Map“ gilt dort.
 - Die Ergebnisseite weist auf Verstöße gegen diese Regel hin, sperrt aber nicht.
 - Spielerprofil und Turnierseite bekommen Seeding-Bereiche; Format-, Map-Stats und Dashboard bleiben ohne Seeding.

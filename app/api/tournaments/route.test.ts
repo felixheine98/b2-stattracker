@@ -203,4 +203,51 @@ describe.skipIf(process.env.DB_TESTS !== "1")("tournament routes with PostgreSQL
       expect((await patch(id, { formats: ["ROUND_1V1", "ROUND_3V3"] })).status).toBe(200)
     }))
   })
+
+  describe("seeding format", () => {
+    const emc = (settings: object = {}) => ({ type: "EMC", settings })
+
+    it("keeps the chosen seeding type with its numbers, the type's where none are changed", async () => {
+      const res = await post(comp({ style: "TECH", seeding: emc({ best: 4 }) }))
+      expect(res.status).toBe(201)
+      const { id } = await res.json()
+      const stored = await client.tournament.findUniqueOrThrow({ where: { id } })
+      expect(stored.seedingType).toBe("EMC")
+      expect(stored.seedingSettings).toMatchObject({ maps: 2, best: 4, times: ["18:00", "18:30", "19:00", "19:30"] })
+      // Without one the comp has none
+      const plain = await (await post(comp({ style: "TECH" }))).json()
+      expect((await client.tournament.findUniqueOrThrow({ where: { id: plain.id } })).seedingType).toBeNull()
+    })
+
+    it("refuses an unknown type, numbers that do not fit and runs among the formats", async () => {
+      expect((await post(comp({ style: "TECH", seeding: { type: "XYZ", settings: {} } }))).status).toBe(400)
+      expect((await post(comp({ style: "TECH", seeding: emc({ best: 9 }) }))).status).toBe(400)
+      expect((await post(comp({ style: "TECH", formats: ["ROUND_3V3", "SEEDING_RUN"] }))).status).toBe(400)
+    })
+
+    it("changes the seeding of a comp and takes it away again", async () => {
+      const { id } = await (await post(comp({ style: "TECH" }))).json()
+      expect((await patch(id, { seeding: emc({ maps: 1, times: ["18:00", "18:30"] }) })).status).toBe(200)
+      expect(await client.tournament.findUniqueOrThrow({ where: { id } })).toMatchObject({ seedingType: "EMC", seedingSettings: expect.objectContaining({ maps: 1 }) })
+      expect((await patch(id, { seeding: emc({ best: 9 }) })).status).toBe(400)
+      expect((await patch(id, { seeding: null })).status).toBe(200)
+      expect(await client.tournament.findUniqueOrThrow({ where: { id } })).toMatchObject({ seedingType: null, seedingSettings: null })
+    })
+
+    it("lays out a seeding match of an EMC comp as one run per map, time and server; others keep the time attack", async () => {
+      const create = async (seeding?: object) => {
+        const { id } = await (await post(comp({ style: "TECH", seeding, stages: { seeding: true, matchDays: 1, playoffDays: 0 } }))).json()
+        const lineup = await client.tournamentLineup.create({ data: { tournamentId: id, name: "B2" } })
+        const stage = await client.stage.findFirstOrThrow({ where: { tournamentId: id, type: "SEEDING" } })
+        const res = await POST_MATCH(new Request("http://test", { method: "POST", body: JSON.stringify({ stageId: stage.id, lineupId: lineup.id }) }), { params: Promise.resolve({ id }) })
+        expect(res.status).toBe(201)
+        return client.subMatch.findMany({ where: { matchId: (await res.json()).id }, orderBy: { order: "asc" }, include: { seedingRun: true, lineup: { include: { slots: true } } } })
+      }
+      const runs = await create(emc())
+      expect(runs).toHaveLength(8)
+      expect(runs.every((r) => r.format === "SEEDING_RUN" && r.lineup === null)).toBe(true)
+      expect(runs.map((r) => [r.seedingRun!.map, r.seedingRun!.slot, r.seedingRun!.server])).toEqual([[0, 0, 0], [0, 0, 1], [0, 1, 0], [0, 1, 1], [1, 2, 0], [1, 2, 1], [1, 3, 0], [1, 3, 1]])
+      expect((await create()).map((r) => r.format)).toEqual(["TIME_ATTACK_10"])
+    })
+  })
 })

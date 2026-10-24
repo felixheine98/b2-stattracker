@@ -13,6 +13,7 @@ import { compRulesOf, rulesInclude } from "@/lib/match-rules-db"
 import { MatchDetailView } from "./match-detail-view"
 import { matchdayPlanningEnabled } from "@/lib/features"
 import { publishedLineupOf } from "@/lib/matchday-plan-db"
+import { runLabel, seedingSettings } from "@/lib/seeding"
 
 interface Props {
   params: Promise<{ id: string; lineup: string; match: string }>
@@ -54,6 +55,7 @@ export default async function MatchDetailPage({ params, searchParams }: Props) {
           orderBy: { order: "asc" },
           include: {
             lineup: { include: { slots: { include: { player: true } } } },
+            seedingRun: true,
             rounds: {
               orderBy: { number: "asc" },
               include: {
@@ -92,5 +94,9 @@ export default async function MatchDetailPage({ params, searchParams }: Props) {
     ? await publishedLineupOf({ id: match.id, tournamentLineupId: match.tournamentLineupId, stageId: match.stage.id, formats: [...new Set([...match.subMatches].sort((a, b) => a.order - b.order).map((sm) => sm.format))] })
     : null
 
-  return <MatchDetailView plannedLineup={plannedLineup} match={named.match} ruleSet={ruleSetFor(compRulesOf(match.tournament), match.stage.type)} allPlayers={named.allPlayers} guestTmIds={guestTmIds} trialTmIds={trialTmIds} autoEcmImport={autoEcmImport} canEdit={canEdit} canManage={canManage(user?.role)} />
+  // The runs of a seeding played in a seeding format (docs/adr/010), named by map, time and server
+  const seeding = match.stage.type === "SEEDING" ? seedingSettings(match.tournament.seedingType, match.tournament.seedingSettings) : null
+  const runLabels = Object.fromEntries(seeding ? match.subMatches.flatMap((sm) => sm.seedingRun ? [[sm.id, runLabel(seeding, sm.seedingRun)]] : []) : [])
+
+  return <MatchDetailView runLabels={runLabels} plannedLineup={plannedLineup} match={named.match} ruleSet={ruleSetFor(compRulesOf(match.tournament), match.stage.type)} allPlayers={named.allPlayers} guestTmIds={guestTmIds} trialTmIds={trialTmIds} autoEcmImport={autoEcmImport} canEdit={canEdit} canManage={canManage(user?.role)} />
 }

@@ -25,6 +25,7 @@ export function formatLabel(format: Format): string {
     ROUND_4V4: "4v4",
     ROUND_5V5: "5v5",
     TIME_ATTACK_10: "Seeding",
+    SEEDING_RUN: "Run",
   }
   return map[format]
 }
@@ -37,6 +38,7 @@ export function formatLabelLong(format: Format): string {
     ROUND_4V4: "4v4 Round",
     ROUND_5V5: "5v5 Round",
     TIME_ATTACK_10: "Seeding (Time Attack)",
+    SEEDING_RUN: "Seeding run",
   }
   return map[format]
 }
