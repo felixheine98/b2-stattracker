@@ -5,6 +5,7 @@ Ideen, die noch kein Todo sind: [ideen.md](ideen.md)
 ## Offen
 
 - [ ] Alte Comp-Stats aus Discord-Screenshots übernehmen ([Entscheidung](docs/adr/007-zusammengefasste-ergebnisse.md), [Glossar](docs/zusammengefasste-ergebnisse-glossar.md)); Abgleich mit Felix pro Comp
+- [ ] VOD-Archiv: Match-Ausschnitte aus Twitch-VODs per Bereichs-Slider auf den Team-YouTube-Kanal sichern ([Entscheidung](docs/adr/011-vod-archiv.md), [Glossar](docs/vod-archiv-glossar.md)); entschieden, Umsetzung offen; Google-Projekt und Audit macht Felix
 
 ## Teilweise erledigt
 
