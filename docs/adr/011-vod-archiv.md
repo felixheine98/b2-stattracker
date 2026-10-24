@@ -25,7 +25,7 @@ Bestätigt (24.10.2026), Frage 4 – Orientierung beim Schieben: Über dem Slide
 
 Bestätigt (24.10.2026), Frage 5 – Zeitpunkt: **automatisch**, sobald für einen VOD ein Bereich gespeichert ist. Die App holt den Ausschnitt im Hintergrund, lädt ihn hoch und hängt den YouTube-Link an den VOD. Sichtbarer Status: wartet, lädt, gesichert, fehlgeschlagen. Ändert sich der Bereich, wird neu gesichert und das alte Video ersetzt. Reicht die Tagesquote von YouTube nicht (rund 6 Uploads), warten die übrigen bis zum nächsten Tag.
 
-Bestätigt (24.10.2026), Frage 6 – Zugang zum Kanal: **„YouTube verbinden“ in den Admin-Einstellungen.** Ein Admin meldet sich einmal per OAuth mit einem Konto an, das den Team-Kanal verwalten darf; die App speichert den Refresh-Token. Ist er abgelaufen oder widerrufen, zeigt die App das an und man verbindet neu. Google-Cloud-Projekt und Audit übernimmt Felix oder wer den Kanal besitzt. *Offen:* ob es den Team-Kanal schon gibt und wer ihn verwaltet.
+Bestätigt (24.10.2026), Frage 6 – Zugang zum Kanal: **„YouTube verbinden“ in den Admin-Einstellungen.** Ein Admin meldet sich einmal per OAuth mit einem Konto an, das den Team-Kanal verwalten darf; die App speichert den Refresh-Token. Ist er abgelaufen oder widerrufen, zeigt die App das an und man verbindet neu. Google-Cloud-Projekt und Audit übernimmt Felix oder wer den Kanal besitzt. Den Team-Kanal gibt es (siehe Abschluss).
 
 Bestätigt (24.10.2026), Frage 7 – Wer sichert: Den Bereich setzen (und damit eine Sicherung auslösen) dürfen nur Konten mit der **globalen Rolle ADMIN oder MANAGER** (`canManage` in `lib/roles.ts`). Lineup-Manager ohne diese Rolle tragen weiterhin VOD-Links ein, setzen aber keinen Bereich.
 
