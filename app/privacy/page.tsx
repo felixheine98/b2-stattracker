@@ -1,10 +1,11 @@
 import type { Metadata } from "next"
+import Link from "next/link"
 import { BrandLogo } from "@/components/brand-logo"
 
 export const metadata: Metadata = { title: "Privacy policy · B2 Stats" }
 
-// Who answers questions about this policy; the contact address is to be set by Felix before it goes live
-const CONTACT: { name: string; email: string | null } = { name: "B2 eSports", email: null }
+// Who answers questions about this policy (set by Felix on 24.10.2026)
+const CONTACT: { name: string; email: string | null } = { name: "Felix Heine (B2 eSports)", email: "contact@b2-esports.com" }
 const UPDATED = "24 October 2026"
 
 // Public: Google links here from the sign-in for the team's YouTube channel (docs/adr/011-vod-archiv.md)
@@ -76,6 +77,10 @@ export default function PrivacyPage() {
         <p>
           You can ask for access to, correction or deletion of your data, and object to its processing, by writing to the contact above. You also have the right to lodge a
           complaint with a data protection authority.
+        </p>
+
+        <p className="pt-4">
+          <Link href="/dashboard">← Back to B2 Stats</Link>
         </p>
       </article>
     </main>

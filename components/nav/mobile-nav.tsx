@@ -96,6 +96,7 @@ export function MobileTopBar({ userName, role, profileHref }: Props) {
               <LogOut size={16} />
               Sign out
             </button>
+            <Link href="/privacy" onClick={() => setOpen(false)} className="block px-3 pt-1 text-xs text-fg-subtle hover:text-fg">Privacy policy</Link>
           </div>
         </>
       )}

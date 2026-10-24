@@ -211,6 +211,7 @@ export function Sidebar({ userName, role, profileHref, styles }: SidebarProps) {
           <LogOut size={16} className="shrink-0" />
           {!collapsed && "Sign out"}
         </button>
+        {!collapsed && <Link href="/privacy" className="block px-3 pt-1 text-[11px] text-fg-subtle hover:text-fg">Privacy policy</Link>}
       </div>
       {showPassword && <ChangePasswordDialog onClose={() => setShowPassword(false)} />}
       {showTwoFactor && <TwoFactorDialog onClose={() => setShowTwoFactor(false)} />}
