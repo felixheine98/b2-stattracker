@@ -5,7 +5,7 @@ import { BrandLogo } from "@/components/brand-logo"
 export const metadata: Metadata = { title: "Privacy policy · B2 Stats" }
 
 // Who answers questions about this policy (set by Felix on 24.10.2026)
-const CONTACT: { name: string; email: string | null } = { name: "Felix Heine (B2 eSports)", email: "contact@b2-esports.com" }
+const CONTACT: { name: string; email: string | null } = { name: "Felix Heine (aka Shoffy, B2 eSports)", email: "contact@b2-esports.com" }
 const UPDATED = "24 October 2026"
 
 // Public: Google links here from the sign-in for the team's YouTube channel (docs/adr/011-vod-archiv.md)
