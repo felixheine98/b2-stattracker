@@ -4,7 +4,11 @@ Ideen, die noch kein Todo sind: [ideen.md](ideen.md)
 
 ## Offen
 
-- [ ] seeding formate für import/anlegen prüfen (Liste der alten Seeding-Screenshots aus Discord folgt nach der Übernahme, [ADR 007](docs/adr/007-zusammengefasste-ergebnisse.md))
+- [ ] seeding formate für import/anlegen prüfen (Liste der alten Seeding-Screenshots aus Discord folgt nach der Übernahme, [ADR 007](docs/adr/007-zusammengefasste-ergebnisse.md)); als erstes das EMC-Seeding ([Entscheidung](docs/adr/010-seeding-formate.md), [Glossar](docs/seeding-glossar.md)), Ziel: Planung bis zum Seeding von EMC S8 (Start 08.11.2026)
+  - [ ] fundament: seeding-typ „EMC“ an der comp (zahlen änderbar), seeding-match mit einem sub-match pro fahrt
+  - [ ] planung: seeding als stage der matchday-planung, raster der fahrten, sperre „keine map zweimal“
+  - [ ] festhalten: scores pro fahrt, platz und liga, gesamttabelle pro lineup, seeding-übersicht auf der turnierseite
+  - [ ] stats: seeding-bereich im spielerprofil (vorher Low-Prio-Todo), seeding-tabelle auf der turnierseite
 - [ ] Alte Comp-Stats aus Discord-Screenshots übernehmen ([Entscheidung](docs/adr/007-zusammengefasste-ergebnisse.md), [Glossar](docs/zusammengefasste-ergebnisse-glossar.md)); Abgleich mit Felix pro Comp
 
 ## Teilweise erledigt
@@ -45,7 +49,6 @@ Ideen, die noch kein Todo sind: [ideen.md](ideen.md)
 ## Low Prio
 
 - [ ] Discord-Bot postet die finalisierte Matchday-Besetzung in den passenden Channel ([Matchday-Planung](docs/adr/008-matchday-planung.md))
-- [ ] spieler-profil: seeding-bereich mit seeding-stats (erst entscheiden, wie seeding-daten ins system kommen)
 
 ## Erledigt
 

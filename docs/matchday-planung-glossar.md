@@ -3,7 +3,7 @@
 Begriffe aus [ADR 008](adr/008-matchday-planung.md).
 
 - **Comp-Planung**: die bestehende Planung pro Comp: Verfügbarkeit, Varianten der Lineup-Aufteilung, Übernahme in die `TournamentLineup`s.
-- **Match Day**: eine Stage der Gruppenphase (`GROUP`), z. B. „Match Day 2“. In der Matchday-Planung zählt auch eine Playoff-Stage als Match Day; das Seeding kommt dazu, sobald es in der App umgesetzt ist.
+- **Match Day**: eine Stage der Gruppenphase (`GROUP`), z. B. „Match Day 2“. In der Matchday-Planung zählt auch eine Playoff-Stage als Match Day; das Seeding kommt dazu, mit einem Raster der Fahrten statt der Matches ([ADR 010](adr/010-seeding-formate.md), Entwurf).
 - **Kader**: die Spieler eines Turnier-Lineups (`TournamentLineupSlot`), festgelegt durch die Comp-Planung.
 - **Matchday-Planung**: die Planung eines Lineups für einen Match Day: wer antritt und wer in jedem Match welches Format fährt.
 - **Geplantes Match**: ein vorab angelegtes Match ohne Sub-Matches und Ergebnis. Es wird zum gespielten Match, sobald Ergebnisse eingetragen oder importiert sind.
