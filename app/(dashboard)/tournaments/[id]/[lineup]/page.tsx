@@ -41,7 +41,7 @@ export default async function LineupMatchesPage({ params }: Props) {
       where: { id: lineupId, tournamentId },
       include: {
         tournament: {
-          select: { id: true, slug: true, name: true, formats: true, startDate: true, endDate: true, createdAt: true, stages: { select: { id: true, type: true, number: true } }, ...rulesInclude },
+          select: { id: true, slug: true, name: true, formats: true, startDate: true, endDate: true, createdAt: true, seedingType: true, stages: { select: { id: true, type: true, number: true } }, ...rulesInclude },
         },
         slots: { include: { player: true } },
         ...LINEUP_MANAGERS_INCLUDE,

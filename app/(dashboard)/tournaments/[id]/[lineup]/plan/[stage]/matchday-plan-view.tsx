@@ -26,6 +26,8 @@ import { formatDay, formatDayMonth } from "@/lib/player-status"
 import { cn, formatLabel } from "@/lib/utils"
 import type { Format } from "@/types"
 import { SeatInput } from "./seat-input"
+import { SeedingGrid } from "./seeding-grid"
+import { seedingRuns } from "@/lib/seeding"
 import { PlayerName } from "@/components/player-name"
 import { shownName } from "@/lib/player-names"
 import { MatchdayDiscord } from "@/components/planning/matchday-discord"
@@ -402,6 +404,42 @@ export function MatchdayPlanView({ initial, apiPath, title, links, dayFormats, d
             </div>
           </section>
 
+          {plan.seeding && (() => {
+            // The runs are the places of SEEDING_RUN in the day lineup; the seeding match follows it
+            const runCount = seedingRuns(plan.seeding.settings).length
+            const places = Array.from({ length: runCount }, (_, i) => variant.seats.day.SEEDING_RUN?.[i] ?? null)
+            const open = places.filter((id) => id === null).length
+            const out = [...new Set(places.filter((id): id is string => !!id && answers[id] === "OUT"))]
+            const match = plan.matches[0]
+            return (
+              <>
+                <SeedingGrid
+                  settings={plan.seeding.settings}
+                  places={places}
+                  kader={plan.kader}
+                  answers={answers}
+                  dot={dotOf}
+                  disabled={busy}
+                  onChange={(next) => saveSeats({ day: { ...variant.seats.day, SEEDING_RUN: next }, matches: {} })}
+                />
+                {(open > 0 || out.length > 0) && (
+                  <ul className="space-y-1 rounded-lg border border-bronze/40 bg-bronze/5 px-3 py-2 text-xs text-fg-soft">
+                    {open > 0 && <li className="flex items-start gap-1.5"><AlertTriangle size={12} className="mt-0.5 shrink-0 text-bronze" />{open} run{open > 1 ? "s" : ""} open</li>}
+                    {out.map((id) => <li key={id} className="flex items-start gap-1.5"><AlertTriangle size={12} className="mt-0.5 shrink-0 text-bronze" />{nameOf(id)} is out</li>)}
+                  </ul>
+                )}
+                <p className="text-sm text-fg-subtle">
+                  {match ? (
+                    <>Finalising shows the runs on the <Link href={links.match[match.id]} className="text-brand-ink hover:underline">seeding match</Link>.</>
+                  ) : (
+                    <>No seeding match yet. <Link href={links.addMatch} className="text-brand-ink hover:underline">Add it</Link> to record the scores; the plan applies to it.</>
+                  )}
+                </p>
+              </>
+            )
+          })()}
+
+          {!plan.seeding && <>
           {/* Day lineup */}
           <section>
             <h2 className="section-title mb-1">Day lineup</h2>
@@ -507,6 +545,7 @@ export function MatchdayPlanView({ initial, apiPath, title, links, dayFormats, d
               })}
             </div>
           </section>
+          </>}
         </div>
       </div>
     </div>

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { SEEDING_TYPES, readSeeding, runLabel, seedingChoiceOf, seedingRuns, seedingSettings, slotLabel } from "./seeding"
+import { SEEDING_TYPES, mapsDrivenTwice, placeRun, readSeeding, runLabel, seedingChoiceOf, seedingRuns, seedingSettings, slotLabel } from "./seeding"
 
 describe("seeding types", () => {
   it("start the EMC seeding with its numbers: 2 maps, 2 times each, 2 servers, 10 rounds, the best 3 per map", () => {
@@ -47,5 +47,41 @@ describe("seeding types", () => {
     expect(seedingChoiceOf("EMC", { best: 4 })).toEqual({ type: "EMC", settings: { ...SEEDING_TYPES.EMC.defaults, best: 4 } })
     expect(seedingChoiceOf(null, null)).toBeNull()
     expect(seedingChoiceOf("XYZ", {})).toBeNull()
+  })
+})
+
+describe("planning the runs", () => {
+  const emc = SEEDING_TYPES.EMC.defaults
+  // Runs 0-3 are on map 1, runs 4-7 on map 2
+  const empty = () => Array<string | null>(8).fill(null)
+
+  it("put a player on a run, also on the other map", () => {
+    const one = placeRun(emc, empty(), 0, "a")!
+    expect(one).toEqual(["a", null, null, null, null, null, null, null])
+    expect(placeRun(emc, one, 5, "a")).toEqual(["a", null, null, null, null, "a", null, null])
+  })
+
+  it("refuse a second run on the same map", () => {
+    expect(placeRun(emc, ["a", null, null, null, null, null, null, null], 3, "a")).toBeNull()
+  })
+
+  it("move a run's player to another run, swapping with whoever drives there", () => {
+    expect(placeRun(emc, ["a", null, "b", null, null, null, null, null], 2, "a", 0)).toEqual(["b", null, "a", null, null, null, null, null])
+    expect(placeRun(emc, ["a", null, null, null, null, null, null, null], 1, "a", 0)).toEqual([null, "a", null, null, null, null, null, null])
+  })
+
+  it("swap players across the maps only where neither then drives a map twice", () => {
+    // a from map 1 onto b's run on map 2: b would come to map 1, where b already drives
+    expect(placeRun(emc, ["a", "b", null, null, "b", null, null, null], 4, "a", 0)).toBeNull()
+    expect(placeRun(emc, ["a", null, null, null, "b", null, null, null], 4, "a", 0)).toEqual(["b", null, null, null, "a", null, null, null])
+  })
+
+  it("free a run", () => {
+    expect(placeRun(emc, ["a", null, null, null, null, null, null, null], 0, null)).toEqual(empty())
+  })
+
+  it("name the players who drive a map twice", () => {
+    expect(mapsDrivenTwice(emc, ["a", "a", null, null, "a", "b", "b", null])).toEqual([{ playerId: "a", map: 0 }, { playerId: "b", map: 1 }])
+    expect(mapsDrivenTwice(emc, ["a", "b", null, null, "a", "b", null, null])).toEqual([])
   })
 })

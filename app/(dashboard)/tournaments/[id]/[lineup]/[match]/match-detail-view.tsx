@@ -362,10 +362,12 @@ interface Props {
   // The lineup finalised in the match day planning; null without one or while it is switched off
   // Names of the runs of a seeding played in a seeding format, by sub-match id (docs/adr/010)
   runLabels?: Record<string, string>
+  // Who drives a run, as finalised in the planning, by sub-match id
+  runDrivers?: Record<string, { id: string; name: string; nickname?: string | null; country: string | null }>
   plannedLineup?: { publishedAt: Date | string | null; formats: Array<{ format: Format; map: string | null; players: Array<{ id: string; name: string; nickname?: string | null; country: string | null } | null> }> } | null
 }
 
-export function MatchDetailView({ match: initialMatch, ruleSet, allPlayers, guestTmIds, trialTmIds, canEdit, canManage, autoEcmImport = false, plannedLineup = null, runLabels = {} }: Props) {
+export function MatchDetailView({ match: initialMatch, ruleSet, allPlayers, guestTmIds, trialTmIds, canEdit, canManage, autoEcmImport = false, plannedLineup = null, runLabels = {}, runDrivers = {} }: Props) {
   const ownRow = useOwnRow()
   const router = useRouter()
   const guests = new Set(guestTmIds)
@@ -709,6 +711,12 @@ export function MatchDetailView({ match: initialMatch, ruleSet, allPlayers, gues
                   {runLabels[sm.id]
                     ? <span className="text-sm text-fg">{runLabels[sm.id]}</span>
                     : <span className="text-sm text-fg-muted max-md:hidden">{formatLabelLong(sm.format)}</span>}
+                  {runDrivers[sm.id] && (
+                    <span className="inline-flex items-center gap-1 text-sm text-fg-soft">
+                      <PlayerAvatar player={runDrivers[sm.id]} className="h-4 w-4 text-[9px]" />
+                      <PlayerName name={runDrivers[sm.id].name} nickname={runDrivers[sm.id].nickname} />
+                    </span>
+                  )}
                   {(sm.summary?.track ?? sm.rounds[0]?.track) && <span className="text-sm text-fg">{sm.summary?.track ?? sm.rounds[0].track}</span>}
                   {summaryResult && (
                     <Badge variant={summaryResult.outcome === "W" ? "primary" : summaryResult.outcome === "L" ? "red" : "default"}>

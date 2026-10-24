@@ -97,6 +97,9 @@ export default async function MatchDetailPage({ params, searchParams }: Props) {
   // The runs of a seeding played in a seeding format (docs/adr/010), named by map, time and server
   const seeding = match.stage.type === "SEEDING" ? seedingSettings(match.tournament.seedingType, match.tournament.seedingSettings) : null
   const runLabels = Object.fromEntries(seeding ? match.subMatches.flatMap((sm) => sm.seedingRun ? [[sm.id, runLabel(seeding, sm.seedingRun)]] : []) : [])
+  // Who drives each run, as finalised in the planning: its places are in the order of the runs
+  const plannedRuns = seeding && matchdayPlanningEnabled() ? (await publishedLineupOf({ id: match.id, tournamentLineupId: match.tournamentLineupId, stageId: match.stage.id, formats: ["SEEDING_RUN"] }))?.formats[0]?.players : undefined
+  const runDrivers = Object.fromEntries(plannedRuns ? match.subMatches.flatMap((sm) => plannedRuns[sm.order] ? [[sm.id, plannedRuns[sm.order]!]] : []) : [])
 
-  return <MatchDetailView runLabels={runLabels} plannedLineup={plannedLineup} match={named.match} ruleSet={ruleSetFor(compRulesOf(match.tournament), match.stage.type)} allPlayers={named.allPlayers} guestTmIds={guestTmIds} trialTmIds={trialTmIds} autoEcmImport={autoEcmImport} canEdit={canEdit} canManage={canManage(user?.role)} />
+  return <MatchDetailView runLabels={runLabels} runDrivers={runDrivers} plannedLineup={plannedLineup} match={named.match} ruleSet={ruleSetFor(compRulesOf(match.tournament), match.stage.type)} allPlayers={named.allPlayers} guestTmIds={guestTmIds} trialTmIds={trialTmIds} autoEcmImport={autoEcmImport} canEdit={canEdit} canManage={canManage(user?.role)} />
 }

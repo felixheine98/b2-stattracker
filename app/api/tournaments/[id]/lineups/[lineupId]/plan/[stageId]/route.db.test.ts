@@ -87,4 +87,28 @@ describe.skipIf(process.env.DB_TESTS !== "1")("matchday planning with PostgreSQL
     const cleared = await (await patch({ action: "maps", maps: { ROUND_1V1: "Heat", ROUND_2V2: "" } })).json()
     expect(cleared.maps).toEqual({ ROUND_1V1: "Heat" })
   })
+
+  it("plans the runs of a seeding with a format, refusing a player on a map twice (docs/adr/010)", async () => {
+    state.session = { user: { id: ids.manager, role: "PLAYER" } }
+    const comp = await client.tournament.create({ data: { name: "EMC", formats: ["ROUND_1V1"], style: "MIXED", seedingType: "EMC", stages: { create: { type: "SEEDING", number: 1 } } }, include: { stages: true } })
+    const lineup = await client.tournamentLineup.create({ data: { tournamentId: comp.id, name: "A", slots: { create: [{ playerId: ids.anna }, { playerId: ids.ben }] }, managers: { create: { userId: ids.manager } } } })
+    const runs = [[0, 0, 0], [0, 0, 1], [0, 1, 0], [0, 1, 1], [1, 2, 0], [1, 2, 1], [1, 3, 0], [1, 3, 1]]
+    const match = await client.match.create({ data: { tournamentId: comp.id, tournamentLineupId: lineup.id, stageId: comp.stages[0].id, subMatches: { create: runs.map(([map, slot, server], order) => ({ format: "SEEDING_RUN", order, seedingRun: { create: { map, slot, server } } })) } } })
+    const seedingParams = () => ({ params: Promise.resolve({ id: comp.id, lineupId: lineup.id, stageId: comp.stages[0].id }) })
+    const seedingPatch = (body: unknown) => PATCH(new Request("http://test/plan", { method: "PATCH", body: JSON.stringify(body) }), seedingParams())
+
+    const plan = await (await GET(new Request("http://test/plan"), seedingParams())).json()
+    expect(plan.seeding.settings).toMatchObject({ maps: 2, best: 3 })
+    expect(plan.matches).toMatchObject([{ id: match.id, formats: ["SEEDING_RUN"] }])
+    const variantId = plan.variants[0].id
+
+    const twice = await seedingPatch({ action: "seats", variantId, seats: { day: { SEEDING_RUN: [ids.anna, null, ids.anna, null, null, null, null, null] }, matches: {} } })
+    expect(twice.status).toBe(400)
+    expect((await twice.json()).error).toMatch(/map 1/i)
+
+    const runsOf = [ids.anna, ids.ben, null, null, ids.ben, ids.anna, null, null]
+    expect((await seedingPatch({ action: "seats", variantId, seats: { day: { SEEDING_RUN: runsOf }, matches: {} } })).status).toBe(200)
+    const published = await (await seedingPatch({ action: "publish", variantId })).json()
+    expect(published.published.matches[match.id]).toEqual({ SEEDING_RUN: runsOf })
+  })
 })

@@ -82,3 +82,23 @@ export function seedingChoiceOf(type: string | null | undefined, raw: unknown): 
   const given = raw && typeof raw === "object" ? raw : {}
   return { type, settings: { ...SEEDING_TYPES[type].defaults, ...given } }
 }
+
+// Who drives a map more than once, by the places of the runs in the order of seedingRuns
+export function mapsDrivenTwice(settings: SeedingSettings, places: Array<string | null>): Array<{ playerId: string; map: number }> {
+  const runs = seedingRuns(settings)
+  const twice: Array<{ playerId: string; map: number }> = []
+  for (let map = 0; map < settings.maps; map++) {
+    const drivers = runs.flatMap((run, i) => (run.map === map && places[i] ? [places[i]] : []))
+    for (const playerId of new Set(drivers.filter((id, i) => drivers.indexOf(id) !== i))) twice.push({ playerId, map })
+  }
+  return twice
+}
+
+// Puts a player on a run. Moved from another run (from), the player swaps places with the one there;
+// otherwise it is one more run of theirs. Null where someone would then drive a map twice.
+export function placeRun(settings: SeedingSettings, places: Array<string | null>, index: number, playerId: string | null, from?: number): Array<string | null> | null {
+  const next = Array.from({ length: seedingRuns(settings).length }, (_, i) => places[i] ?? null)
+  if (from !== undefined) next[from] = next[index]
+  next[index] = playerId
+  return mapsDrivenTwice(settings, next).length > 0 ? null : next
+}

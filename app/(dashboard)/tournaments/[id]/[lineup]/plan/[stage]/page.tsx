@@ -24,9 +24,11 @@ export default async function MatchdayPlanPage({ params }: Props) {
   if (!lineup) notFound()
   const stages = sortStages(lineup.tournament.stages)
   const stage = stages.find((s) => s.id === stageId)!
-  if (stage.type === "SEEDING" || !mayEditLineup(await sessionUser(), lineup)) notFound()
+  if (!mayEditLineup(await sessionUser(), lineup)) notFound()
 
   const plan = await loadPlan(lineup.id, stageId)
+  // The seeding is planned only in a comp with a seeding format (docs/adr/010)
+  if (stage.type === "SEEDING" && !plan.seeding) notFound()
   const start = new Date(lineup.tournament.startDate ?? lineup.tournament.createdAt)
   return (
     <MatchdayPlanView
@@ -38,7 +40,7 @@ export default async function MatchdayPlanPage({ params }: Props) {
       links={{ tournament: tournamentPath(tournament), lineup: lineupPath(tournament, found), addMatch: `${lineupPath(tournament, found)}?addMatch=${stageId}`, match: Object.fromEntries(plan.matches.map((m) => [m.id, `${lineupPath(tournament, found)}/${m.slug ?? m.id}`])) }}
       discord={!!process.env.DISCORD_BOT_URL}
       dayFormats={[...new Set(lineup.tournament.formats.filter((f) => f !== "TIME_ATTACK_10"))]}
-      days={stages.filter((s) => s.type !== "SEEDING").map((s) => ({ id: s.id, name: stageName(s, stages), day: stageDate(s, stages, start).toISOString(), href: planPath(tournament, found, s), current: s.id === stageId }))}
+      days={stages.filter((s) => s.type !== "SEEDING" || lineup.tournament.seedingType).map((s) => ({ id: s.id, name: stageName(s, stages), day: stageDate(s, stages, start).toISOString(), href: planPath(tournament, found, s), current: s.id === stageId }))}
     />
   )
 }

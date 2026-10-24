@@ -79,8 +79,9 @@ export function suggestStage<T extends StageRef>(stages: T[], playedStageIds: st
 }
 
 // The match day the planning opens with (docs/adr/008): the first one from today on, today as
-// YYYY-MM-DD; once all are over, the last one. The seeding is not planned.
-export function planningStage<T extends StageRef>(stages: T[], startDate: Date, today: string): T | undefined {
-  const plannable = sortStages(stages).filter((s) => s.type !== "SEEDING")
+// YYYY-MM-DD; once all are over, the last one.
+export function planningStage<T extends StageRef>(stages: T[], startDate: Date, today: string, { seeding = false } = {}): T | undefined {
+  // The seeding is planned only in a comp with a seeding format
+  const plannable = sortStages(stages).filter((s) => seeding || s.type !== "SEEDING")
   return plannable.find((s) => stageDate(s, stages, startDate).toISOString().slice(0, 10) >= today) ?? plannable[plannable.length - 1]
 }

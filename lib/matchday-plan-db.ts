@@ -5,13 +5,14 @@ import { LINEUP_ACCESS_SELECT } from "./lineup-access-db"
 import { matchLineup, type MatchdayAnswer, type PlanVariant } from "./matchday-plan"
 import type { EmojiChoice } from "./matchday-discord"
 import { sortMatches } from "./match-order"
+import { seedingSettings } from "./seeding"
 import type { Format } from "@/types"
 
 // The lineup with what deciding about access needs, if the stage belongs to its tournament
 export async function findPlanLineup(tournamentId: string, lineupId: string, stageId: string) {
   const lineup = await db.tournamentLineup.findUnique({
     where: { id: lineupId, tournamentId },
-    select: { id: true, name: true, ...LINEUP_ACCESS_SELECT, tournament: { select: { ...LINEUP_ACCESS_SELECT.tournament.select, name: true, formats: true, stages: { select: { id: true, type: true, number: true } } } } },
+    select: { id: true, name: true, ...LINEUP_ACCESS_SELECT, tournament: { select: { ...LINEUP_ACCESS_SELECT.tournament.select, name: true, formats: true, seedingType: true, stages: { select: { id: true, type: true, number: true } } } } },
   })
   if (!lineup || !lineup.tournament.stages.some((s) => s.id === stageId)) return null
   return lineup
@@ -37,7 +38,7 @@ export async function loadPlan(lineupId: string, stageId: string) {
       where: { tournamentLineupId: lineupId, stageId },
       select: { id: true, slug: true, number: true, label: true, opponent: true, date: true, createdAt: true, subMatches: { orderBy: { order: "asc" }, select: { format: true } } },
     }),
-    db.stage.findUniqueOrThrow({ where: { id: stageId }, select: { maps: true } }),
+    db.stage.findUniqueOrThrow({ where: { id: stageId }, select: { maps: true, type: true, tournament: { select: { seedingType: true, seedingSettings: true } } } }),
   ])
   const { discordChannelId } = await db.tournamentLineup.findUniqueOrThrow({ where: { id: lineupId }, select: { discordChannelId: true } })
   return {
@@ -51,9 +52,16 @@ export async function loadPlan(lineupId: string, stageId: string) {
     publishedVariantId: plan.publishedVariantId,
     publishedAt: plan.publishedAt,
     maps: (stage.maps ?? {}) as StageMaps,
+    // A seeding in a seeding format is planned as runs (docs/adr/010); null for every other stage
+    seeding: stage.type === "SEEDING" ? seedingPlanOf(stage.tournament) : null,
     discordSettings: plan.discordSettings as MatchdayDiscordSettings | null,
     discordChannelId,
   }
+}
+
+function seedingPlanOf(tournament: { seedingType: string | null; seedingSettings: unknown }) {
+  const settings = seedingSettings(tournament.seedingType, tournament.seedingSettings)
+  return settings && { settings }
 }
 
 // The matchday announcement and how its emojis read (docs/adr/008)

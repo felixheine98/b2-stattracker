@@ -107,4 +107,10 @@ describe("planningStage", () => {
     expect(planningStage(standard, start, "2026-07-30")?.id).toBe("PLAYOFF-1")
     expect(planningStage([stage("SEEDING", 1)], start, "2026-06-01")).toBeUndefined()
   })
+
+  it("opens the seeding as well where it is planned, a comp with a seeding format (docs/adr/010)", () => {
+    expect(planningStage(standard, start, "2026-06-01", { seeding: true })?.id).toBe("SEEDING-1")
+    expect(planningStage(standard, start, "2026-06-07", { seeding: true })?.id).toBe("SEEDING-1")
+    expect(planningStage(standard, start, "2026-06-08", { seeding: true })?.id).toBe("GROUP-1")
+  })
 })

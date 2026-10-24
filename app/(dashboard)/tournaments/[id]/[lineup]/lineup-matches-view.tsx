@@ -88,7 +88,8 @@ interface Props {
     id: string
     slug?: string | null
     name: string
-    tournament: { id: string; slug?: string | null; name: string; formats: Format[]; startDate: Date | null; createdAt: Date; stages: StageRef[] }
+    // seedingType: a comp with a seeding format plans its seeding too (docs/adr/010)
+    tournament: { id: string; slug?: string | null; name: string; formats: Format[]; startDate: Date | null; createdAt: Date; stages: StageRef[]; seedingType?: string | null }
     slots: Array<{ id: string; player: Player }>
     // Accounts responsible for the lineup
     managers: Array<{ user: { id: string; name: string; role: string; playerId: string | null } }>
@@ -148,7 +149,7 @@ export function LineupMatchesView({ lineup, rules, guestTmIds, trialTmIds, profi
   const addMatchFor = useSearchParams().get("addMatch")
   const openingStage = canEdit ? stages.find((st) => st.id === addMatchFor) : undefined
   // The planning opens on the next match day; it switches between the days itself
-  const planStage = canPlan ? planningStage(stages, new Date(startDate), localTodayKey()) : undefined
+  const planStage = canPlan ? planningStage(stages, new Date(startDate), localTodayKey(), { seeding: !!tournament.seedingType }) : undefined
   const dayOf = (stage: StageRef | undefined) => (stage ? stageDate(stage, stages, new Date(startDate)).toISOString().slice(0, 10) : "")
   const [opponentValue, setOpponentValue] = useState<OpponentValue>({ name: "" })
   const [showAddMatch, setShowAddMatch] = useState(!!openingStage)

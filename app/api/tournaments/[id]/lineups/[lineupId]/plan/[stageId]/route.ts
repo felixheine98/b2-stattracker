@@ -5,6 +5,8 @@ import { db } from "@/lib/db"
 import { publishedSnapshot } from "@/lib/matchday-plan"
 import { planAccess as access, type PlanParams as Params } from "@/lib/matchday-plan-access"
 import { emptyVariant, loadPlan } from "@/lib/matchday-plan-db"
+import { shownName } from "@/lib/player-names"
+import { mapsDrivenTwice } from "@/lib/seeding"
 
 export async function GET(_req: Request, ctx: Params) {
   const found = await access(ctx)
@@ -12,8 +14,9 @@ export async function GET(_req: Request, ctx: Params) {
   return NextResponse.json(await loadPlan(found.lineup.id, found.stageId))
 }
 
-const FORMATS = ["ROUND_1V1", "ROUND_2V2", "ROUND_3V3", "ROUND_4V4", "ROUND_5V5", "TIME_ATTACK_10"] as const
-const seatsSchema = z.partialRecord(z.enum(FORMATS), z.array(z.string().nullable()).max(5))
+const FORMATS = ["ROUND_1V1", "ROUND_2V2", "ROUND_3V3", "ROUND_4V4", "ROUND_5V5", "TIME_ATTACK_10", "SEEDING_RUN"] as const
+// A seeding's runs are the places of SEEDING_RUN, one per run
+const seatsSchema = z.partialRecord(z.enum(FORMATS), z.array(z.string().nullable()).max(100))
 const variantSchema = z.object({ day: seatsSchema, matches: z.record(z.string(), seatsSchema) })
 
 const actionSchema = z.discriminatedUnion("action", [
@@ -75,6 +78,14 @@ export async function PATCH(req: Request, ctx: Params) {
       const ids = [body.seats.day, ...Object.values(body.seats.matches)].flatMap((seats) => Object.values(seats).flat()).filter((id): id is string => id !== null)
       if (ids.some((id) => !inKader(id))) return bad("Only players of the lineup can be planned")
       if (Object.keys(body.seats.matches).some((matchId) => !plan.matches.some((m) => m.id === matchId))) return bad("The match is not part of this match day")
+      // A player drives each map of the seeding at most once
+      if (plan.seeding) {
+        const twice = [body.seats.day, ...Object.values(body.seats.matches)].flatMap((seats) => mapsDrivenTwice(plan.seeding!.settings, seats.SEEDING_RUN ?? []))
+        if (twice.length > 0) {
+          const player = plan.kader.find((p) => p.id === twice[0].playerId)!
+          return bad(`${shownName(player)} would drive map ${twice[0].map + 1} twice`)
+        }
+      }
       await db.matchdayVariant.update({ where: { id: body.variantId }, data: { seats: body.seats as unknown as Prisma.InputJsonValue } })
       break
     }
