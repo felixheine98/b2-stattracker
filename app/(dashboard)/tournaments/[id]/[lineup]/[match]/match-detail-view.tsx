@@ -23,7 +23,7 @@ import { closingHints, matchPoints, matchReport, resultOf, subMatchState, summar
 import { bestPerformer } from "@/lib/dashboard"
 import { dayKey, formatDay } from "@/lib/player-status"
 import { sortStages, stageDate, stageName, type StageRef } from "@/lib/stages"
-import { useMemo, useState } from "react"
+import { useMemo, useState, type ReactNode } from "react"
 import { matchTag } from "@/lib/match-order"
 import { EcmImportDialog } from "./ecm-import-dialog"
 import { MatchCsvImportDialog } from "./match-csv-import-dialog"
@@ -360,14 +360,12 @@ interface Props {
   // Open the eCM import dialog right away (the import page sends people here with the data)
   autoEcmImport?: boolean
   // The lineup finalised in the match day planning; null without one or while it is switched off
-  // Names of the runs of a seeding played in a seeding format, by sub-match id (docs/adr/010)
-  runLabels?: Record<string, string>
-  // Who drives a run, as finalised in the planning, by sub-match id
-  runDrivers?: Record<string, { id: string; name: string; nickname?: string | null; country: string | null }>
+  // A seeding in a seeding format shows its runs and score here instead of the sub-matches (docs/adr/010)
+  seedingResults?: ReactNode
   plannedLineup?: { publishedAt: Date | string | null; formats: Array<{ format: Format; map: string | null; players: Array<{ id: string; name: string; nickname?: string | null; country: string | null } | null> }> } | null
 }
 
-export function MatchDetailView({ match: initialMatch, ruleSet, allPlayers, guestTmIds, trialTmIds, canEdit, canManage, autoEcmImport = false, plannedLineup = null, runLabels = {}, runDrivers = {} }: Props) {
+export function MatchDetailView({ match: initialMatch, ruleSet, allPlayers, guestTmIds, trialTmIds, canEdit, canManage, autoEcmImport = false, plannedLineup = null, seedingResults }: Props) {
   const ownRow = useOwnRow()
   const router = useRouter()
   const guests = new Set(guestTmIds)
@@ -670,6 +668,7 @@ export function MatchDetailView({ match: initialMatch, ruleSet, allPlayers, gues
         </div>
       )}
 
+      {seedingResults ?? <>
       {/* Player stats, one table per sub-match */}
       {subMatches.some((sm) => sm.rounds.length > 0 || sm.summary) && (
         <div>
@@ -708,15 +707,7 @@ export function MatchDetailView({ match: initialMatch, ruleSet, allPlayers, gues
                   <Badge variant={sm.format === "TIME_ATTACK_10" ? "primary" : "secondary"}>
                     {formatLabel(sm.format)}
                   </Badge>
-                  {runLabels[sm.id]
-                    ? <span className="text-sm text-fg">{runLabels[sm.id]}</span>
-                    : <span className="text-sm text-fg-muted max-md:hidden">{formatLabelLong(sm.format)}</span>}
-                  {runDrivers[sm.id] && (
-                    <span className="inline-flex items-center gap-1 text-sm text-fg-soft">
-                      <PlayerAvatar player={runDrivers[sm.id]} className="h-4 w-4 text-[9px]" />
-                      <PlayerName name={runDrivers[sm.id].name} nickname={runDrivers[sm.id].nickname} />
-                    </span>
-                  )}
+                  <span className="text-sm text-fg-muted max-md:hidden">{formatLabelLong(sm.format)}</span>
                   {(sm.summary?.track ?? sm.rounds[0]?.track) && <span className="text-sm text-fg">{sm.summary?.track ?? sm.rounds[0].track}</span>}
                   {summaryResult && (
                     <Badge variant={summaryResult.outcome === "W" ? "primary" : summaryResult.outcome === "L" ? "red" : "default"}>
@@ -947,6 +938,7 @@ export function MatchDetailView({ match: initialMatch, ruleSet, allPlayers, gues
           )
         })}
       </div>
+      </>}
 
       {/* eCircuitMania import dialog */}
       {showEcmImport && (

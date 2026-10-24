@@ -55,6 +55,8 @@ Bestätigt (24.10.2026), Frage 12 – Weg nach Production: ohne Schalter. Jeder 
 
 Bestätigt (24.10.2026), Frage 13 – Platz und Liga: werden auf der Seite des Seeding-Matches (Gesamttabelle des Lineups) eingetragen, als „Platz“ (Zahl) und „Liga“ (freier Text, z. B. „Liga 2“ oder „Gold“). Die Turnier-Übersicht zeigt sie für alle Lineups.
 
+Bestätigt (24.10.2026), Frage 14 – Eingabe über das Mastersheet: Das Mastersheet der EMC S7 ist da und wird für S8 voraussichtlich gleich aufgebaut. Tab „Seeding“: pro Team und Map bis zu 10 Spieler mit Login (TM-Account-ID, base64url) und Punkten (Summe über die Runden, 0 = nicht gefahren), Map-Namen im Kopf („Map 1 - Bernage“), dazu Rang, Teamsumme; Tab „Leagues“: Liga und Gruppe pro Team. Zeitfenster und Server stehen nicht drin. Felix wählt A: Import per Sheet-Link mit Vorschau, Handeingabe als Ausweichweg. Lineups werden über den Teamnamen zugeordnet, Spieler über den Login; jeder Score landet auf der Fahrt, auf der der Spieler für die Map eingeplant ist, sonst auf einer freien Fahrt der Map. Platz und Liga kommen aus dem Sheet, nicht aus der eigenen Rechnung (B2 eSports stand in S7 mit 0 Punkten in League 2). Damit ist die Annahme aus Frage 4a (Handeingabe, bis es ein Mastersheet gibt) überholt.
+
 ## Erwogene Alternativen
 
 - Frage 1: nur festhalten (A), festhalten plus Planung (B), festhalten plus Stats (C). Gewählt: alles (D).
@@ -70,6 +72,7 @@ Bestätigt (24.10.2026), Frage 13 – Platz und Liga: werden auf der Seite des S
 - Frage 11: Seeding nur noch mit Typ (B); eigener Typ „Ohne Wertung“ (C). Gewählt: ohne Typ wie bisher (A).
 - Frage 12: hinter einem Schalter `SEEDING` bis zur Freigabe (A). Gewählt: ohne Schalter, schrittweise (B).
 - Frage 13: Eintragen in der Turnier-Übersicht (B) oder an beiden Stellen (C). Gewählt: auf der Seite des Seeding-Matches (A).
+- Frage 14: nur Handeingabe (B) – abtippen kostet Zeit und ist fehleranfällig; Import aus eingefügtem CSV-Export (C) – geht auch bei nicht öffentlichem Sheet, ist aber umständlicher. Gewählt: Import per Sheet-Link plus Handeingabe (A).
 
 ## Konsequenzen
 
@@ -80,4 +83,4 @@ Bestätigt (24.10.2026), Frage 13 – Platz und Liga: werden auf der Seite des S
 - Die Ergebnisseite weist auf Verstöße gegen diese Regel hin, sperrt aber nicht.
 - Spielerprofil und Turnierseite bekommen Seeding-Bereiche; Format-, Map-Stats und Dashboard bleiben ohne Seeding.
 - Jedes weitere Seeding-Format ist ein neuer Typ mit eigener Wertung.
-- Offen bleiben: die tatsächliche Punkteverteilung der EMC (nur relevant, wenn es Runden gibt) und ein Import, sobald es ein Mastersheet gibt.
+- Offen bleibt die tatsächliche Punkteverteilung der EMC (nur relevant, wenn es Runden gibt).

@@ -415,6 +415,7 @@ export function MatchdayPlanView({ initial, apiPath, title, links, dayFormats, d
               <>
                 <SeedingGrid
                   settings={plan.seeding.settings}
+                  mapNames={plan.seeding.mapNames}
                   places={places}
                   kader={plan.kader}
                   answers={answers}

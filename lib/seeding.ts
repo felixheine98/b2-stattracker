@@ -71,8 +71,10 @@ export function readSeeding(input: z.infer<typeof seedingInput>): { seedingType:
   return { seedingType: input.type, seedingSettings: parsed.data }
 }
 
-export const runLabel = (settings: SeedingSettings, run: { map: number; slot: number; server: number }) =>
-  `Map ${run.map + 1} · ${slotLabel(settings, run.slot)} · Server ${run.server + 1}`
+export const mapLabel = (map: number, names: string[] = []) => names[map] || `Map ${map + 1}`
+
+export const runLabel = (settings: SeedingSettings, run: { map: number; slot: number; server: number }, mapNames: string[] = []) =>
+  `${mapLabel(run.map, mapNames)} · ${slotLabel(settings, run.slot)} · Server ${run.server + 1}`
 
 // What the comp dialog shows and sends: a type with all its numbers, or null for a seeding without format
 export type SeedingChoice = { type: SeedingType; settings: SeedingSettings } | null
@@ -101,4 +103,53 @@ export function placeRun(settings: SeedingSettings, places: Array<string | null>
   if (from !== undefined) next[from] = next[index]
   next[index] = playerId
   return mapsDrivenTwice(settings, next).length > 0 ? null : next
+}
+
+export interface RunResult {
+  playerId: string | null
+  score: number | null
+}
+
+// Puts the scores of each map (from the master sheet: who drove it and their score) on its runs:
+// on the run the player drove or was planned for on that map, otherwise on a run not taken by
+// another driver, in the order given. Runs nobody drove are left empty. Who does not fit is unplaced.
+export function assignScores(
+  settings: SeedingSettings,
+  runs: Array<{ planned: string | null; recorded: string | null }>,
+  scores: Array<Array<{ playerId: string; score: number }>>
+): { runs: RunResult[]; unplaced: Array<{ map: number; playerId: string; score: number }> } {
+  const layout = seedingRuns(settings)
+  const result: RunResult[] = layout.map(() => ({ playerId: null, score: null }))
+  const unplaced: Array<{ map: number; playerId: string; score: number }> = []
+  for (let map = 0; map < settings.maps; map++) {
+    const onMap = layout.flatMap((run, i) => (run.map === map ? [i] : []))
+    const taken = new Set<number>()
+    const rest: Array<{ playerId: string; score: number }> = []
+    for (const driver of scores[map] ?? []) {
+      const own = onMap.find((i) => !taken.has(i) && runs[i]?.recorded === driver.playerId)
+        ?? onMap.find((i) => !taken.has(i) && runs[i]?.planned === driver.playerId)
+      if (own === undefined) rest.push(driver)
+      else { taken.add(own); result[own] = { playerId: driver.playerId, score: driver.score } }
+    }
+    for (const driver of rest) {
+      const free = onMap.find((i) => !taken.has(i))
+      if (free === undefined) unplaced.push({ map, ...driver })
+      else { taken.add(free); result[free] = { playerId: driver.playerId, score: driver.score } }
+    }
+  }
+  return { runs: result, unplaced }
+}
+
+// The best scores of each map (their runs, best first) and their sums; null without any score
+export function seedingScore(settings: SeedingSettings, runs: RunResult[]): { maps: Array<{ sum: number; counted: number[] }>; total: number | null } {
+  const layout = seedingRuns(settings)
+  const maps = Array.from({ length: settings.maps }, (_, map) => {
+    const counted = layout
+      .flatMap((run, i) => (run.map === map && runs[i]?.score != null ? [i] : []))
+      .sort((a, b) => runs[b].score! - runs[a].score! || a - b)
+      .slice(0, settings.best)
+    return { sum: counted.reduce((sum, i) => sum + runs[i].score!, 0), counted: counted.sort((a, b) => a - b) }
+  })
+  const any = runs.some((r) => r?.score != null)
+  return { maps, total: any ? maps.reduce((sum, m) => sum + m.sum, 0) : null }
 }

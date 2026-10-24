@@ -5,12 +5,13 @@ import { AlertTriangle, GripVertical } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
 import { planPool, seatSuggestions, type MatchdayAnswer } from "@/lib/matchday-plan"
 import { shownName } from "@/lib/player-names"
-import { placeRun, seedingRuns, slotLabel, type SeedingSettings } from "@/lib/seeding"
+import { mapLabel, placeRun, seedingRuns, slotLabel, type SeedingSettings } from "@/lib/seeding"
 import { cn } from "@/lib/utils"
 import { SeatInput, type SeatPlayer } from "./seat-input"
 
 interface Props {
   settings: SeedingSettings
+  mapNames: string[]
   // The player of every run, in the order of seedingRuns
   places: Array<string | null>
   kader: SeatPlayer[]
@@ -26,7 +27,7 @@ type Picked = { playerId: string; from?: number }
 // The runs of a seeding (docs/adr/010): per map its times, per time one run on each server.
 // Players are dragged from the kader or from another run, or typed in; on phones a tap on a
 // player and then on a run does the same. Nobody can be put on a map twice.
-export function SeedingGrid({ settings, places, kader, answers, dot, disabled, onChange }: Props) {
+export function SeedingGrid({ settings, mapNames, places, kader, answers, dot, disabled, onChange }: Props) {
   const [picked, setPicked] = useState<Picked | null>(null)
   const [refused, setRefused] = useState("")
   const runs = seedingRuns(settings)
@@ -38,7 +39,7 @@ export function SeedingGrid({ settings, places, kader, answers, dot, disabled, o
     if (from === index) return
     const next = placeRun(settings, places, index, playerId, from)
     if (!next) {
-      setRefused(`${shownName(playerOf(playerId!))} cannot drive map ${runs[index].map + 1} twice.`)
+      setRefused(`${shownName(playerOf(playerId!))} cannot drive ${mapLabel(runs[index].map, mapNames)} twice.`)
       return
     }
     setRefused("")
@@ -109,7 +110,7 @@ export function SeedingGrid({ settings, places, kader, answers, dot, disabled, o
         {Array.from({ length: settings.maps }, (_, map) => (
           <Card key={map}>
             <CardContent className="space-y-3 pt-5">
-              <h3 className="text-sm font-semibold text-fg">Map {map + 1}</h3>
+              <h3 className="text-sm font-semibold text-fg">{mapLabel(map, mapNames)}</h3>
               {Array.from({ length: settings.slotsPerMap }, (_, s) => {
                 const slot = map * settings.slotsPerMap + s
                 return (
@@ -145,7 +146,7 @@ export function SeedingGrid({ settings, places, kader, answers, dot, disabled, o
                             <span className="w-6 shrink-0 text-xs text-fg-subtle">S{run.server + 1}</span>
                             <div className="min-w-0 flex-1">
                               <SeatInput
-                                label={`Map ${map + 1}, ${slotLabel(settings, slot)}, server ${run.server + 1}`}
+                                label={`${mapLabel(map, mapNames)}, ${slotLabel(settings, slot)}, server ${run.server + 1}`}
                                 player={playerId ? playerOf(playerId) : null}
                                 suggest={(query) => seatSuggestions(query, kader, answers, onMap)}
                                 dot={dot}

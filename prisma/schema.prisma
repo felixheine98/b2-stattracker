@@ -131,6 +131,7 @@ model Player {
   user                  User?
   lineupSlots           LineupSlot[]
   roundResults          RoundResult[]
+  seedingRuns           SeedingRun[]
   summaryResults        SubMatchSummaryPlayer[]
   tournamentLineupSlots TournamentLineupSlot[]
   opponentTeamSlots     OpponentTeamSlot[]
@@ -198,6 +199,8 @@ model Tournament {
   // a seeding match is a single time attack as before
   seedingType     String?
   seedingSettings Json?
+  // The master sheet the seeding results are imported from
+  seedingSheet    String?
   description String?
   startDate   DateTime?
   endDate     DateTime?
@@ -469,6 +472,8 @@ model Stage {
   number       Int
   // The map of every format on this match day, e.g. {"ROUND_1V1": "Heat"} (docs/adr/008-matchday-planung.md)
   maps         Json?
+  // The names of a seeding's maps, in order (docs/adr/010)
+  seedingMaps  String[]   @default([])
   createdAt    DateTime   @default(now())
 
   matches Match[]
@@ -545,6 +550,9 @@ model Match {
   label               String?
   // eCircuitMania match page the results were imported from
   ecmUrl              String?
+  // The official result of a seeding match (docs/adr/010): place and league, e.g. "League 4 · Group H"
+  seedingPlace        Int?
+  seedingLeague       String?
   createdAt           DateTime          @default(now())
   updatedAt           DateTime          @updatedAt
 
@@ -702,6 +710,9 @@ model SeedingRun {
   map        Int
   slot       Int
   server     Int
+  // Who drove it and their points over the session (docs/adr/010); empty until recorded
+  playerId   String?
+  player     Player?  @relation(fields: [playerId], references: [id], onDelete: SetNull)
   score      Int?
 }
 

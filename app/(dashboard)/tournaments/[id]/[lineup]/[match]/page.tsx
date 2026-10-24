@@ -13,7 +13,8 @@ import { compRulesOf, rulesInclude } from "@/lib/match-rules-db"
 import { MatchDetailView } from "./match-detail-view"
 import { matchdayPlanningEnabled } from "@/lib/features"
 import { publishedLineupOf } from "@/lib/matchday-plan-db"
-import { runLabel, seedingSettings } from "@/lib/seeding"
+import { seedingSettings } from "@/lib/seeding"
+import { SeedingResults } from "@/components/seeding/seeding-results"
 
 interface Props {
   params: Promise<{ id: string; lineup: string; match: string }>
@@ -40,7 +41,7 @@ export default async function MatchDetailPage({ params, searchParams }: Props) {
       where: { id: matchId },
       include: {
         tournamentLineup: { select: { id: true, slug: true, name: true, slots: { include: { player: true } }, managers: { select: { userId: true } } } },
-        stage: { select: { id: true, type: true, number: true } },
+        stage: { select: { id: true, type: true, number: true, seedingMaps: true } },
         tournament: {
           include: {
             stages: { select: { id: true, type: true, number: true } },
@@ -55,7 +56,7 @@ export default async function MatchDetailPage({ params, searchParams }: Props) {
           orderBy: { order: "asc" },
           include: {
             lineup: { include: { slots: { include: { player: true } } } },
-            seedingRun: true,
+            seedingRun: { include: { player: { select: { id: true, name: true, nickname: true, country: true } } } },
             rounds: {
               orderBy: { number: "asc" },
               include: {
@@ -94,12 +95,29 @@ export default async function MatchDetailPage({ params, searchParams }: Props) {
     ? await publishedLineupOf({ id: match.id, tournamentLineupId: match.tournamentLineupId, stageId: match.stage.id, formats: [...new Set([...match.subMatches].sort((a, b) => a.order - b.order).map((sm) => sm.format))] })
     : null
 
-  // The runs of a seeding played in a seeding format (docs/adr/010), named by map, time and server
+  // A seeding in a seeding format (docs/adr/010): its runs with who drove or was planned, and the score
   const seeding = match.stage.type === "SEEDING" ? seedingSettings(match.tournament.seedingType, match.tournament.seedingSettings) : null
-  const runLabels = Object.fromEntries(seeding ? match.subMatches.flatMap((sm) => sm.seedingRun ? [[sm.id, runLabel(seeding, sm.seedingRun)]] : []) : [])
-  // Who drives each run, as finalised in the planning: its places are in the order of the runs
-  const plannedRuns = seeding && matchdayPlanningEnabled() ? (await publishedLineupOf({ id: match.id, tournamentLineupId: match.tournamentLineupId, stageId: match.stage.id, formats: ["SEEDING_RUN"] }))?.formats[0]?.players : undefined
-  const runDrivers = Object.fromEntries(plannedRuns ? match.subMatches.flatMap((sm) => plannedRuns[sm.order] ? [[sm.id, plannedRuns[sm.order]!]] : []) : [])
+  let seedingResults = null
+  if (seeding) {
+    // Who was planned for each run, as finalised: its places are in the order of the runs
+    const planned = matchdayPlanningEnabled() ? (await publishedLineupOf({ id: match.id, tournamentLineupId: match.tournamentLineupId, stageId: match.stage.id, formats: ["SEEDING_RUN"] }))?.formats[0]?.players ?? [] : []
+    const runs = match.subMatches.flatMap((sm) => sm.seedingRun ? [{ subMatchId: sm.id, map: sm.seedingRun.map, slot: sm.seedingRun.slot, server: sm.seedingRun.server, player: sm.seedingRun.player, planned: planned[sm.order] ?? null, score: sm.seedingRun.score }] : [])
+    const kader = match.tournamentLineup?.slots.map((s) => ({ id: s.player.id, name: s.player.name, nickname: s.player.nickname, country: s.player.country })) ?? []
+    const players = [...kader, ...runs.flatMap((r) => (r.player && !kader.some((p) => p.id === r.player!.id) ? [r.player] : []))]
+    seedingResults = (
+      <SeedingResults
+        apiPath={`/api/tournaments/${match.tournament.id}/matches/${match.id}/seeding`}
+        settings={seeding}
+        mapNames={match.stage.seedingMaps}
+        runs={runs}
+        place={match.seedingPlace}
+        league={match.seedingLeague}
+        players={players}
+        canEdit={canEdit}
+        sheetUrl={match.tournament.seedingSheet}
+      />
+    )
+  }
 
-  return <MatchDetailView runLabels={runLabels} runDrivers={runDrivers} plannedLineup={plannedLineup} match={named.match} ruleSet={ruleSetFor(compRulesOf(match.tournament), match.stage.type)} allPlayers={named.allPlayers} guestTmIds={guestTmIds} trialTmIds={trialTmIds} autoEcmImport={autoEcmImport} canEdit={canEdit} canManage={canManage(user?.role)} />
+  return <MatchDetailView seedingResults={seedingResults} plannedLineup={plannedLineup} match={named.match} ruleSet={ruleSetFor(compRulesOf(match.tournament), match.stage.type)} allPlayers={named.allPlayers} guestTmIds={guestTmIds} trialTmIds={trialTmIds} autoEcmImport={autoEcmImport} canEdit={canEdit} canManage={canManage(user?.role)} />
 }

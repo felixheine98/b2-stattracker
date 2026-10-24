@@ -38,7 +38,7 @@ export async function loadPlan(lineupId: string, stageId: string) {
       where: { tournamentLineupId: lineupId, stageId },
       select: { id: true, slug: true, number: true, label: true, opponent: true, date: true, createdAt: true, subMatches: { orderBy: { order: "asc" }, select: { format: true } } },
     }),
-    db.stage.findUniqueOrThrow({ where: { id: stageId }, select: { maps: true, type: true, tournament: { select: { seedingType: true, seedingSettings: true } } } }),
+    db.stage.findUniqueOrThrow({ where: { id: stageId }, select: { maps: true, type: true, seedingMaps: true, tournament: { select: { seedingType: true, seedingSettings: true } } } }),
   ])
   const { discordChannelId } = await db.tournamentLineup.findUniqueOrThrow({ where: { id: lineupId }, select: { discordChannelId: true } })
   return {
@@ -53,15 +53,15 @@ export async function loadPlan(lineupId: string, stageId: string) {
     publishedAt: plan.publishedAt,
     maps: (stage.maps ?? {}) as StageMaps,
     // A seeding in a seeding format is planned as runs (docs/adr/010); null for every other stage
-    seeding: stage.type === "SEEDING" ? seedingPlanOf(stage.tournament) : null,
+    seeding: stage.type === "SEEDING" ? seedingPlanOf(stage.tournament, stage.seedingMaps) : null,
     discordSettings: plan.discordSettings as MatchdayDiscordSettings | null,
     discordChannelId,
   }
 }
 
-function seedingPlanOf(tournament: { seedingType: string | null; seedingSettings: unknown }) {
+function seedingPlanOf(tournament: { seedingType: string | null; seedingSettings: unknown }, mapNames: string[]) {
   const settings = seedingSettings(tournament.seedingType, tournament.seedingSettings)
-  return settings && { settings }
+  return settings && { settings, mapNames }
 }
 
 // The matchday announcement and how its emojis read (docs/adr/008)
