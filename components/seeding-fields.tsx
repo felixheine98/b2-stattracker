@@ -10,10 +10,10 @@ interface Props {
 
 const NUMBERS: Array<{ key: "maps" | "slotsPerMap" | "servers" | "rounds" | "best"; label: string }> = [
   { key: "maps", label: "Maps" },
-  { key: "slotsPerMap", label: "Times per map" },
+  { key: "slotsPerMap", label: "Times / map" },
   { key: "servers", label: "Servers" },
   { key: "rounds", label: "Rounds" },
-  { key: "best", label: "Best scores per map" },
+  { key: "best", label: "Best / map" },
 ]
 
 const listOf = (text: string) => text.split(",").map((s) => s.trim()).filter(Boolean)
@@ -39,10 +39,10 @@ export function SeedingFields({ value, onChange }: Props) {
       {value && (
         // Keyed by type: the list fields start over with the new type's numbers
         <div key={value.type} className="space-y-3">
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
+          <div className="grid grid-cols-2 items-end gap-3 sm:grid-cols-3">
             {NUMBERS.map(({ key, label }) => (
               <div key={key} className="space-y-1">
-                <Label htmlFor={`seeding-${key}`} className="text-xs text-fg-muted">{label}</Label>
+                <Label htmlFor={`seeding-${key}`} className="block truncate text-xs text-fg-muted" title={label}>{label}</Label>
                 <Input
                   id={`seeding-${key}`}
                   type="number"
