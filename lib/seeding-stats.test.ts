@@ -30,18 +30,19 @@ describe("seeding stats", () => {
     ])
   })
 
-  it("give every player their runs, average and best score, and how many runs counted for the team", () => {
-    const of = (id: string) => stats.players.find((p) => p.playerId === id)
-    // Over both lineups; each of crypii's runs is among the best 3 of its map
-    expect(of("crypii")).toEqual({ playerId: "crypii", runs: 2, scored: 2, average: 481.5, best: 500, counted: 2 })
+  it("give every player of a lineup their score on each map and whether it counted for the team", () => {
+    const of = (playerId: string, lineupId: string) => stats.players.find((p) => p.playerId === playerId && p.lineupId === lineupId)
+    expect(of("crypii", "academy")).toEqual({ playerId: "crypii", lineupId: "academy", maps: [{ score: 463, counted: true }, null] })
     // The fourth best on map 1 does not count
-    expect(of("siri")).toEqual({ playerId: "siri", runs: 1, scored: 1, average: 298, best: 298, counted: 0 })
-    // A run without a score counts as driven, but not into the average
-    expect(of("toast")).toEqual({ playerId: "toast", runs: 1, scored: 0, average: null, best: null, counted: 0 })
+    expect(of("siri", "academy")!.maps).toEqual([{ score: 298, counted: false }, null])
+    // Driven for another lineup as well: a row of its own
+    expect(of("crypii", "esports")!.maps).toEqual([{ score: 500, counted: true }, null])
+    // A run without a score yet
+    expect(of("toast", "esports")!.maps).toEqual([{ score: null, counted: false }, null])
   })
 
-  it("put the best average first", () => {
-    expect(stats.players.slice(0, 2).map((p) => p.playerId)).toEqual(["crypii", "parzival"])
+  it("put the best score first", () => {
+    expect(stats.players.slice(0, 3).map((p) => [p.playerId, p.lineupId])).toEqual([["crypii", "esports"], ["crypii", "academy"], ["parzival", "academy"]])
     expect(stats.players.at(-1)!.playerId).toBe("toast")
   })
 })

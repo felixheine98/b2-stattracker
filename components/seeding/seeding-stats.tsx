@@ -1,7 +1,8 @@
 "use client"
 
 import Link from "next/link"
-import { Flag } from "lucide-react"
+import { Flag, Trophy } from "lucide-react"
+import { cn } from "@/lib/utils"
 import { useOwnRow } from "@/components/own-player"
 import { PlayerName } from "@/components/player-name"
 import type { LoadedSeedingStats } from "@/lib/seeding-stats-db"
@@ -16,7 +17,7 @@ const head = "py-2 px-3 font-medium whitespace-nowrap"
 const cell = "py-1.5 px-3 text-right tabular-nums text-fg-soft"
 
 // The seeding of a comp in a seeding format (docs/adr/010): team totals with place and league, and
-// per player their runs and scores; kept apart from the other stats, as scores measure something else
+// per player their score on each map, the counted ones marked; kept apart from the other stats, as scores measure something else
 export function SeedingStats({ stats, single = false }: Props) {
   const ownRow = useOwnRow()
   const lineup = stats.lineups[0]
@@ -64,26 +65,31 @@ export function SeedingStats({ stats, single = false }: Props) {
             <thead>
               <tr className="border-b border-line bg-table-head text-fg-muted">
                 <th className={`${head} sticky left-0 z-[1] bg-table-head text-left`}>Player</th>
-                <th className={`${head} text-right`}>Runs</th>
-                <th className={`${head} text-right`}>Avg score</th>
-                <th className={`${head} text-right`}>Best</th>
-                <th className={`${head} text-right`} title={`Runs among the best ${stats.best} of their map`}>Counted</th>
+                {!single && <th className={`${head} text-left`}>Lineup</th>}
+                {stats.maps.map((name) => <th key={name} className={`${head} text-right`}>{name}</th>)}
               </tr>
             </thead>
             <tbody>
               {stats.players.map((p) => (
-                <tr key={p.playerId} className={`border-b border-table-rule hover:bg-table-hover ${ownRow({ playerId: p.playerId, tmId: p.player.tmId })}`}>
+                <tr key={`${p.lineupId}:${p.playerId}`} className={`border-b border-table-rule hover:bg-table-hover ${ownRow({ playerId: p.playerId, tmId: p.player.tmId })}`}>
                   <td className="sticky left-0 z-[1] whitespace-nowrap bg-table-cell py-1.5 px-3 font-medium text-fg max-md:shadow-[1px_0_0_var(--border)]">
                     <Link href={p.href} className="hover:text-brand-ink"><PlayerName name={p.player.name} nickname={p.player.nickname} /></Link>
                   </td>
-                  <td className={cell}>{p.runs}</td>
-                  <td className={cell}>{p.average == null ? "—" : Math.round(p.average)}</td>
-                  <td className={cell}>{p.best ?? "—"}</td>
-                  <td className={cell}>{p.counted} / {p.runs}</td>
+                  {!single && <td className="whitespace-nowrap py-1.5 px-3 text-fg-soft">{p.lineupName}</td>}
+                  {p.maps.map((m, i) => (
+                    <td key={i} className={cn(cell, m?.counted && "font-semibold text-fg")}>
+                      {m?.counted && <Trophy size={11} className="mr-1 inline text-brand-ink" aria-label={`among the best ${stats.best} of the map`} />}
+                      {m ? (m.score ?? "—") : ""}
+                    </td>
+                  ))}
                 </tr>
               ))}
             </tbody>
           </table>
+          <p className="border-t border-line px-3 py-1.5 text-[11px] text-fg-subtle">
+            <Trophy size={10} className="mr-1 inline text-brand-ink" />
+            among the best {stats.best} of the map, counted for the team total
+          </p>
         </div>
       )}
     </div>
