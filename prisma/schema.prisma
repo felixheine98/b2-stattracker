@@ -550,6 +550,8 @@ model Match {
   label               String?
   // eCircuitMania match page the results were imported from
   ecmUrl              String?
+  // Recordings of the match, mostly Twitch VODs: [{ url, label }] (see lib/vod.ts)
+  vods                Json              @default("[]")
   // The official result of a seeding match (docs/adr/010): place and league, e.g. "League 4 · Group H"
   seedingPlace        Int?
   seedingLeague       String?

@@ -2,6 +2,7 @@
 
 import { ResultBoard } from "@/components/result-board"
 import { MatchOpponentPanel } from "@/components/opponents/match-opponent-panel"
+import { VodLinks, vodLinks } from "@/components/vod-links"
 import { BASE_PATH } from "@/lib/base-path"
 import { lineupPath, matchPath, tournamentPath } from "@/lib/paths"
 import { PlayerName } from "@/components/player-name"
@@ -98,6 +99,7 @@ interface Match {
   number?: number | null
   label?: string | null
   ecmUrl?: string | null
+  vods?: unknown
   closedAt?: Date | null
   confirmedOutcome?: string | null
   tournamentLineup?: TournamentLineup | null
@@ -562,6 +564,7 @@ export function MatchDetailView({ match: initialMatch, ruleSet, allPlayers, gues
               </p>
             )}
             {initialMatch.notes && <p className="text-fg-subtle text-sm mt-1 whitespace-pre-line break-words">{initialMatch.notes}</p>}
+            <VodLinks vods={vodLinks(initialMatch.vods)} />
             {ecmUrl && (
               <a
                 href={ecmUrl}

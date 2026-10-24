@@ -5,14 +5,16 @@ Ideen, die noch kein Todo sind: [ideen.md](ideen.md)
 ## Offen
 
 - [ ] Alte Comp-Stats aus Discord-Screenshots übernehmen ([Entscheidung](docs/adr/007-zusammengefasste-ergebnisse.md), [Glossar](docs/zusammengefasste-ergebnisse-glossar.md)); Abgleich mit Felix pro Comp
+- [ ] VOD-Links (meist Twitch) an einzelnen Matches: im „Edit match“-Dialog, auf der Match-Seite als Link mit Icon; einer üblich, mehrere mit Namen möglich (gebaut, in dev zu prüfen)
 
 ## Teilweise erledigt
 
 - [ ] seeding formate für import/anlegen prüfen (Liste der alten Seeding-Screenshots aus Discord folgt nach der Übernahme, [ADR 007](docs/adr/007-zusammengefasste-ergebnisse.md)); als erstes das EMC-Seeding ([Entscheidung](docs/adr/010-seeding-formate.md), [Glossar](docs/seeding-glossar.md)), Ziel: Planung bis zum Seeding von EMC S8 (Start 08.11.2026)
   - [x] fundament: seeding-typ „EMC“ an der comp (zahlen änderbar), seeding-match mit einem sub-match pro fahrt
-  - [ ] planung: seeding als stage der matchday-planung, raster der fahrten, sperre „keine map zweimal“ (gebaut, in dev zu prüfen; map-namen kommen aus dem mastersheet)
-  - [ ] festhalten: scores pro fahrt, platz und liga, gesamttabelle pro lineup (gebaut, in dev zu prüfen: import per mastersheet-link, handeingabe; testdaten B2 Academy in EMC S8)
-  - [ ] stats: seeding auf lineup-seite (ergebnis + spieler) und comp-übersicht (lineups + spieler) gebaut, in dev zu prüfen; offen: seeding-bereich im spielerprofil (vorher Low-Prio-Todo)
+  - [x] planung: seeding als stage der matchday-planung, raster der fahrten, sperre „keine map zweimal“ (live seit 24.10.2026; map-namen kommen aus dem mastersheet)
+  - [x] festhalten: scores pro fahrt, platz und liga, gesamttabelle pro lineup (live seit 24.10.2026: import per mastersheet-link, handeingabe)
+  - [x] stats: seeding auf lineup-seite (ergebnis + spieler) und comp-übersicht (lineups + spieler), score pro map mit pokal für gezählte (live seit 24.10.2026)
+  - [ ] seeding-bereich im spielerprofil (vorher Low-Prio-Todo)
 
 - [ ] Discord-Reaktionen in der Comp-Planung ([Anbindung](docs/discord-planning.md))
   - [x] Abruf, Emoji-Zuordnung, Account-Verknüpfung und Übernahme mit Vorschau
