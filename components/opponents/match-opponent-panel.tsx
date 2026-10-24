@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Select } from "@/components/ui/select"
 import { Dialog, DialogTitle } from "@/components/ui/dialog"
 import { Plus, TriangleAlert, X } from "lucide-react"
-import { vodLinks } from "@/components/vod-links"
+import { vodLinks } from "@/lib/vod"
 import { OpponentPicker, type OpponentValue } from "./opponent-picker"
 interface Meta {
   opponent: string | null; opponentLineupId: string | null; date: string | null; notes: string | null; number: number | null; label: string | null; vods: unknown

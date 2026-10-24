@@ -560,6 +560,7 @@ model Match {
 
   subMatches SubMatch[]
   confirmations MatchConfirmation[]
+  vodClips VodClip[]
 
   @@unique([tournamentLineupId, slug])
   matchdayAbsences MatchdayPlanAbsence[]
@@ -872,4 +873,21 @@ model TfhImportDraft {
   expiresAt    DateTime
 
   @@index([expiresAt])
+}
+
+// The range of a match within one of its Twitch VODs, from which the clip is backed up to YouTube
+// (docs/adr/011-vod-archiv.md); kept apart from Match.vods, so editing the links keeps the ranges
+model VodClip {
+  id        String   @id @default(cuid())
+  matchId   String
+  match     Match    @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  // The VOD link as stored in Match.vods
+  url       String
+  // Seconds into the VOD
+  start     Int
+  end       Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([matchId, url])
 }

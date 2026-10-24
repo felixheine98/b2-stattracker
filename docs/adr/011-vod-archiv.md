@@ -1,6 +1,6 @@
 # VOD-Archiv: Match-Ausschnitte aus Twitch-VODs sichern
 
-Status: Akzeptiert – von Felix am 24.10.2026 bestätigt (Fragen 1–15 und offene Punkte). Umsetzung noch nicht begonnen. Begriffe: [Glossar](../vod-archiv-glossar.md)
+Status: Akzeptiert – von Felix am 24.10.2026 bestätigt (Fragen 1–15 und offene Punkte). Umsetzung in Schritten (a Slider und Bereich, b vod-worker, c YouTube verbinden und Upload, d Player auf der Match-Seite). Begriffe: [Glossar](../vod-archiv-glossar.md)
 
 ## Kontext
 
@@ -77,3 +77,7 @@ Bestätigt (24.10.2026), Abschluss:
 - Wartung: Twitch ändert gelegentlich etwas, dann braucht `yt-dlp` im `vod-worker` ein Update.
 - Verwaiste Videos: Sicherungen entfernter VODs oder gelöschter Matches bleiben auf dem Kanal (Frage 13).
 - Strikes: Drei Urheberrechtsbeschwerden können den Team-Kanal sperren. Wer den Kanal verwaltet, muss Beschwerden mitbekommen und die betroffene Sicherung entfernen; die App sollte dann auf den ursprünglichen VOD-Link zurückfallen.
+
+## Technische Umsetzung
+
+- Schritt a: Bereiche liegen in einer eigenen Tabelle `VodClip` (ein Eintrag je Match und VOD-Link, Sekunden `start`/`end`), getrennt von `Match.vods`, damit das Bearbeiten der Links im Dialog „Edit match“ keine Bereiche überschreibt. Route `PUT /api/tournaments/[id]/matches/[matchId]/vod-clip` (nur `canManage`). Zeitstempel, Twitch-Video-ID und Bereichsprüfung in `lib/vod.ts`; Dialog mit Twitch-Player und Slider in `components/vod-range-dialog.tsx`.

@@ -42,6 +42,7 @@ export default async function MatchDetailPage({ params, searchParams }: Props) {
       include: {
         tournamentLineup: { select: { id: true, slug: true, name: true, slots: { include: { player: true } }, managers: { select: { userId: true } } } },
         stage: { select: { id: true, type: true, number: true, seedingMaps: true } },
+        vodClips: { select: { url: true, start: true, end: true } },
         tournament: {
           include: {
             stages: { select: { id: true, type: true, number: true } },

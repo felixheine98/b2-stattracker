@@ -2,7 +2,9 @@
 
 import { ResultBoard } from "@/components/result-board"
 import { MatchOpponentPanel } from "@/components/opponents/match-opponent-panel"
-import { VodLinks, vodLinks } from "@/components/vod-links"
+import { VodLinks } from "@/components/vod-links"
+import { vodLinks, type VodLink } from "@/lib/vod"
+import { VodRangeDialog } from "@/components/vod-range-dialog"
 import { BASE_PATH } from "@/lib/base-path"
 import { lineupPath, matchPath, tournamentPath } from "@/lib/paths"
 import { PlayerName } from "@/components/player-name"
@@ -100,6 +102,7 @@ interface Match {
   label?: string | null
   ecmUrl?: string | null
   vods?: unknown
+  vodClips?: Array<{ url: string; start: number; end: number }>
   closedAt?: Date | null
   confirmedOutcome?: string | null
   tournamentLineup?: TournamentLineup | null
@@ -381,6 +384,7 @@ export function MatchDetailView({ match: initialMatch, ruleSet, allPlayers, gues
     return planned ? { playerIds: planned.players.flatMap((p) => (p ? [p.id] : [])), map: planned.map } : null
   }
   const [ecmUrl, setEcmUrl] = useState(initialMatch.ecmUrl ?? null)
+  const [rangeVod, setRangeVod] = useState<VodLink | null>(null)
   // In playing order
   const stages = sortStages(initialMatch.tournament.stages)
   const [stageId, setStageId] = useState(initialMatch.stage.id)
@@ -564,7 +568,8 @@ export function MatchDetailView({ match: initialMatch, ruleSet, allPlayers, gues
               </p>
             )}
             {initialMatch.notes && <p className="text-fg-subtle text-sm mt-1 whitespace-pre-line break-words">{initialMatch.notes}</p>}
-            <VodLinks vods={vodLinks(initialMatch.vods)} />
+            <VodLinks vods={vodLinks(initialMatch.vods)} ranges={Object.fromEntries((initialMatch.vodClips ?? []).map((c) => [c.url, c]))} onSetRange={canManage ? setRangeVod : undefined} />
+            {rangeVod && <VodRangeDialog competitionId={initialMatch.tournament.id} matchId={initialMatch.id} vod={rangeVod} range={initialMatch.vodClips?.find((c) => c.url === rangeVod.url) ?? null} onClose={() => setRangeVod(null)} />}
             {ecmUrl && (
               <a
                 href={ecmUrl}

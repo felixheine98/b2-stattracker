@@ -5,10 +5,15 @@ Ideen, die noch kein Todo sind: [ideen.md](ideen.md)
 ## Offen
 
 - [ ] Alte Comp-Stats aus Discord-Screenshots übernehmen ([Entscheidung](docs/adr/007-zusammengefasste-ergebnisse.md), [Glossar](docs/zusammengefasste-ergebnisse-glossar.md)); Abgleich mit Felix pro Comp
-- [ ] VOD-Archiv: Match-Ausschnitte aus Twitch-VODs per Bereichs-Slider auf den Team-YouTube-Kanal sichern ([Entscheidung](docs/adr/011-vod-archiv.md), [Glossar](docs/vod-archiv-glossar.md)); entschieden, Umsetzung offen; Google-Projekt und Audit macht Felix
 
 ## Teilweise erledigt
 
+- [ ] VOD-Archiv: Match-Ausschnitte aus Twitch-VODs per Bereichs-Slider auf den Team-YouTube-Kanal sichern ([Entscheidung](docs/adr/011-vod-archiv.md), [Glossar](docs/vod-archiv-glossar.md))
+  - [ ] a: Bereichs-Slider mit Twitch-Player am VOD, Bereich speichern (gebaut, in dev zu prüfen)
+  - [ ] b: Container `vod-worker` mit Warteschlange (yt-dlp, ffmpeg)
+  - [ ] c: „YouTube verbinden“ in den Admin-Einstellungen, Upload
+  - [ ] d: Player der Sicherung auf der Match-Seite
+  - [ ] Felix: Google-Cloud-Projekt mit YouTube-API, Audit beantragen
 - [ ] seeding formate für import/anlegen prüfen (Liste der alten Seeding-Screenshots aus Discord folgt nach der Übernahme, [ADR 007](docs/adr/007-zusammengefasste-ergebnisse.md)); als erstes das EMC-Seeding ([Entscheidung](docs/adr/010-seeding-formate.md), [Glossar](docs/seeding-glossar.md)), Ziel: Planung bis zum Seeding von EMC S8 (Start 08.11.2026)
   - [x] fundament: seeding-typ „EMC“ an der comp (zahlen änderbar), seeding-match mit einem sub-match pro fahrt
   - [x] planung: seeding als stage der matchday-planung, raster der fahrten, sperre „keine map zweimal“ (live seit 24.10.2026; map-namen kommen aus dem mastersheet)
