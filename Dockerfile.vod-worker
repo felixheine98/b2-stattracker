@@ -1,0 +1,23 @@
+# The vod-worker (docs/adr/011-vod-archiv.md): Node runs worker/vod-worker.ts directly; yt-dlp cuts
+# the ranges out of Twitch VODs with ffmpeg. Rebuilding this image also brings yt-dlp up to date.
+FROM node:24-alpine AS base
+RUN apk add --no-cache openssl ffmpeg python3 py3-pip \
+  && pip install --no-cache-dir --break-system-packages yt-dlp
+
+FROM base AS deps
+WORKDIR /app
+COPY package.json package-lock.json ./
+RUN npm install --ignore-scripts
+COPY prisma ./prisma
+RUN npx prisma generate
+
+FROM base AS runner
+WORKDIR /app
+ENV NODE_ENV=production
+COPY --from=deps /app/node_modules ./node_modules
+COPY package.json ./
+COPY lib/vod-queue.ts ./lib/vod-queue.ts
+COPY worker ./worker
+RUN mkdir /work && chown node:node /work
+USER node
+CMD ["node", "--disable-warning=MODULE_TYPELESS_PACKAGE_JSON", "worker/vod-worker.ts"]

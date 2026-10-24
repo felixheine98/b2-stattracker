@@ -6,7 +6,7 @@ import { execFileSync } from "node:child_process"
 const state = vi.hoisted(() => ({ client: undefined as unknown, session: null as unknown }))
 vi.mock("@/lib/db", () => ({ get db() { return state.client } }))
 vi.mock("@/lib/auth", () => ({ auth: async () => state.session }))
-import { PUT } from "./route"
+import { POST, PUT } from "./route"
 
 const VOD = "https://www.twitch.tv/videos/2281234567?t=1h02m30s"
 
@@ -32,6 +32,8 @@ describe.skipIf(process.env.DB_TESTS !== "1")("VOD ranges with PostgreSQL", () =
   afterAll(async () => { await client?.$disconnect(); await root.$executeRawUnsafe(`DROP SCHEMA IF EXISTS "${schema}" CASCADE`); await root.$disconnect() })
 
   const put = (body: unknown) => PUT(new Request("http://test/vod-clip", { method: "PUT", body: JSON.stringify(body) }), { params: Promise.resolve({ id: ids.comp, matchId: ids.match }) })
+  const post = (body: unknown) => POST(new Request("http://test/vod-clip", { method: "POST", body: JSON.stringify(body) }), { params: Promise.resolve({ id: ids.comp, matchId: ids.match }) })
+  const clip = () => client.vodClip.findFirstOrThrow({ where: { matchId: ids.match, url: VOD } })
   const clips = async () => (await client.vodClip.findMany({ where: { matchId: ids.match } })).map((c) => [c.url, c.start, c.end])
   const as = (id: string, role: string) => { state.session = { user: { id, role } } }
 
@@ -63,5 +65,34 @@ describe.skipIf(process.env.DB_TESTS !== "1")("VOD ranges with PostgreSQL", () =
     expect(res.status).toBe(400)
     expect((await res.json()).error).toMatch(/before the end/)
     expect(await clips()).toEqual([[VOD, 3700, 6500]])
+  })
+
+  it("queues the backup of a saved range", async () => {
+    expect(await clip()).toMatchObject({ status: "WAITING", attempts: 0, youtubeId: null })
+  })
+
+  it("leaves a backup alone when the same range is saved again", async () => {
+    as(ids.admin, "ADMIN")
+    await client.vodClip.update({ where: { id: (await clip()).id }, data: { status: "DONE", youtubeId: "old-video" } })
+    expect((await put({ url: VOD, start: 3700, end: 6500 })).status).toBe(200)
+    expect(await clip()).toMatchObject({ status: "DONE", youtubeId: "old-video", replacesYoutubeId: null })
+  })
+
+  it("backs a changed range up anew, keeping the old video until the new one replaces it", async () => {
+    as(ids.admin, "ADMIN")
+    expect((await put({ url: VOD, start: 3600, end: 6500 })).status).toBe(200)
+    expect(await clip()).toMatchObject({ status: "WAITING", attempts: 0, error: null, youtubeId: "old-video", replacesYoutubeId: "old-video" })
+  })
+
+  it("starts a backup by hand, also again after it failed; only for admins and managers", async () => {
+    await client.vodClip.update({ where: { id: (await clip()).id }, data: { status: "FAILED", attempts: 4, error: "HTTP Error 503", nextAttemptAt: null } })
+    as(ids.lineupManager, "PLAYER")
+    expect((await post({ url: VOD })).status).toBe(403)
+    as(ids.manager, "MANAGER")
+    expect((await post({ url: "https://www.twitch.tv/videos/999" })).status).toBe(404)
+    expect((await post({ url: VOD })).status).toBe(200)
+    const queued = await clip()
+    expect(queued).toMatchObject({ status: "WAITING", attempts: 0, error: null, nextAttemptAt: null })
+    expect(queued.requestedAt).toBeInstanceOf(Date)
   })
 })

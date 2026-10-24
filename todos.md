@@ -10,7 +10,7 @@ Ideen, die noch kein Todo sind: [ideen.md](ideen.md)
 
 - [ ] VOD-Archiv: Match-Ausschnitte aus Twitch-VODs per Bereichs-Slider auf den Team-YouTube-Kanal sichern ([Entscheidung](docs/adr/011-vod-archiv.md), [Glossar](docs/vod-archiv-glossar.md))
   - [ ] a: Bereichs-Slider mit Twitch-Player am VOD, Bereich speichern (gebaut, in dev zu prüfen)
-  - [ ] b: Container `vod-worker` mit Warteschlange (yt-dlp, ffmpeg)
+  - [ ] b: Container `vod-worker` mit Warteschlange (yt-dlp, ffmpeg); gebaut, läuft in dev (`manual`), Status am VOD-Knopf; Upload folgt mit c
   - [ ] c: „YouTube verbinden“ in den Admin-Einstellungen, Upload
   - [ ] d: Player der Sicherung auf der Match-Seite
   - [ ] Felix: Google-Cloud-Projekt mit YouTube-API, Audit beantragen

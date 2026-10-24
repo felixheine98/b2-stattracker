@@ -110,6 +110,32 @@ services:
       - ../b2-member/data:/bot/data:ro
       - reaction_times:/bot/times
 
+  # Backs up the ranges of Twitch VODs to the team's YouTube channel (docs/adr/011-vod-archiv.md)
+  vod-worker:
+    build:
+      context: .
+      dockerfile: Dockerfile.vod-worker
+    restart: unless-stopped
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    mem_limit: 512m
+    pids_limit: 100
+    tmpfs:
+      - /tmp:size=64m,mode=1777
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:?POSTGRES_USER is required}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}@db:5432/${POSTGRES_DB:?POSTGRES_DB is required}
+      # Off until Google has audited the API project (ADR 011); then "auto"
+      VOD_ARCHIVE: "off"
+    volumes:
+      - vod_work:/work
+    depends_on:
+      db:
+        condition: service_healthy
+
 volumes:
   postgres_data:
   reaction_times:
+  vod_work:

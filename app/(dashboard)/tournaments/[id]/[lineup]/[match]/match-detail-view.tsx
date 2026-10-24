@@ -102,7 +102,7 @@ interface Match {
   label?: string | null
   ecmUrl?: string | null
   vods?: unknown
-  vodClips?: Array<{ url: string; start: number; end: number }>
+  vodClips?: Array<{ url: string; start: number; end: number; status: string; error: string | null; youtubeId: string | null }>
   closedAt?: Date | null
   confirmedOutcome?: string | null
   tournamentLineup?: TournamentLineup | null
@@ -385,6 +385,12 @@ export function MatchDetailView({ match: initialMatch, ruleSet, allPlayers, gues
   }
   const [ecmUrl, setEcmUrl] = useState(initialMatch.ecmUrl ?? null)
   const [rangeVod, setRangeVod] = useState<VodLink | null>(null)
+  // Asks for the backup of a VOD's range by hand (dev) or again after it failed
+  async function backUpVod(vod: VodLink) {
+    const r = await fetch(`${BASE_PATH}/api/tournaments/${initialMatch.tournament.id}/matches/${initialMatch.id}/vod-clip`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ url: vod.url }) })
+    if (!r.ok) alert((await r.json().catch(() => ({}))).error ?? "The backup could not be started.")
+    router.refresh()
+  }
   // In playing order
   const stages = sortStages(initialMatch.tournament.stages)
   const [stageId, setStageId] = useState(initialMatch.stage.id)
@@ -568,7 +574,7 @@ export function MatchDetailView({ match: initialMatch, ruleSet, allPlayers, gues
               </p>
             )}
             {initialMatch.notes && <p className="text-fg-subtle text-sm mt-1 whitespace-pre-line break-words">{initialMatch.notes}</p>}
-            <VodLinks vods={vodLinks(initialMatch.vods)} ranges={Object.fromEntries((initialMatch.vodClips ?? []).map((c) => [c.url, c]))} onSetRange={canManage ? setRangeVod : undefined} />
+            <VodLinks vods={vodLinks(initialMatch.vods)} ranges={Object.fromEntries((initialMatch.vodClips ?? []).map((c) => [c.url, c]))} onSetRange={canManage ? setRangeVod : undefined} onBackUp={canManage ? backUpVod : undefined} />
             {rangeVod && <VodRangeDialog competitionId={initialMatch.tournament.id} matchId={initialMatch.id} vod={rangeVod} range={initialMatch.vodClips?.find((c) => c.url === rangeVod.url) ?? null} onClose={() => setRangeVod(null)} />}
             {ecmUrl && (
               <a

@@ -886,6 +886,17 @@ model VodClip {
   // Seconds into the VOD
   start     Int
   end       Int
+  // The backup (lib/vod-queue.ts): WAITING, LOADING, DONE or FAILED
+  status            String    @default("WAITING")
+  attempts          Int       @default(0)
+  nextAttemptAt     DateTime?
+  // Asked for by hand: the only way in dev, and "try again" after a failure
+  requestedAt       DateTime?
+  startedAt         DateTime?
+  error             String?
+  youtubeId         String?
+  // The backup of the range before it changed; replaced once the new one is up
+  replacesYoutubeId String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
