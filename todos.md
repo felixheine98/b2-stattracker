@@ -4,8 +4,6 @@ Ideen, die noch kein Todo sind: [ideen.md](ideen.md)
 
 ## Offen
 
-- [ ] Alte Comp-Stats aus Discord-Screenshots übernehmen ([Entscheidung](docs/adr/007-zusammengefasste-ergebnisse.md), [Glossar](docs/zusammengefasste-ergebnisse-glossar.md)); Abgleich mit Felix pro Comp
-
 ## Teilweise erledigt
 
 - [ ] seeding formate für import/anlegen prüfen (Liste der alten Seeding-Screenshots aus Discord folgt nach der Übernahme, [ADR 007](docs/adr/007-zusammengefasste-ergebnisse.md)); als erstes das EMC-Seeding ([Entscheidung](docs/adr/010-seeding-formate.md), [Glossar](docs/seeding-glossar.md)), Ziel: Planung bis zum Seeding von EMC S8 (Start 08.11.2026)
@@ -58,6 +56,7 @@ Ideen, die noch kein Todo sind: [ideen.md](ideen.md)
   - [ ] d: Player der Sicherung auf der Match-Seite
   - [ ] Felix: Google-Cloud-Projekt mit YouTube-API, Audit beantragen
 - [ ] Discord-Bot postet die finalisierte Matchday-Besetzung in den passenden Channel ([Matchday-Planung](docs/adr/008-matchday-planung.md))
+- [ ] Alte Comp-Stats aus Discord-Screenshots übernehmen ([Entscheidung](docs/adr/007-zusammengefasste-ergebnisse.md), [Glossar](docs/zusammengefasste-ergebnisse-glossar.md)); Abgleich mit Felix pro Comp
 
 ## Erledigt
 
